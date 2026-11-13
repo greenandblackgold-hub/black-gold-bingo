@@ -9,6 +9,7 @@ export function createWalletService({ repo, config, chapa }) {
   const service = {
     /** Step 1 of a deposit: record a pending payment and get the Chapa checkout link. */
     async startDeposit(user, amountEtb) {
+      if (!config.realMoneyEnabled) throw new HttpError(503, 'real_money_disabled', 'Real-money deposits are not enabled yet.');
       const amount = toSantim(amountEtb);
       if (!Number.isFinite(amount) || amount < config.minDeposit || amount > config.maxDeposit) {
         throw new HttpError(400, 'invalid_amount', `Deposit between ${etb(config.minDeposit)} and ${etb(config.maxDeposit)} ETB`);
@@ -66,6 +67,7 @@ export function createWalletService({ repo, config, chapa }) {
     /* ───────────── cash-out ───────────── */
 
     async requestWithdrawal(user, { amount, accountName, accountNumber, bankCode }) {
+      if (!config.realMoneyEnabled) throw new HttpError(503, 'real_money_disabled', 'Real-money cash-outs are not enabled yet.');
       const a = toSantim(amount);
       if (!Number.isFinite(a) || a < config.minWithdraw) throw new HttpError(400, 'invalid_amount', `Minimum cash-out is ${etb(config.minWithdraw)} ETB`);
       const name = String(accountName ?? '').trim().slice(0, 80);
@@ -90,6 +92,7 @@ export function createWalletService({ repo, config, chapa }) {
 
     /** Admin: send the money. pending -> processing -> paid (or failed + automatic refund). */
     async approveWithdrawal(id) {
+      if (!config.realMoneyEnabled) throw new HttpError(503, 'real_money_disabled', 'Real-money payouts are not enabled yet.');
       const claimed = await repo.transitionWithdrawal(id, ['pending'], 'processing');
       if (!claimed) throw new HttpError(409, 'wrong_status', 'Withdrawal is not pending');
       try {
