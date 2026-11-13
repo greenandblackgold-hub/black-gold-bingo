@@ -9,9 +9,9 @@ You do not need to write, read or fix any code. Follow the steps in order. Each 
 
 ## Two things you must know first
 
-**1. I can't press the buttons for you.** Creating accounts, accepting terms and typing your passwords has to be done by you. I can't log in to GitHub, MongoDB, Render or Chapa for you. Everything else is already built and tested: the website, the game, the wallets, the card sales, the prize payments and the cash-out system.
+**1. I can't press the buttons for you.** Creating accounts, accepting terms and typing your passwords has to be done by you. I can't log in to GitHub, MongoDB, Render or Chapa for you. The old live page was not safe: it exposed temporary OTP codes in logs and contained startup code that could delete player records. The server has been corrected in GitHub, but the new version has not yet been deployed and fully verified. Do not invite players or accept money.
 
-**2. A licence is needed before you take real money.** Bingo played for money is gambling. In Ethiopia the National Lottery Administration licenses this, and the rules and taxes have been changing. Use **test mode** (fake money, below) as long as you like. Before you switch to real money, ask a lawyer and the National Lottery Administration what you need, and ask Chapa whether they accept your business type. I am not a lawyer, and the game does not deduct any tax from prizes.
+**2. Real-money Bingo needs official clearance.** Ethiopia's Ministry of Justice explains that Bingo/lottery categories have different rules, and the required permit must come from the National Lottery Administration. We must confirm the exact category and get the correct permit in writing. Chapa must also approve this exact business model in writing before we use its payment service. The application now keeps real-money functions OFF by default.
 
 ---
 
