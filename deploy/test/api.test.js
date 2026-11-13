@@ -320,15 +320,19 @@ test('rate limiting and CORS', async () => {
 });
 
 test('production safety gates block registration and all real-money routes until approvals are enabled', async () => {
-  const p = await newPlayer('Safety Gate Player');
   const previous = {
     prod: ctx.config.prod,
     registrationEnabled: ctx.config.registrationEnabled,
     realMoneyEnabled: ctx.config.realMoneyEnabled,
     lotteryLicenseApproved: ctx.config.lotteryLicenseApproved,
     chapaMerchantApproved: ctx.config.chapaMerchantApproved,
+    authLimit: ctx.config.rateLimits.auth,
   };
   try {
+    // The preceding rate-limit test intentionally lowers this limit; reset it before creating this test player.
+    ctx.config.rateLimits.auth = 100000;
+    ctx.app.resetLimits();
+    const p = await newPlayer('Safety Gate Player');
     ctx.config.prod = true;
     ctx.config.registrationEnabled = false;
     ctx.config.realMoneyEnabled = false;
@@ -345,6 +349,7 @@ test('production safety gates block registration and all real-money routes until
     assert.equal((await api('POST', '/api/payments/manual', { token: p.token, body: { txnId: 'FAKE-123', amount: 100 } })).status, 404);
   } finally {
     Object.assign(ctx.config, previous);
+    ctx.config.rateLimits.auth = previous.authLimit;
     ctx.app.resetLimits();
   }
 });
