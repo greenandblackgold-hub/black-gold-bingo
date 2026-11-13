@@ -98,36 +98,33 @@ Only after those steps will we enter approved payment credentials and switch on 
 
 ---
 
-## Running a game (every time)
+## Running a game
 
-1. Players buy cards **before** the round starts (cards cannot be bought once it has started).
-2. You: **Control Center, Start round.**
-3. You: switch **Auto-call** on (5 to 10 seconds is comfortable) or press **Draw next number**.
-4. A player completes a line and presses **Call BINGO!**. The server checks it and ends the round, shows the winning card to everyone and pays the prize into the winner's wallet. Nothing for you to do.
-5. You: press **New round**. Everyone's old cards are cleared and a new round begins.
+This section is not active yet. The public site is currently in safe maintenance mode. Do not start paid rounds, invite players or accept money. We will restore these instructions only after the new player interface and owner control center pass the full test.
 
-## Paying cash-outs (every day)
+## Paying cash-outs
 
-Open **Control Center**. Under **Cash-out requests** you see the amount, name and account number. Check them, then press **Pay** (or **Reject**, and the money goes back to the player's wallet). If it shows **Sending** for a long time, press **Check status**.
+Cash-outs are disabled. Do not promise or send payouts through the old site. Existing balances and any previous payment records must be checked and reconciled before real-money operation resumes.
 
 ---
 
 ## If something looks wrong
 
 - **The site does not open:** in Render, click your service and look for **Live**. If it says failed, open **Logs** and send me a screenshot.
-- **Players cannot pay:** check that the Chapa key in Render has no spaces before or after it.
+- **Players cannot pay:** payments are intentionally disabled until the legal permit and Chapa's written approval are confirmed.
 - **You forgot your owner PIN:** change `ADMIN_PIN` in Render, Environment, Save. It becomes your PIN after the restart.
 - **Anything else:** send me a screenshot of the page and of Render's **Logs** and I will fix it.
 
 ---
 
-## What is not covered yet (be aware)
+## What still needs to be completed
 
-- **Phone numbers are not verified.** Anyone can register any number. Adding an SMS code is the first improvement I recommend before you advertise.
-- **Age and ID are not checked.** The sign-up page says 18+, and nothing enforces it.
-- **No tax is deducted** from prizes (see the licence note).
-- **Only one copy of the game may run.** Do not change the instance count in Render.
-- **Telebirr direct** is not built (it needs a contract with Ethio telecom). Players can still pay with Telebirr through Chapa.
+- Real SMS phone verification and age/identity checks.
+- The complete player and owner interfaces must be rebuilt and tested against the secure API.
+- Existing database records and any old balances must be audited before migration.
+- The official Bingo category, permit, taxes and Chapa merchant approval must be confirmed.
+- The payment provider's live checkout and payout flows must pass end-to-end tests.
+- Only one game server instance should run because the live draw scheduler is single-instance.
 
 ## Test and deployment status
 
