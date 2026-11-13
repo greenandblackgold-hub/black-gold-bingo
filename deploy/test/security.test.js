@@ -15,6 +15,7 @@ test('production real-money mode is off unless explicitly approved', () => {
     MONGODB_URI: 'mongodb://example.invalid/db',
     JWT_SECRET: secret,
   });
+  assert.equal(safe.registrationEnabled, false);
   assert.equal(safe.realMoneyEnabled, false);
   assert.equal(safe.lotteryLicenseApproved, false);
   assert.equal(safe.chapaMerchantApproved, false);
