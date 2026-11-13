@@ -8,7 +8,7 @@ services:
     plan: free               # use the existing free service tier; it may sleep when idle.
     autoDeployTrigger: checksPass # wait for GitHub Actions tests before deploying commits.
     numInstances: 1          # must stay 1
-    buildCommand: npm --prefix deploy install && npm --prefix deploy test && cd client-source && npm install --include=dev --production=false && VITE_SERVER_MODE=true npm run build && cd .. && rm -rf deploy/public && mkdir -p deploy/public && cp -R client-source/dist/. deploy/public/
+    buildCommand: npm --prefix deploy install && npm --prefix deploy test && cd client-source && npm install --include=dev --production=false && VITE_SERVER_MODE=false npm run build && cd .. && rm -rf deploy/public && mkdir -p deploy/public && cp -R client-source/dist/. deploy/public/
     startCommand: npm --prefix deploy start
     healthCheckPath: /health
     envVars:
