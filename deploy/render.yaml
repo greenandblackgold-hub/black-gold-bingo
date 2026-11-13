@@ -23,6 +23,7 @@ services:
       - { key: CARD_PRICE_ETB, value: "10" }
       - { key: PRIZE_PERCENT, value: "80" }
       - { key: AUTO_PAYOUT, value: "false" }       # manual payout approval only
+      - { key: REGISTRATION_ENABLED, value: "false" } # keep new accounts off until real SMS verification is ready
       - { key: REAL_MONEY_ENABLED, value: "false" } # locked until legal and payment approvals
       - { key: LOTTERY_LICENSE_APPROVED, value: "false" }
       - { key: CHAPA_MERCHANT_APPROVED, value: "false" }
