@@ -99,13 +99,25 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
     routes.push({ method, re, keys, access, bucket, handler });
   };
 
+  // Production money routes remain locked until the required permit and provider approval are confirmed.
+  const requireRegistration = () => {
+    if (config.prod && !config.registrationEnabled) {
+      throw new HttpError(503, 'registration_disabled', 'Registration is temporarily unavailable');
+    }
+  };
+  const requireRealMoney = () => {
+    if (config.prod && (!config.realMoneyEnabled || !config.lotteryLicenseApproved || !config.chapaMerchantApproved)) {
+      throw new HttpError(503, 'real_money_disabled', 'Real-money play is not enabled until licensing and payment approval are verified');
+    }
+  };
+
   const ledgerLabel = { prize: 'Prize', withdraw_hold: 'Cash-out', withdraw_refund: 'Cash-out refund' };
   const ledgerKind = (k) => (k === 'card_purchase' || k === 'withdraw_hold' ? 'purchase' : 'deposit');
 
   route('GET', '/health', 'public', 'default', async () => ({ ok: true, storage: repo.kind }));
 
   /* auth */
-  route('POST', '/api/auth/register', 'public', 'auth', ({ body }) => auth.register(body));
+  route('POST', '/api/auth/register', 'public', 'auth', ({ body }) => { requireRegistration(); return auth.register(body); });
   route('POST', '/api/auth/login', 'public', 'auth', ({ body }) => auth.login(body));
   route('GET', '/api/me', 'user', 'default', ({ user }) => publicUser(user));
 
@@ -114,8 +126,8 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
 
   /* cards */
   route('GET', '/api/cards', 'user', 'default', ({ user }) => game.myCards(user));
-  route('POST', '/api/cards/buy', 'user', 'money', async ({ user, body }) => game.buyCards(user, body.count));
-  route('POST', '/api/claim', 'user', 'money', ({ user, body }) => game.claim(user, body.cardId));
+  route('POST', '/api/cards/buy', 'user', 'money', async ({ user, body }) => { requireRealMoney(); return game.buyCards(user, body.count); });
+  route('POST', '/api/claim', 'user', 'money', ({ user, body }) => { requireRealMoney(); return game.claim(user, body.cardId); });
   route('POST', '/api/verify', 'user', 'default', ({ user, body }) => game.verify(user, body.cardId));
 
   /* wallet */
@@ -123,10 +135,11 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
     const rows = await repo.listLedger(user.id, 30);
     return rows.map((e) => ({ id: e.ref, kind: ledgerKind(e.kind), amount: e.amount / 100, label: ledgerLabel[e.kind], at: new Date(e.createdAt).getTime() }));
   });
-  route('POST', '/api/payments/deposit', 'user', 'money', ({ user, body }) => wallet.startDeposit(user, body.amount));
+  route('POST', '/api/payments/deposit', 'user', 'money', ({ user, body }) => { requireRealMoney(); return wallet.startDeposit(user, body.amount); });
 
 
   route('GET', '/api/payments/status/:txRef', 'user', 'money', async ({ user, params }) => {
+    requireRealMoney();
     const r = await wallet.paymentStatus(user, decodeURIComponent(params.txRef));
     const fresh = await repo.findUserById(user.id);
     return { status: r.status, balance: fresh.balance / 100 };
@@ -136,6 +149,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
     (await wallet.myWithdrawals(user)).map((w) => ({ id: w.id, amount: w.amount / 100, status: w.status, at: new Date(w.createdAt).getTime() })),
   );
   route('POST', '/api/withdrawals', 'user', 'money', async ({ user, body }) => {
+    requireRealMoney();
     const w = await wallet.requestWithdrawal(user, body);
     const fresh = await repo.findUserById(user.id);
     return { id: w.id, status: w.status, balance: fresh.balance / 100 };
@@ -144,10 +158,12 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   /* payment provider callbacks (public, but never trusted: every one re-verifies with Chapa) */
   route('GET', '/api/payments/chapa/callback', 'public', 'default', async ({ query }) => {
     const ref = query.get('trx_ref') ?? query.get('tx_ref');
+    if (!config.realMoneyEnabled) return { ok: true, ignored: true };
     if (ref) await wallet.confirmDeposit(ref).catch((e) => (e instanceof HttpError ? null : Promise.reject(e)));
     return { ok: true };
   });
   route('POST', '/api/payments/chapa/webhook', 'public', 'default', async ({ rawBody, req }) => {
+    if (!config.realMoneyEnabled) return { ok: true, ignored: true };
     if (!chapa.verifyWebhookSignature(rawBody, req.headers)) throw new HttpError(401, 'bad_signature', 'Invalid signature');
     const body = parseJson(rawBody);
     const ref = body.tx_ref ?? body.trx_ref ?? body.reference;
@@ -170,9 +186,9 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
     })),
   );
   const wd = (w) => ({ id: w.id, status: w.status });
-  admin('POST', '/api/admin/withdrawals/:id/approve', async ({ params }) => wd(await wallet.approveWithdrawal(params.id)), 'money');
-  admin('POST', '/api/admin/withdrawals/:id/refresh', async ({ params }) => wd(await wallet.refreshWithdrawal(params.id)), 'money');
-  admin('POST', '/api/admin/withdrawals/:id/reject', async ({ params, body }) => wd(await wallet.rejectWithdrawal(params.id, body.note)), 'money');
+  admin('POST', '/api/admin/withdrawals/:id/approve', async ({ params }) => { requireRealMoney(); return wd(await wallet.approveWithdrawal(params.id)); }, 'money');
+  admin('POST', '/api/admin/withdrawals/:id/refresh', async ({ params }) => { requireRealMoney(); return wd(await wallet.refreshWithdrawal(params.id)); }, 'money');
+  admin('POST', '/api/admin/withdrawals/:id/reject', async ({ params, body }) => { requireRealMoney(); return wd(await wallet.rejectWithdrawal(params.id, body.note)); }, 'money');
 
   /* local testing only: a fake Chapa checkout page */
   if (chapa.mock) {
