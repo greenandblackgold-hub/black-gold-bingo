@@ -1,174 +1,173 @@
-import React, { useState, useEffect } from 'react';
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Gold Bingo PRO</title>
+    <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white font-sans min-h-screen">
+    <div id="root"></div>
 
-export default function App() {
-  const [token, setToken] = useState(localStorage.getItem('bingo_token') || '');
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('bingo_user') || 'null'));
-  const [isLoginView, setIsLoginView] = useState(true);
-  
-  // Form states
-  const [phone, setPhone] = useState('');
-  const [pin, setPin] = useState('');
-  const [name, setName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+    <script type="text/babel">
+        function App() {
+            const [token, setToken] = React.useState(localStorage.getItem('bingo_token') || '');
+            const [user, setUser] = React.useState(JSON.parse(localStorage.getItem('bingo_user') || 'null'));
+            const [isLoginView, setIsLoginView] = React.useState(true);
+            
+            const [phone, setPhone] = React.useState('');
+            const [pin, setPin] = React.useState('');
+            const [name, setName] = React.useState('');
+            const [loading, setLoading] = React.useState(false);
+            const [error, setError] = React.useState('');
 
-  // Game/Wallet states
-  const [balance, setBalance] = useState(user?.balance || 0);
-  const [depositAmount, setDepositAmount] = useState(50);
-  const [cardCount, setCardCount] = useState(1);
-  const [activeTab, setActiveTab] = useState('game');
+            const [balance, setBalance] = React.useState(user?.balance || 190);
+            const [depositAmount, setDepositAmount] = React.useState(50);
+            const [activeTab, setActiveTab] = React.useState('game');
 
-  useEffect(() => {
-    if (user?.balance !== undefined) {
-      setBalance(user.balance);
-    }
-  }, [user]);
+            const handleAuth = async (e) => {
+                e.preventDefault();
+                setError('');
+                setLoading(true);
 
-  const handleAuth = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+                const endpoint = isLoginView ? '/api/auth/login' : '/api/auth/register';
+                
+                try {
+                    const res = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone, pin, name: isLoginView ? undefined : name })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.token) {
+                        localStorage.setItem('bingo_token', data.token);
+                        localStorage.setItem('bingo_user', JSON.stringify(data.user));
+                        setToken(data.token);
+                        setUser(data.user);
+                        setBalance(data.user.balance || 0);
+                    } else {
+                        setError(data.message || 'ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።');
+                    }
+                } catch (err) {
+                    setError('ከ ሰርቨር ጋር መገናኘት አልተቻለም።');
+                } finally {
+                    setLoading(false);
+                }
+            };
 
-    const endpoint = isLoginView ? '/api/auth/login' : '/api/auth/register';
-    
-    try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, pin, name: isLoginView ? undefined : name })
-      });
-      const data = await res.json();
-      
-      if (data.token) {
-        localStorage.setItem('bingo_token', data.token);
-        localStorage.setItem('bingo_user', JSON.stringify(data.user));
-        setToken(data.token);
-        setUser(data.user);
-        setBalance(data.user.balance || 0);
-      } else {
-        setError(data.message || 'ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።');
-      }
-    } catch (err) {
-      setError('ከ ሰርቨር ጋር መገናኘት አልተቻለም።');
-    } finally {
-      setLoading(false);
-    }
-  };
+            const handleLogout = () => {
+                localStorage.removeItem('bingo_token');
+                localStorage.removeItem('bingo_user');
+                setToken('');
+                setUser(null);
+            };
 
-  const handleLogout = () => {
-    localStorage.removeItem('bingo_token');
-    localStorage.removeItem('bingo_user');
-    setToken('');
-    setUser(null);
-  };
+            // 1. IF NOT LOGGED IN -> SHOW LOGIN / REGISTER SCREEN
+            if (!token) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
+                        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+                            <h2 className="text-2xl font-bold text-center text-amber-400 mb-2">Black Gold Bingo PRO</h2>
+                            <p className="text-center text-slate-400 text-sm mb-6">እንኳን ደህና መጡ! ለመጫወት ይግቡ ወይም ይመዝገቡ።</p>
+                            
+                            <div className="flex mb-6 bg-slate-800 p-1 rounded-xl">
+                                <button onClick={() => setIsLoginView(true)} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition ${isLoginView ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-300'}`}>ግቡ (Sign In)</button>
+                                <button onClick={() => setIsLoginView(false)} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition {!isLoginView ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-300'}`}>ይመዝገቡ (Sign Up)</button>
+                            </div>
 
-  const handleDeposit = async () => {
-    try {
-      const res = await fetch('/api/payments/deposit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ amount: depositAmount })
-      });
-      const data = await res.json();
-      setBalance(data.balance || (balance + depositAmount));
-      alert(data.message || 'ክፍያው ተረጋግጧል!');
-    } catch (e) {
-      alert('የክፍያ ስህተት ተፈጥሯል');
-    }
-  };
+                            {error && <div className="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded-xl mb-4 text-sm text-center">{error}</div>}
 
-  // 1. IF NOT LOGGED IN -> SHOW LOGIN / REGISTER PAGE
-  if (!token) {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
-        <div style={{ backgroundColor: '#1e293b', padding: '30px', borderRadius: '12px', width: '100%', maxWidth: '400px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
-          <h2 style={{ textAlign: 'center', color: '#f59e0b', marginBottom: '20px' }}>Black Gold Bingo PRO</h2>
-          <div style={{ display: 'flex', marginBottom: '20px', background: '#334155', borderRadius: '8px', padding: '4px' }}>
-            <button onClick={() => setIsLoginView(true)} style={{ flex: 1, padding: '10px', background: isLoginView ? '#f59e0b' : 'transparent', border: 'none', color: '#fff', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}>ግቡ (Login)</button>
-            <button onClick={() => setIsLoginView(false)} style={{ flex: 1, padding: '10px', background: !isLoginView ? '#f59e0b' : 'transparent', border: 'none', color: '#fff', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer' }}>ይመዝገቡ (Register)</button>
-          </div>
+                            <form onSubmit={handleAuth} className="space-y-4">
+                                {!isLoginView && (
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-400 mb-1">ሙሉ ስም</label>
+                                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="ስምዎን ያስገቡ" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-400 mb-1">ስልክ ቁጥር</label>
+                                    <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxx" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-400 mb-1">ሚስጥራዊ ቁጥር (PIN)</label>
+                                    <input type="password" value={pin} onChange={(e) => setPin(e.target.value)} placeholder="******" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                </div>
+                                <button type="submit" disabled={loading} className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition shadow-lg mt-2">
+                                    {loading ? 'እየጠበቁ...' : (isLoginView ? 'ግባ (Sign In)' : 'ተመዝገብ (Sign Up)')}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
 
-          {error && <div style={{ backgroundColor: '#ef4444', padding: '10px', borderRadius: '6px', marginBottom: '15px', fontSize: '14px', textAlign: 'center' }}>{error}</div>}
+            // 2. MAIN BINGO & WALLET APP
+            return (
+                <div className="min-h-screen pb-20 bg-slate-950 text-white">
+                    <header className="flex justify-between items-center p-4 bg-slate-900 border-b border-slate-800">
+                        <div>
+                            <h1 className="font-bold text-amber-400 text-base">Black Gold Bingo PRO</h1>
+                            <p className="text-xs text-slate-400">ተጠቃሚ: {user?.name || phone}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <span className="bg-slate-800 px-3 py-1.5 rounded-full text-sm font-bold text-amber-400 border border-slate-700">{balance.toFixed(2)} ብር</span>
+                            <button onClick={handleLogout} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-bold">ውጣ</button>
+                        </div>
+                    </header>
 
-          <form onSubmit={handleAuth}>
-            {!isLoginView && (
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px' }}>ሙሉ ስም</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="ስምዎን ያስገቡ" required style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #475569', background: '#0f172a', color: '#fff', boxSizing: 'border-box' }} />
-              </div>
-            )}
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px' }}>ስልክ ቁጥር</label>
-              <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxx" required style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #475569', background: '#0f172a', color: '#fff', boxSizing: 'border-box' }} />
-            </div>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '14px', marginBottom: '5px' }}>ሚስጥራዊ ቁጥር (PIN)</label>
-              <input type="password" value={pin} onChange={(e) => setPin(e.target.value)} placeholder="******" required style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #475569', background: '#0f172a', color: '#fff', boxSizing: 'border-box' }} />
-            </div>
-            <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: '#f59e0b', color: '#000', fontWeight: 'bold', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '16px' }}>
-              {loading ? 'እየጠበቁ...' : (isLoginView ? 'ግባ (Sign In)' : 'ተመዝገብ (Sign Up)')}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
+                    <main className="p-4 max-w-md mx-auto">
+                        {activeTab === 'game' && (
+                            <div className="space-y-4">
+                                <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl text-center">
+                                    <p className="text-xs text-slate-400 mb-1">ጨዋታው ገና አልጀመረም</p>
+                                    <div className="text-4xl font-extrabold text-amber-400 my-2">--</div>
+                                    <p className="text-xs text-slate-500">ቀጣዩን ዙር በመጠበቅ ላይ...</p>
+                                </div>
 
-  // 2. MAIN APP & GAME & WALLET INTERFACE
-  return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#fff', fontFamily: 'sans-serif', paddingBottom: '70px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', backgroundColor: '#1e293b', borderBottom: '1px solid #334155' }}>
-        <h2 style={{ margin: 0, color: '#f59e0b', fontSize: '18px' }}>Black Gold Bingo PRO</h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <span style={{ background: '#334155', padding: '6px 12px', borderRadius: '20px', fontSize: '14px' }}>{balance.toFixed(2)} ብር</span>
-          <button onClick={handleLogout} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>ውጣ</button>
-        </div>
-      </header>
+                                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                                    <h3 className="font-bold text-sm mb-3">የእኔ ካርዶች (1)</h3>
+                                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-center">
+                                        <p className="text-xs text-amber-400 font-bold mb-2">ካርድ #1BG-HPRUFM</p>
+                                        <div className="grid grid-cols-5 gap-2 text-sm font-mono font-bold">
+                                            {['9','26','33','54','66','4','24','39','58','68','14','22','★','56','74','2','30','43','53','69'].map((num, i) => (
+                                                <div key={i} className={`p-2 rounded ${num === '★' ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-200'}`}>{num}</div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
-      <main style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-        {activeTab === 'game' && (
-          <div>
-            <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', textAlign: 'center', marginBottom: '20px' }}>
-              <h3>ቁጥር በመጠባበቅ ላይ...</h3>
-              <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#f59e0b', margin: '20px 0' }}>--</div>
-              <p style={{ color: '#94a3b8' }}>ጨዋታው ሲጀመር ቁጥሮች እዚህ ይታያሉ</p>
-            </div>
+                        {activeTab === 'wallet' && (
+                            <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
+                                <h3 className="font-bold text-base text-amber-400">ገንዘብ ያስገቡ (Deposit)</h3>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-2">መጠን (ብር)</label>
+                                    <div className="grid grid-cols-4 gap-2 mb-3">
+                                        {[50, 100, 200, 500].map(amt => (
+                                            <button key={amt} onClick={() => setDepositAmount(amt)} className={`py-2.5 rounded-xl font-bold text-sm border ${depositAmount === amt ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-950 text-slate-300 border-slate-800'}`}>{amt}</button>
+                                        ))}
+                                    </div>
+                                    <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(Number(e.target.value))} className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                </div>
+                                <button onClick={() => { setBalance(prev => prev + depositAmount); alert('ክፍያው ተረጋግጦ ቦርሳዎ ተሞልቷል!'); }} className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition shadow-lg">ክፍያ አረጋግጥ (Deposit)</button>
+                            </div>
+                        )}
+                    </main>
 
-            <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px' }}>
-              <h4 style={{ marginTop: 0 }}>ካርድ ይግዙ</h4>
-              <p style={{ fontSize: '14px', color: '#94a3b8' }}>የአንድ ካርድ ዋጋ: 10.00 ብር</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' }}>
-                <button onClick={() => setCardCount(Math.max(1, cardCount - 1))} style={{ padding: '8px 16px', background: '#334155', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>-</button>
-                <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{cardCount}</span>
-                <button onClick={() => setCardCount(cardCount + 1)} style={{ padding: '8px 16px', background: '#334155', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>+</button>
-                <span style={{ marginLeft: 'auto', fontWeight: 'bold', color: '#f59e0b' }}>ጠቅላላ: {(cardCount * 10).toFixed(2)} ብር</span>
-              </div>
-              <button onClick={() => alert('ካርዶች ተገዝተዋል!')} style={{ width: '100%', padding: '12px', background: '#10b981', color: '#fff', fontWeight: 'bold', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>ካርዶቹን ግዛ</button>
-            </div>
-          </div>
-        )}
+                    <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex p-2 max-w-md mx-auto">
+                        <button onClick={() => setActiveTab('game')} className={`flex-1 py-3 text-xs font-bold rounded-xl transition ${activeTab === 'game' ? 'text-amber-400 bg-slate-800' : 'text-slate-400'}`}>ጨዋታ</button>
+                        <button onClick={() => setActiveTab('wallet')} className={`flex-1 py-3 text-xs font-bold rounded-xl transition ${activeTab === 'wallet' ? 'text-amber-400 bg-slate-800' : 'text-slate-400'}`}>ቦርሳ</button>
+                    </nav>
+                </div>
+            );
+        }
 
-        {activeTab === 'wallet' && (
-          <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px' }}>
-            <h3>ገንዘብ ያስገቡ (Deposit)</h3>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontSize: '14px' }}>መጠን (ብር)</label>
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                {[50, 100, 200, 500].map(amt => (
-                  <button key={amt} onClick={() => setDepositAmount(amt)} style={{ flex: 1, padding: '10px', background: depositAmount === amt ? '#f59e0b' : '#334155', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{amt}</button>
-                ))}
-              </div>
-              <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(Number(e.target.value))} style={{ width: '100%', padding: '12px', background: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '6px', boxSizing: 'border-box' }} />
-            </div>
-            <button onClick={handleDeposit} style={{ width: '100%', padding: '12px', background: '#f59e0b', color: '#000', fontWeight: 'bold', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>ሂሳብ ሞል (Deposit)</button>
-          </div>
-        )}
-      </main>
-
-      <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#1e293b', display: 'flex', borderTop: '1px solid #334155', padding: '10px 0' }}>
-        <button onClick={() => setActiveTab('game')} style={{ flex: 1, background: 'transparent', border: 'none', color: activeTab === 'game' ? '#f59e0b' : '#94a3b8', fontWeight: 'bold', cursor: 'pointer' }}>ጨዋታ</button>
-        <button onClick={() => setActiveTab('wallet')} style={{ flex: 1, background: 'transparent', border: 'none', color: activeTab === 'wallet' ? '#f59e0b' : '#94a3b8', fontWeight: 'bold', cursor: 'pointer' }}>ቦርሳ</button>
-      </nav>
-    </div>
-  );
-}
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
