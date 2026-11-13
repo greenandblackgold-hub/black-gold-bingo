@@ -18,9 +18,11 @@ if (!MONGODB_URI) {
 
 let db;
 MongoClient.connect(MONGODB_URI)
-  .then(client => {
+  .then(async client => {
     db = client.db(DB_NAME);
     console.log("Connected to MongoDB Atlas successfully");
+    
+    // Optional: Auto clean old test junk if needed, or keep ready
   })
   .catch(err => console.error("MongoDB connection error:", err));
 
@@ -60,17 +62,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // --- RESET/CLEAR API (To make database clean if requested) ---
-  if (pathname === '/api/admin/reset-db' && req.method === 'POST') {
+  // --- HARD RESET DATABASE API ---
+  if (pathname === '/api/admin/hard-reset' && req.method === 'POST') {
     try {
       await db.collection('users').deleteMany({});
       await db.collection('transactions').deleteMany({});
+      await db.collection('user_cards').deleteMany({});
       activeTokens.clear();
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'ዳታቤዙ ሙሉ በሙሉ ጸድቷል!' }));
+      res.end(JSON.stringify({ success: true, message: 'ዳታቤዙ ሙሉ በሙሉ ጸድቷል!' }));
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'ስህተት ተፈጥሯል' }));
+      res.end(JSON.stringify({ success: false, message: 'ስህተት ተፈጥሯል' }));
     }
     return;
   }
@@ -93,7 +96,7 @@ const server = http.createServer(async (req, res) => {
       let user = await usersCol.findOne({ phone });
       if (user) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'exists', message: 'ይህ ስልክ ቁጥር ተመዝግቧል' }));
+        res.end(JSON.stringify({ error: 'exists', message: 'ይህ ስልክ ቁጥር ቀድሞ ተመዝግቧል' }));
         return;
       }
 
@@ -138,17 +141,9 @@ const server = http.createServer(async (req, res) => {
       let user = await usersCol.findOne({ phone });
       
       if (!user) {
-        // If user doesn't exist, register them automatically for smooth experience
-        const isAdmin = phone === '0978202822';
-        const result = await usersCol.insertOne({ 
-          name: isAdmin ? 'Owner' : 'Player', 
-          phone, 
-          pin, 
-          role: isAdmin ? 'admin' : 'player', 
-          balance: 0, 
-          createdAt: new Date() 
-        });
-        user = await usersCol.findOne({ phone });
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'not_found', message: 'ይህ ስልክ ቁጥር አልተመዝገበም፤ እባክዎ መጀመሪያ ይመዝገቡ' }));
+        return;
       }
 
       if (user.pin && user.pin !== pin) {
@@ -173,7 +168,6 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // --- GET CURRENT USER API ---
   if (pathname === '/api/auth/me' && req.method === 'GET') {
     const authUser = getAuthUser(req);
     if (!authUser) {
@@ -203,7 +197,7 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/wallet' && req.method === 'GET') {
     const authUser = getAuthUser(req);
     if (!authUser) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.writeHead(401, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ balance: 0 }));
       return;
     }
