@@ -125,30 +125,6 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   });
   route('POST', '/api/payments/deposit', 'user', 'money', ({ user, body }) => wallet.startDeposit(user, body.amount));
 
-  /* ───────────── 🆕 MANUAL PAYMENT ROUTE (Temporary until Chapa is live) ───────────── */
-  const pendingManualPayments = [];
-  route('POST', '/api/payments/manual', 'user', 'money', async ({ user, body }) => {
-    const { txnId, amount } = body;
-    if (!txnId || !String(txnId).trim()) {
-      throw new HttpError(400, 'invalid_txn_id', 'እባክዎን የ Txn ID ቁጥር ያስገቡ!');
-    }
-    const newPayment = {
-      id: 'PAY-' + Date.now(),
-      userId: user.id,
-      userName: user.name,
-      amount: amount || 20,
-      txnId: String(txnId).trim().toUpperCase(),
-      status: 'PENDING',
-      at: Date.now()
-    };
-    pendingManualPayments.push(newPayment);
-    return { 
-      success: true, 
-      message: 'የክፍያ ማረጋገጫዎ ደርሶናል! በአስተዳዳሪው ሲረጋገጥ ካርድዎ ይከፈታል።', 
-      paymentId: newPayment.id 
-    };
-  });
-  /* ───────────────────────────────────────────────────────────────────────────────── */
 
   route('GET', '/api/payments/status/:txRef', 'user', 'money', async ({ user, params }) => {
     const r = await wallet.paymentStatus(user, decodeURIComponent(params.txRef));
