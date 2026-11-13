@@ -3,6 +3,7 @@
 services:
   - type: web
     name: black-gold-bingo
+    rootDir: ./deploy
     runtime: node
     plan: starter            # always on. The free plan falls asleep, which stops games and payments.
     numInstances: 1          # must stay 1
