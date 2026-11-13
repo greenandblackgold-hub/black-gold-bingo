@@ -41,6 +41,10 @@ export function loadConfig(env = process.env) {
     maxDeposit: santim(num(env.MAX_DEPOSIT_ETB, 10000)),
     minWithdraw: santim(num(env.MIN_WITHDRAW_ETB, 50)),
     autoPayout: bool(env.AUTO_PAYOUT, false),
+    // Real-money activity stays OFF in production until both the lottery permit and Chapa's written merchant approval exist.
+    realMoneyEnabled: bool(env.REAL_MONEY_ENABLED, !prod && bool(env.CHAPA_MOCK, false)),
+    lotteryLicenseApproved: bool(env.LOTTERY_LICENSE_APPROVED, false),
+    chapaMerchantApproved: bool(env.CHAPA_MERCHANT_APPROVED, false),
     // Requests per minute per IP. Many mobile users can share one carrier IP, so keep these generous.
     rateLimits: { auth: num(env.RATE_LIMIT_AUTH, 20), money: num(env.RATE_LIMIT_MONEY, 40), default: num(env.RATE_LIMIT_DEFAULT, 240) },
     chapa: {
@@ -60,7 +64,9 @@ export function loadConfig(env = process.env) {
   if (prod) {
     if (cfg.storage !== 'mongo') problems.push('Production requires STORAGE=mongo with MONGODB_URI');
     if (cfg.chapa.mock) problems.push('CHAPA_MOCK must be false in production');
-    if (!cfg.chapa.secretKey) problems.push('CHAPA_SECRET_KEY is required in production');
+    if (cfg.realMoneyEnabled && !cfg.lotteryLicenseApproved) problems.push('LOTTERY_LICENSE_APPROVED is required before real-money play');
+    if (cfg.realMoneyEnabled && !cfg.chapaMerchantApproved) problems.push('CHAPA_MERCHANT_APPROVED is required before real-money play');
+    if (cfg.realMoneyEnabled && !cfg.chapa.secretKey) problems.push('CHAPA_SECRET_KEY is required when real-money play is enabled');
     if (cfg.adminPhone && !/^\d{6}$/.test(cfg.adminPin)) problems.push('ADMIN_PIN must be exactly 6 digits');
   }
   if (problems.length) throw new Error('Invalid configuration:\n - ' + problems.join('\n - '));
