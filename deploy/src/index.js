@@ -49,12 +49,6 @@ const server = http.createServer(async (req, res) => {
     });
   });
 
-  const getAuthUser = (req) => {
-    const authHeader = req.headers['authorization'] || '';
-    const token = authHeader.replace('Bearer ', '').trim();
-    return activeTokens.get(token) || { userId: '650123456789012345678901', phone: '0900000000' };
-  };
-
   const url = new URL(req.url, `http://${req.headers.host}`);
   const pathname = url.pathname;
 
@@ -64,10 +58,10 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // --- BULLETPROOF AUTH: REGISTER ---
+  // --- AUTH APIs ---
   if (pathname.includes('/api/auth/register') || pathname === '/api/register') {
     const body = await parseBody();
-    const phone = (body.phone || body.phoneNumber || body.mobile || '0900000000').trim();
+    const phone = (body.phone || body.phoneNumber || '0900000000').trim();
     const name = (body.name || body.fullName || 'Player').trim();
     const pin = (body.pin || body.password || '123456').trim();
 
@@ -90,10 +84,6 @@ const server = http.createServer(async (req, res) => {
         userIdStr = result.insertedId.toString();
       } else {
         userIdStr = user._id.toString();
-        if (user.pin && pin && user.pin !== pin) {
-          // If pin mismatch, update it for seamless recovery
-          await usersCol.updateOne({ _id: user._id }, { $set: { pin } });
-        }
       }
 
       const token = 'tok_' + Math.random().toString(36).substring(2) + Date.now();
@@ -102,13 +92,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ 
         token, 
-        user: { 
-          id: userIdStr, 
-          phone, 
-          name, 
-          role: phone === '0978202822' ? 'admin' : 'player', 
-          balance: 0 
-        } 
+        user: { id: userIdStr, phone, name, role: phone === '0978202822' ? 'admin' : 'player', balance: 0 } 
       }));
     } catch(e) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -120,10 +104,9 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // --- BULLETPROOF AUTH: LOGIN ---
   if (pathname.includes('/api/auth/login') || pathname === '/api/login') {
     const body = await parseBody();
-    const phone = (body.phone || body.phoneNumber || body.mobile || '0900000000').trim();
+    const phone = (body.phone || body.phoneNumber || '0900000000').trim();
     const pin = (body.pin || body.password || '123456').trim();
 
     try {
@@ -131,11 +114,7 @@ const server = http.createServer(async (req, res) => {
       const usersCol = db.collection('users');
       let user = await usersCol.findOne({ phone });
       
-      let userIdStr;
-      let userName = 'Player';
-      let userRole = 'player';
-      let userBalance = 0;
-
+      let userIdStr, userName = 'Player', userRole = 'player', userBalance = 0;
       if (!user) {
         const isAdmin = phone === '0978202822';
         userName = isAdmin ? 'Owner' : 'Player';
@@ -162,13 +141,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ 
         token, 
-        user: { 
-          id: userIdStr, 
-          phone, 
-          name: userName, 
-          role: userRole, 
-          balance: userBalance 
-        } 
+        user: { id: userIdStr, phone, name: userName, role: userRole, balance: userBalance } 
       }));
     } catch(e) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -180,7 +153,6 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // --- AUTH ME ---
   if (pathname === '/api/auth/me') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ 
@@ -189,14 +161,12 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // --- WALLET API ---
   if (pathname === '/api/wallet') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ balance: 0 }));
     return;
   }
 
-  // --- SECURE DEPOSIT API ---
   if (pathname === '/api/payments/deposit') {
     const body = await parseBody();
     const depositAmount = Number(body.amount || 0);
