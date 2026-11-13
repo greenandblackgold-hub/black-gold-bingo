@@ -16,15 +16,17 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
-let db;
-MongoClient.connect(MONGODB_URI)
-  .then(async client => {
-    db = client.db(DB_NAME);
-    console.log("Connected to MongoDB Atlas successfully");
-    
-    // Optional: Auto clean old test junk if needed, or keep ready
-  })
-  .catch(err => console.error("MongoDB connection error:", err));
+let cachedClient = null;
+async function getDb() {
+  if (cachedClient) {
+    return cachedClient.db(DB_NAME);
+  }
+  const client = await MongoClient.connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 10000,
+  });
+  cachedClient = client;
+  return client.db(DB_NAME);
+}
 
 const activeTokens = new Map();
 
@@ -62,24 +64,8 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // --- HARD RESET DATABASE API ---
-  if (pathname === '/api/admin/hard-reset' && req.method === 'POST') {
-    try {
-      await db.collection('users').deleteMany({});
-      await db.collection('transactions').deleteMany({});
-      await db.collection('user_cards').deleteMany({});
-      activeTokens.clear();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, message: 'ዳታቤዙ ሙሉ በሙሉ ጸድቷል!' }));
-    } catch(e) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, message: 'ስህተት ተፈጥሯል' }));
-    }
-    return;
-  }
-
-  // --- AUTH APIs ---
-  if (pathname === '/api/auth/register' && req.method === 'POST') {
+  // --- AUTH APIs (Register & Login with multiple path aliases for robustness) ---
+  if ((pathname === '/api/auth/register' || pathname === '/api/register') && req.method === 'POST') {
     const body = await parseBody();
     const phone = (body.phone || body.phoneNumber || '').trim();
     const name = (body.name || body.fullName || 'Player').trim();
@@ -92,8 +78,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     try {
+      const db = await getDb();
       const usersCol = db.collection('users');
       let user = await usersCol.findOne({ phone });
+      
       if (user) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'exists', message: 'ይህ ስልክ ቁጥር ቀድሞ ተመዝግቧል' }));
@@ -119,13 +107,14 @@ const server = http.createServer(async (req, res) => {
         user: { id: userIdStr, phone, name, role: phone === '0978202822' ? 'admin' : 'player', balance: 0 } 
       }));
     } catch(e) {
+      console.error("Register Error:", e);
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'server_error', message: 'ሰርቨር ስህተት ተፈጥሯል' }));
+      res.end(JSON.stringify({ error: 'server_error', message: 'የዳታቤዝ ግንኙነት ስህተት ተፈጥሯል' }));
     }
     return;
   }
 
-  if (pathname === '/api/auth/login' && req.method === 'POST') {
+  if ((pathname === '/api/auth/login' || pathname === '/api/login') && req.method === 'POST') {
     const body = await parseBody();
     const phone = (body.phone || body.phoneNumber || '').trim();
     const pin = (body.pin || body.password || '').trim();
@@ -137,13 +126,22 @@ const server = http.createServer(async (req, res) => {
     }
 
     try {
+      const db = await getDb();
       const usersCol = db.collection('users');
       let user = await usersCol.findOne({ phone });
       
       if (!user) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'not_found', message: 'ይህ ስልክ ቁጥር አልተመዝገበም፤ እባክዎ መጀመሪያ ይመዝገቡ' }));
-        return;
+        // Auto-register on login if not found for seamless experience
+        const isAdmin = phone === '0978202822';
+        const result = await usersCol.insertOne({ 
+          name: isAdmin ? 'Owner' : 'Player', 
+          phone, 
+          pin, 
+          role: isAdmin ? 'admin' : 'player', 
+          balance: 0, 
+          createdAt: new Date() 
+        });
+        user = await usersCol.findOne({ phone });
       }
 
       if (user.pin && user.pin !== pin) {
@@ -162,8 +160,9 @@ const server = http.createServer(async (req, res) => {
         user: { id: userIdStr, phone, name: user.name, role: user.role || 'player', balance: user.balance || 0 } 
       }));
     } catch(e) {
+      console.error("Login Error:", e);
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'server_error', message: 'ሰርቨር ስህተት ተፈጥሯል' }));
+      res.end(JSON.stringify({ error: 'server_error', message: 'የዳታቤዝ ግንኙነት ስህተት ተፈጥሯል' }));
     }
     return;
   }
@@ -176,6 +175,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     try {
+      const db = await getDb();
       const user = await db.collection('users').findOne({ _id: new ObjectId(authUser.userId) });
       if (!user) {
         res.writeHead(401, { 'Content-Type': 'application/json' });
@@ -197,11 +197,12 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/wallet' && req.method === 'GET') {
     const authUser = getAuthUser(req);
     if (!authUser) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ balance: 0 }));
       return;
     }
     try {
+      const db = await getDb();
       const user = await db.collection('users').findOne({ _id: new ObjectId(authUser.userId) });
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ balance: user ? user.balance || 0 : 0 }));
@@ -238,6 +239,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     try {
+      const db = await getDb();
       const existingTxn = await db.collection('transactions').findOne({ txnId: cleanTxnId });
       if (existingTxn) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
