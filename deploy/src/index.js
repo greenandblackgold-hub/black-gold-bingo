@@ -58,8 +58,8 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // --- AUTH APIs ---
-  if (pathname.includes('/api/auth/register') || pathname === '/api/register') {
+  // --- COMPREHENSIVE AUTH APIs ---
+  if (pathname.includes('/api/auth/register') || pathname === '/api/register' || pathname === '/api/auth/login' || pathname === '/api/login') {
     const body = await parseBody();
     const phone = (body.phone || body.phoneNumber || '0900000000').trim();
     const name = (body.name || body.fullName || 'Player').trim();
@@ -71,56 +71,11 @@ const server = http.createServer(async (req, res) => {
       let user = await usersCol.findOne({ phone });
       
       let userIdStr;
-      if (!user) {
-        const isAdmin = phone === '0978202822';
-        const result = await usersCol.insertOne({ 
-          name, 
-          phone, 
-          pin, 
-          role: isAdmin ? 'admin' : 'player', 
-          balance: 0, 
-          createdAt: new Date() 
-        });
-        userIdStr = result.insertedId.toString();
-      } else {
-        userIdStr = user._id.toString();
-      }
-
-      const token = 'tok_' + Math.random().toString(36).substring(2) + Date.now();
-      activeTokens.set(token, { userId: userIdStr, phone });
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ 
-        token, 
-        user: { id: userIdStr, phone, name, role: phone === '0978202822' ? 'admin' : 'player', balance: 0 } 
-      }));
-    } catch(e) {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ 
-        token: 'tok_fallback_' + Date.now(), 
-        user: { id: '650123456789012345678901', phone, name, role: 'player', balance: 0 } 
-      }));
-    }
-    return;
-  }
-
-  if (pathname.includes('/api/auth/login') || pathname === '/api/login') {
-    const body = await parseBody();
-    const phone = (body.phone || body.phoneNumber || '0900000000').trim();
-    const pin = (body.pin || body.password || '123456').trim();
-
-    try {
-      const db = await getDb();
-      const usersCol = db.collection('users');
-      let user = await usersCol.findOne({ phone });
+      let userRole = (phone === '0978202822') ? 'admin' : 'player';
       
-      let userIdStr, userName = 'Player', userRole = 'player', userBalance = 0;
       if (!user) {
-        const isAdmin = phone === '0978202822';
-        userName = isAdmin ? 'Owner' : 'Player';
-        userRole = isAdmin ? 'admin' : 'player';
         const result = await usersCol.insertOne({ 
-          name: userName, 
+          name: name || (userRole === 'admin' ? 'Owner' : 'Player'), 
           phone, 
           pin, 
           role: userRole, 
@@ -128,11 +83,10 @@ const server = http.createServer(async (req, res) => {
           createdAt: new Date() 
         });
         userIdStr = result.insertedId.toString();
+        user = await usersCol.findOne({ phone });
       } else {
         userIdStr = user._id.toString();
-        userName = user.name || 'Player';
-        userRole = user.role || 'player';
-        userBalance = user.balance || 0;
+        userRole = user.role || userRole;
       }
 
       const token = 'tok_' + Math.random().toString(36).substring(2) + Date.now();
@@ -141,13 +95,19 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ 
         token, 
-        user: { id: userIdStr, phone, name: userName, role: userRole, balance: userBalance } 
+        user: { 
+          id: userIdStr, 
+          phone, 
+          name: user.name || name, 
+          role: userRole, 
+          balance: user.balance || 0 
+        } 
       }));
     } catch(e) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ 
         token: 'tok_fallback_' + Date.now(), 
-        user: { id: '650123456789012345678901', phone, name: 'Player', role: 'player', balance: 0 } 
+        user: { id: '650123456789012345678901', phone, name, role: 'player', balance: 0 } 
       }));
     }
     return;
@@ -178,12 +138,13 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // --- SERVE FRONTEND STATIC FILES ---
+  // --- SERVE FRONTEND STATIC FILES OR FALLBACK TO INDEX.HTML ---
   const publicDir = path.join(__dirname, '../public');
   let filePath = path.join(publicDir, pathname === '/' ? 'index.html' : pathname);
 
   fs.readFile(filePath, (err, content) => {
     if (err) {
+      // Fallback to index.html for Single Page Application (SPA) routing
       fs.readFile(path.join(publicDir, 'index.html'), (err2, homeContent) => {
         if (err2) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -200,6 +161,8 @@ const server = http.createServer(async (req, res) => {
       else if (ext === '.css') contentType = 'text/css';
       else if (ext === '.json') contentType = 'application/json';
       else if (ext === '.svg') contentType = 'image/svg+xml';
+      else if (ext === '.png') contentType = 'image/png';
+      else if (ext === '.ico') contentType = 'image/x-icon';
       
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(content);
