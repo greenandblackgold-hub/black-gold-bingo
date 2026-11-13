@@ -54,7 +54,7 @@ Keep the existing folder structure. The deployment package and Render Blueprint 
 2. Create a **cluster**: choose the **Free (M0)** plan and any region close to Ethiopia (Europe or the Middle East if offered). Click **Create**.
 3. When it asks about security:
    - **Username and password:** make a username (for example `bingo`) and a long password. **Write the password down.** Avoid symbols like `@ : / ?` in the password to keep things simple. Click **Create user**.
-   - **Where to connect from:** choose **Add IP address**, type `0.0.0.0/0` and click **Add entry**. (This lets Render connect. Your long password keeps it safe.)
+   - **Where to connect from:** for a quick test, Atlas can temporarily allow `0.0.0.0/0`, but this exposes the database port to the internet. For production, restrict access to Render's current outbound IP ranges where possible, use a strong unique database password, and never publish the connection string.
 4. Click **Connect**, then **Drivers**. You will see a line starting with `mongodb+srv://...`. Click the copy button.
 5. Paste it into a note on your computer. Replace `<password>` in it with the password you wrote down (remove the `<` and `>` too).
 
@@ -69,8 +69,9 @@ Keep that note. You will paste it in Step 4.
 
 ## Step 4: Put the game online with Render (about 15 minutes)
 
-1. Go to **render.com** and sign up with your GitHub account.
-2. Click **New**, then **Blueprint**. Connect your GitHub and choose the repository `black-gold-bingo`.
+1. Go to **render.com** and sign in.
+2. Click **New**, then **Blueprint**. Connect GitHub and choose `greenandblackgold-hub/black-gold-bingo`.
+3. Set the Blueprint file path to `deploy/render.yaml`. The service is configured to run from the `deploy` folder.
 3. Render shows a form with 4 empty boxes. Fill them in:
    - **MONGODB_URI:** paste the long `mongodb+srv://...` line from your note.
    - **CHAPA_SECRET_KEY:** paste the test key from your note.
