@@ -17,87 +17,80 @@
             const [token, setToken] = React.useState(localStorage.getItem('bingo_token') || '');
             const [user, setUser] = React.useState(JSON.parse(localStorage.getItem('bingo_user') || 'null'));
             const [isLoginView, setIsLoginView] = React.useState(true);
-            const [step, setStep] = React.useState('form'); // 'form' or 'verify'
+            const [authStep, setAuthStep] = React.useState('phone'); // 'phone', 'otp', 'register'
             
             const [phone, setPhone] = React.useState('');
             const [pin, setPin] = React.useState('');
             const [confirmPin, setConfirmPin] = React.useState('');
             const [name, setName] = React.useState('');
-            const [otpCode, setOtpCode] = React.useState('');
-            const [sentOtp, setSentOtp] = React.useState('');
-            
+            const [otp, setOtp] = React.useState('');
+            const [debugOtpHint, setDebugOtpHint] = React.useState('');
+
             const [loading, setLoading] = React.useState(false);
             const [error, setError] = React.useState('');
             const [successMsg, setSuccessMsg] = React.useState('');
 
+            // Game & Wallet
             const [balance, setBalance] = React.useState(user?.balance || 0);
             const [depositAmount, setDepositAmount] = React.useState(50);
+            const [paymentMethod, setPaymentMethod] = React.useState('telebirr');
             const [activeTab, setActiveTab] = React.useState('game');
+            const [cardsCount, setCardsCount] = React.useState(1);
 
-            const handleAuth = async (e) => {
+            // 1. Send OTP for Registration
+            const handleRequestOtp = async (e) => {
                 e.preventDefault();
                 setError('');
                 setSuccessMsg('');
-
-                if (!isLoginView && pin !== confirmPin) {
-                    setError('ያስገቧቸው ሚስጥራዊ ቁጥሮች (PIN) አይመሳሰሉም!');
-                    return;
-                }
-
-                // If Register, first send verification code to phone
-                if (!isLoginView && step === 'form') {
-                    const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
-                    setSentOtp(generatedOtp);
-                    setStep('verify');
-                    setSuccessMsg(`የማረጋገጫ ኮድ ወደ ${phone} ተልኳል። (የሙከራ ኮድ: ${generatedOtp})`);
+                if (!phone || phone.length < 10) {
+                    setError('እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ');
                     return;
                 }
 
                 setLoading(true);
-                const endpoint = isLoginView ? '/api/auth/login' : '/api/auth/register';
-                
                 try {
-                    const res = await fetch(endpoint, {
+                    const res = await fetch('/api/auth/send-otp', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ phone, pin, name: isLoginView ? undefined : name })
+                        body: JSON.stringify({ phone })
                     });
                     const data = await res.json();
-                    
-                    if (data.token) {
-                        localStorage.setItem('bingo_token', data.token);
-                        localStorage.setItem('bingo_user', JSON.stringify(data.user));
-                        setToken(data.token);
-                        setUser(data.user);
-                        setBalance(data.user.balance || 0);
+                    if (data.success) {
+                        setAuthStep('otp');
+                        setDebugOtpHint(data.debugOtp);
+                        setSuccessMsg(data.message);
                     } else {
-                        setError(data.message || 'ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።');
+                        setError(data.message);
                     }
                 } catch (err) {
-                    setError('ከ ሰርቨር ጋር መገናኘት አልተቻለም።');
+                    setError('ሰርቨር ጋር መገናኘት አልተቻለም');
                 } finally {
                     setLoading(false);
                 }
             };
 
-            const handleVerifyOtp = async (e) => {
+            // 2. Register or Login Action
+            const handleAuthSubmit = async (e) => {
                 e.preventDefault();
                 setError('');
-                if (otpCode !== sentOtp) {
-                    setError('ያስገቡት የማረጋገጫ ኮድ ትክክል አይደለም!');
+                setSuccessMsg('');
+
+                if (!isLoginView && pin !== confirmPin) {
+                    setError('ሚስጥራዊ ቁጥሮች (PIN) አይመሳሰሉም');
                     return;
                 }
 
-                // OTP matched, proceed to register
                 setLoading(true);
+                const endpoint = isLoginView ? '/api/auth/login' : '/api/auth/register';
+
                 try {
-                    const res = await fetch('/api/auth/register', {
+                    const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ phone, pin, name })
+                        body: JSON.stringify({ phone, pin, name, otp })
                     });
                     const data = await res.json();
-                    
+
                     if (data.token) {
                         localStorage.setItem('bingo_token', data.token);
                         localStorage.setItem('bingo_user', JSON.stringify(data.user));
@@ -105,10 +98,10 @@
                         setUser(data.user);
                         setBalance(data.user.balance || 0);
                     } else {
-                        setError(data.message || 'ምዝገባው ሳይሳካ ቀርቷል።');
+                        setError(data.message || 'ስህተት ተፈጥሯል');
                     }
                 } catch (err) {
-                    setError('ከ ሰርቨር ጋር መገናኘት አልተቻለም።');
+                    setError('የሰርቨር ስህተት');
                 } finally {
                     setLoading(false);
                 }
@@ -119,63 +112,103 @@
                 localStorage.removeItem('bingo_user');
                 setToken('');
                 setUser(null);
-                setStep('form');
+                setAuthStep('phone');
             };
 
-            // 1. LOGIN / REGISTER SCREEN
+            // 3. Deposit Money via Telebirr or CBE
+            const handleDeposit = async () => {
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/payments/deposit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ amount: depositAmount, method: paymentMethod })
+                    });
+                    const data = await res.json();
+                    setBalance(prev => prev + depositAmount);
+                    alert(data.message);
+                } catch (e) {
+                    alert('የክፍያ ስህተት');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Admin Database Reset
+            const handleAdminReset = async () => {
+                if (!confirm('እርግጠኛ ኖት? የድሮ ተጠቃሚዎች በሙሉ ከዳታቤዝ ይሰረዛሉ!')) return;
+                try {
+                    const res = await fetch('/api/admin/reset-database');
+                    const data = await res.json();
+                    alert(data.message);
+                } catch (e) {
+                    alert('ስህተት ተፈጥሯል');
+                }
+            };
+
+            // 1. AUTH SCREEN
             if (!token) {
                 return (
                     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
                         <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
                             <h2 className="text-2xl font-bold text-center text-amber-400 mb-2">Black Gold Bingo PRO</h2>
-                            <p className="text-center text-slate-400 text-sm mb-6">እንኳን ደህና መጡ! ለመጫወት ይግቡ ወይም ይመዝገቡ።</p>
-                            
-                            {step === 'form' && (
-                                <div className="flex mb-6 bg-slate-800 p-1 rounded-xl">
-                                    <button onClick={() => { setIsLoginView(true); setError(''); }} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition ${isLoginView ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-300'}`}>ግቡ (Sign In)</button>
-                                    <button onClick={() => { setIsLoginView(false); setError(''); }} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition {!isLoginView ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-300'}`}>ይመዝገቡ (Sign Up)</button>
-                                </div>
-                            )}
+                            <p className="text-center text-slate-400 text-sm mb-6">የኢትዮጵያ አስተማማኝ የቢንጎ መጫወቻ</p>
+
+                            <div className="flex mb-6 bg-slate-800 p-1 rounded-xl">
+                                <button onClick={() => { setIsLoginView(true); setAuthStep('phone'); setError(''); }} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition ${isLoginView ? 'bg-amber-500 text-slate-950' : 'text-slate-300'}`}>ግቡ (Sign In)</button>
+                                <button onClick={() => { setIsLoginView(false); setAuthStep('phone'); setError(''); }} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition {!isLoginView ? 'bg-amber-500 text-slate-950' : 'text-slate-300'}`}>ይመዝገቡ (Sign Up)</button>
+                            </div>
 
                             {error && <div className="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded-xl mb-4 text-sm text-center">{error}</div>}
-                            {successMsg && <div className="bg-emerald-500/20 border border-emerald-500 text-emerald-300 p-3 rounded-xl mb-4 text-sm text-center">{successMsg}</div>}
+                            {successMsg && <div className="bg-emerald-500/20 border border-emerald-500 text-emerald-300 p-3 rounded-xl mb-4 text-sm text-center">{successMsg} {debugOtpHint && <span className="block font-bold text-amber-300 mt-1">OTP: {debugOtpHint}</span>}</div>}
 
-                            {step === 'form' ? (
-                                <form onSubmit={handleAuth} className="space-y-4">
-                                    {!isLoginView && (
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-400 mb-1">ሙሉ ስም</label>
-                                            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="ስምዎን ያስገቡ" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
-                                        </div>
-                                    )}
+                            {/* LOGIN FORM */}
+                            {isLoginView && (
+                                <form onSubmit={handleAuthSubmit} className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-semibold text-slate-400 mb-1">ስልክ ቁጥር</label>
-                                        <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxx" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                        <label className="block text-xs text-slate-400 mb-1">ስልክ ቁጥር</label>
+                                        <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="09xxxxxxxx" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-semibold text-slate-400 mb-1">ሚስጥራዊ ቁጥር (PIN)</label>
-                                        <input type="password" value={pin} onChange={(e) => setPin(e.target.value)} placeholder="******" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                        <label className="block text-xs text-slate-400 mb-1">ሚስጥራዊ ቁጥር (PIN)</label>
+                                        <input type="password" value={pin} onChange={e => setPin(e.target.value)} placeholder="******" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
                                     </div>
-                                    {!isLoginView && (
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-400 mb-1">ሚስጥራዊ ቁጥር ይድገሙ (Confirm PIN)</label>
-                                            <input type="password" value={confirmPin} onChange={(e) => setConfirmPin(e.target.value)} placeholder="******" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
-                                        </div>
-                                    )}
-                                    <button type="submit" disabled={loading} className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition shadow-lg mt-2">
-                                        {loading ? 'እየጠበቁ...' : (isLoginView ? 'ግባ (Sign In)' : 'ኮድ ላክ (Send Code)')}
-                                    </button>
+                                    <button type="submit" disabled={loading} className="w-full py-3.5 bg-amber-500 text-slate-950 font-bold rounded-xl shadow-lg mt-2">{loading ? 'እየጠበቁ...' : 'ግባ (Sign In)'}</button>
                                 </form>
-                            ) : (
-                                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                            )}
+
+                            {/* REGISTER STEP 1: PHONE */}
+                            {!isLoginView && authStep === 'phone' && (
+                                <form onSubmit={handleRequestOtp} className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-semibold text-slate-400 mb-1">ወደ ስልክዎ የተላከውን የ 4 አሃዝ ማረጋገጫ ኮድ ያስገቡ</label>
-                                        <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} placeholder="xxxx" maxLength="4" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-center text-2xl tracking-widest focus:border-amber-500 focus:outline-none" />
+                                        <label className="block text-xs text-slate-400 mb-1">ስልክ ቁጥር (OTP ለማግኘት)</label>
+                                        <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="09xxxxxxxx" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
                                     </div>
-                                    <button type="submit" disabled={loading} className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition shadow-lg">
-                                        {loading ? 'እየረጋገጠ ነው...' : 'አረጋግጥ እና ተመዝገብ (Verify & Register)'}
-                                    </button>
-                                    <button type="button" onClick={() => setStep('form')} className="w-full py-2 text-slate-400 text-sm hover:underline">ተመለስ</button>
+                                    <button type="submit" disabled={loading} className="w-full py-3.5 bg-amber-500 text-slate-950 font-bold rounded-xl shadow-lg mt-2">{loading ? 'እየላከ ነው...' : 'የማረጋገጫ ኮድ ላክ (Send OTP)'}</button>
+                                </form>
+                            )}
+
+                            {/* REGISTER STEP 2: OTP & DETAILS */}
+                            {!isLoginView && authStep === 'otp' && (
+                                <form onSubmit={handleAuthSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">ወደ ስልክዎ የተላከው 4 አሃዝ OTP</label>
+                                        <input type="text" value={otp} onChange={e => setOtp(e.target.value)} placeholder="xxxx" maxLength="4" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-center text-xl tracking-widest focus:border-amber-500 focus:outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">ሙሉ ስም</label>
+                                        <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="ስምዎን ያስገቡ" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">ሚስጥራዊ ቁጥር (PIN)</label>
+                                        <input type="password" value={pin} onChange={e => setPin(e.target.value)} placeholder="******" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">ሚስጥራዊ ቁጥር ይድገሙ</label>
+                                        <input type="password" value={confirmPin} onChange={e => setConfirmPin(e.target.value)} placeholder="******" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                    </div>
+                                    <button type="submit" disabled={loading} className="w-full py-3.5 bg-amber-500 text-slate-950 font-bold rounded-xl shadow-lg mt-2">{loading ? 'እየመዘገበ ነው...' : 'ተመዝገብ (Complete Sign Up)'}</button>
+                                    <button type="button" onClick={() => setAuthStep('phone')} className="w-full py-2 text-slate-400 text-sm">ተመለስ</button>
                                 </form>
                             )}
                         </div>
@@ -183,13 +216,13 @@
                 );
             }
 
-            // 2. MAIN BINGO & WALLET APP
+            // 2. MAIN APP & BINGO & WALLET & ADMIN PANEL
             return (
                 <div className="min-h-screen pb-20 bg-slate-950 text-white">
                     <header className="flex justify-between items-center p-4 bg-slate-900 border-b border-slate-800">
                         <div>
                             <h1 className="font-bold text-amber-400 text-base">Black Gold Bingo PRO</h1>
-                            <p className="text-xs text-slate-400">ተጠቃሚ: {user?.name || phone}</p>
+                            <p className="text-xs text-slate-400">{user?.name} ({user?.phone}) {user?.role === 'admin' && <span className="bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded text-[10px] font-bold ml-1">አድሚን</span>}</p>
                         </div>
                         <div className="flex items-center gap-3">
                             <span className="bg-slate-800 px-3 py-1.5 rounded-full text-sm font-bold text-amber-400 border border-slate-700">{balance.toFixed(2)} ብር</span>
@@ -197,21 +230,21 @@
                         </div>
                     </header>
 
-                    <main className="p-4 max-w-md mx-auto">
+                    <main className="p-4 max-w-md mx-auto space-y-4">
                         {activeTab === 'game' && (
                             <div className="space-y-4">
                                 <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl text-center">
-                                    <p className="text-xs text-slate-400 mb-1">ጨዋታው ገና አልጀመረም</p>
+                                    <p className="text-xs text-slate-400 mb-1">ጨዋታው በቅርቡ ይጀምራል</p>
                                     <div className="text-4xl font-extrabold text-amber-400 my-2">--</div>
-                                    <p className="text-xs text-slate-500">ቀጣዩን ዙር በመጠበቅ ላይ...</p>
+                                    <p className="text-xs text-slate-500">ዙር 1 · ቀጣዩን ቁጥር በመጠበቅ ላይ</p>
                                 </div>
 
                                 <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                                    <h3 className="font-bold text-sm mb-3">የእኔ ካርዶች (1)</h3>
+                                    <h3 className="font-bold text-sm mb-3">የእርስዎ ቢንጎ ካርድ</h3>
                                     <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-center">
-                                        <p className="text-xs text-amber-400 font-bold mb-2">ካርድ #1BG-HPRUFM</p>
+                                        <p className="text-xs text-amber-400 font-bold mb-2">ካርድ #BG-9021</p>
                                         <div className="grid grid-cols-5 gap-2 text-sm font-mono font-bold">
-                                            {['9','26','33','54','66','4','24','39','58','68','14','22','★','56','74','2','30','43','53','69'].map((num, i) => (
+                                            {['12','28','35','52','67','5','21','40','59','70','15','23','★','55','72','3','31','44','51','68'].map((num, i) => (
                                                 <div key={i} className={`p-2 rounded ${num === '★' ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-200'}`}>{num}</div>
                                             ))}
                                         </div>
@@ -224,15 +257,31 @@
                             <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
                                 <h3 className="font-bold text-base text-amber-400">ገንዘብ ያስገቡ (Deposit)</h3>
                                 <div>
+                                    <label className="block text-xs text-slate-400 mb-2">የክፍያ መንገድ ይምረጡ</label>
+                                    <div className="grid grid-cols-2 gap-2 mb-3">
+                                        <button onClick={() => setPaymentMethod('telebirr')} className={`py-3 rounded-xl font-bold text-sm border ${paymentMethod === 'telebirr' ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-950 text-slate-300 border-slate-800'}`}>ቴሌብር (Telebirr)</button>
+                                        <button onClick={() => setPaymentMethod('cbe')} className={`py-3 rounded-xl font-bold text-sm border ${paymentMethod === 'cbe' ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-950 text-slate-300 border-slate-800'}`}>ንግድ ባንክ (CBE)</button>
+                                    </div>
+                                </div>
+                                <div>
                                     <label className="block text-xs text-slate-400 mb-2">መጠን (ብር)</label>
                                     <div className="grid grid-cols-4 gap-2 mb-3">
                                         {[50, 100, 200, 500].map(amt => (
                                             <button key={amt} onClick={() => setDepositAmount(amt)} className={`py-2.5 rounded-xl font-bold text-sm border ${depositAmount === amt ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-slate-950 text-slate-300 border-slate-800'}`}>{amt}</button>
                                         ))}
                                     </div>
-                                    <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(Number(e.target.value))} className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                    <input type="number" value={depositAmount} onChange={e => setDepositAmount(Number(e.target.value))} className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
                                 </div>
-                                <button onClick={() => { setBalance(prev => prev + depositAmount); alert('ክፍያው ተረጋግጦ ቦርሳዎ ተሞልቷል!'); }} className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition shadow-lg">ክፍያ አረጋግጥ (Deposit)</button>
+                                <button onClick={handleDeposit} disabled={loading} className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg">ክፍያ አረጋግጥ (Deposit)</button>
+                            </div>
+                        )}
+
+                        {/* PRIVATE ADMIN PANEL (Visible only to Admin) */}
+                        {user?.role === 'admin' && activeTab === 'admin' && (
+                            <div className="bg-slate-900 border border-amber-500/50 p-5 rounded-2xl space-y-4">
+                                <h3 className="font-bold text-base text-amber-400">የአድሚን መቆጣጠሪያ ፓነል (Admin Panel)</h3>
+                                <p className="text-xs text-slate-400">ይህ ገጽ የሚታየው ለእርስዎ ብቻ ነው። የድሮ የተጠቃሚዎች ዳታቤዝ ሙሉ በሙሉ ማጽዳት ከፈለጉ ከታች ይጫኑ።</p>
+                                <button onClick={handleAdminReset} className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl shadow-lg">የድሮ አካውንቶች በሙሉ አጽዳ (Reset Database)</button>
                             </div>
                         )}
                     </main>
@@ -240,6 +289,9 @@
                     <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex p-2 max-w-md mx-auto">
                         <button onClick={() => setActiveTab('game')} className={`flex-1 py-3 text-xs font-bold rounded-xl transition ${activeTab === 'game' ? 'text-amber-400 bg-slate-800' : 'text-slate-400'}`}>ጨዋታ</button>
                         <button onClick={() => setActiveTab('wallet')} className={`flex-1 py-3 text-xs font-bold rounded-xl transition ${activeTab === 'wallet' ? 'text-amber-400 bg-slate-800' : 'text-slate-400'}`}>ቦርሳ</button>
+                        {user?.role === 'admin' && (
+                            <button onClick={() => setActiveTab('admin')} className={`flex-1 py-3 text-xs font-bold rounded-xl transition ${activeTab === 'admin' ? 'text-amber-400 bg-slate-800' : 'text-slate-400'}`}>አድሚን</button>
+                        )}
                     </nav>
                 </div>
             );
