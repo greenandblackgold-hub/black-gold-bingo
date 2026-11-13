@@ -41,19 +41,12 @@ To change a setting later, open Render, your service, **Environment**, edit the 
 
 ---
 
-## Step 1: Put the files on GitHub (about 10 minutes)
+## Step 1: GitHub repository (already completed)
 
-Render reads your files from GitHub.
+Your repository is already connected:
+`https://github.com/greenandblackgold-hub/black-gold-bingo`
 
-1. Unzip the file I gave you. You will see a folder called **deploy**.
-2. Go to **github.com** and create a free account (or sign in).
-3. Click the **+** at the top right, then **New repository**. Name it `black-gold-bingo`. Choose **Private**. Click **Create repository**.
-4. On the next page click **uploading an existing file**.
-5. Open the **deploy** folder on your computer. Select **everything inside it** (the `public`, `scripts`, `src`, `test` folders and the `package.json`, `render.yaml` files) and drag it all into the GitHub page.
-   Upload the contents of `deploy`, **not** the folder called `deploy` itself.
-6. Wait until the uploads finish, then click **Commit changes**.
-
-You should now see `render.yaml` and `package.json` in the list of files on GitHub.
+Keep the existing folder structure. The deployment package and Render Blueprint are inside `deploy/`; do not upload a second copy of the folder contents or create a duplicate repository.
 
 ## Step 2: Create the database, MongoDB Atlas (about 15 minutes)
 
@@ -147,6 +140,6 @@ Open **Control Center**. Under **Cash-out requests** you see the amount, name an
 - **Only one copy of the game may run.** Do not change the instance count in Render.
 - **Telebirr direct** is not built (it needs a contract with Ethio telecom). Players can still pay with Telebirr through Chapa.
 
-## What was tested
+## Test and deployment status
 
-I tested the game server automatically (26 checks, including two players claiming BINGO at the same moment, duplicate payment messages, cash-outs, and the server restarting in the middle of auto-calling) and ran the finished website in a real browser through the whole player and owner journey with a pretend Chapa. I could **not** test the real MongoDB, real Chapa or real Render from here, because I cannot log in to them. Step 6 above is how you confirm those pieces work, using pretend money, before any real money is involved.
+Automated test files are included in `deploy/test/`, and a GitHub Actions workflow has been added to run them on pushes and pull requests. Do not assume tests have passed until the workflow shows a successful result. The real MongoDB Atlas connection, Chapa test checkout, Render deployment, and full browser journey still need to be verified using your own service accounts. Complete Step 6 with test money before considering a live launch.
