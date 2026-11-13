@@ -19,6 +19,7 @@ export function createAuthService({ repo, config }) {
 
   return {
     async register({ phone, name, pin }) {
+      if (!config.registrationEnabled) throw new HttpError(503, 'registration_disabled', 'New registrations are temporarily disabled until phone verification is ready.');
       const p = normalizePhone(phone);
       if (!p) throw new HttpError(400, 'invalid_phone', 'Enter a valid Ethiopian mobile number');
       const cleanName = String(name ?? '').trim().slice(0, 60);
