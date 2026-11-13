@@ -2,10 +2,11 @@
 # Render asks you to type the four values marked "sync: false" when you create it.
 services:
   - type: web
-    name: black-gold-bingo
+    name: black-gold-bingo-pro
     rootDir: ./deploy
     runtime: node
-    plan: starter            # always on. The free plan falls asleep, which stops games and payments.
+    plan: starter            # paid always-on service; confirm cost in the Render plan before approval.
+    autoDeployTrigger: checksPass # wait for GitHub Actions tests before deploying commits.
     numInstances: 1          # must stay 1
     buildCommand: npm install
     startCommand: npm start
