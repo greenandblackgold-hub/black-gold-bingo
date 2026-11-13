@@ -60,53 +60,41 @@ Keep the existing folder structure. The deployment package and Render Blueprint 
 
 Keep that note. You will paste it in Step 4.
 
-## Step 3: Get your Chapa key (about 10 minutes)
+## Step 3: Chapa approval (do not create or share a key yet)
 
-1. Go to **chapa.co** and create a business account.
-2. Log in to the Chapa dashboard. Find **Settings**, then **API** (or **API Keys**).
-3. Copy the **Secret Key**. While you are testing it starts with `CHASECK_TEST-`. **This is the test key, which uses pretend money.** That is exactly what you want first.
-4. Paste it into your note.
+Do not create a live payment key or send money through Chapa yet. First ask Chapa support to confirm in writing that they accept this exact model: paid Bingo cards, a player wallet, prize credits and cash-outs. Their terms may restrict monetizable wallet balances. We will add the payment key only after they approve the model.
 
 ## Step 4: Put the game online with Render (about 15 minutes)
 
 1. Go to **render.com** and sign in.
 2. Click **New**, then **Blueprint**. Connect GitHub and choose `greenandblackgold-hub/black-gold-bingo`.
 3. Set the Blueprint file path to `deploy/render.yaml`. The service is configured to run from the `deploy` folder.
-3. Render shows a form with 4 empty boxes. Fill them in:
-   - **MONGODB_URI:** paste the long `mongodb+srv://...` line from your note.
-   - **CHAPA_SECRET_KEY:** paste the test key from your note.
-   - **ADMIN_PHONE:** your own phone number, for example `0911223344`. This will be your owner login.
-   - **ADMIN_PIN:** choose a 6-digit number that is hard to guess, for example `482913`. This is your owner password. **Write it down. Do not use 123456.**
+3. Render will ask for the database address and owner login details:
+   - **MONGODB_URI:** paste the private MongoDB connection string.
+   - **ADMIN_PHONE:** your owner phone number.
+   - **ADMIN_PIN:** a new 6-digit owner PIN. Do not reuse a PIN used elsewhere.
+   - **JWT_SECRET:** Render generates this automatically.
+4. The Blueprint keeps real-money deposits, paid card purchases and cash-outs disabled. Do not switch them on yet.
 4. Click **Apply** (or **Deploy**). Render builds it. Wait about 3 to 5 minutes until you see **Live**.
 5. At the top of the page is your address, like `https://black-gold-bingo.onrender.com`. **Open it.** You should see the gold Sign in page.
 
-## Step 5: Tell Chapa where to send payment news (2 minutes, recommended)
+## Step 5: Payment notifications (wait)
 
-1. In the Chapa dashboard open the **webhook** settings.
-2. Set the webhook address to your site address followed by `/api/payments/chapa/webhook`.
-   Example: `https://black-gold-bingo.onrender.com/api/payments/chapa/webhook`
-3. Save. (You can leave any "secret" box empty.)
+Skip this step until Chapa has approved the Bingo business in writing and we have added the approved credentials. Do not configure live payments or webhooks yet.
 
-Even without this step payments still get confirmed when the player returns to the site. This step makes it faster and more reliable.
+## Step 6: Safe testing (not yet ready)
 
-## Step 6: Practise with pretend money (about 20 minutes)
+The current public page is intentionally a maintenance screen while the full player interface is rebuilt and verified against the secure API. No real deposits, paid cards or cash-outs are available. Do not invite players or accept money. After the new version is deployed, we will test the full player and owner journey with fake transactions first.
 
-1. Open your site and **sign in** with `ADMIN_PHONE` and `ADMIN_PIN`. At the top you will see **Control Center →**. Only you see it.
-2. Open your site in a **private/incognito window** (this is a player). Click **Register**, make a player account with a different phone number.
-3. As the player: **Wallet**, **Pay with Chapa**, and finish Chapa's **test** payment. Your balance should go up.
-4. As the player: buy 2 cards on the **Wallet** page.
-5. As you (owner): open **Control Center**, press **Start round**, then **Draw next number** a few times, or switch on **Auto-call**.
-6. As the player: tap the called numbers on your card. When you complete a line, press **Call BINGO!**. The server checks it and pays the prize into the wallet.
-7. As the player: **Wallet**, **Cash out**, send a request. As you: in the Control Center find **Cash-out requests** and press **Pay**.
+## Step 7: Real-money launch (only after every approval)
 
-If all of that worked, your business is running and the technical part is done.
+We will not enable real money until all of these are confirmed:
+1. The National Lottery Administration confirms in writing the correct Bingo category and issues the required permit.
+2. Chapa confirms in writing that it accepts this exact Bingo, wallet, prize and cash-out model, and approves the merchant account and payouts.
+3. The website passes its security tests, phone verification and age/identity checks, payment verification, and end-to-end test transactions.
+4. A local lawyer/accountant confirms the tax, prize and reporting requirements.
 
-## Step 7: Going live with real money (only after the licence is sorted)
-
-1. Make sure your Chapa business account is fully approved for live payments and that **transfers (payouts)** are switched on and funded. Ask Chapa support if you cannot find it.
-2. In Chapa, copy the **live** secret key.
-3. In Render open your service, **Environment**, replace the value of `CHAPA_SECRET_KEY` with the live key, **Save**.
-4. Do one real transaction with your own money first: deposit 10 birr, buy a card, cash out. Then tell your players.
+Only after those steps will we enter approved payment credentials and switch on real-money mode. Never send a password, PIN, bank login or API key in this chat.
 
 ---
 
