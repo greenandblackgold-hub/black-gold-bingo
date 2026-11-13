@@ -3,13 +3,13 @@
 services:
   - type: web
     name: black-gold-bingo-pro
-    rootDir: ./deploy
+    rootDir: .
     runtime: node
     plan: starter            # paid always-on service; confirm cost in the Render plan before approval.
     autoDeployTrigger: checksPass # wait for GitHub Actions tests before deploying commits.
     numInstances: 1          # must stay 1
-    buildCommand: npm install && npm test
-    startCommand: npm start
+    buildCommand: npm --prefix deploy install && npm --prefix deploy test && npm --prefix client-source install && VITE_SERVER_MODE=true npm --prefix client-source run build && rm -rf deploy/public && mkdir -p deploy/public && cp -R client-source/dist/. deploy/public/
+    startCommand: npm --prefix deploy start
     healthCheckPath: /health
     envVars:
       - { key: NODE_VERSION, value: "22" }
