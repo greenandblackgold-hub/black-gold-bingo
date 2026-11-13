@@ -78,3 +78,17 @@ test('paid cards, deposits and cash-outs are blocked when real-money mode is off
   );
   game.stop();
 });
+
+test('production registration is disabled until real phone verification is configured', async () => {
+  const config = loadConfig({
+    NODE_ENV: 'production',
+    MONGODB_URI: 'mongodb://example.invalid/db',
+    JWT_SECRET: secret,
+  });
+  const repo = createMemoryRepo();
+  const auth = createAuthService({ repo, config });
+  await assert.rejects(
+    () => auth.register({ phone: '0911223344', name: 'New Player', pin: '123456' }),
+    (e) => e.status === 503 && e.code === 'registration_disabled',
+  );
+});
