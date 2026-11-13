@@ -17,13 +17,18 @@
             const [token, setToken] = React.useState(localStorage.getItem('bingo_token') || '');
             const [user, setUser] = React.useState(JSON.parse(localStorage.getItem('bingo_user') || 'null'));
             const [isLoginView, setIsLoginView] = React.useState(true);
+            const [step, setStep] = React.useState('form'); // 'form' or 'verify'
             
             const [phone, setPhone] = React.useState('');
             const [pin, setPin] = React.useState('');
             const [confirmPin, setConfirmPin] = React.useState('');
             const [name, setName] = React.useState('');
+            const [otpCode, setOtpCode] = React.useState('');
+            const [sentOtp, setSentOtp] = React.useState('');
+            
             const [loading, setLoading] = React.useState(false);
             const [error, setError] = React.useState('');
+            const [successMsg, setSuccessMsg] = React.useState('');
 
             const [balance, setBalance] = React.useState(user?.balance || 0);
             const [depositAmount, setDepositAmount] = React.useState(50);
@@ -32,10 +37,19 @@
             const handleAuth = async (e) => {
                 e.preventDefault();
                 setError('');
+                setSuccessMsg('');
 
-                // Check if passwords match during registration
                 if (!isLoginView && pin !== confirmPin) {
                     setError('ያስገቧቸው ሚስጥራዊ ቁጥሮች (PIN) አይመሳሰሉም!');
+                    return;
+                }
+
+                // If Register, first send verification code to phone
+                if (!isLoginView && step === 'form') {
+                    const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+                    setSentOtp(generatedOtp);
+                    setStep('verify');
+                    setSuccessMsg(`የማረጋገጫ ኮድ ወደ ${phone} ተልኳል። (የሙከራ ኮድ: ${generatedOtp})`);
                     return;
                 }
 
@@ -66,11 +80,46 @@
                 }
             };
 
+            const handleVerifyOtp = async (e) => {
+                e.preventDefault();
+                setError('');
+                if (otpCode !== sentOtp) {
+                    setError('ያስገቡት የማረጋገጫ ኮድ ትክክል አይደለም!');
+                    return;
+                }
+
+                // OTP matched, proceed to register
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone, pin, name })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.token) {
+                        localStorage.setItem('bingo_token', data.token);
+                        localStorage.setItem('bingo_user', JSON.stringify(data.user));
+                        setToken(data.token);
+                        setUser(data.user);
+                        setBalance(data.user.balance || 0);
+                    } else {
+                        setError(data.message || 'ምዝገባው ሳይሳካ ቀርቷል።');
+                    }
+                } catch (err) {
+                    setError('ከ ሰርቨር ጋር መገናኘት አልተቻለም።');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
             const handleLogout = () => {
                 localStorage.removeItem('bingo_token');
                 localStorage.removeItem('bingo_user');
                 setToken('');
                 setUser(null);
+                setStep('form');
             };
 
             // 1. LOGIN / REGISTER SCREEN
@@ -81,38 +130,54 @@
                             <h2 className="text-2xl font-bold text-center text-amber-400 mb-2">Black Gold Bingo PRO</h2>
                             <p className="text-center text-slate-400 text-sm mb-6">እንኳን ደህና መጡ! ለመጫወት ይግቡ ወይም ይመዝገቡ።</p>
                             
-                            <div className="flex mb-6 bg-slate-800 p-1 rounded-xl">
-                                <button onClick={() => { setIsLoginView(true); setError(''); }} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition ${isLoginView ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-300'}`}>ግቡ (Sign In)</button>
-                                <button onClick={() => { setIsLoginView(false); setError(''); }} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition {!isLoginView ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-300'}`}>ይመዝገቡ (Sign Up)</button>
-                            </div>
+                            {step === 'form' && (
+                                <div className="flex mb-6 bg-slate-800 p-1 rounded-xl">
+                                    <button onClick={() => { setIsLoginView(true); setError(''); }} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition ${isLoginView ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-300'}`}>ግቡ (Sign In)</button>
+                                    <button onClick={() => { setIsLoginView(false); setError(''); }} className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition {!isLoginView ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-300'}`}>ይመዝገቡ (Sign Up)</button>
+                                </div>
+                            )}
 
                             {error && <div className="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded-xl mb-4 text-sm text-center">{error}</div>}
+                            {successMsg && <div className="bg-emerald-500/20 border border-emerald-500 text-emerald-300 p-3 rounded-xl mb-4 text-sm text-center">{successMsg}</div>}
 
-                            <form onSubmit={handleAuth} className="space-y-4">
-                                {!isLoginView && (
+                            {step === 'form' ? (
+                                <form onSubmit={handleAuth} className="space-y-4">
+                                    {!isLoginView && (
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-400 mb-1">ሙሉ ስም</label>
+                                            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="ስምዎን ያስገቡ" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                        </div>
+                                    )}
                                     <div>
-                                        <label className="block text-xs font-semibold text-slate-400 mb-1">ሙሉ ስም</label>
-                                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="ስምዎን ያስገቡ" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                        <label className="block text-xs font-semibold text-slate-400 mb-1">ስልክ ቁጥር</label>
+                                        <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxx" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
                                     </div>
-                                )}
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-400 mb-1">ስልክ ቁጥር</label>
-                                    <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="09xxxxxxxx" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-400 mb-1">ሚስጥራዊ ቁጥር (PIN)</label>
-                                    <input type="password" value={pin} onChange={(e) => setPin(e.target.value)} placeholder="******" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
-                                </div>
-                                {!isLoginView && (
                                     <div>
-                                        <label className="block text-xs font-semibold text-slate-400 mb-1">ሚስጥራዊ ቁጥር ይድገሙ (Confirm PIN)</label>
-                                        <input type="password" value={confirmPin} onChange={(e) => setConfirmPin(e.target.value)} placeholder="******" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                        <label className="block text-xs font-semibold text-slate-400 mb-1">ሚስጥራዊ ቁጥር (PIN)</label>
+                                        <input type="password" value={pin} onChange={(e) => setPin(e.target.value)} placeholder="******" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
                                     </div>
-                                )}
-                                <button type="submit" disabled={loading} className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition shadow-lg mt-2">
-                                    {loading ? 'እየጠበቁ...' : (isLoginView ? 'ግባ (Sign In)' : 'ተመዝገብ (Sign Up)')}
-                                </button>
-                            </form>
+                                    {!isLoginView && (
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-400 mb-1">ሚስጥራዊ ቁጥር ይድገሙ (Confirm PIN)</label>
+                                            <input type="password" value={confirmPin} onChange={(e) => setConfirmPin(e.target.value)} placeholder="******" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-amber-500 focus:outline-none" />
+                                        </div>
+                                    )}
+                                    <button type="submit" disabled={loading} className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition shadow-lg mt-2">
+                                        {loading ? 'እየጠበቁ...' : (isLoginView ? 'ግባ (Sign In)' : 'ኮድ ላክ (Send Code)')}
+                                    </button>
+                                </form>
+                            ) : (
+                                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-400 mb-1">ወደ ስልክዎ የተላከውን የ 4 አሃዝ ማረጋገጫ ኮድ ያስገቡ</label>
+                                        <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} placeholder="xxxx" maxLength="4" required className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-center text-2xl tracking-widest focus:border-amber-500 focus:outline-none" />
+                                    </div>
+                                    <button type="submit" disabled={loading} className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition shadow-lg">
+                                        {loading ? 'እየረጋገጠ ነው...' : 'አረጋግጥ እና ተመዝገብ (Verify & Register)'}
+                                    </button>
+                                    <button type="button" onClick={() => setStep('form')} className="w-full py-2 text-slate-400 text-sm hover:underline">ተመለስ</button>
+                                </form>
+                            )}
                         </div>
                     </div>
                 );
