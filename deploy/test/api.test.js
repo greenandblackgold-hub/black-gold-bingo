@@ -318,3 +318,33 @@ test('rate limiting and CORS', async () => {
   }
   assert.equal(limited, true);
 });
+
+test('production safety gates block registration and all real-money routes until approvals are enabled', async () => {
+  const p = await newPlayer('Safety Gate Player');
+  const previous = {
+    prod: ctx.config.prod,
+    registrationEnabled: ctx.config.registrationEnabled,
+    realMoneyEnabled: ctx.config.realMoneyEnabled,
+    lotteryLicenseApproved: ctx.config.lotteryLicenseApproved,
+    chapaMerchantApproved: ctx.config.chapaMerchantApproved,
+  };
+  try {
+    ctx.config.prod = true;
+    ctx.config.registrationEnabled = false;
+    ctx.config.realMoneyEnabled = false;
+    ctx.config.lotteryLicenseApproved = false;
+    ctx.config.chapaMerchantApproved = false;
+    ctx.app.resetLimits();
+
+    assert.equal((await api('POST', '/api/auth/register', { body: { phone: newPhone(), name: 'Blocked', pin: '123456' } })).status, 503);
+    assert.equal((await api('POST', '/api/payments/deposit', { token: p.token, body: { amount: 100 } })).status, 503);
+    assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 1 } })).status, 503);
+    assert.equal((await api('POST', '/api/claim', { token: p.token, body: { cardId: 'BG-TEST22' } })).status, 503);
+    assert.equal((await api('POST', '/api/withdrawals', { token: p.token, body: { amount: 50, accountName: 'Test Name', accountNumber: '0911000111', bankCode: '1' } })).status, 503);
+    assert.equal((await api('POST', '/api/admin/withdrawals/fake-id/approve', { token: ctx.adminToken })).status, 503);
+    assert.equal((await api('POST', '/api/payments/manual', { token: p.token, body: { txnId: 'FAKE-123', amount: 100 } })).status, 404);
+  } finally {
+    Object.assign(ctx.config, previous);
+    ctx.app.resetLimits();
+  }
+});
