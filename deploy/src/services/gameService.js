@@ -138,6 +138,7 @@ export function createGameService({ repo, config, now = Date.now }) {
     /* ───────────── players ───────────── */
 
     async buyCards(user, count) {
+      if (!config.realMoneyEnabled) throw new HttpError(503, 'real_money_disabled', 'Paid card purchases are not enabled yet.');
       const n = Number(count);
       if (!Number.isInteger(n) || n < 1 || n > config.maxCardsPerPurchase) {
         throw new HttpError(400, 'invalid_count', `Buy 1 to ${config.maxCardsPerPurchase} cards`);
