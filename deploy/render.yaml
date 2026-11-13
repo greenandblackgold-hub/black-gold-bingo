@@ -8,7 +8,7 @@ services:
     plan: starter            # paid always-on service; confirm cost in the Render plan before approval.
     autoDeployTrigger: checksPass # wait for GitHub Actions tests before deploying commits.
     numInstances: 1          # must stay 1
-    buildCommand: npm install
+    buildCommand: npm install && npm test
     startCommand: npm start
     healthCheckPath: /health
     envVars:
@@ -16,11 +16,13 @@ services:
       - { key: NODE_ENV, value: production }
       - { key: JWT_SECRET, generateValue: true }   # created for you automatically
       - { key: MONGODB_URI, sync: false }          # from MongoDB Atlas (guide step 2)
-      - { key: CHAPA_SECRET_KEY, sync: false }     # from Chapa (guide step 4)
       - { key: ADMIN_PHONE, sync: false }          # YOUR phone number: this becomes the owner login
       - { key: ADMIN_PIN, sync: false }            # YOUR 6-digit owner PIN
       - { key: ADMIN_NAME, value: Owner }
       - { key: ROOM_ID, value: BINGO-99 }
       - { key: CARD_PRICE_ETB, value: "10" }
       - { key: PRIZE_PERCENT, value: "80" }
-      - { key: AUTO_PAYOUT, value: "false" }       # you approve each cash-out with one button
+      - { key: AUTO_PAYOUT, value: "false" }       # manual payout approval only
+      - { key: REAL_MONEY_ENABLED, value: "false" } # locked until legal and payment approvals
+      - { key: LOTTERY_LICENSE_APPROVED, value: "false" }
+      - { key: CHAPA_MERCHANT_APPROVED, value: "false" }
