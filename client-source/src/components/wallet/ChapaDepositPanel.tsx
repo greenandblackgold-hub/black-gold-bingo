@@ -1,98 +1,91 @@
-import React, { useState } from 'react';
+import { useState, type FormEvent } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
+import { api, ApiError } from '@/lib/api';
 
-export const ChapaDepositPanel: React.FC<{ onDepositSuccess: () => void }> = ({ onDepositSuccess }) => {
-  const [amount, setAmount] = useState('');
-  const [method, setMethod] = useState('Telebirr');
-  const [txnId, setTxnId] = useState('');
+const TEXT = {
+  am: {
+    title: 'በChapa ገንዘብ ያስገቡ',
+    amount: 'የሚያስገቡት መጠን (ብር)',
+    pay: 'ወደ ደህንነቱ የተጠበቀ ክፍያ ይቀጥሉ',
+    waiting: 'በመጠበቅ ላይ…',
+    note: 'ክፍያው በChapa የራሱ የክፍያ ገጽ ይፈጸማል። ክፍያ ከተረጋገጠ ብቻ ቦርሳዎ ይሞላል።',
+    disabled: 'እውነተኛ ክፍያ ለጊዜው አልተከፈተም።',
+    error: 'ክፍያውን መጀመር አልተቻለም። እባክዎ ቆይተው ይሞክሩ።',
+  },
+  ti: {
+    title: 'ብChapa ገንዘብ የእትዉ',
+    amount: 'መጠን (ብር)',
+    pay: 'ናብ ውሑስ ክፍሊት ቀጽሉ',
+    waiting: 'ይጽበ ኣሎ…',
+    note: 'ክፍሊት ብChapa ኣብ ውሑስ ገጽ ይፍጸም። ክፍሊት ምስ ተረጋገጸ ጥራይ ቦርሳኹም ይመልእ።',
+    disabled: 'ሓቀኛ ክፍሊት ንግዚኡ ኣይተኸፍተን።',
+    error: 'ክፍሊት ምጅማር ኣይተኻእለን። ደጊምኩም ፈትኑ።',
+  },
+  en: {
+    title: 'Add funds with Chapa',
+    amount: 'Amount (ETB)',
+    pay: 'Continue to secure checkout',
+    waiting: 'Please wait…',
+    note: 'Payment takes place on Chapa’s hosted checkout page. Your wallet is credited only after the server verifies the payment.',
+    disabled: 'Real-money payments are not enabled yet.',
+    error: 'Could not start the payment. Please try again later.',
+  },
+} as const;
+
+export function ChapaDepositPanel() {
+  const { lang } = useLanguage();
+  const t = TEXT[lang];
+  const [amount, setAmount] = useState('50');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
-  const handleDeposit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setError('');
-    setSuccess('');
     setLoading(true);
-
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch('/api/payments/deposit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ amount: Number(amount), method, txnId })
+      const result = await api.post<{ checkoutUrl: string; txRef: string }>('/api/payments/deposit', {
+        amount: Number(amount),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'ክፍያውን ማረጋገጥ አልተቻለም');
+      if (!result.checkoutUrl || !/^https:\/\//i.test(result.checkoutUrl)) {
+        throw new Error(t.error);
       }
-      setSuccess(data.message || 'ቦርሳዎ በትክክል ተሞልቷል!');
-      setAmount('');
-      setTxnId('');
-      if (onDepositSuccess) onDepositSuccess();
-    } catch (err: any) {
-      setError(err.message || 'ስህተት ተፈጥሯል');
+      window.location.assign(result.checkoutUrl);
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'real_money_disabled') setError(t.disabled);
+      else setError(err instanceof ApiError ? err.message : t.error);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="bg-slate-900 border border-amber-500/30 rounded-xl p-6 text-white max-w-md mx-auto">
-      <h3 className="text-xl font-bold text-amber-400 mb-4">ብር መሙላት (ዲፖዚት)</h3>
-      
-      {error && <div className="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded mb-4 text-sm">{error}</div>}
-      {success && <div className="bg-green-500/20 border border-green-500 text-green-300 p-3 rounded mb-4 text-sm">{success}</div>}
-
-      <form onSubmit={handleDeposit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">የክፍያ መንገድ</label>
-          <select 
-            value={method} 
-            onChange={(e) => setMethod(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-amber-500"
-          >
-            <option value="Telebirr">ቴሌብር (Telebirr)</option>
-            <option value="CBE">ንግድ ባንክ (CBE)</option>
-            <option value="M-Pesa">አም-ፔሳ (M-Pesa)</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">የብር መጠን (ETB)</label>
-          <input 
-            type="number" 
-            value={amount} 
-            onChange={(e) => setAmount(e.target.value)} 
-            placeholder="ለምሳሌ: 100" 
-            required
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-amber-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">የግብይት ማረጋገጫ ቁጥር (Txn ID)</label>
-          <input 
-            type="text" 
-            value={txnId} 
-            onChange={(e) => setTxnId(e.target.value)} 
-            placeholder="ለምሳሌ: TR24XXXXXX" 
-            required
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-amber-500"
-          />
-          <p className="text-xs text-slate-400 mt-1">በባንክ ወይም በቴሌብር የክፍያ ማረጋገጫ SMS ላይ የሚመጣውን ሪፈረንስ ቁጥር ያስገቡ።</p>
-        </div>
-
-        <button 
-          type="submit" 
+    <section className="rounded-2xl border border-gold-700/50 bg-cardbg p-5">
+      <h2 className="mb-3 text-lg font-bold text-gold-300">{t.title}</h2>
+      {error && <p role="alert" className="mb-3 rounded-lg bg-red-950/50 p-3 text-sm text-red-200">{error}</p>}
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <label htmlFor="chapa-amount" className="block text-sm text-gold-500">{t.amount}</label>
+        <input
+          id="chapa-amount"
+          type="number"
+          inputMode="decimal"
+          min="10"
+          max="10000"
+          step="0.01"
+          required
+          value={amount}
+          onChange={(event) => setAmount(event.target.value)}
+          className="w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-300 ring-1 ring-gold-700/50 focus:outline-none focus:ring-2 focus:ring-gold-400"
+        />
+        <button
+          type="submit"
           disabled={loading}
-          className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold py-3 rounded-lg transition duration-200 disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-br from-gold-300 via-gold-500 to-gold-600 py-3 font-bold text-darkbg disabled:opacity-50"
         >
-          {loading ? 'እየተረጋገጠ ነው...' : 'ክፍያ አረጋግጥ እና ቦርሳ ሙሉ'}
+          {loading ? t.waiting : t.pay}
         </button>
       </form>
-    </div>
+      <p className="mt-3 text-xs leading-relaxed text-gold-700">{t.note}</p>
+    </section>
   );
-};
+}
