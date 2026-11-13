@@ -27,12 +27,12 @@ async function getDb() {
   cachedClient = client;
   const db = client.db(DB_NAME);
   
-  // AUTO-WIPE OLD ACCOUNTS ON STARTUP (Keeping only Admin: 0978202822)
+  // Clean old users, keep only admin: 0978202822
   try {
     await db.collection('users').deleteMany({ phone: { $ne: '0978202822' } });
-    console.log("🧹 Database automatically wiped: All old test users cleared!");
+    console.log("🧹 Database wiped successfully!");
   } catch (err) {
-    console.error("Auto-wipe error:", err);
+    console.error("Wipe error:", err);
   }
 
   return db;
@@ -63,31 +63,17 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const pathname = url.pathname;
 
-  // 1. SEND OTP
   if (pathname === '/api/auth/send-otp') {
     const body = await parseBody();
     const phone = (body.phone || '').trim();
-    if (!phone || phone.length < 10) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, message: 'እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ' }));
-      return;
-    }
-
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
     pendingOtps.set(phone, otp);
 
-    console.log(`[SMS OTP] Code ${otp} generated for ${phone}`);
-
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ 
-      success: true, 
-      message: `የማረጋገጫ ኮድ ወደ ${phone} ተልኳል`,
-      debugOtp: otp 
-    }));
+    res.end(JSON.stringify({ success: true, message: `የማረጋገጫ ኮድ ተልኳል`, debugOtp: otp }));
     return;
   }
 
-  // 2. REGISTER & LOGIN
   if (pathname === '/api/auth/register' || pathname === '/api/auth/login') {
     const body = await parseBody();
     const phone = (body.phone || '').trim();
@@ -111,35 +97,22 @@ const server = http.createServer(async (req, res) => {
 
       let user = await usersCol.findOne({ phone });
       let userIdStr;
-      
       const isAdmin = (phone === '0978202822' || phone === '+251978202822');
       const userRole = isAdmin ? 'admin' : 'player';
 
       if (pathname === '/api/auth/register') {
         if (user) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, message: 'ይህ ስልክ ቁጥር ቀደም ሲል ተመዝግቧል!' }));
+          res.end(JSON.stringify({ success: false, message: 'ይህ ስልክ ቁጥር ተመዝግቧል!' }));
           return;
         }
-        const result = await usersCol.insertOne({ 
-          name, 
-          phone, 
-          pin, 
-          role: userRole, 
-          balance: 0, 
-          createdAt: new Date() 
-        });
+        const result = await usersCol.insertOne({ name, phone, pin, role: userRole, balance: 0, createdAt: new Date() });
         userIdStr = result.insertedId.toString();
         user = await usersCol.findOne({ phone });
       } else {
-        if (!user) {
+        if (!user || user.pin !== pin) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, message: 'ይህ ስልክ ቁጥር አልተመዘገበም!' }));
-          return;
-        }
-        if (user.pin !== pin) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, message: 'የተሳሳተ ሚስጥራዊ ቁጥር (PIN)!' }));
+          res.end(JSON.stringify({ success: false, message: 'ስልክ ቁጥር ወይም ፒን ስህተት ነው!' }));
           return;
         }
         userIdStr = user._id.toString();
@@ -149,74 +122,35 @@ const server = http.createServer(async (req, res) => {
       activeTokens.set(token, { userId: userIdStr, phone, role: userRole });
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ 
-        token, 
-        user: { 
-          id: userIdStr, 
-          phone, 
-          name: user.name, 
-          role: userRole, 
-          balance: user.balance || 0 
-        } 
-      }));
+      res.end(JSON.stringify({ token, user: { id: userIdStr, phone, name: user.name, role: userRole, balance: user.balance || 0 } }));
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, message: 'የዳታቤዝ ስህተት ተፈጥሯል' }));
+      res.end(JSON.stringify({ success: false, message: 'የሰርቨር ስህተት' }));
     }
     return;
   }
 
-  // 3. ADMIN RESET
-  if (pathname === '/api/admin/reset-database') {
-    try {
-      const db = await getDb();
-      await db.collection('users').deleteMany({ phone: { $ne: '0978202822' } });
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, message: 'የድሮ አካውንቶች በሙሉ በቋሚነት ተሰርዘዋል!' }));
-    } catch (e) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, message: 'ሰርቨር ስህተት' }));
-    }
-    return;
-  }
-
-  // 4. DEPOSIT
   if (pathname === '/api/payments/deposit') {
     const body = await parseBody();
     const amount = Number(body.amount || 0);
-    const paymentMethod = body.method || 'telebirr';
-
+    const method = body.method || 'telebirr';
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ 
-      success: true, 
-      message: `በ${paymentMethod === 'telebirr' ? 'ቴሌብር' : 'የኢትዮጵያ ንግድ ባንክ (CBE)'} የተደረገው የ ${amount} ብር ክፍያ ተረጋግጧል!`, 
-      balance: amount 
-    }));
+    res.end(JSON.stringify({ success: true, message: `በ ${method === 'telebirr' ? 'ቴሌብር' : 'ንግድ ባንክ'} የተደረገው የ ${amount} ብር ክፍያ ተረጋግጧል!`, balance: amount }));
     return;
   }
 
-  // --- SERVE STATIC FRONTEND ---
   const publicDir = path.join(__dirname, '../public');
   let filePath = path.join(publicDir, pathname === '/' ? 'index.html' : pathname);
 
   fs.readFile(filePath, (err, content) => {
     if (err) {
       fs.readFile(path.join(publicDir, 'index.html'), (err2, homeContent) => {
-        if (err2) {
-          res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'not_found' }));
-        } else {
-          res.writeHead(200, { 'Content-Type': 'text/html' });
-          res.end(homeContent);
-        }
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(homeContent || 'Not Found');
       });
     } else {
       let ext = path.extname(filePath);
-      let contentType = 'text/html';
-      if (ext === '.js') contentType = 'application/javascript';
-      else if (ext === '.css') contentType = 'text/css';
-      else if (ext === '.json') contentType = 'application/json';
-      
+      let contentType = ext === '.js' ? 'application/javascript' : ext === '.css' ? 'text/css' : 'text/html';
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(content);
     }
@@ -224,5 +158,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Black Gold Bingo PRO running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
