@@ -68,8 +68,10 @@ export function createAuthService({ repo, config }) {
         await repo.createUser({ phone: p, name: name || 'Owner', pinHash: await hashSecret(String(pin)), role: 'admin' });
         return 'created';
       }
+      if (existing.role !== 'admin') {
+        throw new Error('ADMIN_PHONE already belongs to a player account. Use a separate owner phone number.');
+      }
       const patch = {};
-      if (existing.role !== 'admin') patch.role = 'admin';
       if (!(await verifySecret(String(pin), existing.pinHash))) patch.pinHash = await hashSecret(String(pin));
       if (!Object.keys(patch).length) return 'ok';
       await repo.updateUser(existing.id, { ...patch, failedLogins: 0, lockedUntil: 0 });
