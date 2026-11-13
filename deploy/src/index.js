@@ -2,6 +2,10 @@ import http from 'http';
 import { MongoClient, ObjectId } from 'mongodb';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 10000;
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -129,7 +133,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // --- SECURE DEPOSIT API (NO CHAPA - DIRECT TXN ID CHECK) ---
+  // --- SECURE DEPOSIT API (DIRECT TXN ID CHECK) ---
   if (pathname === '/api/payments/deposit' && req.method === 'POST') {
     const authUser = getAuthUser(req);
     if (!authUser) { res.writeHead(401); res.end(JSON.stringify({ message: 'እባክዎ ይግቡ' })); return; }
@@ -230,10 +234,36 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  res.writeHead(404, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'not_found', message: 'Not found' }));
+  // --- SERVE FRONTEND STATIC FILES ---
+  const publicDir = path.join(__dirname, '../public');
+  let filePath = path.join(publicDir, pathname === '/' ? 'index.html' : pathname);
+
+  fs.readFile(filePath, (err, content) => {
+    if (err) {
+      // Fallback to index.html for Single Page Application routing
+      fs.readFile(path.join(publicDir, 'index.html'), (err2, homeContent) => {
+        if (err2) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'not_found', message: 'Page not found' }));
+        } else {
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(homeContent);
+        }
+      });
+    } else {
+      let ext = path.extname(filePath);
+      let contentType = 'text/html';
+      if (ext === '.js') contentType = 'application/javascript';
+      else if (ext === '.css') contentType = 'text/css';
+      else if (ext === '.json') contentType = 'application/json';
+      else if (ext === '.svg') contentType = 'image/svg+xml';
+      
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(content);
+    }
+  });
 });
 
 server.listen(PORT, () => {
-  console.log(`Bingo API running on port ${PORT}`);
+  console.log(`Bingo API & Web running on port ${PORT}`);
 });
