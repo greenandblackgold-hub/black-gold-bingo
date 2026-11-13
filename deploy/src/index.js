@@ -68,7 +68,7 @@ const server = http.createServer(async (req, res) => {
     const { name, phone, pin } = await parseBody();
     if (!phone || !pin) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'ስልክ ቁጥር እና ፒን አስፈላጊ ናቸው' }));
+      res.end(JSON.stringify({ error: 'bad_request', message: 'ስልክ ቁጥር እና ፒን አስፈላጊ ናቸው' }));
       return;
     }
     try {
@@ -76,17 +76,29 @@ const server = http.createServer(async (req, res) => {
       let user = await usersCol.findOne({ phone });
       if (user) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'ይህ ስልክ ቁጥር ተመዝግቧል' }));
+        res.end(JSON.stringify({ error: 'exists', message: 'ይህ ስልክ ቁጥር ተመዝግቧል' }));
         return;
       }
-      const result = await usersCol.insertOne({ name: name || 'Player', phone, pin, balance: 0, createdAt: new Date() });
+      const result = await usersCol.insertOne({ 
+        name: name || 'Player', 
+        phone, 
+        pin, 
+        role: phone === '0978202822' ? 'admin' : 'player', 
+        balance: 0, 
+        createdAt: new Date() 
+      });
       const token = 'tok_' + Math.random().toString(36).substring(2) + Date.now();
-      activeTokens.set(token, { userId: result.insertedId.toString(), phone });
+      const userIdStr = result.insertedId.toString();
+      activeTokens.set(token, { userId: userIdStr, phone });
+
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ token, message: 'ተመዝግቧል' }));
+      res.end(JSON.stringify({ 
+        token, 
+        user: { id: userIdStr, phone, name: name || 'Player', role: phone === '0978202822' ? 'admin' : 'player', balance: 0 } 
+      }));
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'ሰርቨር ስህተት ተፈጥሯል' }));
+      res.end(JSON.stringify({ error: 'server_error', message: 'ሰርቨር ስህተት ተፈጥሯል' }));
     }
     return;
   }
@@ -95,28 +107,41 @@ const server = http.createServer(async (req, res) => {
     const { phone, pin } = await parseBody();
     if (!phone || !pin) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'ስልክ ቁጥር እና ፒን አስፈላጊ ናቸው' }));
+      res.end(JSON.stringify({ error: 'bad_request', message: 'ስልክ ቁጥር እና ፒን አስፈላጊ ናቸው' }));
       return;
     }
     try {
       const usersCol = db.collection('users');
       let user = await usersCol.findOne({ phone });
       if (!user) {
-        await usersCol.insertOne({ name: phone === '0978202822' ? 'Owner' : 'Player', phone, pin, balance: 0, createdAt: new Date() });
+        const isAdmin = phone === '0978202822';
+        await usersCol.insertOne({ 
+          name: isAdmin ? 'Owner' : 'Player', 
+          phone, 
+          pin, 
+          role: isAdmin ? 'admin' : 'player', 
+          balance: 0, 
+          createdAt: new Date() 
+        });
         user = await usersCol.findOne({ phone });
       }
       if (user.pin && user.pin !== pin) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'ልክ ያልሆነ ፒን ቁጥር' }));
+        res.end(JSON.stringify({ error: 'invalid_pin', message: 'ልክ ያልሆነ ፒን ቁጥር' }));
         return;
       }
       const token = 'tok_' + Math.random().toString(36).substring(2) + Date.now();
-      activeTokens.set(token, { userId: user._id.toString(), phone });
+      const userIdStr = user._id.toString();
+      activeTokens.set(token, { userId: userIdStr, phone });
+
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ token, message: 'በተሳካ ሁኔታ ገብተዋል' }));
+      res.end(JSON.stringify({ 
+        token, 
+        user: { id: userIdStr, phone, name: user.name, role: user.role || 'player', balance: user.balance || 0 } 
+      }));
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'ሰርቨር ስህተት ተፈጥሯል' }));
+      res.end(JSON.stringify({ error: 'server_error', message: 'ሰርቨር ስህተት ተፈጥሯል' }));
     }
     return;
   }
@@ -124,19 +149,19 @@ const server = http.createServer(async (req, res) => {
   // --- WALLET API ---
   if (pathname === '/api/wallet' && req.method === 'GET') {
     const authUser = getAuthUser(req);
-    if (!authUser) { res.writeHead(401); res.end(JSON.stringify({ message: 'እባክዎ ይግቡ' })); return; }
+    if (!authUser) { res.writeHead(401, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'unauthorized', message: 'እባክዎ ይግቡ' })); return; }
     try {
       const user = await db.collection('users').findOne({ _id: new ObjectId(authUser.userId) });
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ balance: user ? user.balance || 0 : 0 }));
-    } catch(e) { res.writeHead(500); res.end(JSON.stringify({ message: 'ሰርቨር ስህተት' })); }
+    } catch(e) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'error', message: 'ሰርቨር ስህተት' })); }
     return;
   }
 
   // --- SECURE DEPOSIT API (DIRECT TXN ID CHECK) ---
   if (pathname === '/api/payments/deposit' && req.method === 'POST') {
     const authUser = getAuthUser(req);
-    if (!authUser) { res.writeHead(401); res.end(JSON.stringify({ message: 'እባክዎ ይግቡ' })); return; }
+    if (!authUser) { res.writeHead(401, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'unauthorized', message: 'እባክዎ ይግቡ' })); return; }
     
     const { amount, method, txnId } = await parseBody();
     const depositAmount = Number(amount);
@@ -144,13 +169,13 @@ const server = http.createServer(async (req, res) => {
 
     if (!depositAmount || depositAmount <= 0) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'እባክዎ ትክክለኛ የብር መጠን ያስገቡ' }));
+      res.end(JSON.stringify({ error: 'bad_amount', message: 'እባክዎ ትክክለኛ የብር መጠን ያስገቡ' }));
       return;
     }
 
     if (!cleanTxnId || cleanTxnId.length < 4) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'እባክዎ ትክክለኛ የባንክ/ቴሌብር ሪፈረንስ ቁጥር (Txn ID) ያስገቡ' }));
+      res.end(JSON.stringify({ error: 'bad_txn', message: 'እባክዎ ትክክለኛ የባንክ/ቴሌብር ሪፈረንስ ቁጥር (Txn ID) ያስገቡ' }));
       return;
     }
 
@@ -158,7 +183,7 @@ const server = http.createServer(async (req, res) => {
       const existingTxn = await db.collection('transactions').findOne({ txnId: cleanTxnId });
       if (existingTxn) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'ይህ የግብይት ቁጥር (Txn ID) ከዚህ በፊት ጥቅም ላይ ውሏል!' }));
+        res.end(JSON.stringify({ error: 'duplicate_txn', message: 'ይህ የግብይት ቁጥር (Txn ID) ከዚህ በፊት ጥቅም ላይ ውሏል!' }));
         return;
       }
 
@@ -182,55 +207,12 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ 
         message: 'ክፍያው ተረጋግጦ ቦርሳዎ በትክክል ተሞልቷል!', 
-        newBalance: updatedUser.balance 
+        balance: updatedUser.balance 
       }));
     } catch(e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'ሰርቨር ስህተት ተፈጥሯል' }));
+      res.end(JSON.stringify({ error: 'server_error', message: 'ሰርቨር ስህተት ተፈጥሯል' }));
     }
-    return;
-  }
-
-  // --- GAME & CARDS APIs ---
-  if (pathname === '/api/cards/buy' && req.method === 'POST') {
-    const authUser = getAuthUser(req);
-    if (!authUser) { res.writeHead(401); res.end(JSON.stringify({ message: 'እባክዎ ይግቡ' })); return; }
-    const { count = 1 } = await parseBody();
-    const cost = Number(count) * 10;
-    try {
-      const user = await db.collection('users').findOne({ _id: new ObjectId(authUser.userId) });
-      if (!user || user.balance < cost) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'በቂ ቀሪ ሂሳብ የለዎትም (1 ካርድ = 10 ብር)' }));
-        return;
-      }
-      await db.collection('users').updateOne({ _id: new ObjectId(authUser.userId) }, { $inc: { balance: -cost } });
-      await db.collection('user_cards').insertOne({
-        userId: authUser.userId,
-        phone: authUser.phone,
-        cardNumbers: Array.from({length: 25}, () => Math.floor(Math.random() * 75) + 1),
-        createdAt: new Date()
-      });
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'ካርድ በተሳካ ሁኔታ ተገዝቷል!' }));
-    } catch(e) { res.writeHead(500); res.end(JSON.stringify({ message: 'ሰርቨር ስህተት' })); }
-    return;
-  }
-
-  if (pathname === '/api/cards' && req.method === 'GET') {
-    const authUser = getAuthUser(req);
-    if (!authUser) { res.writeHead(401); res.end(JSON.stringify({ message: 'እባክዎ ይግቡ' })); return; }
-    try {
-      const cards = await db.collection('user_cards').find({ userId: authUser.userId }).toArray();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ cards }));
-    } catch(e) { res.writeHead(500); res.end(JSON.stringify({ message: 'ሰርቨር ስህተት' })); }
-    return;
-  }
-
-  if (pathname === '/api/game/status' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ active: currentRoundActive, drawnNumbers: drawnNumbersList }));
     return;
   }
 
@@ -240,7 +222,6 @@ const server = http.createServer(async (req, res) => {
 
   fs.readFile(filePath, (err, content) => {
     if (err) {
-      // Fallback to index.html for Single Page Application routing
       fs.readFile(path.join(publicDir, 'index.html'), (err2, homeContent) => {
         if (err2) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
