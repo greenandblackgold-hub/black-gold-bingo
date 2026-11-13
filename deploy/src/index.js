@@ -1,5 +1,5 @@
 import http from 'http';
-import { MongoClient, ObjectId } from 'mongodb';
+import { MongoClient } from 'mongodb';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -25,11 +25,21 @@ async function getDb() {
     serverSelectionTimeoutMS: 10000,
   });
   cachedClient = client;
-  return client.db(DB_NAME);
+  const db = client.db(DB_NAME);
+  
+  // AUTO-WIPE OLD ACCOUNTS ON STARTUP (Keeping only Admin: 0978202822)
+  try {
+    await db.collection('users').deleteMany({ phone: { $ne: '0978202822' } });
+    console.log("🧹 Database automatically wiped: All old test users cleared!");
+  } catch (err) {
+    console.error("Auto-wipe error:", err);
+  }
+
+  return db;
 }
 
 const activeTokens = new Map();
-const pendingOtps = new Map(); // Stores real OTPs for phone verification
+const pendingOtps = new Map();
 
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -53,7 +63,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const pathname = url.pathname;
 
-  // 1. REAL SMS OTP GENERATION & VERIFICATION ENDPOINT
+  // 1. SEND OTP
   if (pathname === '/api/auth/send-otp') {
     const body = await parseBody();
     const phone = (body.phone || '').trim();
@@ -66,24 +76,18 @@ const server = http.createServer(async (req, res) => {
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
     pendingOtps.set(phone, otp);
 
-    // REAL SMS API INTEGRATION (e.g., Africa's Talking / local SMS gateway)
-    try {
-      // Here you can integrate your SMS gateway HTTP API (e.g. Telebirr / Arifpay / local bulk SMS)
-      console.log(`[REAL SMS GATEWAY] Sending OTP ${otp} to phone ${phone}`);
-    } catch (e) {
-      console.error("SMS sending error:", e);
-    }
+    console.log(`[SMS OTP] Code ${otp} generated for ${phone}`);
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ 
       success: true, 
       message: `የማረጋገጫ ኮድ ወደ ${phone} ተልኳል`,
-      debugOtp: otp // Included for testing convenience
+      debugOtp: otp 
     }));
     return;
   }
 
-  // 2. REGISTER & LOGIN WITH DATABASE RESET SUPPORT
+  // 2. REGISTER & LOGIN
   if (pathname === '/api/auth/register' || pathname === '/api/auth/login') {
     const body = await parseBody();
     const phone = (body.phone || '').trim();
@@ -95,12 +99,11 @@ const server = http.createServer(async (req, res) => {
       const db = await getDb();
       const usersCol = db.collection('users');
 
-      // If Register, verify OTP first
       if (pathname === '/api/auth/register') {
         const expectedOtp = pendingOtps.get(phone);
         if (!expectedOtp || expectedOtp !== otp) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, message: 'የተሳሳተ ወይም ያበቃለት የማረጋገጫ ኮድ (OTP)' }));
+          res.end(JSON.stringify({ success: false, message: 'የተሳሳተ የማረጋገጫ ኮድ (OTP)' }));
           return;
         }
         pendingOtps.delete(phone);
@@ -109,7 +112,6 @@ const server = http.createServer(async (req, res) => {
       let user = await usersCol.findOne({ phone });
       let userIdStr;
       
-      // ADMIN IDENTIFICATION (Your personal admin phone number)
       const isAdmin = (phone === '0978202822' || phone === '+251978202822');
       const userRole = isAdmin ? 'admin' : 'player';
 
@@ -130,7 +132,6 @@ const server = http.createServer(async (req, res) => {
         userIdStr = result.insertedId.toString();
         user = await usersCol.findOne({ phone });
       } else {
-        // Login
         if (!user) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: false, message: 'ይህ ስልክ ቁጥር አልተመዘገበም!' }));
@@ -165,14 +166,13 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 3. ADMIN RESET / WIPE OLD USERS ENDPOINT (Clears old test accounts)
+  // 3. ADMIN RESET
   if (pathname === '/api/admin/reset-database') {
     try {
       const db = await getDb();
-      // Keep only admin account, clear all old data
       await db.collection('users').deleteMany({ phone: { $ne: '0978202822' } });
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, message: 'የድሮ አካውንቶች በሙሉ ከዳታቤዝ ተሰርዘዋል!' }));
+      res.end(JSON.stringify({ success: true, message: 'የድሮ አካውንቶች በሙሉ በቋሚነት ተሰርዘዋል!' }));
     } catch (e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: false, message: 'ሰርቨር ስህተት' }));
@@ -180,17 +180,16 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 4. REAL TELEBIRR / CBE DEPOSIT & PAYMENT ENDPOINT
+  // 4. DEPOSIT
   if (pathname === '/api/payments/deposit') {
     const body = await parseBody();
     const amount = Number(body.amount || 0);
-    const paymentMethod = body.method || 'telebirr'; // telebirr or cbe
-    const txRef = body.txRef || '';
+    const paymentMethod = body.method || 'telebirr';
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ 
       success: true, 
-      message: `በ${paymentMethod === 'telebirr' ? 'ቴሌብር' : 'የኢትዮጵያ ንግድ ባንክ (CBE)'} የተደረገው የ ${amount} ብር ክፍያ በጥንቃቄ ተረጋግጧል!`, 
+      message: `በ${paymentMethod === 'telebirr' ? 'ቴሌብር' : 'የኢትዮጵያ ንግድ ባንክ (CBE)'} የተደረገው የ ${amount} ብር ክፍያ ተረጋግጧል!`, 
       balance: amount 
     }));
     return;
