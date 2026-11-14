@@ -161,6 +161,27 @@ function analyze(grid: (number | null)[][], marks: Set<number>, called: Set<numb
   return { toGo: result.missing, winningLine: result.missing === 0 ? result.positions : null };
 }
 
+type BallProps = { n: number; size?: 'sm' | 'lg' };
+
+/** Self-contained called-number ball used by the play screen. */
+function Ball({ n, size = 'lg' }: BallProps) {
+  const compact = size === 'sm';
+  return (
+    <div
+      aria-label={`${letterFor(n)} ${n}`}
+      className={[
+        'grid shrink-0 place-items-center rounded-full border-4 border-gold-300',
+        'bg-gradient-to-br from-gold-200 via-gold-400 to-gold-700 text-darkbg',
+        'shadow-[inset_-5px_-7px_12px_rgba(0,0,0,0.25),0_8px_24px_rgba(0,0,0,0.3)]',
+        compact ? 'h-10 w-10 border-2 text-xs' : 'h-32 w-32 text-4xl sm:h-40 sm:w-40',
+      ].join(' ')}
+    >
+      <span className={compact ? 'text-[9px] font-black' : 'text-sm font-black'}>{letterFor(n)}</span>
+      <strong className={compact ? 'text-sm leading-none' : 'text-4xl leading-none'}>{n}</strong>
+    </div>
+  );
+}
+
 function CardView({ card, marks, called, active, t, onToggle, pattern }: CardViewProps) {
   const { toGo, winningLine } = useMemo(() => analyze(card.grid, marks, called, pattern), [card.grid, marks, called, pattern]);
   const winSet = useMemo(() => new Set((winningLine ?? []).map(([r, c]) => `${r}-${c}`)), [winningLine]);
