@@ -205,7 +205,7 @@ test('a full round: server decides the winner, pays 80% of the pot once, and han
   assert.equal((await api('POST', '/api/claim', { token: a.token, body: { cardId: ca[0].id } })).json.error, 'wrong_phase');
 
   await api('POST', '/api/admin/round/start', { token: ctx.adminToken });
-  assert.equal((await api('POST', '/api/claim', { token: a.token, body: { cardId: ca[0].id } })).json.reason, 'no_line');
+  assert.equal((await api('POST', '/api/claim', { token: a.token, body: { cardId: ca[0].id } })).json.reason, 'pattern_incomplete');
   await drawAll();
   assert.equal((await api('POST', '/api/admin/draw', { token: ctx.adminToken })).json.error, 'all_drawn');
   assert.equal((await api('GET', '/api/game')).json.calledNumbers.length, 75);
