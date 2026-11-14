@@ -5,7 +5,7 @@ interface AuthValue {
   user: AuthUser | null;
   loading: boolean;
   login: (phone: string, pin: string) => Promise<void>;
-  register: (phone: string, name: string, pin: string) => Promise<void>;
+  register: (phone: string, name: string, pin: string, pinConfirm: string) => Promise<void>;
   logout: () => void;
   /** Re-read the profile (balance) from the server. */
   refresh: () => Promise<void>;
@@ -49,8 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(r.user);
   }, []);
 
-  const register = useCallback(async (phone: string, name: string, pin: string) => {
-    const r = await api.post<AuthResponse>('/api/auth/register', { phone, name, pin });
+  const register = useCallback(async (phone: string, name: string, pin: string, pinConfirm: string) => {
+    const r = await api.post<AuthResponse>('/api/auth/register', { phone, name, pin, pinConfirm });
     setToken(r.token);
     setUser(r.user);
   }, []);
