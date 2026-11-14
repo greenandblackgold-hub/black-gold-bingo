@@ -9,6 +9,7 @@
 export type Lang = 'am' | 'ti' | 'en';
 export type Phase = 'waiting' | 'running' | 'ended';
 export type PayMethod = 'telebirr' | 'cbe';
+export type WinPattern = 'any_line'|'horizontal_line'|'vertical_line'|'diagonal'|'two_lines'|'two_horizontal_lines'|'four_corners'|'rectangle'|'two_rectangles'|'half_house'|'full_house'|'x'|'t'|'l'|'plus'|'diamond'|'picture_frame'|'six_pack'|'postage_stamp';
 
 /** [row, column] on a 5x5 card. */
 export type Pos = [number, number];
@@ -46,7 +47,7 @@ export interface PlayerContextValue {
   toggleMark: (cardId: string, n: number) => void;
   transactions?: Tx[];
   deposit: (amount: number, method: PayMethod, reference: string) => Promise<void>;
-  buyCards: (count: number) => Promise<{ ok: boolean; error?: string }>;
+  buyCards: (count: number, serial?: string) => Promise<{ ok: boolean; error?: string }>;
   /** Removes all cards and marks (called when a new round is set up). */
   clearCards: () => void;
 }
@@ -54,6 +55,7 @@ export interface PlayerContextValue {
 /** Game state shared by everyone. Only the host may write it. */
 export interface SharedGame {
   phase: Phase;
+  winPattern: WinPattern;
   roundNumber: number;
   /** In call order, values 1..75. */
   calledNumbers: number[];
@@ -111,6 +113,8 @@ export interface RoundContextValue {
   /** True only for the host. Every host action below is a no-op for players. */
   canHost: boolean;
   phase: Phase;
+  winPattern: WinPattern;
+  setWinPattern: (pattern: WinPattern) => void;
   roundNumber: number;
   /** In call order, values 1..75. */
   calledNumbers: number[];
