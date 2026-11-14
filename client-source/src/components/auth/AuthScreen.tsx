@@ -12,7 +12,7 @@ const LANGS: { id: Lang; label: string }[] = [
 
 const TEXT = {
   am: {
-    login: 'ግባ', register: 'መለያ ክፈት', phone: 'ስልክ ቁጥር', name: 'ስምዎ', pin: 'ባለ 6 አሃዝ ሚስጥር ቁጥር (PIN)',
+    login: 'ግባ', register: 'መለያ ክፈት', phone: 'ስልክ ቁጥር', name: 'ስምዎ', pin: 'ባለ 6 አሃዝ ሚስጥር ቁጥር (PIN)', confirmPin: 'PIN ድገም', pinMismatch: 'ያስገቡት PIN አይመሳሰልም።',
     toRegister: 'መለያ የለዎትም? ይመዝገቡ', toLogin: 'መለያ አለዎት? ይግቡ', busy: 'በመጠበቅ ላይ…',
     invalid_phone: 'ትክክለኛ የኢትዮጵያ ስልክ ቁጥር ያስገቡ (09… ወይም 07…)', invalid_name: 'ስምዎን ያስገቡ', invalid_pin: 'PIN 6 አሃዝ መሆን አለበት',
     phone_taken: 'ይህ ስልክ ቁጥር ተመዝግቧል', invalid_credentials: 'ስልክ ቁጥር ወይም PIN ልክ አይደለም',
@@ -20,7 +20,7 @@ const TEXT = {
     age: '18 ዓመት እና ከዚያ በላይ ብቻ። ስልክ ቁጥሩ በSMS አይረጋገጥም፤ የራስዎን ቁጥር ብቻ ይጠቀሙ።',
   },
   ti: {
-    login: 'እቶ', register: 'መለያ ክፈት', phone: 'ቁጽሪ ተሌፎን', name: 'ስምካ', pin: 'ናይ 6 ኣሃዝ ሚስጥራዊ ቁጽሪ (PIN)',
+    login: 'እቶ', register: 'መለያ ክፈት', phone: 'ቁጽሪ ተሌፎን', name: 'ስምካ', pin: 'ናይ 6 ኣሃዝ ሚስጥራዊ ቁጽሪ (PIN)', confirmPin: 'PIN ደግም', pinMismatch: 'እቲ ዘእተኹሞ PIN ኣይመሳሰልን።',
     toRegister: 'መለያ የብልካን? ተመዝገብ', toLogin: 'መለያ ኣለካ? እቶ', busy: 'ይጽበ ኣሎ…',
     invalid_phone: 'ቅኑዕ ናይ ኢትዮጵያ ቁጽሪ ተሌፎን የእትዉ (09… ወይ 07…)', invalid_name: 'ስምኩም የእትዉ', invalid_pin: 'PIN 6 ኣሃዝ ክኸውን ኣለዎ',
     phone_taken: 'እዚ ቁጽሪ ተሌፎን ተመዝጊቡ ኣሎ', invalid_credentials: 'ቁጽሪ ተሌፎን ወይ PIN ቅኑዕ ኣይኮነን',
@@ -28,7 +28,7 @@ const TEXT = {
     age: '18 ዓመትን ልዕሊኡን ጥራይ። ቁጽሪ ተሌፎን ብSMS ኣይረጋገጽን፤ ናይ ባዕልኹም ቁጽሪ ጥራይ ተጠቐሙ።',
   },
   en: {
-    login: 'Sign in', register: 'Create account', phone: 'Phone number', name: 'Your name', pin: '6-digit PIN',
+    login: 'Sign in', register: 'Create account', phone: 'Phone number', name: 'Your name', pin: '6-digit PIN', confirmPin: 'Repeat PIN', pinMismatch: 'The PINs do not match.',
     toRegister: 'No account? Register', toLogin: 'Have an account? Sign in', busy: 'Please wait…',
     invalid_phone: 'Enter a valid Ethiopian mobile number (09… or 07…)', invalid_name: 'Enter your name', invalid_pin: 'PIN must be 6 digits',
     phone_taken: 'This number is already registered', invalid_credentials: 'Wrong phone number or PIN',
@@ -45,6 +45,7 @@ export function AuthScreen() {
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [pin, setPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,7 +54,10 @@ export function AuthScreen() {
     setError(null);
     try {
       if (mode === 'login') await login(phone, pin);
-      else await register(phone, name, pin);
+      else {
+        if (pin !== confirmPin) { setError(t.pinMismatch); return; }
+        await register(phone, name, pin, confirmPin);
+      }
     } catch (e) {
       const code = e instanceof ApiError ? e.code : 'error';
       setError((t as Record<string, string>)[code] ?? t.error);
@@ -113,6 +117,12 @@ export function AuthScreen() {
             className={input}
           />
         </div>
+        {mode === 'register' && (
+          <div>
+            <label htmlFor="auth-pin-confirm" className="mb-1.5 block text-sm text-gold-500">{t.confirmPin}</label>
+            <input id="auth-pin-confirm" type="password" inputMode="numeric" maxLength={6} autoComplete="new-password" value={confirmPin} onChange={(e) => setConfirmPin(e.target.value.replace(/\\D/g, ''))} onKeyDown={(e) => e.key === 'Enter' && !busy && void submit()} className={input} />
+          </div>
+        )}
         {error && (
           <p role="alert" className="text-sm text-red-300">
             {error}
@@ -131,6 +141,8 @@ export function AuthScreen() {
           onClick={() => {
             setMode(mode === 'login' ? 'register' : 'login');
             setError(null);
+            setPin('');
+            setConfirmPin('');
           }}
           className="w-full py-1 text-sm font-medium text-gold-400 underline underline-offset-4"
         >
