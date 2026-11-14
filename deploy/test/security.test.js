@@ -62,7 +62,7 @@ test('a player account cannot be silently promoted to admin by startup settings'
   assert.equal((await repo.findUserByPhone(player.phone)).role, 'player');
 });
 
-test('paid cards, deposits and cash-outs are blocked when real-money mode is off', async () => {
+test('free cards remain playable while deposits and cash-outs are blocked without approval', async () => {
   const repo = createMemoryRepo();
   const config = loadConfig({ NODE_ENV: 'test', JWT_SECRET: secret });
   const auth = createAuthService({ repo, config });
@@ -70,7 +70,10 @@ test('paid cards, deposits and cash-outs are blocked when real-money mode is off
   const game = createGameService({ repo, config });
   const wallet = createWalletService({ repo, config, chapa: {} });
 
-  await assert.rejects(() => game.buyCards(player, 1), (e) => e.status === 503 && e.code === 'real_money_disabled');
+  const free = await game.buyCards(player, 1);
+  assert.equal(free.cards.length, 1);
+  assert.equal(free.balance, 0);
+  assert.equal((await game.getPublicState()).cardPrice, 0);
   await assert.rejects(() => wallet.startDeposit(player, 100), (e) => e.status === 503 && e.code === 'real_money_disabled');
   await assert.rejects(
     () => wallet.requestWithdrawal(player, { amount: 50, accountName: 'Test', accountNumber: '12345678', bankCode: '1' }),
