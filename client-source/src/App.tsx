@@ -28,7 +28,7 @@ function useHash(): string {
   return hash;
 }
 
-/** Player app: Play, Wallet and Verify only. It contains no host controls. */
+/** Player app: Play, Wallet and Verify only. */
 function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
   const [tab, setTab] = useState<TabId>(() => (window.location.hash === '#wallet' ? 'wallet' : 'play'));
   return (
@@ -44,19 +44,37 @@ function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
   );
 }
 
-/** Routes by hash: the Control Center lives at #host, everything else is the player app. */
-function Router() {
+/** Local demo router. This tree is never used by the production build. */
+function DemoRouter() {
   const hash = useHash();
-  const openAdmin = () => {
-    window.location.hash = ADMIN_HASH;
-  };
-  const closeAdmin = () => {
-    window.location.hash = 'play';
-  };
+  const openAdmin = () => { window.location.hash = ADMIN_HASH; };
+  const closeAdmin = () => { window.location.hash = 'play'; };
   return hash === ADMIN_HASH ? <AdminApp onExit={closeAdmin} /> : <PlayerShell onOpenAdmin={openAdmin} />;
 }
 
-/** Demo tree: everything runs in the browser (no accounts, no real money). */
+/** Production host route is guarded by the authenticated database role, not by the URL hash. */
+function ServerRouter() {
+  const hash = useHash();
+  const { user } = useAuth();
+  const closeAdmin = () => { window.location.hash = 'play'; };
+  const openAdmin = () => {
+    if (user?.role === 'admin') window.location.hash = ADMIN_HASH;
+  };
+  if (hash === ADMIN_HASH && user?.role !== 'admin') {
+    return (
+      <main className="grid min-h-screen place-items-center bg-black p-6 text-center text-white">
+        <section className="max-w-md rounded-2xl border border-gold-500/40 bg-zinc-950 p-8">
+          <h1 className="mb-3 text-xl font-bold text-gold-400">የሆስት ፈቃድ ያስፈልጋል</h1>
+          <p className="mb-6 text-sm text-zinc-300">ይህ ክፍል ለተፈቀደለት ሆስት ብቻ ነው።</p>
+          <button className="rounded-lg bg-gold-500 px-5 py-3 font-semibold text-black" onClick={closeAdmin}>ወደ ጨዋታ ተመለስ</button>
+        </section>
+      </main>
+    );
+  }
+  return hash === ADMIN_HASH ? <AdminApp onExit={closeAdmin} /> : <PlayerShell onOpenAdmin={openAdmin} />;
+}
+
+/** Demo tree: browser-only data, no real accounts or money. */
 function DemoApp() {
   return (
     <AppSettingsProvider>
@@ -64,7 +82,7 @@ function DemoApp() {
         <BackendProvider>
           <PlayerProvider>
             <RoundProvider>
-              <Router />
+              <DemoRouter />
             </RoundProvider>
           </PlayerProvider>
         </BackendProvider>
@@ -79,7 +97,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   return user ? <>{children}</> : <AuthScreen />;
 }
 
-/** Production tree: accounts, server-held wallets and cards, Chapa payments, live game over SSE. */
+/** Production: server accounts, live game and database-backed host authorization. */
 function ServerApp() {
   return (
     <AppSettingsProvider>
@@ -88,7 +106,7 @@ function ServerApp() {
           <AuthGate>
             <ServerProviders>
               <PaymentReturnBanner />
-              <Router />
+              <ServerRouter />
             </ServerProviders>
           </AuthGate>
         </AuthProvider>
