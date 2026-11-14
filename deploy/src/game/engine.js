@@ -50,8 +50,8 @@ const allLines = [...rows,...cols,d1,d2];
 const rectangles = [];
 for(let r=0;r<4;r++) for(let c=0;c<4;c++) rectangles.push([pos(r,c),pos(r,c+1),pos(r+1,c),pos(r+1,c+1)]);
 const sixPacks = [];
-for(let r=0;r<5;r++) for(let c=0;c<4;c++) sixPacks.push(Array.from({length:2},(_,dr)=>Array.from({length:3},(_,dc)=>pos(r+dr,c+dc))).flat());
-for(let r=0;r<4;r++) for(let c=0;c<5;c++) sixPacks.push(Array.from({length:3},(_,dr)=>Array.from({length:2},(_,dc)=>pos(r+dr,c+dc))).flat());
+for(let r=0;r<4;r++) for(let c=0;c<3;c++) sixPacks.push(Array.from({length:2},(_,dr)=>Array.from({length:3},(_,dc)=>pos(r+dr,c+dc))).flat());
+for(let r=0;r<3;r++) for(let c=0;c<4;c++) sixPacks.push(Array.from({length:3},(_,dr)=>Array.from({length:2},(_,dc)=>pos(r+dr,c+dc))).flat());
 const nonFree = Array.from({length:25},(_,i)=>pos(Math.floor(i/5),i%5)).filter(([r,c])=>r!==2||c!==2);
 export function patternMasks(pattern='any_line') {
   switch(pattern) {
@@ -61,7 +61,8 @@ export function patternMasks(pattern='any_line') {
     case 'two_lines': return combos(allLines,2).map(g=>combine(...g));
     case 'two_horizontal_lines': return combos(rows,2).map(g=>combine(...g));
     case 'four_corners': return [corners];
-    case 'rectangle': case 'postage_stamp': return rectangles;
+    case 'rectangle': return rectangles;
+    case 'postage_stamp': return [[pos(0,0),pos(0,1),pos(1,0),pos(1,1)],[pos(0,3),pos(0,4),pos(1,3),pos(1,4)],[pos(3,0),pos(3,1),pos(4,0),pos(4,1)],[pos(3,3),pos(3,4),pos(4,3),pos(4,4)]];
     case 'two_rectangles': return combos(rectangles,2).map(g=>combine(...g));
     case 'full_house': return [nonFree];
     case 'x': return [combine(d1,d2)];
