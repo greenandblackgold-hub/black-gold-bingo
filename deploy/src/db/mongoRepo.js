@@ -24,6 +24,7 @@ export async function createMongoRepo({ uri, dbName }) {
   const payments = db.collection('payments');
   const withdrawals = db.collection('withdrawals');
   const rounds = db.collection('rounds');
+  const maintenance = db.collection('maintenance');
 
   async function tx(fn) {
     const session = client.startSession();
@@ -68,6 +69,23 @@ export async function createMongoRepo({ uri, dbName }) {
       ]);
       await games.updateOne({ _id: 'state' }, { $setOnInsert: { ...DEFAULT_GAME } }, { upsert: true });
     },
+    /** One-time fresh-start reset: preserve admin accounts, remove player accounts and their data. */
+    async resetPlayerAccountsOnce() {
+      const markerId = 'player-accounts-reset-2026-11';
+      if (await maintenance.findOne({ _id: markerId })) return { alreadyDone: true };
+      await users.deleteMany({ role: { $ne: 'admin' } });
+      await Promise.all([
+        cards.deleteMany({}),
+        ledger.deleteMany({}),
+        payments.deleteMany({}),
+        withdrawals.deleteMany({}),
+        rounds.deleteMany({}),
+      ]);
+      await games.updateOne({ _id: 'state' }, { $set: { ...DEFAULT_GAME } }, { upsert: true });
+      await maintenance.insertOne({ _id: markerId, completedAt: new Date(), preservedRole: 'admin' });
+      return { alreadyDone: false };
+    },
+
     async close() {
       await client.close();
     },
