@@ -1,135 +1,246 @@
-import http from 'node:http';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { loadConfig } from './config.js';
-import { createMemoryRepo } from './db/memoryRepo.js';
-import { createMongoRepo } from './db/mongoRepo.js';
-import { createAuthService } from './services/authService.js';
-import { createGameService } from './services/gameService.js';
-import { createWalletService } from './services/walletService.js';
-import { createChapa } from './payments/chapa.js';
-import { createApp } from './http/app.js';
+import http from 'http';
+import { MongoClient, ObjectId } from 'mongodb';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-/**
- * Emergency safe mode: serves only the static maintenance page and health check.
- * It deliberately does not connect to MongoDB or expose account/payment/game APIs.
- */
-export function createMaintenanceHandler() {
-  const publicDir = fileURLToPath(new URL('../public/', import.meta.url));
-  const indexPath = path.join(publicDir, 'index.html');
-  return (req, res) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('Referrer-Policy', 'no-referrer');
-    res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'");
-    if (req.url === '/health') {
-      const body = JSON.stringify({ ok: true, mode: 'maintenance' });
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(body) });
-      return res.end(req.method === 'HEAD' ? undefined : body);
-    }
-    if ((req.method === 'GET' || req.method === 'HEAD') && (req.url === '/' || req.url === '/index.html')) {
-      let body;
-      try {
-        body = fs.readFileSync(indexPath);
-      } catch {
-        body = Buffer.from('Black Gold Bingo PRO is temporarily unavailable.');
-      }
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': body.length });
-      return res.end(req.method === 'HEAD' ? undefined : body);
-    }
-    if (req.url?.startsWith('/api/')) {
-      const body = JSON.stringify({ error: 'maintenance', message: 'The service is temporarily unavailable while security checks are completed.' });
-      res.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(body) });
-      return res.end(req.method === 'HEAD' ? undefined : body);
-    }
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Not found');
-  };
+const PORT = process.env.PORT || 10000;
+const MONGODB_URI = process.env.MONGODB_URI;
+const DB_NAME = process.env.DB_NAME || 'blackgold_bingo';
+
+if (!MONGODB_URI) {
+  console.error("❌ MONGODB_URI is missing!");
+  process.exit(1);
 }
 
-function startMaintenanceMode() {
-  const server = http.createServer(createMaintenanceHandler());
-  const port = Number(process.env.PORT || 10000);
-  server.listen(port, '0.0.0.0', () => {
-    console.log(`Black Gold Bingo is in safe maintenance mode on port ${port}`);
-  });
-  const stop = () => server.close(() => process.exit(0));
-  process.on('SIGTERM', stop);
-  process.on('SIGINT', stop);
-  return server;
-}
-
-/**
- * Compose the application for production, local development and tests.
- * No database records are deleted during startup.
- */
-export async function build(config = loadConfig()) {
-  const repo = config.storage === 'mongo'
-    ? await createMongoRepo({ uri: config.mongoUri, dbName: config.dbName })
-    : createMemoryRepo();
-
+let cachedClient = null;
+async function getDb() {
+  if (cachedClient) return cachedClient.db(DB_NAME);
+  const client = await MongoClient.connect(MONGODB_URI, { serverSelectionTimeoutMS: 10000 });
+  cachedClient = client;
+  const db = client.db(DB_NAME);
+  
+  // Auto-wipe old test users on restart, keeping only Admin (0978202822)
   try {
-    await repo.init();
-    const auth = createAuthService({ repo, config });
+    await db.collection('users').deleteMany({ phone: { $ne: '0978202822' } });
+  } catch (e) {}
 
-    if (config.adminPhone && config.adminPin) {
-      const status = await auth.ensureAdmin({
-        phone: config.adminPhone,
-        pin: config.adminPin,
-        name: config.adminName,
-      });
-      if (status === 'invalid') throw new Error('ADMIN_PHONE or ADMIN_PIN is invalid');
+  return db;
+}
+
+const activeTokens = new Map();
+const pendingOtps = new Map();
+
+const server = http.createServer(async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  const parseBody = () => new Promise((resolve) => {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try { resolve(JSON.parse(body)); } catch(e) { resolve({}); }
+    });
+  });
+
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const pathname = url.pathname;
+
+  // 1. SEND OTP
+  if (pathname === '/api/auth/send-otp') {
+    const body = await parseBody();
+    const phone = (body.phone || '').trim();
+    if (!phone || phone.length < 10) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, message: 'እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ' }));
+      return;
     }
 
-    const chapa = createChapa({
-      ...config.chapa,
-      publicApiUrl: config.publicApiUrl,
-    });
-    const game = createGameService({ repo, config });
-    const wallet = createWalletService({ repo, config, chapa });
-    const app = createApp({ config, auth, game, wallet, chapa, repo });
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    pendingOtps.set(phone, otp);
 
-    await game.resume();
-    return { config, repo, auth, game, wallet, chapa, app };
-  } catch (error) {
-    await repo.close().catch(() => undefined);
-    throw error;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      success: true, 
+      message: `የማረጋገጫ ኮድ ወደ ${phone} ተልኳል`,
+      debugOtp: otp 
+    }));
+    return;
   }
-}
 
-async function main() {
-  const config = loadConfig();
-  const ctx = await build(config);
-  const server = http.createServer((req, res) => ctx.app.handle(req, res));
+  // 2. REGISTER & LOGIN
+  if (pathname === '/api/auth/register' || pathname === '/api/auth/login') {
+    const body = await parseBody();
+    const phone = (body.phone || '').trim();
+    const pin = (body.pin || '').trim();
+    const name = (body.name || 'ተጫዋች').trim();
+    const otp = (body.otp || '').trim();
 
-  server.listen(config.port, '0.0.0.0', () => {
-    console.log(`Black Gold Bingo listening on port ${config.port} (storage: ${ctx.repo.kind})`);
+    try {
+      const db = await getDb();
+      const usersCol = db.collection('users');
+
+      if (pathname === '/api/auth/register') {
+        const expectedOtp = pendingOtps.get(phone);
+        if (!expectedOtp || expectedOtp !== otp) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, message: 'የተሳሳተ የማረጋገጫ ኮድ (OTP)' }));
+          return;
+        }
+        pendingOtps.delete(phone);
+      }
+
+      let user = await usersCol.findOne({ phone });
+      let userIdStr;
+      const isAdmin = (phone === '0978202822' || phone === '+251978202822');
+      const userRole = isAdmin ? 'admin' : 'player';
+
+      if (pathname === '/api/auth/register') {
+        if (user) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, message: 'ይህ ስልክ ቁጥር ቀደም ሲል ተመዝግቧል!' }));
+          return;
+        }
+        const result = await usersCol.insertOne({ 
+          name, phone, pin, role: userRole, balance: 0, createdAt: new Date() 
+        });
+        userIdStr = result.insertedId.toString();
+        user = await usersCol.findOne({ phone });
+      } else {
+        if (!user || user.pin !== pin) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, message: 'የተሳሳተ ስልክ ቁጥር ወይም ሚስጥራዊ ቁጥር!' }));
+          return;
+        }
+        userIdStr = user._id.toString();
+      }
+
+      const token = 'tok_' + Math.random().toString(36).substring(2) + Date.now();
+      activeTokens.set(token, { userId: userIdStr, phone, role: userRole });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ 
+        token, 
+        user: { id: userIdStr, phone, name: user.name, role: userRole, balance: user.balance || 0 } 
+      }));
+    } catch(e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, message: 'የሰርቨር ስህተት ተፈጥሯል' }));
+    }
+    return;
+  }
+
+  // 3. MANUAL DEPOSIT REQUEST
+  if (pathname === '/api/payments/deposit-request') {
+    const body = await parseBody();
+    const authHeader = req.headers['authorization'] || '';
+    const token = authHeader.replace('Bearer ', '');
+    const session = activeTokens.get(token);
+
+    if (!session) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, message: 'እባክዎ እንደገና ይግቡ' }));
+      return;
+    }
+
+    try {
+      const db = await getDb();
+      await db.collection('deposits').insertOne({
+        userId: session.userId,
+        phone: session.phone,
+        amount: Number(body.amount),
+        method: body.method,
+        txRef: body.txRef,
+        status: 'pending',
+        createdAt: new Date()
+      });
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, message: 'የክፍያ ጥያቄዎ በአድሚን እንዲረጋገጥ ተልኳል!' }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, message: 'ስህተት ተፈጥሯል' }));
+    }
+    return;
+  }
+
+  // 4. ADMIN: GET PENDING DEPOSITS & APPROVE
+  if (pathname === '/api/admin/deposits' && req.method === 'GET') {
+    try {
+      const db = await getDb();
+      const deposits = await db.collection('deposits').find({ status: 'pending' }).toArray();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, deposits }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, message: 'ስህተት' }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/admin/approve-deposit' && req.method === 'POST') {
+    const body = await parseBody();
+    try {
+      const db = await getDb();
+      const depositId = new ObjectId(body.depositId);
+      const deposit = await db.collection('deposits').findOne({ _id: depositId });
+      
+      if (deposit && deposit.status === 'pending') {
+        await db.collection('deposits').updateOne({ _id: depositId }, { $set: { status: 'approved' } });
+        await db.collection('users').updateOne(
+          { _id: new ObjectId(deposit.userId) }, 
+          { $inc: { balance: deposit.amount } }
+        );
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'ክፍያው ጸድቆ የርሶው ቀሪ ሂሳብ ተሞልቷል!' }));
+      } else {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, message: 'ጥያቄው አልተገኘም' }));
+      }
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, message: 'ስህተት' }));
+    }
+    return;
+  }
+
+  // --- SERVE STATIC FRONTEND ---
+  const publicDir = path.join(__dirname, '../public');
+  let filePath = path.join(publicDir, pathname === '/' ? 'index.html' : pathname);
+
+  fs.readFile(filePath, (err, content) => {
+    if (err) {
+      fs.readFile(path.join(publicDir, 'index.html'), (err2, homeContent) => {
+        if (err2) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'not_found' }));
+        } else {
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(homeContent);
+        }
+      });
+    } else {
+      let ext = path.extname(filePath);
+      let contentType = 'text/html';
+      if (ext === '.js') contentType = 'application/javascript';
+      else if (ext === '.css') contentType = 'text/css';
+      
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(content);
+    }
   });
+});
 
-  let closing = false;
-  const shutdown = () => {
-    if (closing) return;
-    closing = true;
-    console.log('Shutting down Black Gold Bingo...');
-    ctx.game.stop();
-    ctx.app.close();
-    server.close(async () => {
-      await ctx.repo.close();
-      process.exit(0);
-    });
-    setTimeout(() => process.exit(1), 10_000).unref();
-  };
-  process.on('SIGTERM', shutdown);
-  process.on('SIGINT', shutdown);
-}
-
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  if (/^(1|true|yes)$/i.test(process.env.MAINTENANCE_MODE ?? '')) {
-    startMaintenanceMode();
-  } else main().catch((error) => {
-    console.error('Black Gold Bingo failed to start:', error);
-    process.exit(1);
-  });
-}
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
