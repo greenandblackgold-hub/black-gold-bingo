@@ -161,6 +161,40 @@ test('cards: buying, balance checks, round gating, server-issued grids', async (
   assert.equal((await api('GET', '/api/cards', { token: p.token })).json.length, 0, 'cards belong to the round they were bought for');
 });
 
+test('players can choose a unique five-digit card number', async () => {
+  await freshRound();
+  const first = await newPlayer('Custom Number One', 20);
+  const bought = await api('POST', '/api/cards/buy', { token: first.token, body: { count: 1, serial: '12345' } });
+  assert.equal(bought.status, 200, JSON.stringify(bought.json));
+  assert.equal(bought.json.cards[0].serial, '12345');
+
+  const second = await newPlayer('Custom Number Two', 20);
+  const duplicate = await api('POST', '/api/cards/buy', { token: second.token, body: { count: 1, serial: '12345' } });
+  assert.equal(duplicate.status, 409);
+  assert.equal(duplicate.json.error, 'card_number_taken');
+
+  const many = await api('POST', '/api/cards/buy', { token: second.token, body: { count: 2, serial: '23456' } });
+  assert.equal(many.status, 400);
+  assert.equal(many.json.error, 'invalid_card_number');
+});
+
+test('only the host can select a winning pattern, and only before a round starts', async () => {
+  await freshRound();
+  const player = await newPlayer('Pattern Player');
+  assert.equal((await api('POST', '/api/admin/pattern', { token: player.token, body: { pattern: 'diagonal' } })).status, 403);
+
+  const selected = await api('POST', '/api/admin/pattern', { token: ctx.adminToken, body: { pattern: 'two_horizontal_lines' } });
+  assert.equal(selected.status, 200);
+  assert.equal(selected.json.winPattern, 'two_horizontal_lines');
+  assert.equal((await api('POST', '/api/admin/pattern', { token: ctx.adminToken, body: { pattern: 'not-a-pattern' } })).status, 400);
+
+  await api('POST', '/api/admin/round/start', { token: ctx.adminToken });
+  assert.equal((await api('POST', '/api/admin/pattern', { token: ctx.adminToken, body: { pattern: 'diagonal' } })).status, 409);
+  await api('POST', '/api/admin/round/end', { token: ctx.adminToken });
+  await api('POST', '/api/admin/round/reset', { token: ctx.adminToken });
+  await api('POST', '/api/admin/pattern', { token: ctx.adminToken, body: { pattern: 'any_line' } });
+});
+
 test('a full round: server decides the winner, pays 80% of the pot once, and handles simultaneous claims', async () => {
   await freshRound();
   const a = await newPlayer('Alice', 100);
