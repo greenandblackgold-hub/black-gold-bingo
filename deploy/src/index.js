@@ -1,241 +1,70 @@
-import http from 'http';
-import { MongoClient, ObjectId } from 'mongodb';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import http from 'node:http';
+import { loadConfig } from './config.js';
+import { createMemoryRepo } from './db/memoryRepo.js';
+import { createMongoRepo } from './db/mongoRepo.js';
+import { createAuthService } from './services/authService.js';
+import { createGameService } from './services/gameService.js';
+import { createWalletService } from './services/walletService.js';
+import { createChapa } from './payments/chapa.js';
+import { createApp } from './http/app.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const PORT = process.env.PORT || 10000;
-const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.DB_NAME || 'blackgold_bingo';
-
-if (!MONGODB_URI) {
-  console.error("❌ MONGODB_URI is missing!");
-  process.exit(1);
+/** Select persistent MongoDB in production; memory storage is for tests/development only. */
+export async function createRepo(config) {
+  if (config.storage === 'mongo') {
+    if (!config.mongoUri) throw new Error('MONGODB_URI is required for MongoDB storage');
+    return createMongoRepo({ uri: config.mongoUri, dbName: config.dbName });
+  }
+  if (config.prod) throw new Error('Production cannot use in-memory storage');
+  return createMemoryRepo();
 }
 
-let cachedClient = null;
-async function getDb() {
-  if (cachedClient) return cachedClient.db(DB_NAME);
-  const client = await MongoClient.connect(MONGODB_URI, { serverSelectionTimeoutMS: 10000 });
-  cachedClient = client;
-  const db = client.db(DB_NAME);
-  
+/** Compose the production API and its services. Also used by the integration tests. */
+export async function build(config = loadConfig()) {
+  const repo = await createRepo(config);
   try {
-    await db.collection('users').deleteMany({ phone: { $ne: '0978202822' } });
-  } catch (e) {}
+    await repo.init();
+    const auth = createAuthService({ repo, config });
+    const game = createGameService({ repo, config });
+    const chapa = createChapa({ ...config.chapa, publicApiUrl: config.publicApiUrl });
+    const wallet = createWalletService({ repo, config, chapa });
 
-  return db;
-}
-
-const activeTokens = new Map();
-const pendingOtps = new Map();
-
-let runningServer = null;
-
-export function build(options = {}) {
-  const srv = http.createServer(async (req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204);
-      res.end();
-      return;
-    }
-
-    const parseBody = () => new Promise((resolve) => {
-      let body = '';
-      req.on('data', chunk => body += chunk);
-      req.on('end', () => {
-        try { resolve(JSON.parse(body)); } catch(e) { resolve({}); }
-      });
-    });
-
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const pathname = url.pathname;
-
-    // Support for test hooks & options
-    if (options.publicApiUrl) {
-      req.publicApiUrl = options.publicApiUrl;
-    }
-
-    if (pathname === '/api/auth/send-otp') {
-      const body = await parseBody();
-      const phone = (body.phone || '').trim();
-      const otp = '1234';
-      pendingOtps.set(phone, otp);
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, message: 'የማረጋገጫ ኮድ ተልኳል', debugOtp: otp }));
-      return;
-    }
-
-    if (pathname === '/api/auth/register' || pathname === '/api/auth/login') {
-      const body = await parseBody();
-      const phone = (body.phone || '').trim();
-      const pin = (body.pin || '').trim();
-      const name = (body.name || 'ተጫዋች').trim();
-      const otp = (body.otp || '').trim();
-
-      try {
-        const db = await getDb();
-        const usersCol = db.collection('users');
-
-        if (pathname === '/api/auth/register') {
-          const expectedOtp = pendingOtps.get(phone) || '1234';
-          if (otp && expectedOtp !== otp) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, message: 'የተሳሳተ የማረጋገጫ ኮድ' }));
-            return;
-          }
-        }
-
-        let user = await usersCol.findOne({ phone });
-        let userIdStr;
-        const isAdmin = (phone === '0978202822' || phone === '+251978202822');
-        const userRole = isAdmin ? 'admin' : 'player';
-
-        if (pathname === '/api/auth/register') {
-          if (user) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, message: 'ይህ ስልክ ቁጥር ተመዝግቧል!' }));
-            return;
-          }
-          const result = await usersCol.insertOne({ name, phone, pin, role: userRole, balance: 0, createdAt: new Date() });
-          userIdStr = result.insertedId.toString();
-          user = await usersCol.findOne({ phone });
-        } else {
-          if (!user || user.pin !== pin) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, message: 'የተሳሳተ ስልክ ቁጥር ወይም PIN!' }));
-            return;
-          }
-          userIdStr = user._id.toString();
-        }
-
-        const token = 'tok_' + Math.random().toString(36).substring(2) + Date.now();
-        activeTokens.set(token, { userId: userIdStr, phone, role: userRole });
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ token, user: { id: userIdStr, phone, name: user.name, role: userRole, balance: user.balance || 0 } }));
-      } catch(e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, message: 'ሰርቨር ስህተት' }));
+    // Bootstrap the one owner account from private Render environment variables.
+    // Never promote an existing player account; ensureAdmin deliberately fails closed.
+    if (config.adminPhone || config.adminPin) {
+      if (!config.adminPhone || !/^\\d{6}$/.test(config.adminPin)) {
+        throw new Error('ADMIN_PHONE and a six-digit ADMIN_PIN must both be configured');
       }
-      return;
+      await auth.ensureAdmin({ phone: config.adminPhone, pin: config.adminPin, name: config.adminName });
     }
 
-    if (pathname === '/api/payments/deposit-request') {
-      const body = await parseBody();
-      const authHeader = req.headers['authorization'] || '';
-      const token = authHeader.replace('Bearer ', '');
-      const session = activeTokens.get(token);
+    await game.resume();
+    const app = createApp({ config, auth, game, wallet, chapa, repo });
+    return { config, repo, auth, game, wallet, chapa, app };
+  } catch (error) {
+    gameStopIfCreated();
+    await repo.close().catch(() => undefined);
+    throw error;
+  }
 
-      if (!session) {
-        res.writeHead(401, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, message: 'እባክዎ ይግቡ' }));
-        return;
-      }
-
-      try {
-        const db = await getDb();
-        await db.collection('deposits').insertOne({
-          userId: session.userId,
-          phone: session.phone,
-          amount: Number(body.amount),
-          method: body.method,
-          txRef: body.txRef,
-          status: 'pending',
-          createdAt: new Date()
-        });
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, message: 'የክፍያ ጥያቄዎ ተልኳል!' }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, message: 'ስህተት' }));
-      }
-      return;
-    }
-
-    if (pathname === '/api/admin/deposits' && req.method === 'GET') {
-      try {
-        const db = await getDb();
-        const deposits = await db.collection('deposits').find({ status: 'pending' }).toArray();
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, deposits }));
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, message: 'ስህተት' }));
-      }
-      return;
-    }
-
-    if (pathname === '/api/admin/approve-deposit' && req.method === 'POST') {
-      const body = await parseBody();
-      try {
-        const db = await getDb();
-        const depositId = new ObjectId(body.depositId);
-        const deposit = await db.collection('deposits').findOne({ _id: depositId });
-        
-        if (deposit && deposit.status === 'pending') {
-          await db.collection('deposits').updateOne({ _id: depositId }, { $set: { status: 'approved' } });
-          await db.collection('users').updateOne(
-            { _id: new ObjectId(deposit.userId) }, 
-            { $inc: { balance: deposit.amount } }
-          );
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, message: 'ክፍያው ጸድቋል!' }));
-        } else {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, message: 'አልተገኘም' }));
-        }
-      } catch (e) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, message: 'ስህተት' }));
-      }
-      return;
-    }
-
-    const publicDir = path.join(__dirname, '../public');
-    let filePath = path.join(publicDir, pathname === '/' ? 'index.html' : pathname);
-
-    fs.readFile(filePath, (err, content) => {
-      if (err) {
-        fs.readFile(path.join(publicDir, 'index.html'), (err2, homeContent) => {
-          if (err2) {
-            res.writeHead(404, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'not_found' }));
-          } else {
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(homeContent);
-          }
-        });
-      } else {
-        let ext = path.extname(filePath);
-        let contentType = 'text/html';
-        if (ext === '.js') contentType = 'application/javascript';
-        else if (ext === '.css') contentType = 'text/css';
-        
-        res.writeHead(200, { 'Content-Type': contentType });
-        res.end(content);
-      }
-    });
-  });
-
-  return {
-    server: srv,
-    listen: (...args) => srv.listen(...args),
-    stop: () => new Promise(resolve => srv.close(resolve))
-  };
+  function gameStopIfCreated() {
+    // The game service is created before bootstrapping the owner; no timer is started until resume().
+  }
 }
 
 if (process.env.NODE_ENV !== 'test') {
-  runningServer = build();
-  runningServer.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  const config = loadConfig();
+  const ctx = await build(config);
+  const server = http.createServer((req, res) => ctx.app.handle(req, res));
+  server.listen(config.port, () => {
+    console.log(`Black Gold Bingo PRO listening on port ${config.port}`);
   });
+
+  const shutdown = async () => {
+    server.close();
+    ctx.game.stop();
+    ctx.app.close();
+    await ctx.repo.close();
+  };
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
 }
