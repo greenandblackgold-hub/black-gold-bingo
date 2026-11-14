@@ -126,7 +126,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
 
   /* cards */
   route('GET', '/api/cards', 'user', 'default', ({ user }) => game.myCards(user));
-  route('POST', '/api/cards/buy', 'user', 'default', async ({ user, body }) => game.buyCards(user, body.count));
+  route('POST', '/api/cards/buy', 'user', 'default', async ({ user, body }) => game.buyCards(user, body.count, body.serial));
   route('POST', '/api/claim', 'user', 'default', ({ user, body }) => game.claim(user, body.cardId));
   route('POST', '/api/verify', 'user', 'default', ({ user, body }) => game.verify(user, body.cardId));
 
@@ -179,6 +179,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   admin('POST', '/api/admin/round/reset', async () => (await game.resetRound(), game.getPublicState()));
   admin('POST', '/api/admin/draw', async () => (await game.draw(), game.getPublicState()));
   admin('POST', '/api/admin/auto', async ({ body }) => (await game.setAuto(body.on === true, body.intervalSec), game.getPublicState()));
+  admin('POST', '/api/admin/pattern', async ({ body }) => (await game.setWinPattern(body.pattern), game.getPublicState()));
   admin('GET', '/api/admin/withdrawals', async ({ query }) =>
     (await wallet.listWithdrawals({ status: query.get('status') || undefined })).map((w) => ({
       id: w.id, userId: w.userId, amount: w.amount / 100, status: w.status, accountName: w.accountName,
