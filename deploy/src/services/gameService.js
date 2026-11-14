@@ -150,7 +150,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       }
       const g = await repo.getGame();
       if (g.phase !== 'waiting') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
-      if (requestedSerial !== undefined && requestedSerial !== null && (n !== 1 || !/^\\d{5}$/.test(String(requestedSerial)))) {
+      if (requestedSerial !== undefined && requestedSerial !== null && (n !== 1 || !/^\d{5}$/.test(String(requestedSerial)))) {
         throw new HttpError(400, 'invalid_card_number', 'Enter one unique five-digit card number and buy one card at a time');
       }
       const owned = await repo.countCards(user.id, g.roundNumber);
