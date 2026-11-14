@@ -31,7 +31,7 @@ export async function build(config = loadConfig()) {
     // Bootstrap the one owner account from private Render environment variables.
     // Never promote an existing player account; ensureAdmin deliberately fails closed.
     if (config.adminPhone || config.adminPin) {
-      if (!config.adminPhone || !/^\\d{6}$/.test(config.adminPin)) {
+      if (!config.adminPhone || !/^\d{6}$/.test(config.adminPin)) {
         throw new Error('ADMIN_PHONE and a six-digit ADMIN_PIN must both be configured');
       }
       await auth.ensureAdmin({ phone: config.adminPhone, pin: config.adminPin, name: config.adminName });
