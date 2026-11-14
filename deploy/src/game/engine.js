@@ -45,7 +45,15 @@ const d2 = Array.from({length:5},(_,i)=>pos(i,4-i));
 const corners = [pos(0,0),pos(0,4),pos(4,0),pos(4,4)];
 const frame = Array.from({length:25},(_,i)=>pos(Math.floor(i/5),i%5)).filter(([r,c])=>r===0||r===4||c===0||c===4);
 const combine = (...groups) => groups.flat().filter(([r,c],i,a)=>a.findIndex(([x,y])=>x===r&&y===c)===i);
-const combos = (arr,n) => arr.flatMap((v,i)=>i+n<=arr.length? [arr.slice(i,i+n)]:[]);
+const combos = (arr,n) => {
+  const out = [];
+  const choose = (start, picked) => {
+    if (picked.length === n) { out.push(picked); return; }
+    for (let i = start; i <= arr.length - (n - picked.length); i++) choose(i + 1, [...picked, arr[i]]);
+  };
+  choose(0, []);
+  return out;
+};
 const allLines = [...rows,...cols,d1,d2];
 const rectangles = [];
 for(let r=0;r<4;r++) for(let c=0;c<4;c++) rectangles.push([pos(r,c),pos(r,c+1),pos(r+1,c),pos(r+1,c+1)]);
