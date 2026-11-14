@@ -1,4 +1,6 @@
 import http from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { loadConfig } from './config.js';
 import { createMemoryRepo } from './db/memoryRepo.js';
 import { createMongoRepo } from './db/mongoRepo.js';
@@ -51,7 +53,8 @@ export async function build(config = loadConfig()) {
   }
 }
 
-if (process.env.NODE_ENV !== 'test') {
+const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMainModule) {
   const config = loadConfig();
   const ctx = await build(config);
   const server = http.createServer((req, res) => ctx.app.handle(req, res));
