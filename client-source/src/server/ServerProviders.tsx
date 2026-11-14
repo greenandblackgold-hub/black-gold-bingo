@@ -92,7 +92,7 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
         await Promise.all([reloadCards(), reloadLedger(), refresh()]);
         return { ok: true };
       } catch (e) {
-        return { ok: false, error: e instanceof ApiError && e.status !== 402 ? e.message : undefined };
+        return { ok: false, error: e instanceof ApiError && e.code === 'card_number_taken' ? 'ይህ ቁጥር ቀድሞ ተይዟል። ሌላ ቁጥር ይምረጡ።' : e instanceof ApiError && e.status !== 402 ? e.message : undefined };
       }
     },
     [reloadCards, reloadLedger, refresh],
