@@ -33,6 +33,7 @@ export function loadConfig(env = process.env) {
     adminPhone: env.ADMIN_PHONE ?? '',
     adminPin: env.ADMIN_PIN ?? '',
     adminName: env.ADMIN_NAME ?? 'Owner',
+    resetPlayerAccountsOnce: bool(env.RESET_PLAYER_ACCOUNTS_ONCE, false),
     roomId: env.ROOM_ID ?? 'BINGO-99',
     cardPrice: santim(num(env.CARD_PRICE_ETB, 10)),
     prizePercent: num(env.PRIZE_PERCENT, 80),
