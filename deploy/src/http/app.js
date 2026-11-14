@@ -144,7 +144,12 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
     const fresh = await repo.findUserById(user.id);
     return { status: r.status, balance: fresh.balance / 100 };
   });
-  route('GET', '/api/banks', 'user', 'default', () => chapa.banks());
+  // Do not call Chapa for bank metadata until real-money activity is explicitly approved.
+  // This keeps the wallet UI usable without generating provider 401/500 errors while payments are locked.
+  route('GET', '/api/banks', 'user', 'default', () => {
+    if (config.prod && (!config.realMoneyEnabled || !config.lotteryLicenseApproved || !config.chapaMerchantApproved)) return [];
+    return chapa.banks();
+  });
   route('GET', '/api/withdrawals', 'user', 'default', async ({ user }) =>
     (await wallet.myWithdrawals(user)).map((w) => ({ id: w.id, amount: w.amount / 100, status: w.status, at: new Date(w.createdAt).getTime() })),
   );
