@@ -21,7 +21,7 @@ export function createGameService({ repo, config, now = Date.now }) {
     nextCallAt: g.nextCallAt,
     winner: g.winner ? { cardId: g.winner.cardCode, serial: g.winner.serial, at: g.winner.at } : null,
     roomId: config.roomId,
-    cardPrice: config.cardPrice / 100,
+    cardPrice: config.realMoneyEnabled ? config.cardPrice / 100 : 0,
     serverTime: now(),
   });
 
@@ -138,7 +138,6 @@ export function createGameService({ repo, config, now = Date.now }) {
     /* ───────────── players ───────────── */
 
     async buyCards(user, count) {
-      if (!config.realMoneyEnabled) throw new HttpError(503, 'real_money_disabled', 'Paid card purchases are not enabled yet.');
       const n = Number(count);
       if (!Number.isInteger(n) || n < 1 || n > config.maxCardsPerPurchase) {
         throw new HttpError(400, 'invalid_count', `Buy 1 to ${config.maxCardsPerPurchase} cards`);
@@ -154,7 +153,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       try {
         const res = await repo.purchaseCards({
           userId: user.id,
-          cost: n * config.cardPrice,
+          cost: config.realMoneyEnabled ? n * config.cardPrice : 0,
           cards,
           round: g.roundNumber,
           ref: `buy:${g.roundNumber}:${user.id}:${randomToken(6)}`,
