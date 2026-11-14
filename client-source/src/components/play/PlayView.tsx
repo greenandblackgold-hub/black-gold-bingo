@@ -182,6 +182,16 @@ function Ball({ n, size = 'lg' }: BallProps) {
   );
 }
 
+type CardViewProps = {
+  card: BingoCard;
+  marks: Set<number>;
+  called: Set<number>;
+  active: boolean;
+  t: (key: StringKey) => string;
+  onToggle: (n: number) => void;
+  pattern: WinPattern;
+};
+
 function CardView({ card, marks, called, active, t, onToggle, pattern }: CardViewProps) {
   const { toGo, winningLine } = useMemo(() => analyze(card.grid, marks, called, pattern), [card.grid, marks, called, pattern]);
   const winSet = useMemo(() => new Set((winningLine ?? []).map(([r, c]) => `${r}-${c}`)), [winningLine]);
@@ -512,6 +522,29 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
       )}
 
       {confetti && <Confetti onDone={() => setConfetti(false)} />}
+    </div>
+  );
+}
+
+function Confetti({ onDone }: { onDone: () => void }) {
+  useEffect(() => {
+    const timer = window.setTimeout(onDone, 2400);
+    return () => window.clearTimeout(timer);
+  }, [onDone]);
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden" aria-hidden="true">
+      {Array.from({ length: 32 }, (_, i) => (
+        <span
+          key={i}
+          className="absolute top-0 h-3 w-2 rounded-sm bg-gold-400 animate-[bgConfetti_2s_ease-out_forwards]"
+          style={{
+            left: `${(i * 37) % 100}%`,
+            animationDelay: `${(i % 8) * 0.08}s`,
+            ['--rot' as string]: `${i % 2 ? 360 : -360}deg`,
+          } as React.CSSProperties}
+        />
+      ))}
     </div>
   );
 }
