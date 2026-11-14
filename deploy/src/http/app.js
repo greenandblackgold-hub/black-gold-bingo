@@ -126,8 +126,8 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
 
   /* cards */
   route('GET', '/api/cards', 'user', 'default', ({ user }) => game.myCards(user));
-  route('POST', '/api/cards/buy', 'user', 'money', async ({ user, body }) => { requireRealMoney(); return game.buyCards(user, body.count); });
-  route('POST', '/api/claim', 'user', 'money', ({ user, body }) => { requireRealMoney(); return game.claim(user, body.cardId); });
+  route('POST', '/api/cards/buy', 'user', 'default', async ({ user, body }) => game.buyCards(user, body.count));
+  route('POST', '/api/claim', 'user', 'default', ({ user, body }) => game.claim(user, body.cardId));
   route('POST', '/api/verify', 'user', 'default', ({ user, body }) => game.verify(user, body.cardId));
 
   /* wallet */
