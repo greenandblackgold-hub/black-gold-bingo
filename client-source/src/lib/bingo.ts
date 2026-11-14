@@ -70,6 +70,48 @@ export function findWinningLine(grid: (number | null)[][], called: Set<number>):
   return null;
 }
 
+
+export type WinPattern = 'any_line'|'horizontal_line'|'vertical_line'|'diagonal'|'two_lines'|'two_horizontal_lines'|'four_corners'|'rectangle'|'two_rectangles'|'half_house'|'full_house'|'x'|'t'|'l'|'plus'|'diamond'|'picture_frame'|'six_pack'|'postage_stamp';
+const p=(r:number,c:number):Pos=>[r,c];
+const ROWS=Array.from({length:5},(_,r)=>Array.from({length:5},(_,c)=>p(r,c)));
+const COLS=Array.from({length:5},(_,c)=>Array.from({length:5},(_,r)=>p(r,c)));
+const D1=Array.from({length:5},(_,i)=>p(i,i)), D2=Array.from({length:5},(_,i)=>p(i,4-i));
+const ALL_LINES=[...ROWS,...COLS,D1,D2];
+const unique=(groups:Pos[][]):Pos[]=>groups.flat().filter(([r,c],i,a)=>a.findIndex(([x,y])=>x===r&&y===c)===i);
+const combinations=(items:Pos[][],n:number):Pos[][][]=>items.flatMap((_,i)=>i+n<=items.length?[items.slice(i,i+n)]:[]);
+const BLOCKS:Pos[][]=[];
+for(let r=0;r<4;r++)for(let c=0;c<4;c++)BLOCKS.push([p(r,c),p(r,c+1),p(r+1,c),p(r+1,c+1)]);
+const SIX:Pos[][]=[];
+for(let r=0;r<4;r++)for(let c=0;c<4;c++)SIX.push(Array.from({length:2},(_,dr)=>Array.from({length:3},(_,dc)=>p(r+dr,c+dc))).flat());
+for(let r=0;r<4;r++)for(let c=0;c<5;c++)SIX.push(Array.from({length:3},(_,dr)=>Array.from({length:2},(_,dc)=>p(r+dr,c+dc))).flat());
+const NON_FREE=Array.from({length:25},(_,i)=>p(Math.floor(i/5),i%5)).filter(([r,c])=>r!==2||c!==2);
+export function patternMasks(pattern:WinPattern='any_line'):Pos[][] {
+ switch(pattern){
+  case 'horizontal_line':return ROWS;
+  case 'vertical_line':return COLS;
+  case 'diagonal':return [D1,D2];
+  case 'two_lines':return combinations(ALL_LINES,2).map(unique);
+  case 'two_horizontal_lines':return combinations(ROWS,2).map(unique);
+  case 'four_corners':return [[p(0,0),p(0,4),p(4,0),p(4,4)]];
+  case 'rectangle':case 'postage_stamp':return BLOCKS;
+  case 'two_rectangles':return combinations(BLOCKS,2).map(unique);
+  case 'full_house':return [NON_FREE];
+  case 'x':return [unique([D1,D2])];
+  case 't':return [unique([ROWS[0],COLS[2]])];
+  case 'l':return [unique([COLS[0],ROWS[4]])];
+  case 'plus':return [unique([ROWS[2],COLS[2]])];
+  case 'diamond':return [[p(0,2),p(1,1),p(1,3),p(2,0),p(2,4),p(3,1),p(3,3),p(4,2)]];
+  case 'picture_frame':return [Array.from({length:25},(_,i)=>p(Math.floor(i/5),i%5)).filter(([r,c])=>r===0||r===4||c===0||c===4)];
+  case 'six_pack':return SIX;
+  default:return ALL_LINES;
+ }
+}
+export function findWinningPattern(grid:(number|null)[][],called:Set<number>,pattern:WinPattern='any_line'):{positions:Pos[];missing:number}{
+ if(pattern==='half_house'){const marked=NON_FREE.filter(([r,c])=>called.has(grid[r][c] as number));return {positions:marked,missing:Math.max(0,12-marked.length)};}
+ let best:Pos[]=[];let min=Infinity;
+ for(const mask of patternMasks(pattern)){const missing=mask.filter(([r,c])=>grid[r][c]!==null&&!called.has(grid[r][c] as number)).length;if(missing<min){min=missing;best=mask;}if(missing===0)return {positions:mask,missing:0};}
+ return {positions:best,missing:min};
+}
 /** Structural check for a grid received from another device (never trust it blindly). */
 export function isValidGrid(grid: unknown): grid is (number | null)[][] {
   if (!Array.isArray(grid) || grid.length !== 5) return false;
