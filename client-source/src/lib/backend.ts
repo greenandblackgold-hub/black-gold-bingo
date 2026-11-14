@@ -44,6 +44,7 @@ interface ClaudeRuntime {
 
 export const DEFAULT_GAME: SharedGame = {
   phase: 'waiting',
+  winPattern: 'any_line',
   roundNumber: 1,
   calledNumbers: [],
   autoCall: false,
