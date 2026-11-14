@@ -18,7 +18,7 @@ export function createAuthService({ repo, config }) {
   const issue = (user) => ({ token: signJwt({ sub: user.id, role: user.role }, config.jwtSecret, TOKEN_TTL), user: publicUser(user) });
 
   return {
-    async register({ phone, name, pin }) {
+    async register({ phone, name, pin, pinConfirm }) {
       if (!config.registrationEnabled) throw new HttpError(503, 'registration_disabled', 'New registrations are temporarily disabled until phone verification is ready.');
       const p = normalizePhone(phone);
       if (!p) throw new HttpError(400, 'invalid_phone', 'Enter a valid Ethiopian mobile number');
