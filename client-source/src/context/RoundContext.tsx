@@ -178,7 +178,7 @@ export function RoundProvider({ children }: { children: ReactNode }) {
         return { ...c, gridValid, wins, originVerified };
       })
       .sort((a, b) => a.at - b.at);
-  }, [canHost, rawClaims, game.roundNumber, game.calledNumbers]);
+  }, [canHost, rawClaims, game.roundNumber, game.calledNumbers, game.winPattern]);
 
   const acceptClaim = useCallback(
     async (claimId: string): Promise<boolean> => {
