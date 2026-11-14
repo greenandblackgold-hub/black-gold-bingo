@@ -11,7 +11,7 @@ import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { play } from '@/lib/audio';
 import { findWinningPattern } from '@/lib/bingo';
-import type { BingoCard, Lang, Pos } from '@/types/game';
+import type { BingoCard, Lang, Pos, WinPattern } from '@/types/game';
 
 /* ───────────────────────────── CONTEXT WIRING ───────────────────────────── */
 
@@ -105,6 +105,14 @@ const STRINGS = {
 } as const;
 
 type StringKey = keyof (typeof STRINGS)['en'];
+const PATTERN_NAMES: Record<WinPattern, string> = {
+  any_line: 'አንድ መስመር', horizontal_line: 'ሆሪዞንታል መስመር', vertical_line: 'ቨርቲካል መስመር',
+  diagonal: 'ዲያጎናል', two_lines: 'ሁለት መስመሮች', two_horizontal_lines: 'ሁለት ሆሪዞንታል መስመሮች',
+  four_corners: 'አራቱ ማዕዘኖች', rectangle: '2×2 ሬክታንግል', two_rectangles: 'ሁለት ሬክታንግሎች',
+  half_house: 'ግማሽ ቤት', full_house: 'ፉል ሃውስ', x: 'X ቅርጽ', t: 'T ቅርጽ', l: 'L ቅርጽ',
+  plus: 'ፕላስ (+)', diamond: 'ዳይመንድ', picture_frame: 'ውጫዊ ፍሬም', six_pack: 'Six-pack', postage_stamp: 'ፖስታጅ ስታምፕ',
+};
+
 
 /* ───────────────────────────── GAME LOGIC ───────────────────────────── */
 
@@ -567,6 +575,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           <p className="text-sm text-gold-300" aria-live="polite">
             {t('called')} · {t('round')} {roundNumber}
           </p>
+          <p className="text-xs font-semibold text-gold-500">የዚህ ዙር አሸናፊነት: {PATTERN_NAMES[winPattern]}</p>
         </div>
 
         <div className="w-full max-w-xs">
