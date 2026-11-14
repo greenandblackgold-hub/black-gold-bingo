@@ -70,6 +70,7 @@ export function createMemoryRepo() {
     /* cards */
     async purchaseCards({ userId, cost, cards: newCards, round, ref }) {
       if (game.phase !== 'waiting' || game.roundNumber !== round) throw new RepoError('ROUND_NOT_OPEN');
+      if (newCards.some((c) => typeof c.serial === 'string' && [...cards.values()].some((old) => old.round === round && old.serial === c.serial))) throw new RepoError('CARD_NUMBER_TAKEN');
       const r = credit(userId, -cost, 'card_purchase', ref, { round, count: newCards.length });
       for (const c of newCards) cards.set(c.code, { ...clone(c), userId, round, createdAt: new Date() });
       game = { ...game, pot: game.pot + cost, version: game.version + 1 };

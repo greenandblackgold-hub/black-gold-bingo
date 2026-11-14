@@ -59,6 +59,7 @@ export async function createMongoRepo({ uri, dbName }) {
       await Promise.all([
         users.createIndex({ phone: 1 }, { unique: true }),
         cards.createIndex({ code: 1 }, { unique: true }),
+        cards.createIndex({ round: 1, serial: 1 }, { unique: true, partialFilterExpression: { serial: { $type: 'string' } } }),
         cards.createIndex({ userId: 1, round: 1 }),
         ledger.createIndex({ ref: 1 }, { unique: true }),
         ledger.createIndex({ userId: 1, createdAt: -1 }),
@@ -149,10 +150,12 @@ export async function createMongoRepo({ uri, dbName }) {
         );
         if (!g) throw new RepoError('ROUND_NOT_OPEN');
         await moveMoney(session, { userId, amount: -cost, kind: 'card_purchase', ref, meta: { round, count: newCards.length } });
-        await cards.insertMany(
-          newCards.map((c) => ({ ...c, userId, round, createdAt: new Date() })),
-          { session },
-        );
+        try {
+          await cards.insertMany(newCards.map((c) => ({ ...c, userId, round, createdAt: new Date() })), { session });
+        } catch (e) {
+          if (isDuplicate(e)) throw new RepoError('CARD_NUMBER_TAKEN');
+          throw e;
+        }
         const { _id, ...game } = g;
         const user = await users.findOne({ _id: userId }, { session, projection: { balance: 1 } });
         return { balance: user.balance, game };

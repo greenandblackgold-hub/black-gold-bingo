@@ -96,14 +96,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const buyCards = useCallback(
-    async (count: number) => {
+    async (count: number, requestedSerial?: string) => {
       const s = stateRef.current;
       const total = count * cardPrice;
+      if (requestedSerial && (count !== 1 || !/^\d{5}$/.test(requestedSerial) || s.cards.some((c) => String(c.serial) === requestedSerial))) return { ok: false, error: 'ይህ የካርድ ቁጥር ተይዟል ወይም ልክ አይደለም።' };
       if (!Number.isInteger(count) || count < 1 || total > s.balance) return { ok: false };
 
       const bought: BingoCard[] = Array.from({ length: count }, (_, i) => ({
         id: newCardId(),
-        serial: s.nextSerial + i,
+        serial: requestedSerial || s.nextSerial + i,
         grid: generateGrid(),
       }));
       bought.forEach(registerCard);

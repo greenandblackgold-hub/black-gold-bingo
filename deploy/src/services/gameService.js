@@ -1,7 +1,7 @@
 import { randomToken, randomInt, hmacHex, safeEqual } from '../util/crypto.js';
 import { HttpError, RepoError } from '../util/errors.js';
 import { log } from '../util/log.js';
-import { ALL_NUMBERS, findWinningLine, generateGrid, isValidGrid, newCardCode } from '../game/engine.js';
+import { ALL_NUMBERS, findWinningPattern, generateGrid, isValidGrid, isWinPattern, newCardCode } from '../game/engine.js';
 
 const clampSec = (n) => Math.min(60, Math.max(1, Math.round(Number(n) || 5)));
 
@@ -14,6 +14,7 @@ export function createGameService({ repo, config, now = Date.now }) {
   /** What every connected browser may see. Never includes anyone's card grid or user id. */
   const publicState = (g) => ({
     phase: g.phase,
+    winPattern: g.winPattern ?? 'any_line',
     roundNumber: g.roundNumber,
     calledNumbers: g.calledNumbers,
     autoCall: g.autoCall,
@@ -96,6 +97,11 @@ export function createGameService({ repo, config, now = Date.now }) {
 
     endRound: () => mutate('running', () => ({ phase: 'ended', autoCall: false, nextCallAt: null })),
 
+    setWinPattern(pattern) {
+      if (!isWinPattern(pattern)) throw new HttpError(400, 'invalid_pattern', 'Choose a supported bingo pattern');
+      return mutate('waiting', () => ({ winPattern: pattern }));
+    },
+
     async resetRound() {
       const before = await repo.getGame();
       if (before.phase !== 'ended') throw new HttpError(409, 'wrong_phase', `Round is ${before.phase}`);
@@ -103,6 +109,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         round: before.roundNumber,
         calledNumbers: before.calledNumbers,
         winner: before.winner,
+        winPattern: before.winPattern ?? 'any_line',
         pot: before.pot,
         endedAt: new Date(),
       });
@@ -137,18 +144,21 @@ export function createGameService({ repo, config, now = Date.now }) {
 
     /* ───────────── players ───────────── */
 
-    async buyCards(user, count) {
+    async buyCards(user, count, requestedSerial) {
       const n = Number(count);
       if (!Number.isInteger(n) || n < 1 || n > config.maxCardsPerPurchase) {
         throw new HttpError(400, 'invalid_count', `Buy 1 to ${config.maxCardsPerPurchase} cards`);
       }
       const g = await repo.getGame();
       if (g.phase !== 'waiting') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
+      if (requestedSerial !== undefined && requestedSerial !== null && (n !== 1 || !/^\d{5}$/.test(String(requestedSerial)))) {
+        throw new HttpError(400, 'invalid_card_number', 'Enter one unique five-digit card number and buy one card at a time');
+      }
       const owned = await repo.countCards(user.id, g.roundNumber);
       const cards = Array.from({ length: n }, (_, i) => {
         const code = newCardCode();
         const grid = generateGrid();
-        return { code, serial: owned + i + 1, grid, sig: signCard(code, g.roundNumber, grid) };
+        return { code, serial: requestedSerial !== undefined && requestedSerial !== null ? String(requestedSerial) : owned + i + 1, grid, sig: signCard(code, g.roundNumber, grid) };
       });
       try {
         const res = await repo.purchaseCards({
@@ -163,6 +173,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       } catch (e) {
         if (e instanceof RepoError && e.code === 'INSUFFICIENT_FUNDS') throw new HttpError(402, 'insufficient_funds', 'Not enough balance');
         if (e instanceof RepoError && e.code === 'ROUND_NOT_OPEN') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
+        if (e instanceof RepoError && e.code === 'CARD_NUMBER_TAKEN') throw new HttpError(409, 'card_number_taken', 'That card number is already taken. Choose another number.');
         throw e;
       }
     },
@@ -186,7 +197,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       if (!safeEqual(card.sig, signCard(card.code, card.round, card.grid)) || !isValidGrid(card.grid)) {
         throw new HttpError(409, 'card_invalid', 'Card failed the integrity check');
       }
-      if (!findWinningLine(card.grid, new Set(g.calledNumbers))) return { ok: false, reason: 'no_line' };
+      if (findWinningPattern(card.grid, new Set(g.calledNumbers), g.winPattern ?? 'any_line').missing !== 0) return { ok: false, reason: 'pattern_incomplete' };
 
       const prize = Math.floor((g.pot * config.prizePercent) / 100);
       const settled = await repo.settleWin({ round: g.roundNumber, card, prize, ref: `prize:${g.roundNumber}` });
@@ -206,6 +217,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       const g = await repo.getGame();
       let called;
       let isWinner;
+      let pattern = g.winPattern ?? 'any_line';
       if (card.round === g.roundNumber) {
         called = new Set(g.calledNumbers);
         isWinner = g.winner?.cardCode === code;
@@ -213,8 +225,10 @@ export function createGameService({ repo, config, now = Date.now }) {
         const archived = await repo.getArchivedRound(card.round);
         called = new Set(archived?.calledNumbers ?? []);
         isWinner = archived?.winner?.cardCode === code;
+        pattern = archived?.winPattern ?? 'any_line';
       }
-      const line = findWinningLine(card.grid, called);
+      const win = findWinningPattern(card.grid, called, pattern);
+      const line = win.missing === 0 ? win.positions : null;
       const mayView = user.role === 'admin' || card.userId === user.id;
       return {
         status: 'valid',

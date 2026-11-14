@@ -1,5 +1,6 @@
 export const DEFAULT_GAME = {
   phase: 'waiting', // waiting | running | ended
+  winPattern: 'any_line',
   roundNumber: 1,
   calledNumbers: [],
   autoCall: false,

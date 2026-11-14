@@ -378,11 +378,12 @@ function PurchasePanel({
   t: (k: StringKey) => string;
   price: number;
   balance: number;
-  onBuy: (count: number) => Promise<{ ok: boolean; error?: string }>;
+  onBuy: (count: number, serial?: string) => Promise<{ ok: boolean; error?: string }>;
   onGoToPlay?: () => void;
   locked: boolean;
 }) {
   const [count, setCount] = useState(1);
+  const [cardNumber, setCardNumber] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -393,7 +394,7 @@ function PurchasePanel({
     setBusy(true);
     setResult(null);
     try {
-      const res = await onBuy(count);
+      const res = await onBuy(count, cardNumber || undefined);
       setResult({ ok: res.ok, text: res.ok ? t('bought') : res.error ?? t('short') });
     } catch {
       setResult({ ok: false, text: t('short') });
@@ -413,6 +414,14 @@ function PurchasePanel({
         </span>
       </div>
 
+      <div className="mb-4">
+        <label htmlFor="chosen-card-number" className="mb-2 block text-sm text-gold-500">የሚፈልጉት የካርድ ቁጥር (አማራጭ · 5 አሃዝ)</label>
+        <input id="chosen-card-number" inputMode="numeric" maxLength={5} placeholder="ለምሳሌ 12345 ወይም 34245" value={cardNumber}
+          onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 5); setCardNumber(v); if (v) setCount(1); }}
+          className={inputCls} />
+        <p className="mt-1 text-xs text-gold-700">ቁጥሩ በሌላ ተጫዋች ካልተያዘ ይሰጥዎታል። ከተያዘ ሌላ ቁጥር ይምረጡ።</p>
+      </div>
+
       <div className="mb-4 flex items-center justify-between">
         <span className="text-sm text-gold-500" id="count-label">
           {t('count')}
@@ -421,7 +430,7 @@ function PurchasePanel({
           <button
             type="button"
             aria-label="−"
-            disabled={count <= 1}
+            disabled={count <= 1 || !!cardNumber}
             onClick={() => setCount((c) => Math.max(1, c - 1))}
             className="h-11 w-11 rounded-full bg-white/[0.06] text-2xl font-bold text-gold-300 ring-1 ring-gold-700/50 active:scale-90 disabled:opacity-40"
           >
@@ -433,7 +442,7 @@ function PurchasePanel({
           <button
             type="button"
             aria-label="+"
-            disabled={count >= MAX_CARDS}
+            disabled={count >= MAX_CARDS || !!cardNumber}
             onClick={() => setCount((c) => Math.min(MAX_CARDS, c + 1))}
             className="h-11 w-11 rounded-full bg-white/[0.06] text-2xl font-bold text-gold-300 ring-1 ring-gold-700/50 active:scale-90 disabled:opacity-40"
           >
@@ -461,7 +470,7 @@ function PurchasePanel({
         </p>
       )}
 
-      <button type="button" onClick={buy} disabled={busy || short || locked} className={primaryBtn}>
+      <button type="button" onClick={buy} disabled={busy || short || locked || (!!cardNumber && cardNumber.length !== 5)} className={primaryBtn}>
         {busy ? t('buying') : t('buyBtn')}
       </button>
 

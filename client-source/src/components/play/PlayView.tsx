@@ -10,6 +10,170 @@ import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { play } from '@/lib/audio';
+import { findWinningPattern } from '@/lib/bingo';
+import type { BingoCard, Lang, Pos, WinPattern } from '@/types/game';
+
+/* ───────────────────────────── CONTEXT WIRING ───────────────────────────── */
+
+function usePlayData() {
+  const { lang } = useLanguage();
+  const { cards, markedByCard, toggleMark } = usePlayer();
+  const { phase, winPattern, roundNumber, calledNumbers, claimBingo, winner } = useRound();
+  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, roundNumber, calledNumbers, claimBingo, winner };
+}
+
+/* ─────────────────────────── TRANSLATIONS ─────────────────────────── */
+/* Move these into your central translation file if you prefer.
+   Tigrigna strings should be reviewed by a native speaker. */
+
+const STRINGS = {
+  am: {
+    called: 'የወጣ ቁጥር',
+    waitingBall: 'ጨዋታው ገና አልጀመረም',
+    recent: 'ቀደም ሲል የወጡ',
+    myCards: 'የእኔ ካርዶች',
+    board: 'ሁሉም የወጡ ቁጥሮች',
+    round: 'ዙር',
+    toGo: 'ይቀራል',
+    free: 'ነጻ',
+    claim: 'ቢንጎ በል!',
+    claiming: 'በመረጋገጥ ላይ…',
+    claimSent: 'ጥያቄዎ ተልኳል',
+    claimWaiting: 'በመፈተሽ ላይ…',
+    winnerBanner: 'ዙሩ ተጠናቋል። አሸናፊ ካርድ',
+    won: 'እንኳን ደስ አለዎት! ቢንጎ!',
+    invalid: 'ቢንጎው አልተረጋገጠም። እንደገና ይሞክሩ።',
+    noCards: 'ለዚህ ዙር ካርድ የለዎትም',
+    noCardsHint: 'ለመጫወት ከቦርሳዎ ካርድ ይግዙ።',
+    goWallet: 'ወደ ቦርሳ ሂድ',
+    waiting: 'ቀጣዩን ዙር በመጠበቅ ላይ',
+    ended: 'ዙሩ ተጠናቅቋል',
+    card: 'ካርድ',
+    show: 'አሳይ',
+    hide: 'ደብቅ',
+  },
+  ti: {
+    called: 'ዝወጸ ቁጽሪ',
+    waitingBall: 'ጸወታ ገና ኣይጀመረን',
+    recent: 'ቀደም ዝወጹ',
+    myCards: 'ካርዳተይ',
+    board: 'ኩሎም ዝወጹ ቁጽሪታት',
+    round: 'ዙር',
+    toGo: 'ተሪፉ',
+    free: 'ነጻ',
+    claim: 'ቢንጎ በል!',
+    claiming: 'ይረጋገጽ ኣሎ…',
+    claimSent: 'ጥርዓንኩም ተላኢኹ',
+    claimWaiting: 'ይምርመር ኣሎ…',
+    winnerBanner: 'ዙር ተወዲኡ። ዕዉት ካርድ',
+    won: 'እንኳዕ ሕጉስ! ቢንጎ!',
+    invalid: 'ቢንጎ ኣይተረጋገጸን። እንደገና ፈትኑ።',
+    noCards: 'ን እዚ ዙር ካርድ የብልኩምን',
+    noCardsHint: 'ንምጽዋት ካብ ጥረ ገንዘብኩም ካርድ ግዝኡ።',
+    goWallet: 'ናብ ቦርሳ ኺድ',
+    waiting: 'ዝቕጽል ዙር ይጽበ ኣሎ',
+    ended: 'ዙር ተወዲኡ',
+    card: 'ካርድ',
+    show: 'ኣርኢ',
+    hide: 'ሕባእ',
+  },
+  en: {
+    called: 'Called number',
+    waitingBall: 'Round has not started',
+    recent: 'Previous calls',
+    myCards: 'My cards',
+    board: 'All called numbers',
+    round: 'Round',
+    toGo: 'to go',
+    free: 'FREE',
+    claim: 'Call BINGO!',
+    claiming: 'Verifying…',
+    claimSent: 'Claim sent',
+    claimWaiting: 'Checking…',
+    winnerBanner: 'Round finished. Winning card',
+    won: 'Congratulations! BINGO!',
+    invalid: "That bingo couldn't be verified. Try again.",
+    noCards: "You have no cards in this round",
+    noCardsHint: 'Buy cards from your wallet to play.',
+    goWallet: 'Go to wallet',
+    waiting: 'Waiting for the next round',
+    ended: 'Round finished',
+    card: 'Card',
+    show: 'Show',
+    hide: 'Hide',
+  },
+} as const;
+
+type StringKey = keyof (typeof STRINGS)['en'];
+const PATTERN_NAMES: Record<WinPattern, string> = {
+  any_line: 'አንድ መስመር', horizontal_line: 'ሆሪዞንታል መስመር', vertical_line: 'ቨርቲካል መስመር',
+  diagonal: 'ዲያጎናል', two_lines: 'ሁለት መስመሮች', two_horizontal_lines: 'ሁለት ሆሪዞንታል መስመሮች',
+  four_corners: 'አራቱ ማዕዘኖች', rectangle: '2×2 ሬክታንግል', two_rectangles: 'ሁለት ሬክታንግሎች',
+  half_house: 'ግማሽ ቤት', full_house: 'ፉል ሃውስ', x: 'X ቅርጽ', t: 'T ቅርጽ', l: 'L ቅርጽ',
+  plus: 'ፕላስ (+)', diamond: 'ዳይመንድ', picture_frame: 'ውጫዊ ፍሬም', six_pack: 'Six-pack', postage_stamp: 'ፖስታጅ ስታምፕ',
+};
+
+
+/* ───────────────────────────── GAME LOGIC ───────────────────────────── */
+
+const LETTERS = ['B', 'I', 'N', 'G', 'O'] as const;
+const letterFor = (n: number) => LETTERS[Math.min(4, Math.floor((n - 1) / 15))];
+
+const AMHARIC_ONES = ['','አንድ','ሁለት','ሶስት','አራት','አምስት','ስድስት','ሰባት','ስምንት','ዘጠኝ','አስር','አስራ አንድ','አስራ ሁለት','አስራ ሶስት','አስራ አራት','አስራ አምስት','አስራ ስድስት','አስራ ሰባት','አስራ ስምንት','አስራ ዘጠኝ'];
+const AMHARIC_TENS: Record<number, string> = { 20: 'ሃያ', 30: 'ሰላሳ', 40: 'አርባ', 50: 'ሃምሳ', 60: 'ስልሳ', 70: 'ሰባ' };
+const AMHARIC_LETTERS: Record<string, string> = { B: 'ቢ', I: 'አይ', N: 'ኤን', G: 'ጂ', O: 'ኦ' };
+function amharicNumber(n: number): string {
+  if (n <= 19) return AMHARIC_ONES[n] ?? String(n);
+  const ten = Math.floor(n / 10) * 10;
+  const unit = n % 10;
+  return unit === 0 ? (AMHARIC_TENS[ten] ?? String(n)) : `${AMHARIC_TENS[ten] ?? ten} ${AMHARIC_ONES[unit]}`;
+}
+function speakAmharicCall(n: number) {
+  if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return;
+  window.speechSynthesis.cancel();
+  const letter = AMHARIC_LETTERS[letterFor(n)] ?? letterFor(n);
+  const utterance = new SpeechSynthesisUtterance(`${letter}... ${amharicNumber(n)}`);
+  utterance.lang = 'am-ET';
+  utterance.rate = 0.76;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const amharicVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('am'));
+  if (amharicVoice) utterance.voice = amharicVoice;
+  window.speechSynthesis.speak(utterance);
+}
+
+const LINES: Pos[][] = (() => {
+  const out: Pos[][] = [];
+  for (let i = 0; i < 5; i++) {
+    out.push(Array.from({ length: 5 }, (_, c) => [i, c] as Pos)); // row
+    out.push(Array.from({ length: 5 }, (_, r) => [r, i] as Pos)); // column
+  }
+  out.push(Array.from({ length: 5 }, (_, i) => [i, i] as Pos));
+  out.push(Array.from({ length: 5 }, (_, i) => [i, 4 - i] as Pos));
+  return out;
+})();
+
+/** A cell counts only if it is FREE, or marked AND actually called. */
+function analyze(grid: (number | null)[][], marks: Set<number>, called: Set<number>, pattern: import('@/types/game').WinPattern) {
+  const eligible = new Set([...called].filter((n) => marks.has(n)));
+  const result = findWinningPattern(grid, eligible, pattern);
+  return { toGo: result.missing, winningLine: result.missing === 0 ? result.positions : null };
+}
+
+/**
+ * src/components/play/PlayView.tsx
+ *
+ * Core gameplay screen: current called ball, side-by-side player cards,
+ * tap-to-mark cells, "N to go" progress, and a BINGO claim bar with confetti.
+ * Reads from usePlayer() and useRound(); shared types live in '@/types/game'.
+ */
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
+import { usePlayer } from '@/context/PlayerContext';
+import { useRound } from '@/context/RoundContext';
+import { play } from '@/lib/audio';
+import { findWinningPattern } from '@/lib/bingo';
 import type { BingoCard, Lang, Pos } from '@/types/game';
 
 /* ───────────────────────────── CONTEXT WIRING ───────────────────────────── */
@@ -17,8 +181,8 @@ import type { BingoCard, Lang, Pos } from '@/types/game';
 function usePlayData() {
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark } = usePlayer();
-  const { phase, roundNumber, calledNumbers, claimBingo, winner } = useRound();
-  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, roundNumber, calledNumbers, claimBingo, winner };
+  const { phase, winPattern, roundNumber, calledNumbers, claimBingo, winner } = useRound();
+  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, roundNumber, calledNumbers, claimBingo, winner };
 }
 
 /* ─────────────────────────── TRANSLATIONS ─────────────────────────── */
@@ -226,10 +390,11 @@ interface CardViewProps {
   active: boolean;
   t: (k: StringKey) => string;
   onToggle: (n: number) => void;
+  pattern: import('@/types/game').WinPattern;
 }
 
-function CardView({ card, marks, called, active, t, onToggle }: CardViewProps) {
-  const { toGo, winningLine } = useMemo(() => analyze(card.grid, marks, called), [card.grid, marks, called]);
+function CardView({ card, marks, called, active, t, onToggle, pattern }: CardViewProps) {
+  const { toGo, winningLine } = useMemo(() => analyze(card.grid, marks, called, pattern), [card.grid, marks, called, pattern]);
   const winSet = useMemo(() => new Set((winningLine ?? []).map(([r, c]) => `${r}-${c}`)), [winningLine]);
   const hasWin = !!winningLine;
 
@@ -305,7 +470,7 @@ function CardView({ card, marks, called, active, t, onToggle }: CardViewProps) {
 /* ───────────────────────────── MAIN VIEW ───────────────────────────── */
 
 export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
-  const { lang, cards, markedByCard, toggleMark, phase, roundNumber, calledNumbers, claimBingo, winner } = usePlayData();
+  const { lang, cards, markedByCard, toggleMark, phase, winPattern, roundNumber, calledNumbers, claimBingo, winner } = usePlayData();
   const t = (k: StringKey) => (STRINGS[lang] ?? STRINGS.en)[k];
 
   const called = useMemo(() => new Set(calledNumbers), [calledNumbers]);
@@ -320,8 +485,8 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   }, [cards, markedByCard]);
 
   const winners = useMemo(
-    () => (active ? cards.filter((c) => analyze(c.grid, markSets[c.id], called).winningLine) : []),
-    [active, cards, markSets, called],
+    () => (active ? cards.filter((c) => analyze(c.grid, markSets[c.id], called, winPattern).winningLine) : []),
+    [active, cards, markSets, called, winPattern],
   );
 
   const [showBoard, setShowBoard] = useState(false);
@@ -410,6 +575,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           <p className="text-sm text-gold-300" aria-live="polite">
             {t('called')} · {t('round')} {roundNumber}
           </p>
+          <p className="text-xs font-semibold text-gold-500">የዚህ ዙር አሸናፊነት: {PATTERN_NAMES[winPattern]}</p>
         </div>
 
         <div className="w-full max-w-xs">
@@ -520,6 +686,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 active={active}
                 t={t}
                 onToggle={(n) => toggleMark(card.id, n)}
+                pattern={winPattern}
               />
             ))}
           </div>

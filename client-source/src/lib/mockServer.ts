@@ -9,7 +9,7 @@
  * is visible to anyone who opens DevTools, so this proves the flow, not security.
  */
 import type { BingoCard, VerifyResult } from '@/types/game';
-import { findWinningLine } from '@/lib/bingo';
+import { findWinningPattern } from '@/lib/bingo';
 
 const KEY = 'bgb.registry';
 const SECRET = 'black-gold-demo-only';
@@ -67,7 +67,7 @@ export function purgeRegistry(): void {
   }
 }
 
-export function serverVerify(cardId: string, called: number[], local?: BingoCard): VerifyResult {
+export function serverVerify(cardId: string, called: number[], local?: BingoCard, pattern: import('@/types/game').WinPattern = 'any_line'): VerifyResult {
   const entry = read()[cardId];
   if (!entry) return { status: 'not_found' };
 
@@ -75,7 +75,8 @@ export function serverVerify(cardId: string, called: number[], local?: BingoCard
   const localOk = !local || JSON.stringify(local.grid) === JSON.stringify(entry.grid);
   if (!signatureOk || !localOk) return { status: 'tampered' };
 
-  const line = findWinningLine(entry.grid, new Set(called));
+  const result = findWinningPattern(entry.grid, new Set(called), pattern);
+  const line = result.missing === 0 ? result.positions : null;
   return {
     status: 'valid',
     card: { id: entry.id, serial: entry.serial, grid: entry.grid },
@@ -84,7 +85,7 @@ export function serverVerify(cardId: string, called: number[], local?: BingoCard
   };
 }
 
-export function serverClaim(cardId: string, called: number[], local?: BingoCard): boolean {
-  const res = serverVerify(cardId, called, local);
+export function serverClaim(cardId: string, called: number[], local?: BingoCard, pattern: import('@/types/game').WinPattern = 'any_line'): boolean {
+  const res = serverVerify(cardId, called, local, pattern);
   return res.status === 'valid' && res.isWinner === true;
 }
