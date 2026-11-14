@@ -152,7 +152,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       const cards = Array.from({ length: n }, (_, i) => {
         const code = newCardCode();
         const grid = generateGrid();
-        return { code, serial: owned + i + 1, grid, sig: signCard(code, g.roundNumber, grid) };
+        return { code, serial: requestedSerial !== undefined && requestedSerial !== null ? String(requestedSerial) : owned + i + 1, grid, sig: signCard(code, g.roundNumber, grid) };
       });
       try {
         const res = await repo.purchaseCards({
