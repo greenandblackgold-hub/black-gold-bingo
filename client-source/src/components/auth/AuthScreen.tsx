@@ -17,7 +17,7 @@ const TEXT = {
     invalid_phone: 'ትክክለኛ የኢትዮጵያ ስልክ ቁጥር ያስገቡ (09… ወይም 07…)', invalid_name: 'ስምዎን ያስገቡ', invalid_pin: 'PIN 6 አሃዝ መሆን አለበት',
     phone_taken: 'ይህ ስልክ ቁጥር ተመዝግቧል', invalid_credentials: 'ስልክ ቁጥር ወይም PIN ልክ አይደለም',
     locked: 'ብዙ ጊዜ ሞክረዋል። ከ15 ደቂቃ በኋላ ይሞክሩ።', rate_limited: 'በጣም ብዙ ጥያቄዎች። ትንሽ ቆይተው ይሞክሩ።', network: 'ከአገልጋዩ ጋር መገናኘት አልተቻለም።', error: 'የሆነ ችግር ተፈጥሯል። እንደገና ይሞክሩ።',
-    age: 'ይህን ጨዋታ መጫወት የሚችሉት 18 ዓመት እና ከዚያ በላይ የሆኑ ብቻ ናቸው።',
+    age: '18 ዓመት እና ከዚያ በላይ ብቻ። ስልክ ቁጥሩ በSMS አይረጋገጥም፤ የራስዎን ቁጥር ብቻ ይጠቀሙ።',
   },
   ti: {
     login: 'እቶ', register: 'መለያ ክፈት', phone: 'ቁጽሪ ተሌፎን', name: 'ስምካ', pin: 'ናይ 6 ኣሃዝ ሚስጥራዊ ቁጽሪ (PIN)',
@@ -25,7 +25,7 @@ const TEXT = {
     invalid_phone: 'ቅኑዕ ናይ ኢትዮጵያ ቁጽሪ ተሌፎን የእትዉ (09… ወይ 07…)', invalid_name: 'ስምኩም የእትዉ', invalid_pin: 'PIN 6 ኣሃዝ ክኸውን ኣለዎ',
     phone_taken: 'እዚ ቁጽሪ ተሌፎን ተመዝጊቡ ኣሎ', invalid_credentials: 'ቁጽሪ ተሌፎን ወይ PIN ቅኑዕ ኣይኮነን',
     locked: 'ብዙሕ ግዜ ፈቲኖም። ድሕሪ 15 ደቓይቕ ፈትኑ።', rate_limited: 'ብዙሕ ሕቶታት። ቁሩብ ደሊኹም ፈትኑ።', network: 'ምስ ኣገልግሎት ምርካብ ኣይተኻኣለን።', error: 'ጸገም ተፈጢሩ። እንደገና ፈትኑ።',
-    age: 'እዚ ጸወታ ዕድሚኦም 18 ከምኡ’ውን ልዕሊኡ ዝኾኑ ጥራይ ክጻወቱ ይኽእሉ።',
+    age: '18 ዓመትን ልዕሊኡን ጥራይ። ቁጽሪ ተሌፎን ብSMS ኣይረጋገጽን፤ ናይ ባዕልኹም ቁጽሪ ጥራይ ተጠቐሙ።',
   },
   en: {
     login: 'Sign in', register: 'Create account', phone: 'Phone number', name: 'Your name', pin: '6-digit PIN',
@@ -33,7 +33,7 @@ const TEXT = {
     invalid_phone: 'Enter a valid Ethiopian mobile number (09… or 07…)', invalid_name: 'Enter your name', invalid_pin: 'PIN must be 6 digits',
     phone_taken: 'This number is already registered', invalid_credentials: 'Wrong phone number or PIN',
     locked: 'Too many attempts. Try again in 15 minutes.', rate_limited: 'Too many requests. Wait a moment.', network: 'Can’t reach the server.', error: 'Something went wrong. Try again.',
-    age: 'You must be 18 or older to play.',
+    age: '18+ only. Phone numbers are not SMS-verified; use only your own number.',
   },
 } as const;
 
