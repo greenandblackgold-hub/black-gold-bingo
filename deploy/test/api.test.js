@@ -339,6 +339,8 @@ test('production safety gates block registration and all real-money routes until
     ctx.config.lotteryLicenseApproved = false;
     ctx.config.chapaMerchantApproved = false;
     ctx.app.resetLimits();
+    // Previous tests may leave the shared game in an ended phase; reopen it for the free-card assertion.
+    await freshRound();
 
     assert.equal((await api('POST', '/api/auth/register', { body: { phone: newPhone(), name: 'Blocked', pin: '123456' } })).status, 503);
     assert.equal((await api('POST', '/api/payments/deposit', { token: p.token, body: { amount: 100 } })).status, 503);
