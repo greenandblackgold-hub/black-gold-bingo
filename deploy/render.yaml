@@ -1,29 +1,28 @@
-# Render Blueprint: ONE service that serves both the website and the game server.
-# Render asks you to type the four values marked "sync: false" when you create it.
+# Render Blueprint: ONE service serves both the website and the game server.
 services:
   - type: web
     name: black-gold-bingo-pro
     rootDir: .
     runtime: node
-    plan: free               # use the existing free service tier; it may sleep when idle.
-    autoDeployTrigger: checksPass # wait for GitHub Actions tests before deploying commits.
-    numInstances: 1          # must stay 1
-    buildCommand: npm --prefix deploy install && npm --prefix deploy test && cd client-source && npm install --include=dev --production=false && VITE_SERVER_MODE=false npm run build && cd .. && rm -rf deploy/public && mkdir -p deploy/public && cp -R client-source/dist/. deploy/public/
+    plan: free
+    autoDeployTrigger: checksPass
+    numInstances: 1
+    buildCommand: npm --prefix deploy install && npm --prefix deploy test && cd client-source && npm install --include=dev --production=false && VITE_SERVER_MODE=true npm run build && cd .. && rm -rf deploy/public && mkdir -p deploy/public && cp -R client-source/dist/. deploy/public/
     startCommand: npm --prefix deploy start
     healthCheckPath: /health
     envVars:
       - { key: NODE_VERSION, value: "22" }
       - { key: NODE_ENV, value: production }
-      - { key: JWT_SECRET, generateValue: true }   # created for you automatically
-      - { key: MONGODB_URI, sync: false }          # from MongoDB Atlas (guide step 2)
-      - { key: ADMIN_PHONE, sync: false }          # YOUR phone number: this becomes the owner login
-      - { key: ADMIN_PIN, sync: false }            # YOUR 6-digit owner PIN
+      - { key: JWT_SECRET, generateValue: true }
+      - { key: MONGODB_URI, sync: false }
+      - { key: ADMIN_PHONE, sync: false }
+      - { key: ADMIN_PIN, sync: false }
       - { key: ADMIN_NAME, value: Owner }
       - { key: ROOM_ID, value: BINGO-99 }
       - { key: CARD_PRICE_ETB, value: "10" }
       - { key: PRIZE_PERCENT, value: "80" }
-      - { key: AUTO_PAYOUT, value: "false" }       # manual payout approval only
-      - { key: REGISTRATION_ENABLED, value: "false" } # keep new accounts off until real SMS verification is ready
-      - { key: REAL_MONEY_ENABLED, value: "false" } # locked until legal and payment approvals
+      - { key: AUTO_PAYOUT, value: "false" }
+      - { key: REGISTRATION_ENABLED, value: "false" }
+      - { key: REAL_MONEY_ENABLED, value: "false" }
       - { key: LOTTERY_LICENSE_APPROVED, value: "false" }
       - { key: CHAPA_MERCHANT_APPROVED, value: "false" }
