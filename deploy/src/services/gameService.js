@@ -97,6 +97,11 @@ export function createGameService({ repo, config, now = Date.now }) {
 
     endRound: () => mutate('running', () => ({ phase: 'ended', autoCall: false, nextCallAt: null })),
 
+    setWinPattern(pattern) {
+      if (!isWinPattern(pattern)) throw new HttpError(400, 'invalid_pattern', 'Choose a supported bingo pattern');
+      return mutate('waiting', () => ({ winPattern: pattern }));
+    },
+
     async resetRound() {
       const before = await repo.getGame();
       if (before.phase !== 'ended') throw new HttpError(409, 'wrong_phase', `Round is ${before.phase}`);
