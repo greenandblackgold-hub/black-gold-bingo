@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRound } from '@/context/RoundContext';
 import { SERVER_MODE } from '@/lib/api';
-import type { Lang } from '@/types/game';
+import type { Lang, WinPattern } from '@/types/game';
 
 /* ───────────────────────────── CONTEXT WIRING ───────────────────────────── */
 
@@ -267,6 +267,35 @@ export function HostView() {
           {phaseLabel} · {called.length}/75
         </span>
       </div>
+
+      {/* Winning pattern is selected before a round starts and enforced by the server. */}
+      <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
+        <label htmlFor="win-pattern" className="mb-2 block text-sm font-semibold text-gold-300">የዙሩ የBingo አሸናፊነት ቅጥ</label>
+        <select id="win-pattern" value={h.winPattern} disabled={h.phase !== 'waiting'}
+          onChange={(e) => h.setWinPattern(e.target.value as WinPattern)}
+          className="w-full rounded-xl bg-zinc-900 px-4 py-3 text-gold-300 ring-1 ring-gold-700/60 disabled:opacity-50">
+          <option value="any_line">አንድ መስመር (ማንኛውም አቅጣጫ)</option>
+          <option value="horizontal_line">አንድ ሆሪዞንታል መስመር</option>
+          <option value="vertical_line">አንድ ቨርቲካል መስመር</option>
+          <option value="diagonal">ዲያጎናል</option>
+          <option value="two_lines">ሁለት መስመሮች</option>
+          <option value="two_horizontal_lines">ሁለት ሆሪዞንታል መስመሮች</option>
+          <option value="four_corners">አራቱ ማዕዘኖች</option>
+          <option value="rectangle">2×2 ሬክታንግል</option>
+          <option value="two_rectangles">ሁለት ሬክታንግሎች</option>
+          <option value="postage_stamp">ፖስታጅ ስታምፕ</option>
+          <option value="six_pack">2×3 ሬክታንግል (Six-pack)</option>
+          <option value="half_house">ግማሽ ቤት (12 ቁጥሮች)</option>
+          <option value="full_house">ፉል ሃውስ / ሙሉ ካርድ</option>
+          <option value="x">X ቅርጽ</option>
+          <option value="t">T ቅርጽ</option>
+          <option value="l">L ቅርጽ</option>
+          <option value="plus">ፕላስ (+)</option>
+          <option value="diamond">ዳይመንድ</option>
+          <option value="picture_frame">ውጫዊ ፍሬም</option>
+        </select>
+        <p className="mt-2 text-xs text-gold-600">{h.phase === 'waiting' ? 'ዙሩን ከመጀመርዎ በፊት ይምረጡ። ዙሩ ከጀመረ በኋላ መቀየር አይቻልም።' : 'ቅጡ የሚቀየረው ቀጣይ ዙር ከመጀመሩ በፊት ብቻ ነው።'}</p>
+      </section>
 
       {/* Stage */}
       <section className="rounded-3xl bg-cardbg px-4 py-8 ring-1 ring-gold-700/50 sm:py-10">
