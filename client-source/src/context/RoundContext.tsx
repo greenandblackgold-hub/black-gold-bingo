@@ -248,6 +248,12 @@ export function RoundProvider({ children }: { children: ReactNode }) {
       loaded,
       canHost,
       phase: game.phase,
+      winPattern: game.winPattern ?? 'any_line',
+      setWinPattern: (pattern) => {
+        const g = gameRef.current;
+        if (!canHost || g.phase !== 'waiting') return;
+        commit({ ...g, winPattern: pattern });
+      },
       roundNumber: game.roundNumber,
       calledNumbers: game.calledNumbers,
       winner: game.winner,
