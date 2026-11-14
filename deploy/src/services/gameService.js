@@ -109,6 +109,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         round: before.roundNumber,
         calledNumbers: before.calledNumbers,
         winner: before.winner,
+        winPattern: before.winPattern ?? 'any_line',
         pot: before.pot,
         endedAt: new Date(),
       });
@@ -216,6 +217,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       const g = await repo.getGame();
       let called;
       let isWinner;
+      let pattern = g.winPattern ?? 'any_line';
       if (card.round === g.roundNumber) {
         called = new Set(g.calledNumbers);
         isWinner = g.winner?.cardCode === code;
@@ -223,8 +225,9 @@ export function createGameService({ repo, config, now = Date.now }) {
         const archived = await repo.getArchivedRound(card.round);
         called = new Set(archived?.calledNumbers ?? []);
         isWinner = archived?.winner?.cardCode === code;
+        pattern = archived?.winPattern ?? 'any_line';
       }
-      const win = findWinningPattern(card.grid, called, g.winPattern ?? 'any_line');
+      const win = findWinningPattern(card.grid, called, pattern);
       const line = win.missing === 0 ? win.positions : null;
       const mayView = user.role === 'admin' || card.userId === user.id;
       return {
