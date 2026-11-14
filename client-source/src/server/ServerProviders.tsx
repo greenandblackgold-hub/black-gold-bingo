@@ -13,7 +13,7 @@ import { RoundContext } from '@/context/RoundContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { play } from '@/lib/audio';
 import { API_URL, api, ApiError, type ServerGameState } from '@/lib/api';
-import type { BingoCard, GameBackend, PlayerContextValue, RoundContextValue, Tx, VerifyResult } from '@/types/game';
+import type { BingoCard, GameBackend, PlayerContextValue, RoundContextValue, Tx, VerifyResult, WinPattern } from '@/types/game';
 
 const MARKS_KEY = 'bgb.marks';
 const NOOP_BACKEND = (canHost: boolean): GameBackend => ({
@@ -85,9 +85,9 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const buyCards = useCallback(
-    async (count: number) => {
+    async (count: number, serial?: string) => {
       try {
-        await api.post('/api/cards/buy', { count });
+        await api.post('/api/cards/buy', { count, ...(serial ? { serial } : {}) });
         play('coin');
         await Promise.all([reloadCards(), reloadLedger(), refresh()]);
         return { ok: true };
@@ -219,6 +219,8 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
       loaded: g !== null,
       canHost,
       phase: g?.phase ?? 'waiting',
+      winPattern: g?.winPattern ?? 'any_line',
+      setWinPattern: (pattern: WinPattern) => void admin('pattern', { pattern }),
       roundNumber: g?.roundNumber ?? 1,
       calledNumbers: g?.calledNumbers ?? [],
       winner: g?.winner ?? null,
