@@ -11,7 +11,7 @@ import {
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { useBackend } from '@/context/BackendContext';
 import { usePlayer } from '@/context/PlayerContext';
-import { ALL_NUMBERS, findWinningLine, isValidGrid, randomInt } from '@/lib/bingo';
+import { ALL_NUMBERS, findWinningPattern, isValidGrid, randomInt } from '@/lib/bingo';
 import { play } from '@/lib/audio';
 import { DEFAULT_GAME } from '@/lib/backend';
 import { purgeRegistry, serverClaim, serverVerify } from '@/lib/mockServer';
@@ -172,9 +172,9 @@ export function RoundProvider({ children }: { children: ReactNode }) {
       .filter((c) => c.round === game.roundNumber)
       .map((c) => {
         const gridValid = isValidGrid(c.grid);
-        const wins = gridValid && findWinningLine(c.grid, called) !== null;
+        const wins = gridValid && findWinningPattern(c.grid, called, game.winPattern ?? 'any_line').missing === 0;
         const originVerified =
-          gridValid && serverVerify(c.cardId, game.calledNumbers, { id: c.cardId, serial: c.serial, grid: c.grid }).status === 'valid';
+          gridValid && serverVerify(c.cardId, game.calledNumbers, { id: c.cardId, serial: c.serial, grid: c.grid }, game.winPattern ?? 'any_line').status === 'valid';
         return { ...c, gridValid, wins, originVerified };
       })
       .sort((a, b) => a.at - b.at);
@@ -212,7 +212,7 @@ export function RoundProvider({ children }: { children: ReactNode }) {
       const local = cards.find((c) => c.id === cardId);
       if (!local) return { ok: false };
       await delay(250);
-      if (!serverClaim(cardId, gameRef.current.calledNumbers, local)) {
+      if (!serverClaim(cardId, gameRef.current.calledNumbers, local, gameRef.current.winPattern ?? 'any_line')) {
         play('error');
         return { ok: false };
       }
@@ -237,7 +237,7 @@ export function RoundProvider({ children }: { children: ReactNode }) {
     async (cardId: string): Promise<VerifyResult> => {
       await delay(450);
       const local = cards.find((c) => c.id === cardId);
-      return serverVerify(cardId, gameRef.current.calledNumbers, local);
+      return serverVerify(cardId, gameRef.current.calledNumbers, local, gameRef.current.winPattern ?? 'any_line');
     },
     [cards],
   );
