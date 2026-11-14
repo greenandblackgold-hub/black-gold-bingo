@@ -110,6 +110,30 @@ type StringKey = keyof (typeof STRINGS)['en'];
 const LETTERS = ['B', 'I', 'N', 'G', 'O'] as const;
 const letterFor = (n: number) => LETTERS[Math.min(4, Math.floor((n - 1) / 15))];
 
+const AMHARIC_ONES = ['','አንድ','ሁለት','ሶስት','አራት','አምስት','ስድስት','ሰባት','ስምንት','ዘጠኝ','አስር','አስራ አንድ','አስራ ሁለት','አስራ ሶስት','አስራ አራት','አስራ አምስት','አስራ ስድስት','አስራ ሰባት','አስራ ስምንት','አስራ ዘጠኝ'];
+const AMHARIC_TENS: Record<number, string> = { 20: 'ሃያ', 30: 'ሰላሳ', 40: 'አርባ', 50: 'ሃምሳ', 60: 'ስልሳ', 70: 'ሰባ' };
+const AMHARIC_LETTERS: Record<string, string> = { B: 'ቢ', I: 'አይ', N: 'ኤን', G: 'ጂ', O: 'ኦ' };
+function amharicNumber(n: number): string {
+  if (n <= 19) return AMHARIC_ONES[n] ?? String(n);
+  const ten = Math.floor(n / 10) * 10;
+  const unit = n % 10;
+  return unit === 0 ? (AMHARIC_TENS[ten] ?? String(n)) : `${AMHARIC_TENS[ten] ?? ten} ${AMHARIC_ONES[unit]}`;
+}
+function speakAmharicCall(n: number) {
+  if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return;
+  window.speechSynthesis.cancel();
+  const letter = AMHARIC_LETTERS[letterFor(n)] ?? letterFor(n);
+  const utterance = new SpeechSynthesisUtterance(`${letter}... ${amharicNumber(n)}`);
+  utterance.lang = 'am-ET';
+  utterance.rate = 0.76;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const amharicVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('am'));
+  if (amharicVoice) utterance.voice = amharicVoice;
+  window.speechSynthesis.speak(utterance);
+}
+
 const LINES: Pos[][] = (() => {
   const out: Pos[][] = [];
   for (let i = 0; i < 5; i++) {
@@ -301,6 +325,25 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   );
 
   const [showBoard, setShowBoard] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(() => {
+    try { return localStorage.getItem('bgb.amharicVoice') !== 'off'; } catch { return true; }
+  });
+  const previousCall = useRef<number | null>(null);
+  useEffect(() => {
+    if (current === null) { previousCall.current = null; return; }
+    if (previousCall.current !== null && current !== previousCall.current && voiceEnabled) {
+      speakAmharicCall(current);
+    }
+    previousCall.current = current;
+  }, [current, voiceEnabled]);
+  const toggleVoice = () => {
+    setVoiceEnabled((enabled) => {
+      const next = !enabled;
+      try { localStorage.setItem('bgb.amharicVoice', next ? 'on' : 'off'); } catch { /* ignore */ }
+      if (!next && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+      return next;
+    });
+  };
   const [claiming, setClaiming] = useState(false);
   const [confetti, setConfetti] = useState(false);
   const [sentRound, setSentRound] = useState<number | null>(null);
@@ -370,6 +413,14 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         </div>
 
         <div className="w-full max-w-xs">
+          <button
+            type="button"
+            onClick={toggleVoice}
+            aria-pressed={voiceEnabled}
+            className="mb-3 rounded-lg border border-gold-700/60 px-3 py-2 text-xs font-semibold text-gold-300 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
+          >
+            {voiceEnabled ? '🔊 የአማርኛ ድምፅ አብራ' : '🔇 የአማርኛ ድምፅ ጠፍቷል'}
+          </button>
           <p className="mb-2 text-sm text-gold-500">{t('recent')}</p>
           <div className="flex min-h-10 flex-wrap gap-2">
             {recent.map((n) => (
