@@ -25,6 +25,10 @@ export async function build(config = loadConfig()) {
   const repo = await createRepo(config);
   try {
     await repo.init();
+    if (config.resetPlayerAccountsOnce && repo.kind === 'mongo') {
+      const reset = await repo.resetPlayerAccountsOnce();
+      console.log(reset.alreadyDone ? 'Player account reset already completed' : 'Player accounts and related data reset; admin accounts preserved');
+    }
     const auth = createAuthService({ repo, config });
     const game = createGameService({ repo, config });
     const chapa = createChapa({ ...config.chapa, publicApiUrl: config.publicApiUrl });
