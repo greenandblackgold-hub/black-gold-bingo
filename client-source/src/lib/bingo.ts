@@ -82,8 +82,8 @@ const combinations=(items:Pos[][],n:number):Pos[][][]=>items.flatMap((_,i)=>i+n<
 const BLOCKS:Pos[][]=[];
 for(let r=0;r<4;r++)for(let c=0;c<4;c++)BLOCKS.push([p(r,c),p(r,c+1),p(r+1,c),p(r+1,c+1)]);
 const SIX:Pos[][]=[];
-for(let r=0;r<4;r++)for(let c=0;c<4;c++)SIX.push(Array.from({length:2},(_,dr)=>Array.from({length:3},(_,dc)=>p(r+dr,c+dc))).flat());
-for(let r=0;r<4;r++)for(let c=0;c<5;c++)SIX.push(Array.from({length:3},(_,dr)=>Array.from({length:2},(_,dc)=>p(r+dr,c+dc))).flat());
+for(let r=0;r<4;r++)for(let c=0;c<3;c++)SIX.push(Array.from({length:2},(_,dr)=>Array.from({length:3},(_,dc)=>p(r+dr,c+dc))).flat());
+for(let r=0;r<3;r++)for(let c=0;c<4;c++)SIX.push(Array.from({length:3},(_,dr)=>Array.from({length:2},(_,dc)=>p(r+dr,c+dc))).flat());
 const NON_FREE=Array.from({length:25},(_,i)=>p(Math.floor(i/5),i%5)).filter(([r,c])=>r!==2||c!==2);
 export function patternMasks(pattern:WinPattern='any_line'):Pos[][] {
  switch(pattern){
@@ -93,7 +93,8 @@ export function patternMasks(pattern:WinPattern='any_line'):Pos[][] {
   case 'two_lines':return combinations(ALL_LINES,2).map(unique);
   case 'two_horizontal_lines':return combinations(ROWS,2).map(unique);
   case 'four_corners':return [[p(0,0),p(0,4),p(4,0),p(4,4)]];
-  case 'rectangle':case 'postage_stamp':return BLOCKS;
+  case 'rectangle':return BLOCKS;
+  case 'postage_stamp':return [[p(0,0),p(0,1),p(1,0),p(1,1)],[p(0,3),p(0,4),p(1,3),p(1,4)],[p(3,0),p(3,1),p(4,0),p(4,1)],[p(3,3),p(3,4),p(4,3),p(4,4)]];
   case 'two_rectangles':return combinations(BLOCKS,2).map(unique);
   case 'full_house':return [NON_FREE];
   case 'x':return [unique([D1,D2])];
