@@ -5,7 +5,7 @@ services:
     rootDir: .
     runtime: node
     plan: free
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: commit
     numInstances: 1
     buildCommand: npm --prefix deploy install && NODE_ENV=test npm --prefix deploy test && cd client-source && npm install --include=dev --production=false && VITE_SERVER_MODE=true npm run build && cd .. && rm -rf deploy/public && mkdir -p deploy/public && cp -R client-source/dist/. deploy/public/
     startCommand: npm --prefix deploy start
