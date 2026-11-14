@@ -151,7 +151,9 @@ function analyze(grid: (number | null)[][], marks: Set<number>, called: Set<numb
   const eligible = new Set([...called].filter((n) => marks.has(n)));
   const result = findWinningPattern(grid, eligible, pattern);
   return { toGo: result.missing, winningLine: result.missing === 0 ? result.positions : null };
-}**
+}
+
+/**
  * src/components/play/PlayView.tsx
  *
  * Core gameplay screen: current called ball, side-by-side player cards,
