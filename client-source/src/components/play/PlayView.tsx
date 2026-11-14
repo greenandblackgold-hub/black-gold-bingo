@@ -419,7 +419,21 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             aria-pressed={voiceEnabled}
             className="mb-3 rounded-lg border border-gold-700/60 px-3 py-2 text-xs font-semibold text-gold-300 hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
           >
-            {voiceEnabled ? '🔊 የአማርኛ ድምፅ አብራ' : '🔇 የአማርኛ ድምፅ ጠፍቷል'}
+            {voiceEnabled ? '🔊 የአማርኛ ድምፅ በርቷል · ለማጥፋት ይጫኑ' : '🔇 የአማርኛ ድምፅ አብራ'}
+          </button>
+          <button
+            type="button"
+            disabled={current === null}
+            onClick={() => {
+              if (current !== null) {
+                setVoiceEnabled(true);
+                try { localStorage.setItem('bgb.amharicVoice', 'on'); } catch { /* ignore */ }
+                speakAmharicCall(current);
+              }
+            }}
+            className="mb-3 ml-2 rounded-lg border border-gold-700/60 px-3 py-2 text-xs font-semibold text-gold-300 hover:bg-white/5 disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
+          >
+            ▶ የመጨረሻውን ጥሪ አዳምጥ
           </button>
           <p className="mb-2 text-sm text-gold-500">{t('recent')}</p>
           <div className="flex min-h-10 flex-wrap gap-2">
