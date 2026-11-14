@@ -59,6 +59,7 @@ function parseGame(raw: unknown): SharedGame | null {
   const w = r.winner as { cardId?: unknown; serial?: unknown; at?: unknown } | null | undefined;
   return {
     phase: r.phase === 'running' || r.phase === 'ended' ? r.phase : 'waiting',
+    winPattern: typeof r.winPattern === 'string' && ['any_line','horizontal_line','vertical_line','diagonal','two_lines','two_horizontal_lines','four_corners','rectangle','two_rectangles','half_house','full_house','x','t','l','plus','diamond','picture_frame','six_pack','postage_stamp'].includes(r.winPattern) ? r.winPattern as import('@/types/game').WinPattern : 'any_line',
     roundNumber: typeof r.roundNumber === 'number' ? r.roundNumber : 1,
     calledNumbers: Array.isArray(r.calledNumbers) ? r.calledNumbers.filter((n): n is number => typeof n === 'number') : [],
     autoCall: r.autoCall === true,
