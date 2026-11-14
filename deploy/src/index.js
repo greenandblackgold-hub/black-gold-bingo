@@ -54,7 +54,7 @@ export async function build(config = loadConfig()) {
 }
 
 const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (isMainModule) {
+if (process.env.RUN_SERVER === 'true' && isMainModule) {
   const config = loadConfig();
   const ctx = await build(config);
   const server = http.createServer((req, res) => ctx.app.handle(req, res));
