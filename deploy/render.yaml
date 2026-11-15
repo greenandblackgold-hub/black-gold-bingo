@@ -1,7 +1,7 @@
 # Render Blueprint: ONE service serves both the website and the game server.
 services:
   - type: web
-    name: black-gold-bingo-pro
+    name: black-gold-bingo
     rootDir: .
     runtime: node
     plan: free
@@ -23,7 +23,7 @@ services:
       - { key: CARD_PRICE_ETB, value: "10" }
       - { key: PRIZE_PERCENT, value: "80" }
       - { key: AUTO_PAYOUT, value: "false" }
-      - { key: REGISTRATION_ENABLED, value: "false" }
+      - { key: REGISTRATION_ENABLED, value: "true" }
       - { key: REAL_MONEY_ENABLED, value: "false" }
       - { key: LOTTERY_LICENSE_APPROVED, value: "false" }
       - { key: CHAPA_MERCHANT_APPROVED, value: "false" }
