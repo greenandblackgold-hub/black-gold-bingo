@@ -143,7 +143,7 @@ The server-mode wallet now supports a **simulation-only** top-up flow:
 
 ### Local setup
 
-Requirements: Node.js 20 or newer. In PowerShell, from the project root, build the website first and then start the API:
+Requirements: Node.js 20.6 or newer (Node.js 22 is recommended). In PowerShell, from the project root, build the website first and then start the API:
 
 ```powershell
 cd client-source
