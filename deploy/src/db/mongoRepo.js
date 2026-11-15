@@ -190,8 +190,8 @@ export async function createMongoRepo({ uri, dbName }) {
     },
 
     /* deposits */
-    async createPayment({ txRef, userId, amount }) {
-      await payments.insertOne({ txRef, userId, amount, status: 'pending', createdAt: new Date() });
+    async createPayment({ txRef, userId, amount, source = 'chapa' }) {
+      await payments.insertOne({ txRef, userId, amount, source, status: 'pending', createdAt: new Date() });
     },
     async getPayment(txRef) {
       return payments.findOne({ txRef });
