@@ -7,7 +7,7 @@ import http from 'node:http';
 import { loadConfig } from '../src/config.js';
 import { build } from '../src/index.js';
 
-const config = loadConfig({ ...process.env, STORAGE: 'memory', CHAPA_MOCK: 'true', NODE_ENV: 'development', ADMIN_PHONE: '0900000001', ADMIN_PIN: '654321', ADMIN_NAME: 'Dev Admin' });
+const config = loadConfig({ ...process.env, STORAGE: 'memory', CHAPA_MOCK: 'true', NODE_ENV: 'development', ADMIN_PHONE: '0900000001', ADMIN_PIN: '654321', ADMIN_NAME: 'Dev Admin', SMS_WEBHOOK_SECRET: process.env.SMS_WEBHOOK_SECRET ?? 'local-only-sms-webhook-secret-change-before-hosting-2026' });
 const ctx = await build(config);
 http.createServer((req, res) => ctx.app.handle(req, res)).listen(config.port, () => {
   console.log(`Dev API on http://localhost:${config.port}  (admin: 0900000001 / 654321, fake Chapa, memory storage)`);
