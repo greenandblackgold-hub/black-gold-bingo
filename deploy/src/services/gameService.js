@@ -22,7 +22,7 @@ export function createGameService({ repo, config, now = Date.now }) {
     nextCallAt: g.nextCallAt,
     winner: g.winner ? { cardId: g.winner.cardCode, serial: g.winner.serial, at: g.winner.at } : null,
     roomId: config.roomId,
-    cardPrice: config.realMoneyEnabled ? config.cardPrice / 100 : 0,
+    cardPrice: config.cardPrice / 100,
     serverTime: now(),
   });
 
@@ -163,7 +163,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       try {
         const res = await repo.purchaseCards({
           userId: user.id,
-          cost: config.realMoneyEnabled ? n * config.cardPrice : 0,
+          cost: n * config.cardPrice,
           cards,
           round: g.roundNumber,
           ref: `buy:${g.roundNumber}:${user.id}:${randomToken(6)}`,
