@@ -177,6 +177,22 @@ test('simulation deposits require admin review and credit exactly once', async (
   assert.equal((await api('POST', '/api/admin/deposits/TXN-REJECT-1234/approve', { token: ctx.adminToken })).json.error, 'wrong_status');
 });
 
+test('TEST-prefixed deposits can be test-approved without ever crediting the wallet', async () => {
+  const p = await newPlayer();
+  const reference = 'TEST-APPROVAL-1234';
+  const created = await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: 100, reference } });
+  assert.equal(created.status, 200);
+  assert.equal((await api('POST', `/api/admin/deposits/${reference}/approve`, { token: ctx.adminToken })).status, 409,
+    'normal approval must refuse TEST references');
+  const result = await api('POST', `/api/admin/deposits/${reference}/test-approve`, { token: ctx.adminToken });
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.json, { status: 'test-approved', credited: false });
+  assert.equal((await api('GET', `/api/simulation/deposits/${reference}`, { token: p.token })).json.status, 'test-approved');
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
+  assert.equal((await api('GET', '/api/ledger', { token: p.token })).json.length, 0);
+  assert.equal((await api('POST', `/api/admin/deposits/${reference}/test-approve`, { token: ctx.adminToken })).json.error, 'wrong_status');
+});
+
 test('legacy SMS webhook cannot approve new manual-review simulation requests', async () => {
   const p = await newPlayer();
   ctx.config.smsWebhookSecret = 'test-sms-webhook-secret-at-least-32-characters';
