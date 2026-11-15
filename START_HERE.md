@@ -213,3 +213,65 @@ const signature = createHmac('sha256', process.env.SMS_WEBHOOK_SECRET)
 ```
 
 **Important:** this repository includes the signed webhook receiver and simulation wallet flow. It does not yet connect to a particular bank, Telebirr, or SMS-forwarding vendor. That vendor's authenticated SMS receiver/adapter and credentials must be configured separately. Never put the webhook secret in the browser or send it in chat. The ETB balance here is simulated game credit, not a real bank balance or cash payment.
+
+
+## Updated Render deployment and Android SMS Forwarder setup
+
+This section supersedes the older Render notes above where they say public registration is disabled or the player interface is a maintenance page.
+
+### Deploy the complete website and API together
+
+The Render Blueprint at `deploy/render.yaml` builds the React website, copies it into the backend's static folder, runs the backend tests, and starts one Node service. You do not need a separate frontend host.
+
+1. Sign in to **Render** and open the existing service created from this repository (the Blueprint service name is `black-gold-bingo-pro`).
+2. If you have not created it yet: choose **New + → Blueprint**, connect GitHub, select `greenandblackgold-hub/black-gold-bingo`, and set Blueprint file to `deploy/render.yaml`.
+3. In the service's **Environment** tab, set:
+   - `MONGODB_URI`: your private MongoDB Atlas connection string.
+   - `ADMIN_PHONE`: the phone number you will use for the owner account.
+   - `ADMIN_PIN`: a new six-digit owner PIN.
+   - `JWT_SECRET` and `SMS_WEBHOOK_SECRET`: Render generates these from the Blueprint. Keep them private.
+   - `REGISTRATION_ENABLED`: `true`.
+   - `REAL_MONEY_ENABLED`: `false`.
+4. Click **Save Changes** if you edited environment values. Open **Manual Deploy → Deploy latest commit** if Render does not automatically deploy the latest GitHub commit.
+5. Wait for the deploy to finish and for the service status to show **Live**. Open the `onrender.com` URL shown at the top. Both the website and API use this same address.
+6. Check the health endpoint by opening `https://YOUR-SERVICE.onrender.com/health`. It should return JSON with `"ok": true`.
+
+The Render build command installs the backend and frontend dependencies, builds the frontend with server mode enabled, copies the built files to `deploy/public`, and runs the backend tests. The start command starts the backend, which serves both the API and the built website. Keep the service at one instance because the live game scheduler is single-instance.
+
+### Public registration
+
+Production registration is enabled by the Blueprint default. Players can create an account with their phone number, name and PIN without receiving an SMS verification code. The phone number is therefore a login identifier only; it is **not proof that the player owns that number**. Use unique PINs and keep the real-money functions disabled.
+
+### Android SMS Forwarder
+
+The webhook accepts a signed or token-authenticated JSON request from an Android SMS-forwarding app. The forwarding app must support HTTPS POST, JSON body fields, and a custom HTTP header.
+
+1. In Render, open **Environment** and copy the value of `SMS_WEBHOOK_SECRET`. Do not post it in a chat or put it in a public repository.
+2. In the Android SMS Forwarder app, create a rule for messages from Telebirr, CBE and Lion Bank. Set the destination to:
+   `https://YOUR-SERVICE.onrender.com/api/webhooks/sms`
+3. Choose **POST** and JSON body. Map the app's sender field and message text into this shape. If the sender is a short code or number, set the fixed `provider` field in each rule to `telebirr`, `cbe`, or `lion-bank` respectively:
+
+```json
+{
+  "provider": "telebirr",
+  "sender": "Telebirr",
+  "text": "the full incoming SMS text",
+  "eventId": "a unique message ID from the forwarding app"
+}
+```
+
+4. Add this custom header:
+   `X-SMS-Token: YOUR_SMS_WEBHOOK_SECRET`
+   The app may instead calculate HMAC-SHA256 over the exact raw JSON body and send `X-SMS-Signature: sha256=HEX_DIGEST`.
+5. Save the rule. Do not forward outgoing/debit notifications as deposits. The server independently rejects messages that do not look like incoming credits, do not contain one clear ETB amount and a transaction reference, or come from an unsupported provider label.
+6. In the website, first submit a pending simulation deposit using the same transaction reference and amount as the SMS. Only then can the matching forwarded notification confirm it. A duplicate SMS will not credit twice.
+
+**Important integration limit:** SMS Forwarder apps have different screens and field names. This server-side parser supports common English notification patterns for Telebirr, CBE and Lion Bank, but banks can change their wording or use account-specific templates. I cannot confirm the exact SMS template or the options in the Android app without seeing them. If a real notification is not parsed, redact names, phone numbers, account numbers and balances before sharing a sample; never share your Render secret. This is a simulation credit receiver, not bank-grade proof of payment. Do not use it to handle real deposits or payouts.
+
+### What to expect after deployment
+
+- Registration: open.
+- Website and API: served by the same Render service.
+- Wallet: simulation ETB only.
+- SMS webhook: accepts authenticated forwarding requests and parses the supported sender labels.
+- Real-money deposits, withdrawals and payouts: remain disabled.
