@@ -183,6 +183,43 @@ export function createWalletService({ repo, config, chapa }) {
       return service.confirmDeposit(txRef);
     },
 
+    /* ───────────── simulation-only withdrawal requests ───────────── */
+
+    async requestSimulationWithdrawal(user, { amount, method, destination }) {
+      const a = toSantim(amount);
+      if (!Number.isSafeInteger(a) || a <= 0) throw new HttpError(400, 'invalid_amount', 'Enter a positive withdrawal amount.');
+      const receiveMethod = String(method ?? '').trim().toLowerCase();
+      if (receiveMethod && !['telebirr', 'bank'].includes(receiveMethod)) throw new HttpError(400, 'invalid_method', 'Choose Telebirr or Bank.');
+      const target = String(destination ?? '').trim().slice(0, 80);
+      const id = 'simwd-' + randomToken(10);
+      let w;
+      try {
+        w = await repo.requestSimulationWithdrawal({ id, userId: user.id, amount: a, method: receiveMethod || '', destination: target });
+      } catch (e) {
+        if (e instanceof RepoError && e.code === 'INSUFFICIENT_FUNDS') throw new HttpError(402, 'insufficient_funds', 'Not enough simulation balance.');
+        throw e;
+      }
+      log('simulation_withdrawal_requested', { id, userId: user.id, amount: etb(a), method: receiveMethod || 'unspecified', hasDestination: !!target });
+      return { id: w.id, amount: etb(a), status: w.status, balance: (await repo.findUserById(user.id)).balance / 100 };
+    },
+
+    listMySimulationWithdrawals: (user) => repo.listSimulationWithdrawals({ userId: user.id }),
+    listSimulationWithdrawals: (filter) => repo.listSimulationWithdrawals(filter),
+
+    async approveSimulationWithdrawal(id, adminId) {
+      const w = await repo.transitionSimulationWithdrawal(id, ['pending'], 'approved', { reviewedBy: adminId });
+      if (!w) throw new HttpError(409, 'wrong_status', 'Withdrawal request is no longer pending.');
+      log('simulation_withdrawal_admin_approved', { id, adminId, userId: w.userId, amount: etb(w.amount) });
+      return { id, status: 'approved' };
+    },
+
+    async rejectSimulationWithdrawal(id, note, adminId) {
+      const w = await repo.rejectSimulationWithdrawalAndRefund(id, String(note ?? '').slice(0, 200), adminId);
+      if (!w) throw new HttpError(409, 'wrong_status', 'Withdrawal request is no longer pending.');
+      log('simulation_withdrawal_admin_rejected_refunded', { id, adminId, userId: w.userId, amount: etb(w.amount) });
+      return { id, status: 'rejected', refunded: true };
+    },
+
     /* ───────────── cash-out ───────────── */
 
     async requestWithdrawal(user, { amount, accountName, accountNumber, bankCode }) {
