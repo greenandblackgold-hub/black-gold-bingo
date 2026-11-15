@@ -143,14 +143,19 @@ The server-mode wallet now supports a **simulation-only** top-up flow:
 
 ### Local setup
 
-Requirements: Node.js 20 or newer. From a terminal:
+Requirements: Node.js 20 or newer. In PowerShell, from the project root, build the website first and then start the API:
 
-```bash
-cd deploy
+```powershell
+cd client-source
+npm install --include=dev
+$env:VITE_SERVER_MODE="true"; npm run build
+New-Item -ItemType Directory -Force ../deploy/public | Out-Null
+Copy-Item -Path dist/* -Destination ../deploy/public/ -Recurse -Force
+cd ../deploy
 npm install
 ```
 
-Create a local environment file (or export these variables in your terminal):
+Create `deploy/.env` from `deploy/.env.example` and replace both placeholder secrets. The development command loads this file automatically:
 
 ```dotenv
 NODE_ENV=development
