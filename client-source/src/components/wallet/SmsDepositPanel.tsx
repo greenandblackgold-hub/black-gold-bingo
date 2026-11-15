@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -194,5 +194,112 @@ export function SmsDepositPanel() {
         </div>
       )}
     </section>
+  );
+}
+
+type DepositHistoryRow = {
+  reference: string;
+  amount: number;
+  status: DepositStatus;
+  currency: 'ETB';
+  at: number;
+};
+
+const historyCopy = {
+  am: {
+    title: 'የዲፖዚት ጥያቄዎቼ',
+    empty: 'እስካሁን የዲፖዚት ጥያቄ የለም።',
+    pending: 'በመጠባበቅ ላይ',
+    success: 'ተጸድቋል · ባላንስ ጨምሯል',
+    rejected: 'ውድቅ ተደርጓል',
+    test: 'የሙከራ ማጽደቅ · ባላንስ አልጨመረም',
+    failed: 'አልተሳካም',
+    mismatch: 'መጠን አልተዛመደም',
+    unknown: 'ያልታወቀ',
+    refresh: 'ዝርዝሩ በየ15 ሰከንዱ ይታደሳል።',
+  },
+  ti: {
+    title: 'ናይ ዲፖዚት ሕቶታተይ',
+    empty: 'ገና ናይ ዲፖዚት ሕቶ የለን።',
+    pending: 'ይጽበ ኣሎ',
+    success: 'ጸዲቑ · ሚዛን ተወሲኹ',
+    rejected: 'ተነጺጉ',
+    test: 'ሙከራ ጥራይ · ሚዛን ኣይወሰኸን',
+    failed: 'ኣይተዓወተን',
+    mismatch: 'መጠን ኣይተሰማምዐን',
+    unknown: 'ዘይፍለጥ',
+    refresh: 'ዝርዝር ኣብ ነፍሲ ወከፍ 15 ካልኢት ይሕደስ።',
+  },
+  en: {
+    title: 'My deposit requests',
+    empty: 'No deposit requests yet.',
+    pending: 'Pending review',
+    success: 'Approved · balance credited',
+    rejected: 'Rejected',
+    test: 'Test approved · no balance credited',
+    failed: 'Failed',
+    mismatch: 'Amount mismatch',
+    unknown: 'Unknown status',
+    refresh: 'This list refreshes every 15 seconds.',
+  },
+} as const;
+
+export function SimulationDepositHistory() {
+  const { lang } = useLanguage();
+  const t = historyCopy[lang] ?? historyCopy.en;
+  const [rows, setRows] = useState<DepositHistoryRow[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const result = await api.get<DepositHistoryRow[]>('/api/simulation/deposits');
+        if (active) setRows(result);
+      } catch {
+        // Keep the last successfully loaded history visible during temporary network errors.
+      } finally {
+        if (active) setLoaded(true);
+      }
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 15_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const statusLabel = (status: DepositStatus) => status === 'pending' ? t.pending
+    : status === 'success' ? t.success
+    : status === 'rejected' ? t.rejected
+    : status === 'test-approved' ? t.test
+    : status === 'failed' ? t.failed
+    : status === 'amount_mismatch' ? t.mismatch
+    : t.unknown;
+
+  return (
+    <div className="mb-4 rounded-xl border border-gold-700/40 bg-white/[0.03] p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-bold text-gold-300">{t.title}</h3>
+        <span className="text-xs text-gold-700">{t.refresh}</span>
+      </div>
+      {!loaded && <p className="py-2 text-sm text-gold-600">…</p>}
+      {loaded && rows.length === 0 && <p className="py-2 text-sm text-gold-600">{t.empty}</p>}
+      {rows.length > 0 && (
+        <ul className="divide-y divide-gold-700/30">
+          {rows.map((row) => (
+            <li key={row.reference} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <div className="min-w-0">
+                <p className="break-all font-mono text-sm text-gold-300">{row.reference}</p>
+                <p className="mt-1 text-xs text-gold-600">{new Date(row.at).toLocaleString()}</p>
+                <p className="mt-1 text-xs font-semibold text-gold-400">{statusLabel(row.status)}</p>
+              </div>
+              <p className="shrink-0 font-bold tabular-nums text-gold-300">{row.amount.toFixed(2)} ETB</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
