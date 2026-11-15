@@ -423,7 +423,7 @@ test('production safety gates block registration and all real-money routes until
     // The preceding rate-limit test intentionally lowers this limit; reset it before creating this test player.
     ctx.config.rateLimits.auth = 100000;
     ctx.app.resetLimits();
-    const p = await newPlayer('Safety Gate Player');
+    const p = await newPlayer('Safety Gate Player', 10);
     ctx.config.prod = true;
     ctx.config.registrationEnabled = false;
     ctx.config.realMoneyEnabled = false;
