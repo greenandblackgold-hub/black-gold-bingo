@@ -15,7 +15,7 @@ import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { SERVER_MODE } from '@/lib/api';
 import { AccountPanel } from '@/components/wallet/AccountPanel';
-import { ChapaDepositPanel } from '@/components/wallet/ChapaDepositPanel';
+import { SmsDepositPanel } from '@/components/wallet/SmsDepositPanel';
 import { WithdrawPanel } from '@/components/wallet/WithdrawPanel';
 import type { Lang, PayMethod as Method } from '@/types/game';
 
@@ -512,7 +512,7 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
       </section>
 
       <div className="grid gap-5 md:grid-cols-2">
-        {SERVER_MODE ? <ChapaDepositPanel /> : <DepositPanel t={t} onDeposit={deposit} />}
+        {SERVER_MODE ? <SmsDepositPanel /> : <DepositPanel t={t} onDeposit={deposit} />}
         <PurchasePanel t={t} price={cardPrice} balance={balance} onBuy={buyCards} onGoToPlay={onGoToPlay} locked={phase !== 'waiting'} />
       </div>
 
