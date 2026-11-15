@@ -38,10 +38,11 @@ const STRINGS = {
     free: 'ነጻ',
     claim: 'ቢንጎ በል!',
     claiming: 'በመረጋገጥ ላይ…',
-    claimSent: 'ጥያቄዎ ተልኳል',
+    claimSent: 'የአሸናፊነት ጥያቄዎ ተቀባ፤ የአስተዳዳሪ ማጽደቅ ይጠብቁ።',
     claimWaiting: 'በመፈተሽ ላይ…',
     winnerBanner: 'ዙሩ ተጠናቋል። አሸናፊ ካርድ',
     won: 'እንኳን ደስ አለዎት! ቢንጎ!',
+    pendingPrize: 'የSimulation ሽልማቱ ወደ ቦርሳዎ የሚገባው Admin ካጸደቀ በኋላ ብቻ ነው።',
     invalid: 'ቢንጎው አልተረጋገጠም። እንደገና ይሞክሩ።',
     noCards: 'ለዚህ ዙር ካርድ የለዎትም',
     noCardsHint: 'ለመጫወት ከቦርሳዎ ካርድ ይግዙ።',
@@ -63,10 +64,11 @@ const STRINGS = {
     free: 'ነጻ',
     claim: 'ቢንጎ በል!',
     claiming: 'ይረጋገጽ ኣሎ…',
-    claimSent: 'ጥርዓንኩም ተላኢኹ',
+    claimSent: 'ሕቶ ዓወትኩም ተቐቢሉ፤ ናይ Admin ምጽዳቕ ተጸበዩ።',
     claimWaiting: 'ይምርመር ኣሎ…',
     winnerBanner: 'ዙር ተወዲኡ። ዕዉት ካርድ',
     won: 'እንኳዕ ሕጉስ! ቢንጎ!',
+    pendingPrize: 'እቲ Simulation ሽልማት Admin ምስ ኣጽደቖ ጥራይ እዩ ናብ ቦርሳኹም ዝኣቱ።',
     invalid: 'ቢንጎ ኣይተረጋገጸን። እንደገና ፈትኑ።',
     noCards: 'ን እዚ ዙር ካርድ የብልኩምን',
     noCardsHint: 'ንምጽዋት ካብ ጥረ ገንዘብኩም ካርድ ግዝኡ።',
@@ -88,10 +90,11 @@ const STRINGS = {
     free: 'FREE',
     claim: 'Call BINGO!',
     claiming: 'Verifying…',
-    claimSent: 'Claim sent',
+    claimSent: 'Win claim received. Waiting for admin approval.',
     claimWaiting: 'Checking…',
     winnerBanner: 'Round finished. Winning card',
     won: 'Congratulations! BINGO!',
+    pendingPrize: 'The simulation prize is added to your wallet only after an admin approves it.',
     invalid: "That bingo couldn't be verified. Try again.",
     noCards: "You have no cards in this round",
     noCardsHint: 'Buy cards from your wallet to play.',
@@ -451,6 +454,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         >
           {iWon ? t('won') : `${t('winnerBanner')} #${winner.serial}`}
         </p>
+      {iWon && <p className="-mt-2 rounded-lg px-3 py-2 text-center text-xs text-gold-400">{t('pendingPrize')}</p>}
       )}
 
       {/* Cards */}
