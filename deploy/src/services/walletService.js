@@ -44,6 +44,7 @@ export function createWalletService({ repo, config, chapa }) {
         throw new HttpError(404, 'deposit_not_found', 'No pending simulation deposit matches this reference.');
       }
       if (payment.status === 'success') return { status: 'success', credited: false };
+      if (payment.status !== 'pending') return { status: payment.status, credited: false };
       if (String(event.status ?? '').toLowerCase() !== 'success') return { status: 'ignored', credited: false };
       const amount = toSantim(event.amount);
       if (String(event.currency ?? '').toUpperCase() !== 'ETB' || !Number.isSafeInteger(amount) || amount !== payment.amount) {
