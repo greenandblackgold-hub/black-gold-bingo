@@ -62,18 +62,19 @@ test('a player account cannot be silently promoted to admin by startup settings'
   assert.equal((await repo.findUserByPhone(player.phone)).role, 'player');
 });
 
-test('free cards remain playable while deposits and cash-outs are blocked without approval', async () => {
+test('simulation cards are playable while real-money deposits and cash-outs are blocked without approval', async () => {
   const repo = createMemoryRepo();
-  const config = loadConfig({ NODE_ENV: 'test', JWT_SECRET: secret });
+  const config = loadConfig({ NODE_ENV: 'test', JWT_SECRET: secret, CARD_PRICE_ETB: '10' });
   const auth = createAuthService({ repo, config });
   const player = await auth.createAdmin({ phone: '0911223345', name: 'Test', pin: '123456' });
+  await repo.applyLedger({ userId: player.id, amount: 1000, kind: 'deposit', ref: 'seed-security-card-test' });
   const game = createGameService({ repo, config });
   const wallet = createWalletService({ repo, config, chapa: {} });
 
-  const free = await game.buyCards(player, 1);
-  assert.equal(free.cards.length, 1);
-  assert.equal(free.balance, 0);
-  assert.equal((await game.getPublicState()).cardPrice, 0);
+  const purchase = await game.buyCards(player, 1);
+  assert.equal(purchase.cards.length, 1);
+  assert.equal(purchase.balance, 0);
+  assert.equal((await game.getPublicState()).cardPrice, 10);
   await assert.rejects(() => wallet.startDeposit(player, 100), (e) => e.status === 503 && e.code === 'real_money_disabled');
   await assert.rejects(
     () => wallet.requestWithdrawal(player, { amount: 50, accountName: 'Test', accountNumber: '12345678', bankCode: '1' }),
