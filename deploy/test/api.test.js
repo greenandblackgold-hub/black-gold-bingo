@@ -171,6 +171,27 @@ test('SMS simulation deposits require signed matching events and credit exactly 
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
 });
 
+test('signed forwarded SMS text is parsed for Telebirr CBE and Lion Bank', async () => {
+  ctx.config.smsWebhookSecret = 'test-sms-webhook-secret-at-least-32-characters';
+  const cases = [
+    { sender: 'Telebirr', text: 'You have received ETB 42.50. Transaction ID: TEL12345678', reference: 'TEL12345678', amount: 42.5 },
+    { sender: 'CBE', text: 'Your account is credited with 65.00 ETB. Ref No: CBE12345678', reference: 'CBE12345678', amount: 65 },
+    { sender: 'Lion Bank', text: 'You received Birr 80.00. Transaction ID: LION12345678', reference: 'LION12345678', amount: 80 },
+  ];
+  for (const item of cases) {
+    const p = await newPlayer();
+    const pending = await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: item.amount, reference: item.reference } });
+    assert.equal(pending.status, 200);
+    const body = { sender: item.sender, text: item.text, eventId: `event-${item.reference}` };
+    const raw = JSON.stringify(body);
+    const signature = createHmac('sha256', ctx.config.smsWebhookSecret).update(raw, 'utf8').digest('hex');
+    const result = await api('POST', '/api/webhooks/sms', { body, headers: { 'x-sms-signature': signature } });
+    assert.equal(result.status, 200, JSON.stringify(result.json));
+    assert.equal(result.json.credited, true);
+    assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, item.amount);
+  }
+});
+
 test('cards: buying, balance checks, round gating, server-issued grids', async () => {
   await freshRound();
   const p = await newPlayer('Buyer', 35);
