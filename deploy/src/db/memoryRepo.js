@@ -153,6 +153,14 @@ export function createMemoryRepo() {
       Object.assign(w, patch, { status: to, updatedAt: new Date() });
       return clone(w);
     },
+    async transitionWithdrawalAndRefund(id, from, to, patch = {}) {
+      const w = withdrawals.get(id);
+      if (!w || !from.includes(w.status)) return null;
+      // Both operations are synchronous in this in-memory test repository.
+      credit(w.userId, w.amount, 'withdraw_refund', `wd-refund:${id}`, { id });
+      Object.assign(w, patch, { status: to, updatedAt: new Date() });
+      return clone(w);
+    },
     async refundWithdrawal(id) {
       const w = withdrawals.get(id);
       if (!w) throw new RepoError('WITHDRAWAL_NOT_FOUND');
