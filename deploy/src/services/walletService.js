@@ -45,6 +45,9 @@ export function createWalletService({ repo, config, chapa }) {
       if (!payment || !['manual-simulation', 'sms-simulation'].includes(payment.source)) {
         throw new HttpError(404, 'deposit_not_found', 'Unknown simulation deposit request.');
       }
+      if (/^TEST-/i.test(payment.txRef)) {
+        throw new HttpError(409, 'test_only_reference', 'TEST references must use the isolated test approval action.');
+      }
       if (payment.status === 'success') return { status: 'success', credited: false };
       if (payment.status !== 'pending') throw new HttpError(409, 'wrong_status', 'Deposit request is no longer pending.');
       const result = await repo.confirmDeposit({ txRef: payment.txRef, chapaRef: 'manual-admin' });
@@ -54,6 +57,20 @@ export function createWalletService({ repo, config, chapa }) {
         if (latest?.status !== 'success') throw new HttpError(409, 'wrong_status', 'Deposit request has already been processed.');
       }
       return { status: 'success', credited: result.credited };
+    },
+
+    /** Mark a TEST-prefixed request as test-approved without crediting any wallet or ledger. */
+    async testApproveSimulationDeposit(txRef) {
+      const reference = String(txRef ?? '');
+      const payment = await repo.getPayment(reference);
+      if (!payment || !['manual-simulation', 'sms-simulation'].includes(payment.source) || !/^TEST-/i.test(payment.txRef)) {
+        throw new HttpError(404, 'test_deposit_not_found', 'Only TEST-prefixed simulation requests can use test approval.');
+      }
+      if (payment.status !== 'pending') throw new HttpError(409, 'wrong_status', 'Test request is no longer pending.');
+      const updated = await repo.failPayment(payment.txRef, 'test-approved');
+      if (!updated) throw new HttpError(409, 'wrong_status', 'Test request has already been processed.');
+      log('simulation_deposit_test_approved_no_credit', { txRef: payment.txRef, userId: payment.userId, etb: etb(payment.amount) });
+      return { status: 'test-approved', credited: false };
     },
 
     /** Reject a pending simulation request without changing the player's balance. */
