@@ -25,8 +25,10 @@ const firstCapture = (text, patterns) => {
  * SMS templates differ by account, language and provider release. Unknown or
  * ambiguous messages are rejected instead of guessing a transaction or amount.
  */
-export function parseBankSms({ sender, text, eventId } = {}) {
-  const provider = BANK_SENDERS.get(normalizeSender(sender));
+export function parseBankSms({ sender, provider: providerHint, text, eventId } = {}) {
+  const hinted = normalizeSender(providerHint);
+  const provider = BANK_SENDERS.get(normalizeSender(sender)) ?? BANK_SENDERS.get(hinted) ??
+    (hinted === 'TELEBIRR' ? 'telebirr' : hinted === 'CBE' ? 'cbe' : ['LIONBANK', 'LIONINTERNATIONALBANK'].includes(hinted) ? 'lion-bank' : null);
   if (!provider) throw new Error('unsupported_sms_sender');
 
   const message = String(text ?? '').replace(/\s+/g, ' ').trim();
