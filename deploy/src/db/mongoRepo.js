@@ -23,6 +23,7 @@ export async function createMongoRepo({ uri, dbName }) {
   const ledger = db.collection('ledger');
   const payments = db.collection('payments');
   const withdrawals = db.collection('withdrawals');
+  const winPayouts = db.collection('winPayouts');
   const rounds = db.collection('rounds');
 
   async function tx(fn) {
@@ -65,6 +66,7 @@ export async function createMongoRepo({ uri, dbName }) {
         payments.createIndex({ txRef: 1 }, { unique: true }),
         withdrawals.createIndex({ status: 1, createdAt: -1 }),
         withdrawals.createIndex({ userId: 1, createdAt: -1 }),
+        winPayouts.createIndex({ status: 1, createdAt: -1 }),
         rounds.createIndex({ round: 1 }, { unique: true }),
       ]);
       await games.updateOne({ _id: 'state' }, { $setOnInsert: { ...DEFAULT_GAME } }, { upsert: true });
@@ -153,26 +155,42 @@ export async function createMongoRepo({ uri, dbName }) {
       return toDoc(await cards.findOne({ code }));
     },
 
+    /** End the round and enqueue a prize; wallet credit is deferred until admin approval. */
     async settleWin({ round, card, prize, ref }) {
       return tx(async (session) => {
         const g = await games.findOneAndUpdate(
           { _id: 'state', phase: 'running', roundNumber: round },
-          {
-            $set: {
-              phase: 'ended',
-              autoCall: false,
-              nextCallAt: null,
-              winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, at: Date.now() },
-            },
-            $inc: { version: 1 },
-          },
+          { $set: { phase: 'ended', autoCall: false, nextCallAt: null,
+            winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: ref, payoutStatus: 'pending', at: Date.now() } },
+            $inc: { version: 1 } },
           { returnDocument: 'after', session },
         );
-        if (!g) return null; // somebody else already won this round
-        await moveMoney(session, { userId: card.userId, amount: prize, kind: 'prize', ref, meta: { round, card: card.code } });
+        if (!g) return null;
+        await winPayouts.insertOne({ _id: ref, round, cardCode: card.code, serial: card.serial, userId: card.userId, amount: prize, status: 'pending', createdAt: new Date(), updatedAt: new Date() }, { session });
         const { _id, ...game } = g;
         return game;
       });
+    },
+    async listWinPayouts({ status = 'pending' } = {}) {
+      const filter = status ? { status } : {};
+      const rows = await winPayouts.find(filter).sort({ createdAt: -1 }).limit(200).toArray();
+      return Promise.all(rows.map(async (p) => {
+        const u = await users.findOne({ _id: p.userId }, { projection: { name: 1, phone: 1 } });
+        return { id: p._id, round: p.round, cardCode: p.cardCode, serial: p.serial, userId: p.userId, amount: p.amount / 100, status: p.status, note: p.note ?? '', at: new Date(p.createdAt).getTime(), userName: u?.name ?? 'Unknown', userPhone: u?.phone ?? '' };
+      }));
+    },
+    async approveWinPayout(id) {
+      return tx(async (session) => {
+        const p = await winPayouts.findOneAndUpdate({ _id: id, status: 'pending' }, { $set: { status: 'approved', updatedAt: new Date() } }, { returnDocument: 'after', session });
+        if (!p) return null;
+        await moveMoney(session, { userId: p.userId, amount: p.amount, kind: 'prize', ref: `win-payout:${id}`, meta: { round: p.round, card: p.cardCode } });
+        const u = await users.findOne({ _id: p.userId }, { session, projection: { balance: 1 } });
+        return { id, status: 'approved', credited: true, balance: (u?.balance ?? 0) / 100 };
+      });
+    },
+    async rejectWinPayout(id, note = '') {
+      const p = await winPayouts.findOneAndUpdate({ _id: id, status: 'pending' }, { $set: { status: 'rejected', note: String(note).slice(0, 200), updatedAt: new Date() } }, { returnDocument: 'after' });
+      return p ? { id, status: 'rejected' } : null;
     },
 
     /* money */
