@@ -76,8 +76,27 @@ export function parseBankSms({ sender, provider: providerHint, text, eventId } =
       }
     }
   }
+  const allEtbAmounts = [];
+  const allAmountPatterns = [
+    /\b(?:ETB|Birr)\s*([0-9][0-9,]*(?:\.\d{1,2})?)\b/gi,
+    /\b([0-9][0-9,]*(?:\.\d{1,2})?)\s*(?:ETB|Birr)\b/gi,
+  ];
+  for (const pattern of allAmountPatterns) {
+    for (const match of message.matchAll(pattern)) {
+      const amount = Number(match[1].replace(/,/g, ''));
+      if (Number.isFinite(amount) && amount > 0) {
+        const prefix = message.slice(Math.max(0, match.index - 35), match.index);
+        if (!/balance\s*(?:is|:)?\s*$/i.test(prefix)) allEtbAmounts.push(amount);
+      }
+    }
+  }
   const uniqueAmounts = [...new Set(amountCandidates)];
+  const uniqueTransactionAmounts = [...new Set(allEtbAmounts)];
+  if (uniqueTransactionAmounts.length > 1) throw new Error('sms_amount_missing_or_ambiguous');
   if (uniqueAmounts.length !== 1) throw new Error('sms_amount_missing_or_ambiguous');
+  if (uniqueTransactionAmounts.length === 1 && uniqueTransactionAmounts[0] !== uniqueAmounts[0]) {
+    throw new Error('sms_amount_missing_or_ambiguous');
+  }
 
   return {
     eventId: String(eventId ?? reference).slice(0, 120),
