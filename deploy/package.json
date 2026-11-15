@@ -9,6 +9,7 @@
   "scripts": {
     "start": "RUN_SERVER=true node src/index.js",
     "dev": "node --env-file-if-exists=.env scripts/dev.js",
+    "simulate:sms": "node --env-file-if-exists=.env scripts/send-test-sms.js",
     "test": "node --test",
     "create-admin": "node scripts/create-admin.js"
   },
