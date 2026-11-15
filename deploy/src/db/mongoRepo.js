@@ -24,7 +24,6 @@ export async function createMongoRepo({ uri, dbName }) {
   const payments = db.collection('payments');
   const withdrawals = db.collection('withdrawals');
   const rounds = db.collection('rounds');
-  const maintenance = db.collection('maintenance');
 
   async function tx(fn) {
     const session = client.startSession();
@@ -70,23 +69,6 @@ export async function createMongoRepo({ uri, dbName }) {
       ]);
       await games.updateOne({ _id: 'state' }, { $setOnInsert: { ...DEFAULT_GAME } }, { upsert: true });
     },
-    /** One-time fresh-start reset: preserve admin accounts, remove player accounts and their data. */
-    async resetPlayerAccountsOnce() {
-      const markerId = 'player-accounts-reset-2026-11';
-      if (await maintenance.findOne({ _id: markerId })) return { alreadyDone: true };
-      await users.deleteMany({ role: { $ne: 'admin' } });
-      await Promise.all([
-        cards.deleteMany({}),
-        ledger.deleteMany({}),
-        payments.deleteMany({}),
-        withdrawals.deleteMany({}),
-        rounds.deleteMany({}),
-      ]);
-      await games.updateOne({ _id: 'state' }, { $set: { ...DEFAULT_GAME } }, { upsert: true });
-      await maintenance.insertOne({ _id: markerId, completedAt: new Date(), preservedRole: 'admin' });
-      return { alreadyDone: false };
-    },
-
     async close() {
       await client.close();
     },
@@ -208,8 +190,8 @@ export async function createMongoRepo({ uri, dbName }) {
     },
 
     /* deposits */
-    async createPayment({ txRef, userId, amount }) {
-      await payments.insertOne({ txRef, userId, amount, status: 'pending', createdAt: new Date() });
+    async createPayment({ txRef, userId, amount, source = 'chapa' }) {
+      await payments.insertOne({ txRef, userId, amount, source, status: 'pending', createdAt: new Date() });
     },
     async getPayment(txRef) {
       return payments.findOne({ txRef });
@@ -261,6 +243,19 @@ export async function createMongoRepo({ uri, dbName }) {
         { returnDocument: 'after' },
       );
       return toDoc(w);
+    },
+    /** Change a withdrawal state and refund its held balance in the same transaction. */
+    async transitionWithdrawalAndRefund(id, from, to, patch = {}) {
+      return tx(async (session) => {
+        const w = await withdrawals.findOneAndUpdate(
+          { _id: id, status: { $in: from } },
+          { $set: { ...patch, status: to, updatedAt: new Date() } },
+          { returnDocument: 'after', session },
+        );
+        if (!w) return null;
+        await moveMoney(session, { userId: w.userId, amount: w.amount, kind: 'withdraw_refund', ref: `wd-refund:${id}`, meta: { id } });
+        return toDoc(w);
+      });
     },
     async refundWithdrawal(id) {
       const w = await withdrawals.findOne({ _id: id });

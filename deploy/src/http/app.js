@@ -4,6 +4,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { HttpError } from '../util/errors.js';
 import { publicUser } from '../services/authService.js';
 
@@ -135,6 +136,22 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
     const rows = await repo.listLedger(user.id, 30);
     return rows.map((e) => ({ id: e.ref, kind: ledgerKind(e.kind), amount: e.amount / 100, label: ledgerLabel[e.kind], at: new Date(e.createdAt).getTime() }));
   });
+  route('POST', '/api/simulation/deposits', 'user', 'money', ({ user, body }) => wallet.startSmsSimulationDeposit(user, body));
+  route('GET', '/api/simulation/deposits/:txRef', 'user', 'default', ({ user, params }) => wallet.simulationDepositStatus(user, decodeURIComponent(params.txRef)));
+
+  // The gateway signs the exact raw JSON body with HMAC-SHA256. Never trust unsigned SMS text.
+  route('POST', '/api/webhooks/sms', 'public', 'money', async ({ req, rawBody }) => {
+    if (!config.smsWebhookSecret || config.smsWebhookSecret.length < 32) {
+      throw new HttpError(503, 'sms_webhook_not_configured', 'SMS webhook is not configured.');
+    }
+    const supplied = String(req.headers['x-sms-signature'] ?? '').replace(/^sha256=/i, '').toLowerCase();
+    const expected = createHmac('sha256', config.smsWebhookSecret).update(rawBody, 'utf8').digest('hex');
+    const a = Buffer.from(supplied, 'hex');
+    const b = Buffer.from(expected, 'hex');
+    if (a.length !== b.length || !timingSafeEqual(a, b)) throw new HttpError(401, 'bad_signature', 'Invalid SMS webhook signature.');
+    return wallet.confirmSmsSimulationDeposit(parseJson(rawBody));
+  });
+
   route('POST', '/api/payments/deposit', 'user', 'money', ({ user, body }) => { requireRealMoney(); return wallet.startDeposit(user, body.amount); });
 
 

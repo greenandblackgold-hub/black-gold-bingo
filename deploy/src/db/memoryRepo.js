@@ -110,8 +110,9 @@ export function createMemoryRepo() {
     },
 
     /* deposits */
-    async createPayment({ txRef, userId, amount }) {
-      payments.set(txRef, { txRef, userId, amount, status: 'pending', createdAt: new Date() });
+    async createPayment({ txRef, userId, amount, source = 'chapa' }) {
+      if (payments.has(txRef)) throw new RepoError('PAYMENT_REFERENCE_TAKEN');
+      payments.set(txRef, { txRef, userId, amount, source, status: 'pending', createdAt: new Date() });
     },
     async getPayment(txRef) {
       return clone(payments.get(txRef) ?? null);
@@ -150,6 +151,14 @@ export function createMemoryRepo() {
     async transitionWithdrawal(id, from, to, patch = {}) {
       const w = withdrawals.get(id);
       if (!w || !from.includes(w.status)) return null;
+      Object.assign(w, patch, { status: to, updatedAt: new Date() });
+      return clone(w);
+    },
+    async transitionWithdrawalAndRefund(id, from, to, patch = {}) {
+      const w = withdrawals.get(id);
+      if (!w || !from.includes(w.status)) return null;
+      // Both operations are synchronous in this in-memory test repository.
+      credit(w.userId, w.amount, 'withdraw_refund', `wd-refund:${id}`, { id });
       Object.assign(w, patch, { status: to, updatedAt: new Date() });
       return clone(w);
     },

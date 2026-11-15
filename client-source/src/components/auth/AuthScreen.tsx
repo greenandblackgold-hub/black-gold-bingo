@@ -14,7 +14,7 @@ const TEXT = {
   am: {
     login: 'ግባ', register: 'መለያ ክፈት', phone: 'ስልክ ቁጥር', name: 'ስምዎ', pin: 'ባለ 6 አሃዝ ሚስጥር ቁጥር (PIN)', confirmPin: 'PIN ድገም', pinMismatch: 'ያስገቡት PIN አይመሳሰልም።',
     toRegister: 'መለያ የለዎትም? ይመዝገቡ', toLogin: 'መለያ አለዎት? ይግቡ', busy: 'በመጠበቅ ላይ…',
-    invalid_phone: 'ትክክለኛ የኢትዮጵያ ስልክ ቁጥር ያስገቡ (09… ወይም 07…)', invalid_name: 'ስምዎን ያስገቡ', invalid_pin: 'PIN 6 አሃዝ መሆን አለበት',
+    invalid_phone: 'ትክክለኛ የኢትዮጵያ ስልክ ቁጥር ያስገቡ (09… ወይም 07…)', invalid_name: 'ስምዎን ያስገቡ', invalid_pin: 'PIN 6 አሃዝ መሆን አለበት', pin_mismatch: 'ያስገቡት PIN አይመሳሰልም።',
     phone_taken: 'ይህ ስልክ ቁጥር ተመዝግቧል', invalid_credentials: 'ስልክ ቁጥር ወይም PIN ልክ አይደለም',
     locked: 'ብዙ ጊዜ ሞክረዋል። ከ15 ደቂቃ በኋላ ይሞክሩ።', rate_limited: 'በጣም ብዙ ጥያቄዎች። ትንሽ ቆይተው ይሞክሩ።', network: 'ከአገልጋዩ ጋር መገናኘት አልተቻለም።', error: 'የሆነ ችግር ተፈጥሯል። እንደገና ይሞክሩ።',
     age: '18 ዓመት እና ከዚያ በላይ ብቻ። ስልክ ቁጥሩ በSMS አይረጋገጥም፤ የራስዎን ቁጥር ብቻ ይጠቀሙ።',

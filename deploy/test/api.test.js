@@ -1,6 +1,7 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import { createHmac } from 'node:crypto';
 import { loadConfig } from '../src/config.js';
 import { build } from '../src/index.js';
 
@@ -24,7 +25,7 @@ async function api(method, path, { token, body, headers } = {}) {
 
 async function newPlayer(name = 'Test Player', fund = 0) {
   const phone = newPhone();
-  const r = await api('POST', '/api/auth/register', { body: { phone, name, pin: '123456' } });
+  const r = await api('POST', '/api/auth/register', { body: { phone, name, pin: '123456', pinConfirm: '123456' } });
   assert.equal(r.status, 200, JSON.stringify(r.json));
   if (fund) await ctx.repo.applyLedger({ userId: r.json.user.id, amount: fund * 100, kind: 'deposit', ref: `seed:${r.json.user.id}` });
   return { ...r.json, phone };
@@ -68,15 +69,15 @@ const drawAll = async () => { for (let i = 0; i < 75; i++) await ctx.game.draw()
 
 test('register, login, wrong PIN, lockout after 5 failures', async () => {
   const phone = newPhone();
-  assert.equal((await api('POST', '/api/auth/register', { body: { phone, name: 'A', pin: '123456' } })).json.error, 'invalid_name');
-  assert.equal((await api('POST', '/api/auth/register', { body: { phone: '123', name: 'Abebe', pin: '123456' } })).json.error, 'invalid_phone');
-  assert.equal((await api('POST', '/api/auth/register', { body: { phone, name: 'Abebe', pin: '12' } })).json.error, 'invalid_pin');
-  const ok = await api('POST', '/api/auth/register', { body: { phone, name: 'Abebe', pin: '123456' } });
+  assert.equal((await api('POST', '/api/auth/register', { body: { phone, name: 'A', pin: '123456', pinConfirm: '123456' } })).json.error, 'invalid_name');
+  assert.equal((await api('POST', '/api/auth/register', { body: { phone: '123', name: 'Abebe', pin: '123456', pinConfirm: '123456' } })).json.error, 'invalid_phone');
+  assert.equal((await api('POST', '/api/auth/register', { body: { phone, name: 'Abebe', pin: '12', pinConfirm: '12' } })).json.error, 'invalid_pin');
+  const ok = await api('POST', '/api/auth/register', { body: { phone, name: 'Abebe', pin: '123456', pinConfirm: '123456' } });
   assert.equal(ok.status, 200);
   assert.equal(ok.json.user.balance, 0);
   assert.equal(ok.json.user.role, 'player');
   assert.equal(ok.json.user.pinHash, undefined);
-  assert.equal((await api('POST', '/api/auth/register', { body: { phone: '+251' + phone.slice(1), name: 'Dup', pin: '123456' } })).json.error, 'phone_taken');
+  assert.equal((await api('POST', '/api/auth/register', { body: { phone: '+251' + phone.slice(1), name: 'Dup', pin: '123456', pinConfirm: '123456' } })).json.error, 'phone_taken');
   assert.equal((await api('POST', '/api/auth/login', { body: { phone, pin: '123456' } })).status, 200);
   for (let i = 0; i < 5; i++) assert.equal((await api('POST', '/api/auth/login', { body: { phone, pin: '000000' } })).status, 401);
   const locked = await api('POST', '/api/auth/login', { body: { phone, pin: '123456' } });
@@ -136,6 +137,38 @@ test('deposit via mock Chapa: credited once, replays and wrong amounts are harml
   mp.amount = 100; mp.paid = true;
   await api('GET', `/api/payments/chapa/callback?trx_ref=${d2.json.txRef}`);
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 100);
+});
+
+test('SMS simulation deposits require signed matching events and credit exactly once', async () => {
+  const p = await newPlayer();
+  ctx.config.smsWebhookSecret = 'test-sms-webhook-secret-at-least-32-characters';
+  const created = await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: 125.50, reference: 'TXN-SMS-123456' } });
+  assert.equal(created.status, 200, JSON.stringify(created.json));
+  assert.equal(created.json.status, 'pending');
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
+  assert.equal((await api('GET', '/api/simulation/deposits/TXN-SMS-123456', { token: p.token })).json.status, 'pending');
+
+  const payload = { eventId: 'sms-event-001', reference: 'TXN-SMS-123456', amount: 125.50, currency: 'ETB', status: 'success' };
+  const raw = JSON.stringify(payload);
+  const signature = createHmac('sha256', ctx.config.smsWebhookSecret).update(raw, 'utf8').digest('hex');
+  const invalid = await api('POST', '/api/webhooks/sms', { body: payload, headers: { 'x-sms-signature': '00'.repeat(32) } });
+  assert.equal(invalid.status, 401);
+  const valid = await api('POST', '/api/webhooks/sms', { body: payload, headers: { 'x-sms-signature': signature } });
+  assert.equal(valid.status, 200, JSON.stringify(valid.json));
+  assert.equal(valid.json.credited, true);
+  const replay = await api('POST', '/api/webhooks/sms', { body: payload, headers: { 'x-sms-signature': signature } });
+  assert.equal(replay.json.credited, false);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
+
+  const other = await newPlayer();
+  assert.equal((await api('GET', '/api/simulation/deposits/TXN-SMS-123456', { token: other.token })).status, 404);
+  const wrong = await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: 80, reference: 'TXN-SMS-654321' } });
+  const mismatchBody = { eventId: 'sms-event-002', reference: 'TXN-SMS-654321', amount: 79, currency: 'ETB', status: 'success' };
+  const mismatchRaw = JSON.stringify(mismatchBody);
+  const mismatchSig = createHmac('sha256', ctx.config.smsWebhookSecret).update(mismatchRaw, 'utf8').digest('hex');
+  assert.equal(wrong.status, 200);
+  assert.equal((await api('POST', '/api/webhooks/sms', { body: mismatchBody, headers: { 'x-sms-signature': mismatchSig } })).status, 400);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
 });
 
 test('cards: buying, balance checks, round gating, server-issued grids', async () => {
@@ -376,7 +409,7 @@ test('production safety gates block registration and all real-money routes until
     // Previous tests may leave the shared game in an ended phase; reopen it for the free-card assertion.
     await freshRound();
 
-    assert.equal((await api('POST', '/api/auth/register', { body: { phone: newPhone(), name: 'Blocked', pin: '123456' } })).status, 503);
+    assert.equal((await api('POST', '/api/auth/register', { body: { phone: newPhone(), name: 'Blocked', pin: '123456', pinConfirm: '123456' } })).status, 503);
     assert.equal((await api('POST', '/api/payments/deposit', { token: p.token, body: { amount: 100 } })).status, 503);
     assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 1 } })).status, 200);
     assert.equal((await api('POST', '/api/claim', { token: p.token, body: { cardId: 'BG-TEST22' } })).status, 409);

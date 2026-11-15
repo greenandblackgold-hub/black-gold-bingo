@@ -82,6 +82,31 @@ test('free cards remain playable while deposits and cash-outs are blocked withou
   game.stop();
 });
 
+test('registration rejects a mismatched PIN confirmation on the server', async () => {
+  const repo = createMemoryRepo();
+  const config = loadConfig({ NODE_ENV: 'test', JWT_SECRET: secret });
+  const auth = createAuthService({ repo, config });
+  await assert.rejects(
+    () => auth.register({ phone: '0911223346', name: 'Mismatch', pin: '123456', pinConfirm: '654321' }),
+    (e) => e.status === 400 && e.code === 'pin_mismatch',
+  );
+});
+
+test('failed withdrawal transition and refund are applied together exactly once', async () => {
+  const repo = createMemoryRepo();
+  const user = await repo.createUser({ phone: '0911223347', name: 'Refund', pinHash: await hashSecret('123456') });
+  await repo.applyLedger({ userId: user.id, amount: 10000, kind: 'deposit', ref: 'seed-refund-test' });
+  await repo.requestWithdrawal({ id: 'wd-test', userId: user.id, amount: 5000, accountName: 'Refund User', accountNumber: '0911223344', bankCode: '1' });
+  assert.equal((await repo.findUserById(user.id)).balance, 5000);
+  const failed = await repo.transitionWithdrawalAndRefund('wd-test', ['processing'], 'failed');
+  assert.equal(failed, null, 'cannot refund while status is pending');
+  const rejected = await repo.transitionWithdrawalAndRefund('wd-test', ['pending'], 'rejected');
+  assert.equal(rejected.status, 'rejected');
+  assert.equal((await repo.findUserById(user.id)).balance, 10000);
+  assert.equal(await repo.transitionWithdrawalAndRefund('wd-test', ['pending'], 'rejected'), null, 'second refund is blocked by status transition');
+  assert.equal((await repo.listLedger(user.id)).filter((x) => x.kind === 'withdraw_refund').length, 1);
+});
+
 test('production registration is disabled until real phone verification is configured', async () => {
   const config = loadConfig({
     NODE_ENV: 'production',

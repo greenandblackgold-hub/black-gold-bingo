@@ -33,7 +33,6 @@ export function loadConfig(env = process.env) {
     adminPhone: env.ADMIN_PHONE ?? '',
     adminPin: env.ADMIN_PIN ?? '',
     adminName: env.ADMIN_NAME ?? 'Owner',
-    resetPlayerAccountsOnce: bool(env.RESET_PLAYER_ACCOUNTS_ONCE, false),
     roomId: env.ROOM_ID ?? 'BINGO-99',
     cardPrice: santim(num(env.CARD_PRICE_ETB, 10)),
     prizePercent: num(env.PRIZE_PERCENT, 80),
@@ -43,12 +42,14 @@ export function loadConfig(env = process.env) {
     minWithdraw: santim(num(env.MIN_WITHDRAW_ETB, 50)),
     autoPayout: bool(env.AUTO_PAYOUT, false),
     // Real-money activity stays OFF in production until both the lottery permit and Chapa's written merchant approval exist.
-    registrationEnabled: bool(env.REGISTRATION_ENABLED, !prod),
+    // Public signup remains disabled in production until real phone/SMS verification is implemented.
+    registrationEnabled: !prod && bool(env.REGISTRATION_ENABLED, true),
     realMoneyEnabled: bool(env.REAL_MONEY_ENABLED, !prod && bool(env.CHAPA_MOCK, false)),
     lotteryLicenseApproved: bool(env.LOTTERY_LICENSE_APPROVED, false),
     chapaMerchantApproved: bool(env.CHAPA_MERCHANT_APPROVED, false),
     // Requests per minute per IP. Many mobile users can share one carrier IP, so keep these generous.
     rateLimits: { auth: num(env.RATE_LIMIT_AUTH, 20), money: num(env.RATE_LIMIT_MONEY, 40), default: num(env.RATE_LIMIT_DEFAULT, 240) },
+    smsWebhookSecret: env.SMS_WEBHOOK_SECRET ?? '',
     chapa: {
       secretKey: env.CHAPA_SECRET_KEY ?? '',
       webhookSecret: env.CHAPA_WEBHOOK_SECRET ?? '',
