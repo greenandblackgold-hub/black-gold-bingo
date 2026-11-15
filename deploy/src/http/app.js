@@ -141,6 +141,12 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   route('GET', '/api/simulation/deposits', 'user', 'default', ({ user }) => wallet.listUserSimulationDeposits(user));
   route('GET', '/api/simulation/deposits/:txRef', 'user', 'default', ({ user, params }) => wallet.simulationDepositStatus(user, decodeURIComponent(params.txRef)));
 
+  /* Simulation withdrawals: amounts are held in the simulation wallet only. */
+  route('POST', '/api/simulation/withdrawals', 'user', 'money', ({ user, body }) => wallet.requestSimulationWithdrawal(user, body));
+  route('GET', '/api/simulation/withdrawals', 'user', 'default', ({ user, query }) =>
+    wallet.listMySimulationWithdrawals(user).then((rows) => rows.map((w) => ({ id: w.id, amount: w.amount, method: w.method, destination: w.destination, status: w.status, at: w.at }))),
+  );
+
   // The gateway signs the exact raw JSON body with HMAC-SHA256. Never trust unsigned SMS text.
   route('POST', '/api/webhooks/sms', 'public', 'money', async ({ req, rawBody }) => {
     if (!config.smsWebhookSecret || config.smsWebhookSecret.length < 32) {
@@ -218,6 +224,15 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   /* admin */
   const admin = (method, path, handler, bucket = 'default') => route(method, path, 'admin', bucket, handler);
   admin('GET', '/api/admin/stats', () => repo.stats());
+  admin('GET', '/api/admin/withdrawals/simulation', async ({ query }) =>
+    wallet.listSimulationWithdrawals({ status: query.get('status') || 'pending' }),
+  );
+  admin('POST', '/api/admin/withdrawals/simulation/:id/approve', async ({ params, user }) =>
+    wallet.approveSimulationWithdrawal(decodeURIComponent(params.id), user.id),
+  );
+  admin('POST', '/api/admin/withdrawals/simulation/:id/reject', async ({ params, body, user }) =>
+    wallet.rejectSimulationWithdrawal(decodeURIComponent(params.id), body.note, user.id),
+  );
   admin('GET', '/api/admin/deposits', async ({ query }) =>
     wallet.listSimulationDeposits({ status: query.get('status') || 'pending' }),
   );
