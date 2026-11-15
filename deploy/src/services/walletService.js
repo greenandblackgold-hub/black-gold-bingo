@@ -28,6 +28,14 @@ export function createWalletService({ repo, config, chapa }) {
       return { reference: txRef, amount: etb(amount), status: 'pending', currency: 'ETB' };
     },
 
+    async simulationDepositStatus(user, txRef) {
+      const payment = await repo.getPayment(String(txRef ?? ''));
+      if (!payment || payment.userId !== user.id || payment.source !== 'sms-simulation') {
+        throw new HttpError(404, 'deposit_not_found', 'Unknown simulation deposit reference.');
+      }
+      return { status: payment.status };
+    },
+
     /** Process a normalized, HMAC-authenticated SMS gateway event. */
     async confirmSmsSimulationDeposit(event) {
       const txRef = String(event.reference ?? '').trim();
