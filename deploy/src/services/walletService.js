@@ -36,6 +36,9 @@ export function createWalletService({ repo, config, chapa }) {
       return { status: payment.status };
     },
 
+    /** Player-owned deposit history, including pending and terminal states. */
+    listUserSimulationDeposits: (user) => repo.listUserSimulationDeposits(user.id, 30),
+
     /** Admin review queue for simulation deposits. */
     listSimulationDeposits: (filter) => repo.listSimulationDeposits(filter),
 

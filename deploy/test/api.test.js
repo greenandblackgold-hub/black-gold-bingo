@@ -161,6 +161,9 @@ test('simulation deposits require admin review and credit exactly once', async (
   assert.equal(replay.json.credited, false);
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
   assert.equal((await api('GET', '/api/simulation/deposits/TXN-ADMIN-12345', { token: p.token })).json.status, 'success');
+  const history = await api('GET', '/api/simulation/deposits', { token: p.token });
+  assert.equal(history.status, 200);
+  assert.ok(history.json.some((row) => row.reference === 'TXN-ADMIN-12345' && row.status === 'success' && row.amount === 125.5));
   assert.equal((await api('GET', '/api/ledger', { token: p.token })).json.filter((row) => row.kind === 'deposit').length, 1);
 
   const other = await newPlayer();
@@ -173,6 +176,8 @@ test('simulation deposits require admin review and credit exactly once', async (
   assert.equal(denied.status, 200);
   assert.equal(denied.json.status, 'rejected');
   assert.equal((await api('GET', '/api/simulation/deposits/TXN-REJECT-1234', { token: p.token })).json.status, 'rejected');
+  const rejectedHistory = await api('GET', '/api/simulation/deposits', { token: p.token });
+  assert.ok(rejectedHistory.json.some((row) => row.reference === 'TXN-REJECT-1234' && row.status === 'rejected'));
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
   assert.equal((await api('POST', '/api/admin/deposits/TXN-REJECT-1234/approve', { token: ctx.adminToken })).json.error, 'wrong_status');
 });
@@ -188,6 +193,8 @@ test('TEST-prefixed deposits can be test-approved without ever crediting the wal
   assert.equal(result.status, 200);
   assert.deepEqual(result.json, { status: 'test-approved', credited: false });
   assert.equal((await api('GET', `/api/simulation/deposits/${reference}`, { token: p.token })).json.status, 'test-approved');
+  const testHistory = await api('GET', '/api/simulation/deposits', { token: p.token });
+  assert.ok(testHistory.json.some((row) => row.reference === reference && row.status === 'test-approved'));
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
   assert.equal((await api('GET', '/api/ledger', { token: p.token })).json.length, 0);
   assert.equal((await api('POST', `/api/admin/deposits/${reference}/test-approve`, { token: ctx.adminToken })).json.error, 'wrong_status');

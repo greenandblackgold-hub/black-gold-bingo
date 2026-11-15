@@ -117,6 +117,13 @@ export function createMemoryRepo() {
     async getPayment(txRef) {
       return clone(payments.get(txRef) ?? null);
     },
+    async listUserSimulationDeposits(userId, limit = 30) {
+      return [...payments.values()]
+        .filter((p) => p.userId === userId && ['manual-simulation', 'sms-simulation'].includes(p.source))
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, limit)
+        .map((p) => ({ reference: p.txRef, amount: p.amount / 100, status: p.status, currency: 'ETB', at: p.createdAt.getTime() }));
+    },
     async listSimulationDeposits({ status = 'pending' } = {}) {
       return [...payments.values()]
         .filter((p) => ['manual-simulation', 'sms-simulation'].includes(p.source) && (!status || p.status === status))
