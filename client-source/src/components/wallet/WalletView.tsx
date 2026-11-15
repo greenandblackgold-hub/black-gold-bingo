@@ -15,7 +15,7 @@ import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { SERVER_MODE } from '@/lib/api';
 import { AccountPanel } from '@/components/wallet/AccountPanel';
-import { SmsDepositPanel } from '@/components/wallet/SmsDepositPanel';
+import { SmsDepositPanel, SimulationDepositHistory } from '@/components/wallet/SmsDepositPanel';
 import { WithdrawPanel } from '@/components/wallet/WithdrawPanel';
 import type { Lang, PayMethod as Method } from '@/types/game';
 
@@ -521,6 +521,7 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
       {/* History */}
       <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
         <h2 className="mb-3 text-lg font-bold text-gold-300">{t('history')}</h2>
+        {SERVER_MODE && <SimulationDepositHistory />}
         {recent.length === 0 ? (
           <p className="py-4 text-center text-sm text-gold-700">{t('empty')}</p>
         ) : (
