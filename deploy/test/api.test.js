@@ -185,7 +185,10 @@ test('signed forwarded SMS text is parsed for Telebirr CBE and Lion Bank', async
     const body = { sender: item.sender, text: item.text, eventId: `event-${item.reference}` };
     const raw = JSON.stringify(body);
     const signature = createHmac('sha256', ctx.config.smsWebhookSecret).update(raw, 'utf8').digest('hex');
-    const result = await api('POST', '/api/webhooks/sms', { body, headers: { 'x-sms-signature': signature } });
+    const headers = item.sender === 'CBE'
+      ? { 'x-sms-token': ctx.config.smsWebhookSecret }
+      : { 'x-sms-signature': signature };
+    const result = await api('POST', '/api/webhooks/sms', { body, headers });
     assert.equal(result.status, 200, JSON.stringify(result.json));
     assert.equal(result.json.credited, true);
     assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, item.amount);
