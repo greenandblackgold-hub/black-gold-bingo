@@ -176,6 +176,18 @@ npm run dev
 
 Open `http://localhost:8080`. Memory storage is for local testing only; its data is cleared when the server restarts. For persistent hosted use, configure MongoDB Atlas with `STORAGE=mongo` and `MONGODB_URI`, plus a strong private `JWT_SECRET` and `SMS_WEBHOOK_SECRET`.
 
+### Test the complete flow locally
+
+1. Start the server and sign in to the website.
+2. In the wallet, submit a test amount and reference such as `TXN123456789`.
+3. Open a second terminal, go to `deploy`, and send a signed fake SMS event:
+
+```powershell
+npm run simulate:sms -- TXN123456789 100
+```
+
+Use the same reference and amount entered in the wallet. The wallet page checks the status and refreshes the displayed balance after confirmation. This command is only a local test tool; it does not read a real phone SMS or contact a bank.
+
 ### Webhook event format
 
 The SMS gateway adapter must translate the provider's notification into this JSON shape (do not forward arbitrary user-submitted text as a trusted event):
