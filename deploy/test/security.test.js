@@ -15,7 +15,7 @@ test('production real-money mode is off unless explicitly approved', () => {
     MONGODB_URI: 'mongodb://example.invalid/db',
     JWT_SECRET: secret,
   });
-  assert.equal(safe.registrationEnabled, false);
+  assert.equal(safe.registrationEnabled, true);
   assert.equal(safe.realMoneyEnabled, false);
   assert.equal(safe.lotteryLicenseApproved, false);
   assert.equal(safe.chapaMerchantApproved, false);
@@ -107,16 +107,17 @@ test('failed withdrawal transition and refund are applied together exactly once'
   assert.equal((await repo.listLedger(user.id)).filter((x) => x.kind === 'withdraw_refund').length, 1);
 });
 
-test('production registration is disabled until real phone verification is configured', async () => {
+test('production registration is open without SMS verification when enabled', async () => {
   const config = loadConfig({
     NODE_ENV: 'production',
     MONGODB_URI: 'mongodb://example.invalid/db',
     JWT_SECRET: secret,
+    REGISTRATION_ENABLED: 'true',
   });
   const repo = createMemoryRepo();
   const auth = createAuthService({ repo, config });
-  await assert.rejects(
-    () => auth.register({ phone: '0911223344', name: 'New Player', pin: '123456' }),
-    (e) => e.status === 503 && e.code === 'registration_disabled',
-  );
+  const player = await auth.register({ phone: '0911223344', name: 'New Player', pin: '123456', pinConfirm: '123456' });
+  assert.equal(player.user.phone, '0911223344');
+  assert.equal(player.user.role, 'player');
+  assert.ok(player.token);
 });
