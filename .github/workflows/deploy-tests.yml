@@ -25,7 +25,7 @@ jobs:
       - run: npm install
       # Build the real React client before testing the deployable static site.
       - run: npm --prefix ../client-source install --include=dev
-      - run: cd ../client-source && VITE_SERVER_MODE=true npm run build
+      - run: cd ../client-source && npm run typecheck && VITE_SERVER_MODE=true npm run build
       - run: rm -rf public && mkdir -p public && cp -R ../client-source/dist/. public/
       - run: npm test
 
