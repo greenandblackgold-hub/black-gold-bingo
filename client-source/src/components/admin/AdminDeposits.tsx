@@ -1,0 +1,131 @@
+import { useCallback, useEffect, useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
+import { api, ApiError } from '@/lib/api';
+
+const TEXT = {
+  am: {
+    title: 'የገንዘብ ማስገቢያ ጥያቄዎች',
+    empty: 'እስካሁን የቀረበ ጥያቄ የለም።',
+    approve: 'Approve · አጽድቅ',
+    reject: 'Reject · ውድቅ አድርግ',
+    refresh: 'አድስ',
+    pending: 'በመጠባበቅ ላይ',
+    amount: 'መጠን',
+    reference: 'የግብይት ማጣቀሻ',
+    player: 'ተጫዋች',
+    sent: 'የተላከበት ጊዜ',
+    error: 'ጥያቄውን ማስኬድ አልተቻለም።',
+    confirm: 'የባንክ/ቴሌብር መልዕክቱን አረጋግጠዋል? ከሆነ ብቻ Approve ይጫኑ።',
+  },
+  ti: {
+    title: 'ሕቶታት ምእታው ገንዘብ',
+    empty: 'ክሳብ ሕጂ ሕቶ የለን።',
+    approve: 'Approve · ኣጽድቕ',
+    reject: 'Reject · ንጸግ',
+    refresh: 'ኣሐድስ',
+    pending: 'ይጽበ ኣሎ',
+    amount: 'መጠን',
+    reference: 'ማጣቀሻ ግብይት',
+    player: 'ተጻዋታይ',
+    sent: 'ዝተላእከሉ ግዜ',
+    error: 'ሕቶ ምስራሕ ኣይተኻእለን።',
+    confirm: 'መልእኽቲ ባንኪ/ቴሌብር ኣረጋጊጽኩምዶ? እንተኾይኑ ጥራይ Approve ጠውቑ።',
+  },
+  en: {
+    title: 'Deposit requests',
+    empty: 'There are no pending requests.',
+    approve: 'Approve',
+    reject: 'Reject',
+    refresh: 'Refresh',
+    pending: 'Pending',
+    amount: 'Amount',
+    reference: 'Transaction reference',
+    player: 'Player',
+    sent: 'Submitted',
+    error: 'Could not process the request.',
+    confirm: 'Have you verified the bank/Telebirr message? Only then approve this request.',
+  },
+} as const;
+
+interface DepositRow {
+  id: string;
+  reference: string;
+  userId: string;
+  userName: string;
+  userPhone: string;
+  amount: number;
+  status: string;
+  at: number;
+}
+
+export function AdminDeposits() {
+  const { lang } = useLanguage();
+  const t = TEXT[lang] ?? TEXT.en;
+  const [rows, setRows] = useState<DepositRow[]>([]);
+  const [error, setError] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const result = await api.get<DepositRow[]>('/api/admin/deposits?status=pending');
+      setRows(result);
+      setError('');
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t.error);
+    }
+  }, [t.error]);
+
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(() => void load(), 15000);
+    return () => window.clearInterval(timer);
+  }, [load]);
+
+  const act = async (row: DepositRow, action: 'approve' | 'reject') => {
+    if (action === 'approve' && !window.confirm(t.confirm)) return;
+    setBusyId(row.id);
+    setError('');
+    try {
+      await api.post(`/api/admin/deposits/${encodeURIComponent(row.reference)}/${action}`, {});
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : t.error);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const button = 'rounded-lg px-3 py-2 text-sm font-semibold ring-1 disabled:opacity-50';
+  return (
+    <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-bold text-gold-300">{t.title}</h2>
+        <button type="button" onClick={() => void load()} className="text-sm text-gold-400 underline">{t.refresh}</button>
+      </div>
+      {error && <p role="alert" className="mb-3 text-sm text-red-300">{error}</p>}
+      {rows.length === 0 ? (
+        <p className="py-3 text-center text-sm text-gold-600">{t.empty}</p>
+      ) : (
+        <ul className="space-y-3">
+          {rows.map((row) => (
+            <li key={row.id} className="rounded-xl bg-white/[0.04] p-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-lg font-black tabular-nums text-gold-400">{row.amount.toFixed(2)} ETB</span>
+                <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs text-amber-200">{t.pending}</span>
+              </div>
+              <dl className="mt-2 space-y-1 text-sm">
+                <div><dt className="inline text-gold-600">{t.player}: </dt><dd className="inline text-gold-300">{row.userName} · {row.userPhone}</dd></div>
+                <div><dt className="inline text-gold-600">{t.reference}: </dt><dd className="inline break-all font-mono text-gold-300">{row.reference}</dd></div>
+                <div><dt className="inline text-gold-600">{t.sent}: </dt><dd className="inline text-gold-500">{new Date(row.at).toLocaleString()}</dd></div>
+              </dl>
+              <div className="mt-3 flex gap-2">
+                <button type="button" disabled={busyId === row.id} onClick={() => void act(row, 'approve')} className={`${button} flex-1 bg-gold-500 text-darkbg ring-gold-400`}>{t.approve}</button>
+                <button type="button" disabled={busyId === row.id} onClick={() => void act(row, 'reject')} className={`${button} flex-1 text-gold-300 ring-gold-700/60`}>{t.reject}</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
