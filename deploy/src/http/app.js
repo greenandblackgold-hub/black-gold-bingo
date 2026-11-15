@@ -157,12 +157,13 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
     if (!validSignature && !validToken) throw new HttpError(401, 'bad_signature', 'Invalid SMS webhook authentication.');
     const incoming = parseJson(rawBody);
     let event = incoming;
-    if (typeof incoming.text === 'string') {
+    const smsText = incoming.text ?? incoming.message ?? incoming.body;
+    if (typeof smsText === 'string') {
       try {
         event = parseBankSms({
-          sender: incoming.sender ?? incoming.from,
+          sender: incoming.sender ?? incoming.from ?? incoming.address,
           provider: incoming.provider,
-          text: incoming.text,
+          text: smsText,
           eventId: incoming.eventId,
         });
       } catch (error) {
