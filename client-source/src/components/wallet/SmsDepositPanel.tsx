@@ -9,7 +9,7 @@ type DepositRequest = {
   currency: 'ETB';
 };
 
-type DepositStatus = 'pending' | 'success' | 'failed' | 'amount_mismatch' | 'rejected' | 'unknown';
+type DepositStatus = 'pending' | 'success' | 'failed' | 'amount_mismatch' | 'rejected' | 'test-approved' | 'unknown';
 
 const copy = {
   am: {
@@ -22,6 +22,7 @@ const copy = {
     check: 'ሁኔታውን አድስ',
     pending: 'ጥያቄው ተመዝግቧል፤ አስተዳዳሪው እስኪያረጋግጥ ይጠብቁ።',
     rejected: 'ጥያቄው በአስተዳዳሪው ውድቅ ተደርጓል።',
+    testApproved: 'የሙከራ ጥያቄው ተፈቅዷል፤ ይህ ሙከራ ብቻ ስለሆነ ባላንስ አልጨመረም።',
     success: 'ጥያቄው ተረጋግጧል፤ ባላንሱ ተጨምሯል።',
     failed: 'ግብይቱ አልተሳካም።',
     mismatch: 'የተጠየቀው መጠን ከSMS ማረጋገጫው ጋር አልተዛመደም።',
@@ -42,6 +43,7 @@ const copy = {
     check: 'ኩነታት ኣሐድስ',
     pending: 'ሕቶኹም ተመዝጊቡ፤ ኣማሓዳሪ ክሳብ ዝረጋግጾ ተጸበዩ።',
     rejected: 'ሕቶኹም ብኣማሓዳሪ ተነጺጉ።',
+    testApproved: 'ናይ ሙከራ ሕቶ ተፈቒዱ፤ ሚዛን ኣይወሰኸን።',
     success: 'ሕቶኹም ተረጋጊጹ፤ ሚዛን ተወሲኹ።',
     failed: 'ግብይት ኣይተዓወተን።',
     mismatch: 'መጠን ሕቶን SMS ምርግጋጽን ኣይተሰማምዑን።',
@@ -62,6 +64,7 @@ const copy = {
     check: 'Refresh status',
     pending: 'Request recorded; waiting for an administrator to review it.',
     rejected: 'The administrator rejected this request.',
+    testApproved: 'Test request approved for testing only; no wallet balance was credited.',
     success: 'Request verified; the wallet balance has been credited.',
     failed: 'The transaction failed.',
     mismatch: 'The requested amount does not match the SMS confirmation.',
@@ -135,6 +138,7 @@ export function SmsDepositPanel() {
     : status === 'failed' ? t.failed
     : status === 'amount_mismatch' ? t.mismatch
     : status === 'rejected' ? t.rejected
+    : status === 'test-approved' ? t.testApproved
     : status === 'pending' ? t.pending
     : t.unknown;
 
