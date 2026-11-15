@@ -34,6 +34,15 @@ test('parses incoming CBE and Lion Bank notifications', () => {
   assert.equal(lion.reference, 'LION12345678');
 });
 
+test('selects the incoming transfer amount when SMS also reports available balance', () => {
+  const parsed = parseBankSms({
+    sender: 'CBE',
+    text: 'Your account is credited with ETB 125.00. Available balance is ETB 2,450.00. Ref No: CBE98765432',
+  });
+  assert.equal(parsed.amount, 125);
+  assert.equal(parsed.reference, 'CBE98765432');
+});
+
 test('rejects unknown senders, outgoing transfers and ambiguous amounts', () => {
   assert.throws(() => parseBankSms({
     sender: 'Unknown',
