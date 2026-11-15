@@ -1,4 +1,3 @@
-import { AdminPayouts } from '@/components/admin/AdminPayouts';
 import { AdminWinPayouts } from '@/components/admin/AdminWinPayouts';
 import { AdminSimulationWithdrawals } from '@/components/admin/AdminSimulationWithdrawals';
 import { AdminDeposits } from '@/components/admin/AdminDeposits';
@@ -102,7 +101,6 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
         <div className="space-y-5">
           <HostView />
           {SERVER_MODE && <AdminDeposits />}
-          {SERVER_MODE && <AdminPayouts />}
           {SERVER_MODE && <AdminWinPayouts />}
           {SERVER_MODE && <AdminSimulationWithdrawals />}
         </div>
