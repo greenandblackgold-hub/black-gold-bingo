@@ -42,6 +42,23 @@ export function createWalletService({ repo, config, chapa }) {
     /** Admin review queue for simulation deposits. */
     listSimulationDeposits: (filter) => repo.listSimulationDeposits(filter),
 
+    /** Admin queue for simulation-only Bingo prizes. */
+    listWinPayouts: (filter) => repo.listWinPayouts(filter),
+
+    async approveWinPayout(id) {
+      const result = await repo.approveWinPayout(String(id ?? ''));
+      if (!result) throw new HttpError(409, 'wrong_status', 'Win payout is no longer pending.');
+      log('simulation_win_payout_admin_approved', { id, credited: result.credited === true });
+      return result;
+    },
+
+    async rejectWinPayout(id, note) {
+      const result = await repo.rejectWinPayout(String(id ?? ''), note);
+      if (!result) throw new HttpError(409, 'wrong_status', 'Win payout is no longer pending.');
+      log('simulation_win_payout_rejected', { id });
+      return result;
+    },
+
     /** Credit a pending simulation request exactly once after an administrator verifies it. */
     async approveSimulationDeposit(txRef) {
       const payment = await repo.getPayment(String(txRef ?? ''));
