@@ -1,5 +1,13 @@
 # Black Gold PLC Bingo PRO: start here
 
+> **CURRENT DEPLOYMENT NOTE (15 Nov 2026):** The active Render configuration is `deploy/render.yaml`. In Render choose **New + → Blueprint**, connect this repository, and set the Blueprint file path to `deploy/render.yaml`. There is intentionally no root `package.json`: the backend package is `deploy/package.json` and the frontend package is `client-source/package.json`. The Blueprint installs both, runs the frontend TypeScript check and production build, copies the website into `deploy/public`, runs backend tests, and starts the Node server with `npm --prefix deploy start`. The GitHub Actions workflow checks the same frontend typecheck/build and backend tests.
+>
+> **Only three private values need your input during first setup:** `MONGODB_URI` (your MongoDB Atlas connection string), `ADMIN_PHONE` (your owner phone number), and `ADMIN_PIN` (a new six-digit PIN). Render generates `JWT_SECRET` and `SMS_WEBHOOK_SECRET` automatically. Do not paste private values into GitHub or this chat. The Blueprint cannot create a MongoDB Atlas account/cluster or know your owner phone/PIN, so these three values cannot safely be filled in automatically.
+>
+> **Safety:** this project is configured for simulation-only ETB credits. Real-money features remain disabled. A successful GitHub build does not prove that a Render service is deployed or that MongoDB credentials are correct.
+
+---
+
 You do not need to write, read or fix any code. Follow the steps in order. Each step is clicking and copy-pasting.
 
 **Time needed:** about 1 to 1.5 hours the first time.
