@@ -146,16 +146,22 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
       throw new HttpError(503, 'sms_webhook_not_configured', 'SMS webhook is not configured.');
     }
     const supplied = String(req.headers['x-sms-signature'] ?? '').replace(/^sha256=/i, '').toLowerCase();
+    const token = String(req.headers['x-sms-token'] ?? '').replace(/^Bearer\\s+/i, '');
     const expected = createHmac('sha256', config.smsWebhookSecret).update(rawBody, 'utf8').digest('hex');
-    const a = Buffer.from(supplied, 'hex');
-    const b = Buffer.from(expected, 'hex');
-    if (a.length !== b.length || !timingSafeEqual(a, b)) throw new HttpError(401, 'bad_signature', 'Invalid SMS webhook signature.');
+    const signatureBytes = Buffer.from(supplied, 'hex');
+    const expectedBytes = Buffer.from(expected, 'hex');
+    const tokenBytes = Buffer.from(token, 'utf8');
+    const secretBytes = Buffer.from(config.smsWebhookSecret, 'utf8');
+    const validSignature = signatureBytes.length === expectedBytes.length && timingSafeEqual(signatureBytes, expectedBytes);
+    const validToken = tokenBytes.length === secretBytes.length && timingSafeEqual(tokenBytes, secretBytes);
+    if (!validSignature && !validToken) throw new HttpError(401, 'bad_signature', 'Invalid SMS webhook authentication.');
     const incoming = parseJson(rawBody);
     let event = incoming;
     if (typeof incoming.text === 'string') {
       try {
         event = parseBankSms({
           sender: incoming.sender ?? incoming.from,
+          provider: incoming.provider,
           text: incoming.text,
           eventId: incoming.eventId,
         });
