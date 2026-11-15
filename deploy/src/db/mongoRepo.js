@@ -254,6 +254,46 @@ export async function createMongoRepo({ uri, dbName }) {
       return result.modifiedCount === 1;
     },
 
+    /* Simulation-only withdrawals: reserve/refund the simulated wallet in transactions; never transfer funds. */
+    async requestSimulationWithdrawal({ id, userId, amount, method, destination }) {
+      return tx(async (session) => {
+        await moveMoney(session, { userId, amount: -amount, kind: 'simulation_withdraw_hold', ref: `simwd:${id}`, meta: { id } });
+        const doc = { _id: id, userId, amount, method, destination, mode: 'simulation', status: 'pending', note: '', createdAt: new Date(), updatedAt: new Date() };
+        await withdrawals.insertOne(doc, { session });
+        return toDoc(doc);
+      });
+    },
+    async listSimulationWithdrawals({ status = 'pending', userId } = {}) {
+      const q = { mode: 'simulation' };
+      if (status) q.status = status;
+      if (userId) q.userId = userId;
+      const rows = await withdrawals.find(q).sort({ createdAt: -1 }).limit(200).toArray();
+      return Promise.all(rows.map(async (w) => {
+        const u = await users.findOne({ _id: w.userId }, { projection: { name: 1, phone: 1 } });
+        return { id: w._id, userId: w.userId, amount: w.amount / 100, method: w.method ?? '', destination: w.destination ?? '', status: w.status, note: w.note ?? '', at: new Date(w.createdAt).getTime(), userName: u?.name ?? 'Unknown', userPhone: u?.phone ?? '' };
+      }));
+    },
+    async transitionSimulationWithdrawal(id, from, to, patch = {}) {
+      const w = await withdrawals.findOneAndUpdate(
+        { _id: id, mode: 'simulation', status: { $in: from } },
+        { $set: { ...patch, status: to, updatedAt: new Date() } },
+        { returnDocument: 'after' },
+      );
+      return toDoc(w);
+    },
+    async rejectSimulationWithdrawalAndRefund(id, note, adminId) {
+      return tx(async (session) => {
+        const w = await withdrawals.findOneAndUpdate(
+          { _id: id, mode: 'simulation', status: 'pending' },
+          { $set: { status: 'rejected', note, reviewedBy: adminId, updatedAt: new Date() } },
+          { returnDocument: 'after', session },
+        );
+        if (!w) return null;
+        await moveMoney(session, { userId: w.userId, amount: w.amount, kind: 'simulation_withdraw_refund', ref: `simwd-refund:${id}`, meta: { id } });
+        return toDoc(w);
+      });
+    },
+
     /* withdrawals */
     async requestWithdrawal({ id, userId, amount, accountName, accountNumber, bankCode }) {
       return tx(async (session) => {

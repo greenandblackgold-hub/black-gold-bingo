@@ -214,6 +214,45 @@ test('legacy SMS webhook cannot approve new manual-review simulation requests', 
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
 });
 
+test('simulation withdrawals reserve balance, expose test destination to admins, approve without payout, and refund on rejection', async () => {
+  const p = await newPlayer('Withdrawal Player', 100);
+  assert.equal((await api('POST', '/api/simulation/withdrawals', { token: p.token, body: { amount: 0 } })).json.error, 'invalid_amount');
+  assert.equal((await api('POST', '/api/simulation/withdrawals', { token: p.token, body: { amount: 101, method: 'telebirr', destination: '0912345678' } })).status, 402);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 100);
+
+  const request = await api('POST', '/api/simulation/withdrawals', { token: p.token, body: { amount: 40, method: 'telebirr', destination: '0912345678' } });
+  assert.equal(request.status, 200, JSON.stringify(request.json));
+  assert.equal(request.json.status, 'pending');
+  assert.equal(request.json.balance, 60);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 60);
+  assert.equal((await api('GET', '/api/simulation/withdrawals', { token: p.token })).json[0].status, 'pending');
+  assert.equal((await api('GET', '/api/admin/withdrawals/simulation', { token: p.token })).status, 403);
+
+  const queue = await api('GET', '/api/admin/withdrawals/simulation?status=pending', { token: ctx.adminToken });
+  const row = queue.json.find((w) => w.id === request.json.id);
+  assert.ok(row);
+  assert.equal(row.amount, 40);
+  assert.equal(row.method, 'telebirr');
+  assert.equal(row.destination, '0912345678');
+  assert.equal(row.userPhone, p.phone);
+
+  const approved = await api('POST', `/api/admin/withdrawals/simulation/${request.json.id}/approve`, { token: ctx.adminToken });
+  assert.equal(approved.status, 200);
+  assert.equal(approved.json.status, 'approved');
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 60, 'approval must not send or credit real money');
+  assert.equal((await api('POST', `/api/admin/withdrawals/simulation/${request.json.id}/approve`, { token: ctx.adminToken })).status, 409);
+
+  const rejectedRequest = await api('POST', '/api/simulation/withdrawals', { token: p.token, body: { amount: 25, method: 'bank', destination: '1000123456789' } });
+  assert.equal(rejectedRequest.status, 200);
+  assert.equal(rejectedRequest.json.balance, 35);
+  const rejected = await api('POST', `/api/admin/withdrawals/simulation/${rejectedRequest.json.id}/reject`, { token: ctx.adminToken, body: { note: 'Test rejection' } });
+  assert.equal(rejected.status, 200);
+  assert.equal(rejected.json.refunded, true);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 60);
+  assert.equal((await api('POST', `/api/admin/withdrawals/simulation/${rejectedRequest.json.id}/reject`, { token: ctx.adminToken })).status, 409);
+  assert.equal((await api('GET', '/api/admin/withdrawals/simulation?status=pending', { token: ctx.adminToken })).json.some((w) => w.id === rejectedRequest.json.id), false);
+});
+
 test('cards: buying, balance checks, round gating, server-issued grids', async () => {
   await freshRound();
   const p = await newPlayer('Buyer', 35);
