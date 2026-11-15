@@ -49,6 +49,7 @@ export function loadConfig(env = process.env) {
     chapaMerchantApproved: bool(env.CHAPA_MERCHANT_APPROVED, false),
     // Requests per minute per IP. Many mobile users can share one carrier IP, so keep these generous.
     rateLimits: { auth: num(env.RATE_LIMIT_AUTH, 20), money: num(env.RATE_LIMIT_MONEY, 40), default: num(env.RATE_LIMIT_DEFAULT, 240) },
+    smsWebhookSecret: env.SMS_WEBHOOK_SECRET ?? '',
     chapa: {
       secretKey: env.CHAPA_SECRET_KEY ?? '',
       webhookSecret: env.CHAPA_WEBHOOK_SECRET ?? '',
