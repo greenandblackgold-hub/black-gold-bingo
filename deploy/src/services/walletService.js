@@ -49,6 +49,10 @@ export function createWalletService({ repo, config, chapa }) {
       if (payment.status !== 'pending') throw new HttpError(409, 'wrong_status', 'Deposit request is no longer pending.');
       const result = await repo.confirmDeposit({ txRef: payment.txRef, chapaRef: 'manual-admin' });
       if (result.credited) log('simulation_deposit_manually_approved', { txRef: payment.txRef, userId: payment.userId, etb: etb(payment.amount) });
+      if (!result.credited) {
+        const latest = await repo.getPayment(payment.txRef);
+        if (latest?.status !== 'success') throw new HttpError(409, 'wrong_status', 'Deposit request has already been processed.');
+      }
       return { status: 'success', credited: result.credited };
     },
 
