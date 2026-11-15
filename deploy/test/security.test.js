@@ -82,6 +82,16 @@ test('free cards remain playable while deposits and cash-outs are blocked withou
   game.stop();
 });
 
+test('registration rejects a mismatched PIN confirmation on the server', async () => {
+  const repo = createMemoryRepo();
+  const config = loadConfig({ NODE_ENV: 'test', JWT_SECRET: secret });
+  const auth = createAuthService({ repo, config });
+  await assert.rejects(
+    () => auth.register({ phone: '0911223346', name: 'Mismatch', pin: '123456', pinConfirm: '654321' }),
+    (e) => e.status === 400 && e.code === 'pin_mismatch',
+  );
+});
+
 test('production registration is disabled until real phone verification is configured', async () => {
   const config = loadConfig({
     NODE_ENV: 'production',
