@@ -129,3 +129,70 @@ Cash-outs are disabled. Do not promise or send payouts through the old site. Exi
 ## Test and deployment status
 
 Automated test files are included in `deploy/test/`, and a GitHub Actions workflow has been added to run them on pushes and pull requests. Do not assume tests have passed until the workflow shows a successful result. The real MongoDB Atlas connection, Chapa test checkout, Render deployment, and full browser journey still need to be verified using your own service accounts. Complete Step 6 with test money before considering a live launch.
+
+
+## SMS-backed ETB simulation wallet (updated)
+
+The server-mode wallet now supports a **simulation-only** top-up flow:
+
+1. A signed-in player submits an amount in ETB and their transaction reference.
+2. The API stores it as pending. The balance is not changed at this stage.
+3. A trusted SMS-forwarding adapter posts a normalized event to `POST /api/webhooks/sms`.
+4. The adapter signs the exact raw JSON request body with HMAC-SHA256 using `SMS_WEBHOOK_SECRET`, and sends the hex digest in `X-SMS-Signature`.
+5. The server checks the signature, pending reference, `ETB` currency, successful status, and exact amount. A unique ledger reference prevents duplicate credits.
+
+### Local setup
+
+Requirements: Node.js 20 or newer. From a terminal:
+
+```bash
+cd deploy
+npm install
+```
+
+Create a local environment file (or export these variables in your terminal):
+
+```dotenv
+NODE_ENV=development
+PORT=8080
+STORAGE=memory
+JWT_SECRET=replace-this-with-a-random-secret-at-least-32-characters
+SMS_WEBHOOK_SECRET=replace-this-with-a-different-random-secret-at-least-32-characters
+ADMIN_PHONE=0900000001
+ADMIN_PIN=654321
+REGISTRATION_ENABLED=true
+```
+
+Start the server:
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:8080`. Memory storage is for local testing only; its data is cleared when the server restarts. For persistent hosted use, configure MongoDB Atlas with `STORAGE=mongo` and `MONGODB_URI`, plus a strong private `JWT_SECRET` and `SMS_WEBHOOK_SECRET`.
+
+### Webhook event format
+
+The SMS gateway adapter must translate the provider's notification into this JSON shape (do not forward arbitrary user-submitted text as a trusted event):
+
+```json
+{
+  "eventId": "provider-event-unique-id",
+  "reference": "TXN123456789",
+  "amount": 100,
+  "currency": "ETB",
+  "status": "success"
+}
+```
+
+Sign the exact serialized body:
+
+```js
+import { createHmac } from 'node:crypto';
+const rawBody = JSON.stringify(event);
+const signature = createHmac('sha256', process.env.SMS_WEBHOOK_SECRET)
+  .update(rawBody, 'utf8').digest('hex');
+// POST rawBody to /api/webhooks/sms with X-SMS-Signature: signature
+```
+
+**Important:** this repository includes the signed webhook receiver and simulation wallet flow. It does not yet connect to a particular bank, Telebirr, or SMS-forwarding vendor. That vendor's authenticated SMS receiver/adapter and credentials must be configured separately. Never put the webhook secret in the browser or send it in chat. The ETB balance here is simulated game credit, not a real bank balance or cash payment.
