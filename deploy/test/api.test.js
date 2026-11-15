@@ -271,7 +271,7 @@ test('only the host can select a winning pattern, and only before a round starts
   await api('POST', '/api/admin/pattern', { token: ctx.adminToken, body: { pattern: 'any_line' } });
 });
 
-test('a full round: server decides the winner, pays 80% of the pot once, and handles simultaneous claims', async () => {
+test('a full round: winner prize stays pending until an admin approves it', async () => {
   await freshRound();
   const a = await newPlayer('Alice', 100);
   const b = await newPlayer('Bob', 100);
@@ -299,14 +299,28 @@ test('a full round: server decides the winner, pays 80% of the pot once, and han
   assert.equal(wins.length, 1, `expected one winner, got ${JSON.stringify([ra.json, rb.json])}`);
   const prize = wins[0].json.prize;
   assert.equal(prize, 40); // pot = 5 cards x 10 = 50 ETB, 80% = 40
+  assert.equal(wins[0].json.payoutStatus, 'pending');
   const g = (await api('GET', '/api/game')).json;
   assert.equal(g.phase, 'ended');
   assert.ok(g.winner.cardId.startsWith('BG-'));
   assert.equal(g.winner.userId, undefined);
 
   const aWon = ra.json.ok === true;
-  assert.equal((await api('GET', '/api/me', { token: a.token })).json.balance, aWon ? 100 - 20 + 40 : 100 - 20);
-  assert.equal((await api('GET', '/api/me', { token: b.token })).json.balance, aWon ? 100 - 30 : 100 - 30 + 40);
+  assert.equal((await api('GET', '/api/me', { token: a.token })).json.balance, 100 - 20);
+  assert.equal((await api('GET', '/api/me', { token: b.token })).json.balance, 100 - 30);
+  assert.equal((await api('GET', '/api/admin/win-payouts', { token: a.token })).status, 403);
+  const queue = await api('GET', '/api/admin/win-payouts?status=pending', { token: ctx.adminToken });
+  assert.equal(queue.status, 200);
+  assert.equal(queue.json.length, 1);
+  assert.equal(queue.json[0].amount, 40);
+  assert.equal(queue.json[0].cardCode, g.winner.cardId);
+  const payoutId = queue.json[0].id;
+  const approved = await api('POST', `/api/admin/win-payouts/${encodeURIComponent(payoutId)}/approve`, { token: ctx.adminToken });
+  assert.equal(approved.status, 200, JSON.stringify(approved.json));
+  assert.equal(approved.json.credited, true);
+  const replay = await api('POST', `/api/admin/win-payouts/${encodeURIComponent(payoutId)}/approve`, { token: ctx.adminToken });
+  assert.equal(replay.status, 409);
+  assert.equal((await api('GET', '/api/me', { token: aWon ? a.token : b.token })).json.balance, aWon ? 100 - 20 + 40 : 100 - 30 + 40);
 
   // Verify: owner sees the grid and winner flag; others only the status.
   const winnerCard = g.winner.cardId;
