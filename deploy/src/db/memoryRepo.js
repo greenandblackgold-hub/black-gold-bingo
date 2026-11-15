@@ -110,8 +110,9 @@ export function createMemoryRepo() {
     },
 
     /* deposits */
-    async createPayment({ txRef, userId, amount }) {
-      payments.set(txRef, { txRef, userId, amount, status: 'pending', createdAt: new Date() });
+    async createPayment({ txRef, userId, amount, source = 'chapa' }) {
+      if (payments.has(txRef)) throw new RepoError('PAYMENT_REFERENCE_TAKEN');
+      payments.set(txRef, { txRef, userId, amount, source, status: 'pending', createdAt: new Date() });
     },
     async getPayment(txRef) {
       return clone(payments.get(txRef) ?? null);
