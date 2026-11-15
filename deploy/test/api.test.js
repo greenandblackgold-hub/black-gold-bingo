@@ -24,7 +24,7 @@ async function api(method, path, { token, body, headers } = {}) {
 
 async function newPlayer(name = 'Test Player', fund = 0) {
   const phone = newPhone();
-  const r = await api('POST', '/api/auth/register', { body: { phone, name, pin: '123456' } });
+  const r = await api('POST', '/api/auth/register', { body: { phone, name, pin: '123456', pinConfirm: '123456' } });
   assert.equal(r.status, 200, JSON.stringify(r.json));
   if (fund) await ctx.repo.applyLedger({ userId: r.json.user.id, amount: fund * 100, kind: 'deposit', ref: `seed:${r.json.user.id}` });
   return { ...r.json, phone };
@@ -68,15 +68,15 @@ const drawAll = async () => { for (let i = 0; i < 75; i++) await ctx.game.draw()
 
 test('register, login, wrong PIN, lockout after 5 failures', async () => {
   const phone = newPhone();
-  assert.equal((await api('POST', '/api/auth/register', { body: { phone, name: 'A', pin: '123456' } })).json.error, 'invalid_name');
-  assert.equal((await api('POST', '/api/auth/register', { body: { phone: '123', name: 'Abebe', pin: '123456' } })).json.error, 'invalid_phone');
-  assert.equal((await api('POST', '/api/auth/register', { body: { phone, name: 'Abebe', pin: '12' } })).json.error, 'invalid_pin');
-  const ok = await api('POST', '/api/auth/register', { body: { phone, name: 'Abebe', pin: '123456' } });
+  assert.equal((await api('POST', '/api/auth/register', { body: { phone, name: 'A', pin: '123456', pinConfirm: '123456' } })).json.error, 'invalid_name');
+  assert.equal((await api('POST', '/api/auth/register', { body: { phone: '123', name: 'Abebe', pin: '123456', pinConfirm: '123456' } })).json.error, 'invalid_phone');
+  assert.equal((await api('POST', '/api/auth/register', { body: { phone, name: 'Abebe', pin: '12', pinConfirm: '12' } })).json.error, 'invalid_pin');
+  const ok = await api('POST', '/api/auth/register', { body: { phone, name: 'Abebe', pin: '123456', pinConfirm: '123456' } });
   assert.equal(ok.status, 200);
   assert.equal(ok.json.user.balance, 0);
   assert.equal(ok.json.user.role, 'player');
   assert.equal(ok.json.user.pinHash, undefined);
-  assert.equal((await api('POST', '/api/auth/register', { body: { phone: '+251' + phone.slice(1), name: 'Dup', pin: '123456' } })).json.error, 'phone_taken');
+  assert.equal((await api('POST', '/api/auth/register', { body: { phone: '+251' + phone.slice(1), name: 'Dup', pin: '123456', pinConfirm: '123456' } })).json.error, 'phone_taken');
   assert.equal((await api('POST', '/api/auth/login', { body: { phone, pin: '123456' } })).status, 200);
   for (let i = 0; i < 5; i++) assert.equal((await api('POST', '/api/auth/login', { body: { phone, pin: '000000' } })).status, 401);
   const locked = await api('POST', '/api/auth/login', { body: { phone, pin: '123456' } });
@@ -376,7 +376,7 @@ test('production safety gates block registration and all real-money routes until
     // Previous tests may leave the shared game in an ended phase; reopen it for the free-card assertion.
     await freshRound();
 
-    assert.equal((await api('POST', '/api/auth/register', { body: { phone: newPhone(), name: 'Blocked', pin: '123456' } })).status, 503);
+    assert.equal((await api('POST', '/api/auth/register', { body: { phone: newPhone(), name: 'Blocked', pin: '123456', pinConfirm: '123456' } })).status, 503);
     assert.equal((await api('POST', '/api/payments/deposit', { token: p.token, body: { amount: 100 } })).status, 503);
     assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 1 } })).status, 200);
     assert.equal((await api('POST', '/api/claim', { token: p.token, body: { cardId: 'BG-TEST22' } })).status, 409);
