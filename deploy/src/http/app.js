@@ -7,6 +7,7 @@ import path from 'node:path';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { HttpError } from '../util/errors.js';
 import { publicUser } from '../services/authService.js';
+import { parseBankSms } from '../payments/bankSmsParser.js';
 
 const MAX_BODY = 64 * 1024;
 
@@ -149,7 +150,20 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
     const a = Buffer.from(supplied, 'hex');
     const b = Buffer.from(expected, 'hex');
     if (a.length !== b.length || !timingSafeEqual(a, b)) throw new HttpError(401, 'bad_signature', 'Invalid SMS webhook signature.');
-    return wallet.confirmSmsSimulationDeposit(parseJson(rawBody));
+    const incoming = parseJson(rawBody);
+    let event = incoming;
+    if (typeof incoming.text === 'string') {
+      try {
+        event = parseBankSms({
+          sender: incoming.sender ?? incoming.from,
+          text: incoming.text,
+          eventId: incoming.eventId,
+        });
+      } catch (error) {
+        throw new HttpError(400, error.message || 'sms_parse_failed', 'SMS could not be safely identified as a confirmed incoming ETB transfer.');
+      }
+    }
+    return wallet.confirmSmsSimulationDeposit(event);
   });
 
   route('POST', '/api/payments/deposit', 'user', 'money', ({ user, body }) => { requireRealMoney(); return wallet.startDeposit(user, body.amount); });
