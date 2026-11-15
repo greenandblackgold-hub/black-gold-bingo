@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api, ApiError } from '@/lib/api';
+import { useLanguage } from '@/context/LanguageContext';
 
 const TXT = {
   am: { title: 'የSimulation መውጫ ጥያቄ', amount: 'መጠን (ETB)', method: 'የመቀበያ ዘዴ (አማራጭ)', telebirr: 'Telebirr', bank: 'Bank', destination: 'የስልክ/አካውንት ቁጥር (አማራጭ)', send: 'ጥያቄ ላክ', busy: 'በመላክ ላይ…', ok: 'ጥያቄው ተልኳል። የSimulation ሂሳቡ ተይዟል።', note: 'ሙከራ ብቻ፦ እውነተኛ ገንዘብ አይላክም። Admin ካጸደቀ የSimulation ጥያቄው Approved ይሆናል፤ ካልተቀበለ ሂሳቡ ይመለሳል።', err: 'ጥያቄውን መላክ አልተቻለም' },
@@ -14,8 +15,8 @@ export function SimulationWithdrawalPanel() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const lang = (localStorage.getItem('bgb.lang') || 'en') as keyof typeof TXT;
-  const t = TXT[TXT[lang] ? lang : 'en'];
+  const { lang } = useLanguage();
+  const t = TXT[lang] ?? TXT.en;
   const submit = async () => {
     setBusy(true); setError(''); setMessage('');
     try {
