@@ -223,6 +223,9 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   admin('POST', '/api/admin/deposits/:txRef/approve', async ({ params }) =>
     wallet.approveSimulationDeposit(decodeURIComponent(params.txRef)),
   );
+  admin('POST', '/api/admin/deposits/:txRef/test-approve', async ({ params }) =>
+    wallet.testApproveSimulationDeposit(decodeURIComponent(params.txRef)),
+  );
   admin('POST', '/api/admin/deposits/:txRef/reject', async ({ params, body }) =>
     wallet.rejectSimulationDeposit(decodeURIComponent(params.txRef), body.note),
   );
