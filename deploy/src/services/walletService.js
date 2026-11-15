@@ -108,8 +108,7 @@ export function createWalletService({ repo, config, chapa }) {
           return repo.transitionWithdrawal(id, ['processing'], 'paid');
         }
         if (r.status === 'failed') {
-          const failed = await repo.transitionWithdrawal(id, ['processing'], 'failed', { note: 'Transfer failed' });
-          await repo.refundWithdrawal(id);
+          const failed = await repo.transitionWithdrawalAndRefund(id, ['processing'], 'failed', { note: 'Transfer failed' });
           log('withdrawal_failed_refunded', { id });
           return failed;
         }
@@ -129,17 +128,15 @@ export function createWalletService({ repo, config, chapa }) {
       const r = await chapa.verifyTransfer(`wd-${id}`);
       if (r.status === 'success') return repo.transitionWithdrawal(id, ['processing'], 'paid');
       if (r.status === 'failed') {
-        const failed = await repo.transitionWithdrawal(id, ['processing'], 'failed', { note: 'Transfer failed' });
-        await repo.refundWithdrawal(id);
+        const failed = await repo.transitionWithdrawalAndRefund(id, ['processing'], 'failed', { note: 'Transfer failed' });
         return failed;
       }
       return w;
     },
 
     async rejectWithdrawal(id, note) {
-      const w = await repo.transitionWithdrawal(id, ['pending'], 'rejected', { note: String(note ?? '').slice(0, 200) });
+      const w = await repo.transitionWithdrawalAndRefund(id, ['pending'], 'rejected', { note: String(note ?? '').slice(0, 200) });
       if (!w) throw new HttpError(409, 'wrong_status', 'Withdrawal is not pending');
-      await repo.refundWithdrawal(id);
       log('withdrawal_rejected_refunded', { id });
       return w;
     },
