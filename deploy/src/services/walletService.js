@@ -18,7 +18,7 @@ export function createWalletService({ repo, config, chapa }) {
         throw new HttpError(400, 'invalid_amount', `Deposit between ${etb(config.minDeposit)} and ${etb(config.maxDeposit)} ETB`);
       }
       try {
-        await repo.createPayment({ txRef, userId: user.id, amount, source: 'sms-simulation' });
+        await repo.createPayment({ txRef, userId: user.id, amount, source: 'manual-simulation' });
       } catch (error) {
         if (error?.code === 'PAYMENT_REFERENCE_TAKEN' || error?.code === 11000 || error?.errorResponse?.code === 11000) {
           throw new HttpError(409, 'reference_used', 'This transaction reference has already been submitted.');
@@ -30,10 +30,39 @@ export function createWalletService({ repo, config, chapa }) {
 
     async simulationDepositStatus(user, txRef) {
       const payment = await repo.getPayment(String(txRef ?? ''));
-      if (!payment || payment.userId !== user.id || payment.source !== 'sms-simulation') {
+      if (!payment || payment.userId !== user.id || !['manual-simulation', 'sms-simulation'].includes(payment.source)) {
         throw new HttpError(404, 'deposit_not_found', 'Unknown simulation deposit reference.');
       }
       return { status: payment.status };
+    },
+
+    /** Admin review queue for simulation deposits. */
+    listSimulationDeposits: (filter) => repo.listSimulationDeposits(filter),
+
+    /** Credit a pending simulation request exactly once after an administrator verifies it. */
+    async approveSimulationDeposit(txRef) {
+      const payment = await repo.getPayment(String(txRef ?? ''));
+      if (!payment || !['manual-simulation', 'sms-simulation'].includes(payment.source)) {
+        throw new HttpError(404, 'deposit_not_found', 'Unknown simulation deposit request.');
+      }
+      if (payment.status === 'success') return { status: 'success', credited: false };
+      if (payment.status !== 'pending') throw new HttpError(409, 'wrong_status', 'Deposit request is no longer pending.');
+      const result = await repo.confirmDeposit({ txRef: payment.txRef, chapaRef: 'manual-admin' });
+      if (result.credited) log('simulation_deposit_manually_approved', { txRef: payment.txRef, userId: payment.userId, etb: etb(payment.amount) });
+      return { status: 'success', credited: result.credited };
+    },
+
+    /** Reject a pending simulation request without changing the player's balance. */
+    async rejectSimulationDeposit(txRef, note) {
+      const payment = await repo.getPayment(String(txRef ?? ''));
+      if (!payment || !['manual-simulation', 'sms-simulation'].includes(payment.source)) {
+        throw new HttpError(404, 'deposit_not_found', 'Unknown simulation deposit request.');
+      }
+      if (payment.status !== 'pending') throw new HttpError(409, 'wrong_status', 'Deposit request is no longer pending.');
+      const rejected = await repo.failPayment(payment.txRef, 'rejected');
+      if (!rejected) throw new HttpError(409, 'wrong_status', 'Deposit request has already been processed.');
+      log('simulation_deposit_rejected', { txRef: payment.txRef, userId: payment.userId, note: String(note ?? '').slice(0, 120) });
+      return { status: 'rejected' };
     },
 
     /** Process a normalized, HMAC-authenticated SMS gateway event. */
