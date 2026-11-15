@@ -16,7 +16,6 @@ import { useRound } from '@/context/RoundContext';
 import { SERVER_MODE } from '@/lib/api';
 import { AccountPanel } from '@/components/wallet/AccountPanel';
 import { SmsDepositPanel, SimulationDepositHistory } from '@/components/wallet/SmsDepositPanel';
-import { WithdrawPanel } from '@/components/wallet/WithdrawPanel';
 import type { Lang, PayMethod as Method } from '@/types/game';
 
 /* ───────────────────────────── CONTEXT WIRING ───────────────────────────── */
@@ -516,7 +515,6 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
         <PurchasePanel t={t} price={cardPrice} balance={balance} onBuy={buyCards} onGoToPlay={onGoToPlay} locked={phase !== 'waiting'} />
       </div>
 
-      {SERVER_MODE && <WithdrawPanel />}
 
       {/* History */}
       <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
