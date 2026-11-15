@@ -7,6 +7,46 @@ const toSantim = (etbAmount) => Math.round(Number(etbAmount) * 100);
 
 export function createWalletService({ repo, config, chapa }) {
   const service = {
+    /** Simulation wallet: player registers the transaction reference; only a signed SMS webhook can credit it. */
+    async startSmsSimulationDeposit(user, { reference, amount: amountEtb }) {
+      const txRef = String(reference ?? '').trim();
+      const amount = toSantim(amountEtb);
+      if (!/^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$/.test(txRef)) {
+        throw new HttpError(400, 'invalid_reference', 'Enter a valid transaction reference (6-64 letters or numbers).');
+      }
+      if (!Number.isSafeInteger(amount) || amount < config.minDeposit || amount > config.maxDeposit) {
+        throw new HttpError(400, 'invalid_amount', `Deposit between ${etb(config.minDeposit)} and ${etb(config.maxDeposit)} ETB`);
+      }
+      try {
+        await repo.createPayment({ txRef, userId: user.id, amount, source: 'sms-simulation' });
+      } catch (error) {
+        if (error?.code === 'PAYMENT_REFERENCE_TAKEN' || error?.code === 11000 || error?.errorResponse?.code === 11000) {
+          throw new HttpError(409, 'reference_used', 'This transaction reference has already been submitted.');
+        }
+        throw error;
+      }
+      return { reference: txRef, amount: etb(amount), status: 'pending', currency: 'ETB' };
+    },
+
+    /** Process a normalized, HMAC-authenticated SMS gateway event. */
+    async confirmSmsSimulationDeposit(event) {
+      const txRef = String(event.reference ?? '').trim();
+      const payment = await repo.getPayment(txRef);
+      if (!payment || payment.source !== 'sms-simulation') {
+        throw new HttpError(404, 'deposit_not_found', 'No pending simulation deposit matches this reference.');
+      }
+      if (payment.status === 'success') return { status: 'success', credited: false };
+      if (String(event.status ?? '').toLowerCase() !== 'success') return { status: 'ignored', credited: false };
+      const amount = toSantim(event.amount);
+      if (String(event.currency ?? '').toUpperCase() !== 'ETB' || !Number.isSafeInteger(amount) || amount !== payment.amount) {
+        await repo.failPayment(txRef, 'amount_mismatch');
+        throw new HttpError(400, 'deposit_mismatch', 'SMS amount or currency does not match the pending request.');
+      }
+      const result = await repo.confirmDeposit({ txRef, chapaRef: String(event.eventId ?? txRef) });
+      if (result.credited) log('simulation_sms_deposit_credited', { txRef, userId: payment.userId, etb: etb(payment.amount) });
+      return { status: 'success', credited: result.credited };
+    },
+
     /** Step 1 of a deposit: record a pending payment and get the Chapa checkout link. */
     async startDeposit(user, amountEtb) {
       if (!config.realMoneyEnabled) throw new HttpError(503, 'real_money_disabled', 'Real-money deposits are not enabled yet.');
