@@ -196,6 +196,15 @@ export async function createMongoRepo({ uri, dbName }) {
     async getPayment(txRef) {
       return payments.findOne({ txRef });
     },
+    async listSimulationDeposits({ status = 'pending' } = {}) {
+      const filter = { source: { $in: ['manual-simulation', 'sms-simulation'] } };
+      if (status) filter.status = status;
+      const rows = await payments.find(filter).sort({ createdAt: -1 }).limit(200).toArray();
+      return Promise.all(rows.map(async (p) => {
+        const user = await users.findOne({ _id: p.userId }, { projection: { name: 1, phone: 1 } });
+        return { id: p.txRef, reference: p.txRef, userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: new Date(p.createdAt).getTime() };
+      }));
+    },
     async confirmDeposit({ txRef, chapaRef }) {
       const result = await tx(async (session) => {
         const p = await payments.findOneAndUpdate(
@@ -215,7 +224,8 @@ export async function createMongoRepo({ uri, dbName }) {
       return { credited: result.credited, balance: await balanceOf(payment.userId) };
     },
     async failPayment(txRef, status = 'failed') {
-      await payments.updateOne({ txRef, status: 'pending' }, { $set: { status } });
+      const result = await payments.updateOne({ txRef, status: 'pending' }, { $set: { status } });
+      return result.modifiedCount === 1;
     },
 
     /* withdrawals */

@@ -139,60 +139,56 @@ test('deposit via mock Chapa: credited once, replays and wrong amounts are harml
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 100);
 });
 
-test('SMS simulation deposits require signed matching events and credit exactly once', async () => {
+test('simulation deposits require admin review and credit exactly once', async () => {
   const p = await newPlayer();
-  ctx.config.smsWebhookSecret = 'test-sms-webhook-secret-at-least-32-characters';
-  const created = await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: 125.50, reference: 'TXN-SMS-123456' } });
+  const created = await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: 125.50, reference: 'TXN-ADMIN-12345' } });
   assert.equal(created.status, 200, JSON.stringify(created.json));
   assert.equal(created.json.status, 'pending');
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
-  assert.equal((await api('GET', '/api/simulation/deposits/TXN-SMS-123456', { token: p.token })).json.status, 'pending');
+  assert.equal((await api('GET', '/api/simulation/deposits/TXN-ADMIN-12345', { token: p.token })).json.status, 'pending');
 
-  const payload = { eventId: 'sms-event-001', reference: 'TXN-SMS-123456', amount: 125.50, currency: 'ETB', status: 'success' };
-  const raw = JSON.stringify(payload);
-  const signature = createHmac('sha256', ctx.config.smsWebhookSecret).update(raw, 'utf8').digest('hex');
-  const invalid = await api('POST', '/api/webhooks/sms', { body: payload, headers: { 'x-sms-signature': '00'.repeat(32) } });
-  assert.equal(invalid.status, 401);
-  const valid = await api('POST', '/api/webhooks/sms', { body: payload, headers: { 'x-sms-signature': signature } });
-  assert.equal(valid.status, 200, JSON.stringify(valid.json));
-  assert.equal(valid.json.credited, true);
-  const replay = await api('POST', '/api/webhooks/sms', { body: payload, headers: { 'x-sms-signature': signature } });
+  assert.equal((await api('GET', '/api/admin/deposits', { token: p.token })).status, 403);
+  const listed = await api('GET', '/api/admin/deposits?status=pending', { token: ctx.adminToken });
+  assert.equal(listed.status, 200);
+  assert.ok(listed.json.some((row) => row.reference === 'TXN-ADMIN-12345' && row.amount === 125.5 && row.userId === p.user.id));
+
+  const approved = await api('POST', '/api/admin/deposits/TXN-ADMIN-12345/approve', { token: ctx.adminToken });
+  assert.equal(approved.status, 200, JSON.stringify(approved.json));
+  assert.equal(approved.json.status, 'success');
+  assert.equal(approved.json.credited, true);
+  const replay = await api('POST', '/api/admin/deposits/TXN-ADMIN-12345/approve', { token: ctx.adminToken });
+  assert.equal(replay.json.status, 'success');
   assert.equal(replay.json.credited, false);
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
+  assert.equal((await api('GET', '/api/simulation/deposits/TXN-ADMIN-12345', { token: p.token })).json.status, 'success');
+  assert.equal((await api('GET', '/api/ledger', { token: p.token })).json.filter((row) => row.kind === 'deposit').length, 1);
 
   const other = await newPlayer();
-  assert.equal((await api('GET', '/api/simulation/deposits/TXN-SMS-123456', { token: other.token })).status, 404);
-  const wrong = await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: 80, reference: 'TXN-SMS-654321' } });
-  const mismatchBody = { eventId: 'sms-event-002', reference: 'TXN-SMS-654321', amount: 79, currency: 'ETB', status: 'success' };
-  const mismatchRaw = JSON.stringify(mismatchBody);
-  const mismatchSig = createHmac('sha256', ctx.config.smsWebhookSecret).update(mismatchRaw, 'utf8').digest('hex');
-  assert.equal(wrong.status, 200);
-  assert.equal((await api('POST', '/api/webhooks/sms', { body: mismatchBody, headers: { 'x-sms-signature': mismatchSig } })).status, 400);
+  assert.equal((await api('GET', '/api/simulation/deposits/TXN-ADMIN-12345', { token: other.token })).status, 404);
+  assert.equal((await api('POST', '/api/simulation/deposits', { token: other.token, body: { amount: 125.5, reference: 'TXN-ADMIN-12345' } })).json.error, 'reference_used');
+
+  const rejected = await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: 50, reference: 'TXN-REJECT-1234' } });
+  assert.equal(rejected.status, 200);
+  const denied = await api('POST', '/api/admin/deposits/TXN-REJECT-1234/reject', { token: ctx.adminToken, body: { note: 'Not found in statement' } });
+  assert.equal(denied.status, 200);
+  assert.equal(denied.json.status, 'rejected');
+  assert.equal((await api('GET', '/api/simulation/deposits/TXN-REJECT-1234', { token: p.token })).json.status, 'rejected');
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
+  assert.equal((await api('POST', '/api/admin/deposits/TXN-REJECT-1234/approve', { token: ctx.adminToken })).json.error, 'wrong_status');
 });
 
-test('signed forwarded SMS text is parsed for Telebirr CBE and Lion Bank', async () => {
+test('legacy SMS webhook cannot approve new manual-review simulation requests', async () => {
+  const p = await newPlayer();
   ctx.config.smsWebhookSecret = 'test-sms-webhook-secret-at-least-32-characters';
-  const cases = [
-    { sender: 'Telebirr', text: 'You have received ETB 42.50. Transaction ID: TEL12345678', reference: 'TEL12345678', amount: 42.5 },
-    { sender: 'CBE', text: 'Your account is credited with 65.00 ETB. Ref No: CBE12345678', reference: 'CBE12345678', amount: 65 },
-    { sender: 'Lion Bank', text: 'You received Birr 80.00. Transaction ID: LION12345678', reference: 'LION12345678', amount: 80 },
-  ];
-  for (const item of cases) {
-    const p = await newPlayer();
-    const pending = await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: item.amount, reference: item.reference } });
-    assert.equal(pending.status, 200);
-    const body = { sender: item.sender, text: item.text, eventId: `event-${item.reference}` };
-    const raw = JSON.stringify(body);
-    const signature = createHmac('sha256', ctx.config.smsWebhookSecret).update(raw, 'utf8').digest('hex');
-    const headers = item.sender === 'CBE'
-      ? { 'x-sms-token': ctx.config.smsWebhookSecret }
-      : { 'x-sms-signature': signature };
-    const result = await api('POST', '/api/webhooks/sms', { body, headers });
-    assert.equal(result.status, 200, JSON.stringify(result.json));
-    assert.equal(result.json.credited, true);
-    assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, item.amount);
-  }
+  const pending = await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: 42.5, reference: 'TXN-MANUAL-1234' } });
+  assert.equal(pending.status, 200);
+  const payload = { eventId: 'legacy-event-001', reference: 'TXN-MANUAL-1234', amount: 42.5, currency: 'ETB', status: 'success' };
+  const raw = JSON.stringify(payload);
+  const signature = createHmac('sha256', ctx.config.smsWebhookSecret).update(raw, 'utf8').digest('hex');
+  const response = await api('POST', '/api/webhooks/sms', { body: payload, headers: { 'x-sms-signature': signature } });
+  assert.equal(response.status, 404);
+  assert.equal((await api('GET', '/api/simulation/deposits/TXN-MANUAL-1234', { token: p.token })).json.status, 'pending');
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
 });
 
 test('cards: buying, balance checks, round gating, server-issued grids', async () => {

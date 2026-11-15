@@ -217,6 +217,15 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   /* admin */
   const admin = (method, path, handler, bucket = 'default') => route(method, path, 'admin', bucket, handler);
   admin('GET', '/api/admin/stats', () => repo.stats());
+  admin('GET', '/api/admin/deposits', async ({ query }) =>
+    wallet.listSimulationDeposits({ status: query.get('status') || 'pending' }),
+  );
+  admin('POST', '/api/admin/deposits/:txRef/approve', async ({ params }) =>
+    wallet.approveSimulationDeposit(decodeURIComponent(params.txRef)),
+  );
+  admin('POST', '/api/admin/deposits/:txRef/reject', async ({ params, body }) =>
+    wallet.rejectSimulationDeposit(decodeURIComponent(params.txRef), body.note),
+  );
   admin('POST', '/api/admin/round/start', async () => (await game.startRound(), game.getPublicState()));
   admin('POST', '/api/admin/round/end', async () => (await game.endRound(), game.getPublicState()));
   admin('POST', '/api/admin/round/reset', async () => (await game.resetRound(), game.getPublicState()));

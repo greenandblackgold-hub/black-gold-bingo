@@ -5,11 +5,11 @@ import { useLanguage } from '@/context/LanguageContext';
 type DepositRequest = {
   reference: string;
   amount: number;
-  status: 'pending' | 'success' | 'failed' | 'amount_mismatch';
+  status: 'pending' | 'success' | 'failed' | 'amount_mismatch' | 'rejected';
   currency: 'ETB';
 };
 
-type DepositStatus = 'pending' | 'success' | 'failed' | 'amount_mismatch' | 'unknown';
+type DepositStatus = 'pending' | 'success' | 'failed' | 'amount_mismatch' | 'rejected' | 'unknown';
 
 const copy = {
   am: {
@@ -20,12 +20,13 @@ const copy = {
     submit: 'የባላንስ ጥያቄ ላክ',
     sending: 'በመላክ ላይ…',
     check: 'ሁኔታውን አድስ',
-    pending: 'ጥያቄው ተመዝግቧል፤ የSMS ማረጋገጫ እየተጠበቀ ነው።',
+    pending: 'ጥያቄው ተመዝግቧል፤ አስተዳዳሪው እስኪያረጋግጥ ይጠብቁ።',
+    rejected: 'ጥያቄው በአስተዳዳሪው ውድቅ ተደርጓል።',
     success: 'ጥያቄው ተረጋግጧል፤ ባላንሱ ተጨምሯል።',
     failed: 'ግብይቱ አልተሳካም።',
     mismatch: 'የተጠየቀው መጠን ከSMS ማረጋገጫው ጋር አልተዛመደም።',
     unknown: 'ሁኔታው አልታወቀም።',
-    note: 'ባላንስ የሚጨመረው የታመነ SMS webhook ትክክለኛውን ማጣቀሻና መጠን ካረጋገጠ ብቻ ነው።',
+    note: 'አስተዳዳሪው የባንክ/ቴሌብር መልዕክቱን ካረጋገጠ እና Approve ከጫነ ብቻ ባላንሱ ይጨምራል።',
     invalid: 'መጠኑ ከ10 እስከ 10,000 ብር እና እስከ 2 የአስርዮሽ ቦታ መሆን አለበት።',
     refInvalid: 'ማጣቀሻው ከ6 እስከ 64 ፊደል/ቁጥር መሆን አለበት።',
     used: 'ይህ ማጣቀሻ ቀድሞ ተጠቅሟል።',
@@ -39,12 +40,13 @@ const copy = {
     submit: 'ሕቶ ሚዛን ስደድ',
     sending: 'ይለኣኽ ኣሎ…',
     check: 'ኩነታት ኣሐድስ',
-    pending: 'ሕቶኹም ተመዝጊቡ፤ ምርግጋጽ SMS ይጽበ ኣሎ።',
+    pending: 'ሕቶኹም ተመዝጊቡ፤ ኣማሓዳሪ ክሳብ ዝረጋግጾ ተጸበዩ።',
+    rejected: 'ሕቶኹም ብኣማሓዳሪ ተነጺጉ።',
     success: 'ሕቶኹም ተረጋጊጹ፤ ሚዛን ተወሲኹ።',
     failed: 'ግብይት ኣይተዓወተን።',
     mismatch: 'መጠን ሕቶን SMS ምርግጋጽን ኣይተሰማምዑን።',
     unknown: 'ኩነታት ኣይተፈልጠን።',
-    note: 'ሚዛን ዝውሰኽ እቲ ዝተኣማመነ SMS webhook ትኽክለኛ ማጣቀሻን መጠንን ምስ ኣረጋገጸ ጥራይ እዩ።',
+    note: 'ሚዛን ዝውሰኽ ኣማሓዳሪ መልእኽቲ ባንኪ/ቴሌብር ምስ ኣረጋገጸን Approve ምስ ጠወቐን ጥራይ እዩ።',
     invalid: 'መጠን ካብ 10 ክሳብ 10,000 ብር ክኸውን ኣለዎ።',
     refInvalid: 'ማጣቀሻ ካብ 6 ክሳብ 64 ፊደላት/ቁጽርታት ክኸውን ኣለዎ።',
     used: 'እዚ ማጣቀሻ ቀዲሙ ተጠቒሙ እዩ።',
@@ -58,12 +60,13 @@ const copy = {
     submit: 'Submit balance request',
     sending: 'Submitting…',
     check: 'Refresh status',
-    pending: 'Request recorded; waiting for the trusted SMS confirmation.',
+    pending: 'Request recorded; waiting for an administrator to review it.',
+    rejected: 'The administrator rejected this request.',
     success: 'Request verified; the wallet balance has been credited.',
     failed: 'The transaction failed.',
     mismatch: 'The requested amount does not match the SMS confirmation.',
     unknown: 'Status is unavailable.',
-    note: 'The wallet is credited only after the trusted SMS webhook confirms the exact reference and amount.',
+    note: 'The wallet is credited only after an administrator checks the bank/Telebirr message and approves the request.',
     invalid: 'Enter an amount from 10 to 10,000 ETB, with at most 2 decimal places.',
     refInvalid: 'Reference must contain 6–64 letters, numbers, hyphens or underscores.',
     used: 'This transaction reference has already been submitted.',
@@ -131,6 +134,7 @@ export function SmsDepositPanel() {
   const statusText = status === 'success' ? t.success
     : status === 'failed' ? t.failed
     : status === 'amount_mismatch' ? t.mismatch
+    : status === 'rejected' ? t.rejected
     : status === 'pending' ? t.pending
     : t.unknown;
 

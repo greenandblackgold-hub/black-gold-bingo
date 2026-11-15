@@ -117,6 +117,16 @@ export function createMemoryRepo() {
     async getPayment(txRef) {
       return clone(payments.get(txRef) ?? null);
     },
+    async listSimulationDeposits({ status = 'pending' } = {}) {
+      return [...payments.values()]
+        .filter((p) => ['manual-simulation', 'sms-simulation'].includes(p.source) && (!status || p.status === status))
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 200)
+        .map((p) => {
+          const user = users.get(p.userId);
+          return { id: p.txRef, reference: p.txRef, userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: p.createdAt.getTime() };
+        });
+    },
     /** pending -> success and credit the wallet, exactly once. */
     async confirmDeposit({ txRef, chapaRef }) {
       const p = payments.get(txRef);
@@ -129,7 +139,9 @@ export function createMemoryRepo() {
     },
     async failPayment(txRef, status = 'failed') {
       const p = payments.get(txRef);
-      if (p && p.status === 'pending') p.status = status;
+      if (!p || p.status !== 'pending') return false;
+      p.status = status;
+      return true;
     },
 
     /* withdrawals: the amount is held (debited) when requested */
