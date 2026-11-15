@@ -49,14 +49,31 @@ export function parseBankSms({ sender, provider: providerHint, text, eventId } =
   if (!reference) throw new Error('sms_transaction_reference_missing');
 
   const amountCandidates = [];
-  const amountPatterns = [
-    /\b(?:ETB|Birr)\s*([0-9][0-9,]*(?:\.\d{1,2})?)\b/gi,
-    /\b([0-9][0-9,]*(?:\.\d{1,2})?)\s*(?:ETB|Birr)\b/gi,
+  // Prefer the amount grammatically attached to the incoming-credit phrase;
+  // notification texts often also include a separate "available balance".
+  const creditAmountPatterns = [
+    /(?:credited|received|deposit(?:ed)?|you\s+got)[^0-9]{0,45}(?:ETB|Birr)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
+    /(?:credited|received|deposit(?:ed)?|you\s+got)[^0-9]{0,45}([0-9][0-9,]*(?:\.\d{1,2})?)\s*(?:ETB|Birr)/i,
+    /(?:ETB|Birr)\s*([0-9][0-9,]*(?:\.\d{1,2})?)[^.!?]{0,25}(?:credited|received)/i,
   ];
-  for (const pattern of amountPatterns) {
-    for (const match of message.matchAll(pattern)) {
+  for (const pattern of creditAmountPatterns) {
+    const match = message.match(pattern);
+    if (match?.[1]) {
       const amount = Number(match[1].replace(/,/g, ''));
       if (Number.isFinite(amount) && amount > 0) amountCandidates.push(amount);
+    }
+  }
+  // If the provider template has no credit-action adjacency, accept only one ETB amount.
+  if (amountCandidates.length === 0) {
+    const amountPatterns = [
+      /\b(?:ETB|Birr)\s*([0-9][0-9,]*(?:\.\d{1,2})?)\b/gi,
+      /\b([0-9][0-9,]*(?:\.\d{1,2})?)\s*(?:ETB|Birr)\b/gi,
+    ];
+    for (const pattern of amountPatterns) {
+      for (const match of message.matchAll(pattern)) {
+        const amount = Number(match[1].replace(/,/g, ''));
+        if (Number.isFinite(amount) && amount > 0) amountCandidates.push(amount);
+      }
     }
   }
   const uniqueAmounts = [...new Set(amountCandidates)];
