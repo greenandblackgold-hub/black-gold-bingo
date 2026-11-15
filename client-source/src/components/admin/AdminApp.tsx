@@ -1,4 +1,5 @@
 import { AdminPayouts } from '@/components/admin/AdminPayouts';
+import { AdminWinPayouts } from '@/components/admin/AdminWinPayouts';
 import { AdminDeposits } from '@/components/admin/AdminDeposits';
 import { HostView } from '@/components/host/HostView';
 import { useBackend } from '@/context/BackendContext';
@@ -101,6 +102,7 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
           <HostView />
           {SERVER_MODE && <AdminDeposits />}
           {SERVER_MODE && <AdminPayouts />}
+          {SERVER_MODE && <AdminWinPayouts />}
         </div>
       </main>
     </div>

@@ -221,6 +221,15 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   admin('GET', '/api/admin/deposits', async ({ query }) =>
     wallet.listSimulationDeposits({ status: query.get('status') || 'pending' }),
   );
+  admin('GET', '/api/admin/win-payouts', async ({ query }) =>
+    wallet.listWinPayouts({ status: query.get('status') || 'pending' }),
+  );
+  admin('POST', '/api/admin/win-payouts/:id/approve', async ({ params }) =>
+    wallet.approveWinPayout(decodeURIComponent(params.id)),
+  );
+  admin('POST', '/api/admin/win-payouts/:id/reject', async ({ params, body }) =>
+    wallet.rejectWinPayout(decodeURIComponent(params.id), body.note),
+  );
   admin('POST', '/api/admin/deposits/:txRef/approve', async ({ params }) =>
     wallet.approveSimulationDeposit(decodeURIComponent(params.txRef)),
   );

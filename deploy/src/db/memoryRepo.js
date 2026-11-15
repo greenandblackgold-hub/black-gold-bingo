@@ -14,6 +14,7 @@ export function createMemoryRepo() {
   const ledger = new Map(); // ref -> entry
   const payments = new Map();
   const withdrawals = new Map();
+  const winPayouts = new Map();
   const rounds = new Map();
   let game = { ...DEFAULT_GAME, calledNumbers: [] };
 
@@ -86,19 +87,38 @@ export function createMemoryRepo() {
       return clone(cards.get(code) ?? null);
     },
 
-    /** Atomically end the round with a winner and pay the prize. Returns the new game, or null if the round was already decided. */
+    /** End the round and create a pending prize request; never credit the wallet here. */
     async settleWin({ round, card, prize, ref }) {
       if (game.phase !== 'running' || game.roundNumber !== round) return null;
+      const id = ref;
+      if (winPayouts.has(id)) return null;
+      const at = new Date();
+      winPayouts.set(id, { id, round, cardCode: card.code, serial: card.serial, userId: card.userId, amount: prize, status: 'pending', createdAt: at, updatedAt: at });
       game = {
-        ...game,
-        phase: 'ended',
-        autoCall: false,
-        nextCallAt: null,
-        winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, at: Date.now() },
+        ...game, phase: 'ended', autoCall: false, nextCallAt: null,
+        winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: id, payoutStatus: 'pending', at: Date.now() },
         version: game.version + 1,
       };
-      credit(card.userId, prize, 'prize', ref, { round, card: card.code });
       return clone(game);
+    },
+    async listWinPayouts({ status = 'pending' } = {}) {
+      return [...winPayouts.values()].filter((p) => !status || p.status === status).sort((a,b) => b.createdAt-a.createdAt).map((p) => {
+        const u = users.get(p.userId);
+        return { ...clone(p), amount: p.amount / 100, userName: u?.name ?? 'Unknown', userPhone: u?.phone ?? '' };
+      });
+    },
+    async approveWinPayout(id) {
+      const p = winPayouts.get(id);
+      if (!p || p.status !== 'pending') return null;
+      const r = credit(p.userId, p.amount, 'prize', `win-payout:${id}`, { round: p.round, card: p.cardCode });
+      p.status = 'approved'; p.updatedAt = new Date();
+      return { ...clone(p), credited: r.applied, balance: r.balance / 100 };
+    },
+    async rejectWinPayout(id, note = '') {
+      const p = winPayouts.get(id);
+      if (!p || p.status !== 'pending') return null;
+      p.status = 'rejected'; p.note = String(note).slice(0, 200); p.updatedAt = new Date();
+      return clone(p);
     },
 
     /* money */
