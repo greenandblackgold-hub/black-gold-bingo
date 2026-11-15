@@ -20,12 +20,12 @@ export function createAuthService({ repo, config }) {
   return {
     async register({ phone, name, pin, pinConfirm }) {
       if (!config.registrationEnabled) throw new HttpError(503, 'registration_disabled', 'New registrations are temporarily disabled until phone verification is ready.');
-      if (String(pin ?? '') !== String(pinConfirm ?? '')) throw new HttpError(400, 'pin_mismatch', 'PIN confirmation does not match');
       const p = normalizePhone(phone);
       if (!p) throw new HttpError(400, 'invalid_phone', 'Enter a valid Ethiopian mobile number');
       const cleanName = String(name ?? '').trim().slice(0, 60);
       if (cleanName.length < 2) throw new HttpError(400, 'invalid_name', 'Enter your name');
       if (!/^\d{6}$/.test(String(pin ?? ''))) throw new HttpError(400, 'invalid_pin', 'PIN must be 6 digits');
+      if (String(pin) !== String(pinConfirm ?? '')) throw new HttpError(400, 'pin_mismatch', 'PIN confirmation does not match');
       try {
         const user = await repo.createUser({ phone: p, name: cleanName, pinHash: await hashSecret(String(pin)), role: 'player' });
         return issue(user);
