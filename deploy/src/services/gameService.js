@@ -200,12 +200,12 @@ export function createGameService({ repo, config, now = Date.now }) {
       if (findWinningPattern(card.grid, new Set(g.calledNumbers), g.winPattern ?? 'any_line').missing !== 0) return { ok: false, reason: 'pattern_incomplete' };
 
       const prize = Math.floor((g.pot * config.prizePercent) / 100);
-      const settled = await repo.settleWin({ round: g.roundNumber, card, prize, ref: `prize:${g.roundNumber}` });
+      const settled = await repo.settleWin({ round: g.roundNumber, card, prize, ref: `win:${g.roundNumber}:${card.code}` });
       if (!settled) return { ok: false, reason: 'already_won' };
       schedule(settled);
       broadcast(settled);
-      log('prize_paid', { round: g.roundNumber, card: card.code, userId: user.id, etb: prize / 100, potEtb: g.pot / 100 });
-      return { ok: true, prize: prize / 100 };
+      log('prize_pending_admin_approval', { round: g.roundNumber, card: card.code, userId: user.id, etb: prize / 100, potEtb: g.pot / 100 });
+      return { ok: true, prize: prize / 100, payoutStatus: 'pending' };
     },
 
     /** Anyone logged in may verify a card ID. Only the owner or an admin gets the grid. */
