@@ -445,16 +445,18 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
       )}
 
       {winner && (
-        <p
-          role="status"
-          className={[
-            'rounded-xl px-4 py-3 text-center font-bold',
-            iWon ? 'bg-gold-400 text-darkbg' : 'bg-white/5 text-gold-300 ring-1 ring-gold-700/50',
-          ].join(' ')}
-        >
-          {iWon ? t('won') : `${t('winnerBanner')} #${winner.serial}`}
-        </p>
-      {iWon && <p className="-mt-2 rounded-lg px-3 py-2 text-center text-xs text-gold-400">{t('pendingPrize')}</p>}
+        <div className="space-y-2">
+          <p
+            role="status"
+            className={[
+              'rounded-xl px-4 py-3 text-center font-bold',
+              iWon ? 'bg-gold-400 text-darkbg' : 'bg-white/5 text-gold-300 ring-1 ring-gold-700/50',
+            ].join(' ')}
+          >
+            {iWon ? t('won') : `${t('winnerBanner')} #${winner.serial}`}
+          </p>
+          {iWon && <p className="rounded-lg px-3 py-2 text-center text-xs text-gold-400">{t('pendingPrize')}</p>}
+        </div>
       )}
 
       {/* Cards */}
