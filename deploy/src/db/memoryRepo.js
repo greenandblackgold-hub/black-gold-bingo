@@ -171,6 +171,35 @@ export function createMemoryRepo() {
       return true;
     },
 
+    /* Simulation-only withdrawals use a distinct record type and never call a payment provider. */
+    async requestSimulationWithdrawal({ id, userId, amount, method, destination }) {
+      if (withdrawals.has(id)) throw new RepoError('WITHDRAWAL_ID_TAKEN');
+      credit(userId, -amount, 'simulation_withdraw_hold', `simwd:${id}`, { id });
+      const w = { id, userId, amount, method, destination, mode: 'simulation', status: 'pending', note: '', createdAt: new Date(), updatedAt: new Date() };
+      withdrawals.set(id, w);
+      return clone(w);
+    },
+    async listSimulationWithdrawals({ status = 'pending', userId } = {}) {
+      return [...withdrawals.values()].filter((w) => w.mode === 'simulation' && (!status || w.status === status) && (!userId || w.userId === userId))
+        .sort((a,b) => b.createdAt-a.createdAt).map((w) => {
+          const u = users.get(w.userId);
+          return { ...clone(w), amount: w.amount / 100, userName: u?.name ?? 'Unknown', userPhone: u?.phone ?? '', at: w.createdAt.getTime() };
+        });
+    },
+    async transitionSimulationWithdrawal(id, from, to, patch = {}) {
+      const w = withdrawals.get(id);
+      if (!w || w.mode !== 'simulation' || !from.includes(w.status)) return null;
+      Object.assign(w, patch, { status: to, updatedAt: new Date() });
+      return clone(w);
+    },
+    async rejectSimulationWithdrawalAndRefund(id, note, adminId) {
+      const w = withdrawals.get(id);
+      if (!w || w.mode !== 'simulation' || w.status !== 'pending') return null;
+      credit(w.userId, w.amount, 'simulation_withdraw_refund', `simwd-refund:${id}`, { id });
+      Object.assign(w, { status: 'rejected', note, reviewedBy: adminId, updatedAt: new Date() });
+      return clone(w);
+    },
+
     /* withdrawals: the amount is held (debited) when requested */
     async requestWithdrawal({ id, userId, amount, accountName, accountNumber, bankCode }) {
       credit(userId, -amount, 'withdraw_hold', `wd:${id}`, { id });
