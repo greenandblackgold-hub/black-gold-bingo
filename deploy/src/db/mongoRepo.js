@@ -196,6 +196,14 @@ export async function createMongoRepo({ uri, dbName }) {
     async getPayment(txRef) {
       return payments.findOne({ txRef });
     },
+    async listUserSimulationDeposits(userId, limit = 30) {
+      const rows = await payments.find({ userId, source: { $in: ['manual-simulation', 'sms-simulation'] } })
+        .sort({ createdAt: -1 }).limit(limit).toArray();
+      return rows.map((p) => ({
+        reference: p.txRef, amount: p.amount / 100, status: p.status, currency: 'ETB',
+        at: new Date(p.createdAt).getTime(),
+      }));
+    },
     async listSimulationDeposits({ status = 'pending' } = {}) {
       const filter = { source: { $in: ['manual-simulation', 'sms-simulation'] } };
       if (status) filter.status = status;
