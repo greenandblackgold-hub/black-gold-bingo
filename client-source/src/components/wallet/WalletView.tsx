@@ -14,6 +14,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { SERVER_MODE } from '@/lib/api';
+import { SimulationWithdrawalPanel } from '@/components/wallet/SimulationWithdrawalPanel';
 import { AccountPanel } from '@/components/wallet/AccountPanel';
 import { SmsDepositPanel, SimulationDepositHistory } from '@/components/wallet/SmsDepositPanel';
 import type { Lang, PayMethod as Method } from '@/types/game';
@@ -513,6 +514,7 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
       <div className="grid gap-5 md:grid-cols-2">
         {SERVER_MODE ? <SmsDepositPanel /> : <DepositPanel t={t} onDeposit={deposit} />}
         <PurchasePanel t={t} price={cardPrice} balance={balance} onBuy={buyCards} onGoToPlay={onGoToPlay} locked={phase !== 'waiting'} />
+        {SERVER_MODE && <SimulationWithdrawalPanel />}
       </div>
 
 
