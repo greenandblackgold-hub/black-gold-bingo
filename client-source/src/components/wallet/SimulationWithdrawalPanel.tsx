@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -8,7 +8,10 @@ const TXT = {
   en: { title: 'Simulation withdrawal request', amount: 'Amount (ETB)', method: 'Destination method (optional)', telebirr: 'Telebirr', bank: 'Bank', destination: 'Phone / account number (optional)', send: 'Submit request', busy: 'Submitting…', ok: 'Request submitted. Simulation balance has been reserved.', note: 'TEST ONLY: no real money is sent. Admin approval only marks this simulation request Approved; rejection refunds the simulation balance.', err: 'Could not submit request' },
 } as const;
 
+type WithdrawalRow = { id: string; amount: number; method: string; destination: string; status: string; at: number };
+
 export function SimulationWithdrawalPanel() {
+  const [rows, setRows] = useState<WithdrawalRow[]>([]);
   const [amount, setAmount] = useState('10');
   const [method, setMethod] = useState('');
   const [destination, setDestination] = useState('');
@@ -17,10 +20,13 @@ export function SimulationWithdrawalPanel() {
   const [error, setError] = useState('');
   const { lang } = useLanguage();
   const t = TXT[lang] ?? TXT.en;
+  const load = async () => { try { setRows(await api.get<WithdrawalRow[]>('/api/simulation/withdrawals')); } catch { /* request form remains usable */ } };
+  useEffect(() => { void load(); }, []);
   const submit = async () => {
     setBusy(true); setError(''); setMessage('');
     try {
       await api.post('/api/simulation/withdrawals', { amount: Number(amount), method, destination });
+      await load();
       setMessage(t.ok); setAmount('10'); setDestination('');
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t.err);
@@ -44,6 +50,7 @@ export function SimulationWithdrawalPanel() {
       {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
       {message && <p role="status" className="text-sm text-gold-300">{message}</p>}
       <button type="button" disabled={busy || !Number.isFinite(Number(amount)) || Number(amount) <= 0} onClick={() => void submit()} className="w-full rounded-xl bg-gold-500 py-3 font-bold text-darkbg disabled:opacity-50">{busy ? t.busy : t.send}</button>
+      {rows.length > 0 && <div className="border-t border-gold-700/40 pt-3"><h3 className="mb-2 text-sm font-semibold text-gold-300">{lang === 'am' ? 'የመውጫ ጥያቄ ታሪክ' : lang === 'ti' ? 'ታሪኽ ሕቶታት ምውጻእ' : 'Withdrawal request history'}</h3><ul className="space-y-2">{rows.map(row => <li key={row.id} className="flex items-center justify-between gap-2 text-xs"><span className="text-gold-500">{row.amount.toFixed(2)} ETB · {row.method || '—'}</span><span className="font-semibold text-gold-300">{row.status}</span></li>)}</ul></div>}
     </div>
   </section>;
 }
