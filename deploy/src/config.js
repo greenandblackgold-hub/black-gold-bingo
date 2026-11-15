@@ -42,8 +42,8 @@ export function loadConfig(env = process.env) {
     minWithdraw: santim(num(env.MIN_WITHDRAW_ETB, 50)),
     autoPayout: bool(env.AUTO_PAYOUT, false),
     // Real-money activity stays OFF in production until both the lottery permit and Chapa's written merchant approval exist.
-    // Public signup remains disabled in production until real phone/SMS verification is implemented.
-    registrationEnabled: !prod && bool(env.REGISTRATION_ENABLED, true),
+    // Public signup is available in production when explicitly enabled in the deployment environment.
+    registrationEnabled: bool(env.REGISTRATION_ENABLED, true),
     realMoneyEnabled: bool(env.REAL_MONEY_ENABLED, !prod && bool(env.CHAPA_MOCK, false)),
     lotteryLicenseApproved: bool(env.LOTTERY_LICENSE_APPROVED, false),
     chapaMerchantApproved: bool(env.CHAPA_MERCHANT_APPROVED, false),
