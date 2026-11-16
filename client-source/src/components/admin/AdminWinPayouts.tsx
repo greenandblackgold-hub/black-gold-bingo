@@ -3,9 +3,9 @@ import { useLanguage } from '@/context/LanguageContext';
 import { api, ApiError } from '@/lib/api';
 
 const TEXT = {
-  am: { title: 'የቢንጎ አሸናፊ ሽልማቶች', empty: 'በመጠባበቅ ላይ ያለ የሽልማት ጥያቄ የለም', pending: 'በመጠባበቅ ላይ', approve: 'አጽድቅ', reject: 'ውድቅ አድርግ', reload: 'አድስ', round: 'ዙር', card: 'ካርድ', player: 'ተጫዋች', notice: 'የሽልማት ጥያቄው በአስተዳዳሪ ማረጋገጫ ይጸድቃል። ማጽደቁ በመተግበሪያው ቀሪ ሂሳብ ላይ ብቻ ይንጸባረቃል፤ የባንክ/Telebirr ዝውውር አያከናውንም።', err: 'ስህተት ተፈጥሯል' },
-  ti: { title: 'ሽልማት ኣሸነፍቲ ቢንጎ', empty: 'ዝጽበ ዘሎ ሕቶ ሽልማት የለን', pending: 'ይጽበ ኣሎ', approve: 'ኣጽድቕ', reject: 'ንጸግ', reload: 'ኣሐድስ', round: 'ዙር', card: 'ካርድ', player: 'ተጻዋታይ', notice: 'ሕቶ ሽልማት ብምርግጋጽ ኣማሓዳሪ ይጸድቕ። ምጽዳቕ ኣብ ሚዛን መተግበሪ ጥራይ ይንጸባረቕ፤ ናይ ባንክ/Telebirr ምስግጋር ኣይፍጽምን።', err: 'ጌጋ ተፈጢሩ' },
-  en: { title: 'Bingo winner prizes', empty: 'No pending prize requests', pending: 'Pending', approve: 'Approve', reject: 'Reject', reload: 'Reload', round: 'Round', card: 'Card', player: 'Player', notice: 'Prize requests are approved after administrator verification. Approval updates the in-app balance only; it does not initiate a bank or Telebirr transfer.', err: 'Something went wrong' },
+  am: { title: 'የቢንጎ አሸናፊ ሽልማቶች', empty: 'በመጠባበቅ ላይ ያለ የሽልማት ጥያቄ የለም', pending: 'በመጠባበቅ ላይ', approve: 'አጽድቅ', reject: 'ውድቅ አድርግ', reload: 'አድስ', round: 'ዙር', card: 'ካርድ', player: 'ተጫዋች', notice: 'ሽልማቱ ከአስተዳዳሪ ማረጋገጫ በኋላ ወደ ቦርሳ ባላንስ ብቻ ይጨመራል።', err: 'ስህተት ተፈጥሯል' },
+  ti: { title: 'ሽልማት ኣሸነፍቲ ቢንጎ', empty: 'ዝጽበ ዘሎ ሕቶ ሽልማት የለን', pending: 'ይጽበ ኣሎ', approve: 'ኣጽድቕ', reject: 'ንጸግ', reload: 'ኣሐድስ', round: 'ዙር', card: 'ካርድ', player: 'ተጻዋታይ', notice: 'ሽልማት ድሕሪ ምርግጋጽ ኣማሓዳሪ ናብ ሚዛን ቦርሳ ጥራይ ይውሰኽ።', err: 'ጌጋ ተፈጢሩ' },
+  en: { title: 'Bingo winner prizes', empty: 'No pending prize requests', pending: 'Pending', approve: 'Approve', reject: 'Reject', reload: 'Reload', round: 'Round', card: 'Card', player: 'Player', notice: 'Prizes are credited to the wallet balance after administrator review.', err: 'Something went wrong' },
 } as const;
 
 interface WinPayout {
