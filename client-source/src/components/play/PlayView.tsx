@@ -356,7 +356,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6 pb-2">
       <style>{`
         @keyframes bgBallPop { 0% { transform: scale(.4) rotate(-12deg); opacity: 0 } 70% { transform: scale(1.08) } 100% { transform: scale(1); opacity: 1 } }
         @keyframes bgHint { 0%,100% { box-shadow: 0 0 0 0 rgba(255,215,0,.0) } 50% { box-shadow: 0 0 14px 1px rgba(255,215,0,.45) } }
@@ -365,7 +365,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
       `}</style>
 
       {/* Call stage */}
-      <section className="flex flex-col items-center gap-5 rounded-3xl bg-cardbg px-4 py-6 ring-1 ring-gold-700/50 sm:flex-row sm:justify-center sm:gap-10">
+      <section className="relative flex flex-col items-center gap-5 overflow-hidden rounded-3xl border border-gold-500/20 bg-gradient-to-br from-gold-950/40 via-cardbg to-cardbg px-4 py-6 shadow-xl shadow-black/20 ring-1 ring-gold-700/40 sm:flex-row sm:justify-center sm:gap-10 sm:px-7 sm:py-8">
         <div className="flex flex-col items-center gap-2">
           {current !== null ? (
             <Ball key={current} n={current} />
@@ -380,7 +380,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           <p className="text-xs font-semibold text-gold-500">የዚህ ዙር አሸናፊነት: {PATTERN_NAMES[winPattern]}</p>
         </div>
 
-        <div className="w-full max-w-xs">
+        <div className="w-full max-w-xs rounded-2xl border border-gold-700/30 bg-black/10 p-3 sm:p-4">
           <button
             type="button"
             onClick={toggleVoice}
@@ -420,7 +420,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
       </section>
 
       {showBoard && (
-        <section className="rounded-2xl bg-cardbg p-3 ring-1 ring-gold-700/50">
+        <section className="rounded-2xl border border-gold-700/30 bg-cardbg p-3 shadow-lg shadow-black/10 ring-1 ring-gold-700/40 sm:p-4">
           <div className="grid grid-cols-5 gap-x-2 gap-y-1">
             {LETTERS.map((l, col) => (
               <div key={l} className="space-y-1">
@@ -481,7 +481,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {cards.map((card) => (
               <CardView
                 key={card.id}
