@@ -4,9 +4,9 @@ import { useLanguage } from '@/context/LanguageContext';
 
 type Row = { id:string; amount:number; method:string; destination:string; status:string; userName:string; userPhone:string; at:number };
 const TEXT = {
- am:{title:'የመውጫ ጥያቄዎች (Simulation)',empty:'በመጠባበቅ ላይ ያለ የመውጫ ጥያቄ የለም',player:'ተጫዋች',method:'የመቀበያ ዘዴ',destination:'የመቀበያ መረጃ',approve:'አጽድቅ',reject:'ውድቅ አድርግ',reload:'አድስ',pending:'በመጠባበቅ ላይ',notice:'ሙከራ ብቻ፦ እውነተኛ ገንዘብ አይላክም። ማጽደቅ የጥያቄውን ሁኔታ ብቻ ይቀይራል፤ ውድቅ ማድረግ የSimulation ቀሪ ሂሳቡን ይመልሳል።',err:'ስህተት ተፈጥሯል'}, 
- ti:{title:'ሕቶታት ምውጻእ (Simulation)',empty:'ተጸባዪ ሕቶ ምውጻእ የለን',player:'ተጻዋታይ',method:'ኣገባብ ተቐባሊ',destination:'ሓበሬታ ተቐባሊ',approve:'ኣጽድቕ',reject:'ንጸግ',reload:'ኣሐድስ',pending:'ይጽበ ኣሎ',notice:'ንፈተነ ጥራይ፦ ሓቀኛ ገንዘብ ኣይስደድን። ምጽዳቕ ኩነታት ሕቶ ጥራይ ይቕይር፤ ምንጻግ ድማ ናይ Simulation ሚዛን ይመልስ።',err:'ጌጋ ተፈጢሩ'},
- en:{title:'Pending withdrawals (Simulation)',empty:'No pending withdrawal requests',player:'Player',method:'Receiving method',destination:'Receiving details',approve:'Approve',reject:'Reject',reload:'Refresh',pending:'Pending',notice:'TEST ONLY: no real money is sent. Approval only changes the request status; rejection refunds the simulation balance.',err:'Something went wrong'}
+ am:{title:'የገንዘብ ማውጫ ጥያቄዎች',empty:'በመጠባበቅ ላይ ያለ የመውጫ ጥያቄ የለም',player:'ተጫዋች',method:'የመቀበያ ዘዴ',destination:'የመቀበያ መረጃ',approve:'አጽድቅ',reject:'ውድቅ አድርግ',reload:'አድስ',pending:'በመጠባበቅ ላይ',notice:'ጥያቄዎች በአስተዳዳሪ ይገመገማሉ። ማጽደቅ የጥያቄውን ሁኔታ ብቻ ይቀይራል፤ በዚህ መተግበሪያ የባንክ ወይም የTelebirr ዝውውር አይፈጸምም። ውድቅ ሲደረግ የተያዘው ቀሪ ሂሳብ ይመለሳል።',err:'ስህተት ተፈጥሯል'}, 
+ ti:{title:'ሕቶታት ምውጻእ',empty:'ተጸባዪ ሕቶ ምውጻእ የለን',player:'ተጻዋታይ',method:'ኣገባብ ተቐባሊ',destination:'ሓበሬታ ተቐባሊ',approve:'ኣጽድቕ',reject:'ንጸግ',reload:'ኣሐድስ',pending:'ይጽበ ኣሎ',notice:'ሕቶታት ብኣማሓዳሪ ይግምገሙ። ምጽዳቕ ኩነታት ሕቶ ጥራይ ይቕይር፤ ብእዚ መተግበሪ ባንክ ወይ Telebirr ምስግጋር ኣይፍጸምን። ምንጻግ እቲ ዝተሓዝ ሚዛን ይመልስ።',err:'ጌጋ ተፈጢሩ'},
+ en:{title:'Pending withdrawals',empty:'No pending withdrawal requests',player:'Player',method:'Receiving method',destination:'Receiving details',approve:'Approve',reject:'Reject',reload:'Refresh',pending:'Pending',notice:'Requests are reviewed by an administrator. Approval updates the request status only; this app does not initiate bank or Telebirr transfers. Rejection returns the reserved balance.',err:'Something went wrong'}
 } as const;
 export function AdminSimulationWithdrawals(){
  const {lang}=useLanguage(); const t=TEXT[lang]??TEXT.en;
