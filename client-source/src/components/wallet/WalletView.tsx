@@ -226,7 +226,7 @@ function DepositPanel({
   const methodLabel = method === 'telebirr' ? t('telebirr') : t('cbe');
 
   return (
-    <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
+    <section className="rounded-2xl border border-gold-700/25 bg-cardbg p-4 shadow-lg shadow-black/10 ring-1 ring-gold-700/40 sm:p-5">
       <h2 className="mb-4 text-lg font-bold text-gold-300">{t('deposit')}</h2>
 
       {stage === 'form' && (
@@ -498,11 +498,11 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
   const recent = useMemo(() => [...transactions].sort((a, b) => b.at - a.at).slice(0, 8), [transactions]);
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto w-full max-w-6xl space-y-6 pb-2">
       {/* Balance */}
-      <section className="rounded-3xl bg-gradient-to-br from-gold-700/40 via-cardbg to-cardbg p-5 ring-1 ring-gold-500/60 sm:p-7">
+      <section className="relative overflow-hidden rounded-3xl border border-gold-400/25 bg-gradient-to-br from-gold-700/40 via-cardbg to-cardbg p-5 shadow-xl shadow-black/20 ring-1 ring-gold-500/50 sm:p-7">
         <p className="text-sm text-gold-300">{t('balance')}</p>
-        <p className="mt-1 text-5xl font-black tabular-nums text-gold-400 sm:text-6xl" aria-live="polite">
+        <p className="mt-2 text-4xl font-black tracking-tight tabular-nums text-gold-300 sm:text-6xl" aria-live="polite">
           {fmt(balance)}
           <span className="ml-2 text-xl font-bold text-gold-500">{t('etb')}</span>
         </p>
@@ -511,7 +511,7 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
         </p>
       </section>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid items-start gap-5 lg:grid-cols-2">
         {SERVER_MODE ? <SmsDepositPanel /> : <DepositPanel t={t} onDeposit={deposit} />}
         <PurchasePanel t={t} price={cardPrice} balance={balance} onBuy={buyCards} onGoToPlay={onGoToPlay} locked={phase !== 'waiting'} />
         {SERVER_MODE && <SimulationWithdrawalPanel />}

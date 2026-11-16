@@ -46,9 +46,9 @@ export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab:
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-gold-700/40 bg-darkbg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-gold-500/20 bg-darkbg/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.25)] backdrop-blur-xl"
     >
-      <ul className="mx-auto grid max-w-xl grid-cols-3">
+      <ul className="mx-auto grid max-w-xl grid-cols-3 px-2">
         {ORDER.map((id) => {
           const on = id === active;
           return (
@@ -58,7 +58,7 @@ export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab:
                 aria-current={on ? 'page' : undefined}
                 onClick={() => onChange(id)}
                 className={[
-                  'flex w-full flex-col items-center gap-1 py-2.5 text-xs font-semibold transition-colors',
+                  'flex w-full flex-col items-center gap-1 rounded-xl py-3 text-xs font-semibold transition-colors',
                   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300',
                   on ? 'text-gold-400' : 'text-gold-700 hover:text-gold-500',
                 ].join(' ')}

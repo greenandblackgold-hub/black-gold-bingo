@@ -143,7 +143,7 @@ export function SmsDepositPanel() {
     : t.unknown;
 
   return (
-    <section className="rounded-2xl border border-gold-700/50 bg-cardbg p-5" aria-labelledby="simulation-wallet-title">
+    <section className="rounded-2xl border border-gold-600/30 bg-gradient-to-b from-white/[0.045] to-transparent p-5 shadow-[0_18px_50px_rgba(0,0,0,0.22)] sm:p-6" aria-labelledby="simulation-wallet-title">
       <h2 id="simulation-wallet-title" className="mb-4 text-lg font-bold text-gold-300">{t.title}</h2>
       {!request ? (
         <div className="space-y-4">
@@ -172,7 +172,7 @@ export function SmsDepositPanel() {
             />
           </div>
           {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
-          <button type="button" onClick={submit} disabled={busy} className="w-full rounded-xl bg-gradient-to-br from-gold-300 via-gold-500 to-gold-600 py-3.5 font-bold text-darkbg disabled:opacity-50">
+          <button type="button" onClick={submit} disabled={busy} className="w-full rounded-xl bg-gradient-to-r from-gold-300 via-gold-500 to-gold-600 py-3.5 font-bold text-darkbg shadow-lg shadow-gold-900/20 transition duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:ring-offset-2 focus-visible:ring-offset-darkbg disabled:cursor-not-allowed disabled:opacity-50">
             {busy ? t.sending : t.submit}
           </button>
           <p className="text-xs leading-relaxed text-gold-600">{t.note}</p>
@@ -279,7 +279,7 @@ export function SimulationDepositHistory() {
     : t.unknown;
 
   return (
-    <div className="mb-4 rounded-xl border border-gold-700/40 bg-white/[0.03] p-3">
+    <div className="mb-4 rounded-2xl border border-gold-700/35 bg-gradient-to-b from-white/[0.035] to-transparent p-4 sm:p-5">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-bold text-gold-300">{t.title}</h3>
         <span className="text-xs text-gold-700">{t.refresh}</span>
