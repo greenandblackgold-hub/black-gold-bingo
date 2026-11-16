@@ -12,6 +12,7 @@ import { PlayerProvider } from '@/context/PlayerContext';
 import { RoundProvider } from '@/context/RoundContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AuthScreen } from '@/components/auth/AuthScreen';
+import { ToastProvider } from '@/context/ToastContext';
 import { SERVER_MODE } from '@/lib/api';
 import { PaymentReturnBanner } from '@/server/PaymentReturnBanner';
 import { ServerProviders } from '@/server/ServerProviders';
