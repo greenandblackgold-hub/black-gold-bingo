@@ -24,9 +24,9 @@ export function PinResetFlow({ lang, onClose }: { lang: Lang; onClose: () => voi
   const field = 'w-full rounded-xl border border-gold-700/40 bg-black/5 px-4 py-3 text-gold-100 placeholder:text-gold-700/80 outline-none focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20';
   const move = () => {
     setNotice(t.unavailable);
-    if (step === 1 && /^0[79]\\d{8}$/.test(phone)) { setStep(2); setSeconds(60); }
-    else if (step === 2 && /^\\d{4,6}$/.test(otp)) setStep(3);
-    else if (step === 3 && /^\\d{6}$/.test(pin) && pin === confirm) setNotice(t.unavailable);
+    if (step === 1 && /^0[79]\d{8}$/.test(phone)) { setStep(2); setSeconds(60); }
+    else if (step === 2 && /^\d{4,6}$/.test(otp)) setStep(3);
+    else if (step === 3 && /^\d{6}$/.test(pin) && pin === confirm) setNotice(t.unavailable);
     else setNotice(t.invalid);
   };
   return (
