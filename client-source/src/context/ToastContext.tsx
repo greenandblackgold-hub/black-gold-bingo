@@ -18,8 +18,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       {toast && (
-        <div className="pointer-events-none fixed bottom-5 left-1/2 z-[100] w-[calc(100%-2rem)] max-w-md -translate-x-1/2" role={toast.kind === 'error' ? 'alert' : 'status'} aria-live="polite">
-          <div className={['flex items-start gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-2xl', toast.kind === 'error' ? 'bg-red-700' : 'bg-green-700'].join(' ')}>
+        <div className="pointer-events-none fixed bottom-24 left-1/2 z-[100] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 sm:bottom-6" role={toast.kind === 'error' ? 'alert' : 'status'} aria-live="polite">
+          <div className={['flex items-start gap-3 rounded-2xl border px-4 py-3.5 text-sm font-semibold text-white shadow-2xl backdrop-blur-xl', toast.kind === 'error' ? 'border-red-300/20 bg-red-950/95' : 'border-gold-300/20 bg-emerald-950/95'].join(' ')}>
             <span aria-hidden="true" className="text-lg leading-5">{toast.kind === 'error' ? '✖' : '✔'}</span>
             <span>{toast.message}</span>
           </div>
