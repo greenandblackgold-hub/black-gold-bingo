@@ -69,7 +69,9 @@ export function AuthScreen() {
       }
     } catch (e) {
       const code = e instanceof ApiError ? e.code : 'error';
-      const message = (t as Record<string, string>)[code] ?? t.error;\n      setError(message);\n      showToast('error', message);
+      const message = (t as Record<string, string>)[code] ?? t.error;
+      setError(message);
+      showToast('error', message);
     } finally {
       setBusy(false);
     }
