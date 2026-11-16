@@ -203,36 +203,49 @@ function CardView({ card, marks, called, active, t, onToggle, pattern }: CardVie
   return (
     <section
       className={[
-        'rounded-2xl bg-cardbg p-3 sm:p-4 transition-shadow',
+        'relative overflow-hidden rounded-[1.35rem] border bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.012)_38%,rgba(0,0,0,0.18))] p-3 shadow-xl shadow-black/25 transition-all duration-300 sm:p-4',
         hasWin
-          ? 'ring-2 ring-gold-400 shadow-[0_0_40px_-6px_rgba(255,215,0,0.55)]'
-          : 'ring-1 ring-gold-700/50',
+          ? 'border-gold-300/90 ring-2 ring-gold-400/80 shadow-[0_0_42px_-8px_rgba(255,215,0,0.58)]'
+          : 'border-gold-700/45 ring-1 ring-gold-700/25 hover:border-gold-500/60',
       ].join(' ')}
     >
-      <header className="mb-3 flex items-baseline justify-between">
-        <h3 className="font-semibold text-gold-300">
-          {t('card')} #{card.serial}
-          <span className="ml-2 select-all font-mono text-xs font-normal text-gold-500">{card.id}</span>
-        </h3>
+      {hasWin && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-gold-300 to-transparent" aria-hidden="true" />
+      )}
+      <header className="mb-3 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[9px] font-black uppercase tracking-[0.22em] text-gold-600">GOLD EDITION</p>
+          <h3 className="mt-0.5 truncate font-bold text-gold-200">
+            {t('card')} <span className="text-gold-400">#{card.serial}</span>
+          </h3>
+          <span className="select-all font-mono text-[10px] text-gold-600">{card.id}</span>
+        </div>
         {active && (
           <span
             className={[
-              'rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums',
-              toGo <= 2 ? 'bg-gold-400 text-darkbg' : 'bg-white/5 text-gold-500',
+              'shrink-0 rounded-full border px-3 py-1 text-[11px] font-black tabular-nums tracking-wide transition-colors',
+              hasWin
+                ? 'border-gold-200 bg-gradient-to-r from-gold-200 via-gold-400 to-gold-500 text-darkbg shadow-[0_0_20px_rgba(255,215,0,.35)]'
+                : toGo <= 2
+                  ? 'border-gold-400/60 bg-gold-400/15 text-gold-200'
+                  : 'border-gold-700/40 bg-black/20 text-gold-500',
             ].join(' ')}
           >
-            {hasWin ? 'BINGO' : `${toGo} ${t('toGo')}`}
+            {hasWin ? '✦ BINGO ✦' : `${toGo} ${t('toGo')}`}
           </span>
         )}
       </header>
 
-      <div className="grid grid-cols-5 gap-1 pb-1 text-center text-sm font-black text-gold-500">
-        {LETTERS.map((l) => (
-          <span key={l}>{l}</span>
-        ))}
-      </div>
+      <div className="rounded-2xl border border-gold-700/35 bg-black/25 p-2.5 shadow-inner shadow-black/30 sm:p-3">
+        <div className="mb-2 grid grid-cols-5 gap-1.5 text-center">
+          {LETTERS.map((l) => (
+            <span key={l} className="rounded-lg border border-gold-500/20 bg-gradient-to-b from-gold-400/20 to-gold-500/[0.04] py-1.5 text-xs font-black tracking-widest text-gold-300 shadow-sm sm:py-2 sm:text-sm">
+              {l}
+            </span>
+          ))}
+        </div>
 
-      <div className="grid grid-cols-5 gap-1">
+        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
         {card.grid.flatMap((row, r) =>
           row.map((v, c) => {
             const isFree = v === null;
@@ -248,15 +261,14 @@ function CardView({ card, marks, called, active, t, onToggle, pattern }: CardVie
                 aria-label={isFree ? t('free') : `${LETTERS[c]} ${v}`}
                 onClick={() => v !== null && isCalled && onToggle(v)}
                 className={[
-                  'relative aspect-square rounded-lg text-base font-bold tabular-nums sm:text-lg',
-                  'transition-transform active:scale-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300',
+                  'relative grid aspect-square min-w-0 place-items-center overflow-hidden rounded-lg border text-base font-extrabold tabular-nums shadow-sm transition-all duration-200 active:scale-[0.91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-200 sm:rounded-xl sm:text-lg',
                   isMarked
-                    ? 'bg-gradient-to-br from-gold-300 via-gold-500 to-gold-600 text-darkbg'
-                    : 'bg-white/[0.04] text-gold-300/80',
+                    ? 'bg-gradient-to-br from-gold-200 via-gold-400 to-gold-600 border-gold-200/80 text-[#17130a] shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_3px_12px_rgba(212,175,55,.22)] bg-cell-mark'
+                    : 'border-white/[0.055] bg-gradient-to-br from-white/[0.065] to-white/[0.015] text-gold-200/90 hover:border-gold-500/40',
                   isCalled && !isMarked
-                    ? 'bg-anim ring-1 ring-gold-400 animate-[bgHint_1.6s_ease-in-out_infinite]'
+                    ? 'bg-anim border-gold-400/80 text-gold-100 ring-1 ring-gold-400/60 animate-[bgHint_1.6s_ease-in-out_infinite]'
                     : '',
-                  inWin ? 'outline outline-2 outline-white/90' : '',
+                  inWin ? 'z-[1] outline outline-2 outline-white shadow-[0_0_18px_rgba(255,245,190,.75)]' : '',
                 ].join(' ')}
               >
                 {isFree ? <span className="text-xs font-black">★</span> : v}
@@ -264,6 +276,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern }: CardVie
             );
           }),
         )}
+        </div>
       </div>
     </section>
   );
@@ -368,10 +381,21 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           50% { box-shadow: inset -5px -7px 12px rgba(0,0,0,.25), 0 8px 24px rgba(0,0,0,.3), 0 0 34px rgba(255,215,0,.28); }
         }
         @keyframes bgHint { 0%,100% { box-shadow: 0 0 0 0 rgba(255,215,0,.0) } 50% { box-shadow: 0 0 14px 1px rgba(255,215,0,.45) } }
+        @keyframes bgCellMark {
+          0% { transform: scale(.9); filter: brightness(1.35); }
+          65% { transform: scale(1.035); }
+          100% { transform: scale(1); filter: brightness(1); }
+        }
+        @keyframes bgWinnerReveal {
+          0% { opacity: 0; transform: translateY(10px) scale(.985); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .bg-cell-mark { animation: bgCellMark 260ms cubic-bezier(.2,.8,.2,1) both; }
+        .bg-winner-reveal { animation: bgWinnerReveal 420ms cubic-bezier(.2,.8,.2,1) both; }
         @keyframes bgConfetti { to { transform: translateY(110vh) rotate(var(--rot)); opacity: .9 } }
         .bg-ball-pop { animation: bgBallPop 620ms cubic-bezier(.2,.8,.2,1) both, bgBallGlow 2.8s ease-in-out 620ms 2; }
         @media (prefers-reduced-motion: reduce) {
-          .bg-anim, .bg-ball-pop { animation: none !important; }
+          .bg-anim, .bg-ball-pop, .bg-cell-mark, .bg-winner-reveal { animation: none !important; }
         }
       `}</style>
 
@@ -499,16 +523,20 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
 
       {winner && (
         <div className="space-y-2">
-          <p
-            role="status"
-            className={[
-              'rounded-xl px-4 py-3 text-center font-bold',
-              iWon ? 'bg-gold-400 text-darkbg' : 'bg-white/5 text-gold-300 ring-1 ring-gold-700/50',
-            ].join(' ')}
-          >
-            {iWon ? t('won') : `${t('winnerBanner')} #${winner.serial}`}
-          </p>
-          {iWon && <p className="rounded-lg px-3 py-2 text-center text-xs text-gold-400">{t('pendingPrize')}</p>}
+          <div className="bg-winner-reveal relative isolate overflow-hidden rounded-[1.5rem] border border-gold-300/50 bg-[radial-gradient(ellipse_at_top,rgba(255,215,0,.18),transparent_62%),linear-gradient(135deg,rgba(212,175,55,.12),rgba(15,15,18,.96)_58%)] p-4 text-center shadow-[0_12px_44px_-18px_rgba(255,215,0,.45)] ring-1 ring-gold-500/20 sm:p-5">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-200 to-transparent" aria-hidden="true" />
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-gold-500">
+              {iWon ? '✦ VICTORY ✦' : 'ROUND RESULT'}
+            </p>
+            <p role="status" className="mt-2 text-lg font-black text-gold-100 sm:text-2xl">
+              {iWon ? t('won') : `${t('winnerBanner')} #${winner.serial}`}
+            </p>
+            {iWon && (
+              <p className="mx-auto mt-2 max-w-xl rounded-xl border border-gold-500/20 bg-black/20 px-3 py-2 text-xs leading-relaxed text-gold-300 sm:text-sm">
+                {t('pendingPrize')}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
