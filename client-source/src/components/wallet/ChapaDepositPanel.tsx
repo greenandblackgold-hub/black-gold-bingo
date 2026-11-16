@@ -60,7 +60,7 @@ export function ChapaDepositPanel() {
   };
 
   return (
-    <section className="rounded-2xl border border-gold-700/50 bg-cardbg p-5">
+    <section className="rounded-2xl border border-gold-600/30 bg-gradient-to-b from-white/[0.045] to-transparent p-5 shadow-[0_18px_50px_rgba(0,0,0,0.22)] sm:p-6">
       <h2 className="mb-3 text-lg font-bold text-gold-300">{t.title}</h2>
       {error && <p role="alert" className="mb-3 rounded-lg bg-red-950/50 p-3 text-sm text-red-200">{error}</p>}
       <form onSubmit={handleSubmit} className="space-y-3">
@@ -75,12 +75,12 @@ export function ChapaDepositPanel() {
           required
           value={amount}
           onChange={(event) => setAmount(event.target.value)}
-          className="w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-300 ring-1 ring-gold-700/50 focus:outline-none focus:ring-2 focus:ring-gold-400"
+          className="w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-200 ring-1 ring-gold-700/50 transition focus:outline-none focus:ring-2 focus:ring-gold-400"
         />
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-gradient-to-br from-gold-300 via-gold-500 to-gold-600 py-3 font-bold text-darkbg disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-gold-300 via-gold-500 to-gold-600 py-3.5 font-bold text-darkbg shadow-lg shadow-gold-900/20 transition duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:ring-offset-2 focus-visible:ring-offset-darkbg disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? t.waiting : t.pay}
         </button>
