@@ -165,7 +165,7 @@ export function AuthScreen() {
             <button type="submit" disabled={busy} className="w-full rounded-xl bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500 py-3.5 font-bold text-darkbg shadow-lg shadow-gold-900/20 transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50">
               {busy ? t.busy : mode === 'login' ? t.login : t.register}
             </button>
-          </form>
+          </form>}
 
           {mode === 'register' && <p className="mt-5 text-center text-xs leading-5 text-gold-500/70">{t.age}</p>}
           {!showPinReset && <p className="mt-8 text-center text-xs text-gold-700/70">© BLACK GOLD BINGO PRO</p>}
