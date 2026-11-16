@@ -4,9 +4,9 @@ import { useLanguage } from '@/context/LanguageContext';
 
 type Row = { id:string; amount:number; method:string; destination:string; status:string; userName:string; userPhone:string; at:number };
 const TEXT = {
- am:{title:'የገንዘብ ማውጫ ጥያቄዎች',empty:'በመጠባበቅ ላይ ያለ የመውጫ ጥያቄ የለም',player:'ተጫዋች',method:'የመቀበያ ዘዴ',destination:'የመቀበያ መረጃ',approve:'አጽድቅ',reject:'ውድቅ አድርግ',reload:'አድስ',pending:'በመጠባበቅ ላይ',notice:'ጥያቄዎች ከአስተዳዳሪ ማረጋገጫ በኋላ ይጸድቃሉ። ማጽደቁ የጥያቄውን ሁኔታ ብቻ ይቀይራል፤ የባንክ/Telebirr ዝውውር አያከናውንም። ውድቅ ሲደረግ የተያዘው ቀሪ ሂሳብ ይመለሳል።',err:'ስህተት ተፈጥሯል'}, 
- ti:{title:'ሕቶታት ምውጻእ',empty:'ተጸባዪ ሕቶ ምውጻእ የለን',player:'ተጻዋታይ',method:'ኣገባብ ተቐባሊ',destination:'ሓበሬታ ተቐባሊ',approve:'ኣጽድቕ',reject:'ንጸግ',reload:'ኣሐድስ',pending:'ይጽበ ኣሎ',notice:'ሕቶታት ብምርግጋጽ ኣማሓዳሪ ይጸድቑ። ምጽዳቕ ኩነታት ሕቶ ጥራይ ይቕይር፤ ናይ ባንክ/Telebirr ምስግጋር ኣይፍጽምን። ምንጻግ እቲ ዝተሓዝ ሚዛን ይምለስ።',err:'ጌጋ ተፈጢሩ'},
- en:{title:'Pending withdrawals',empty:'No pending withdrawal requests',player:'Player',method:'Receiving method',destination:'Receiving details',approve:'Approve',reject:'Reject',reload:'Refresh',pending:'Pending',notice:'Requests are approved after administrator verification. Approval updates the request status only; it does not initiate a bank or Telebirr transfer. Rejected requests return the reserved balance.',err:'Something went wrong'}
+ am:{title:'የገንዘብ ማውጫ ጥያቄዎች',empty:'በመጠባበቅ ላይ ያለ የመውጫ ጥያቄ የለም',player:'ተጫዋች',method:'የመቀበያ ዘዴ',destination:'የመቀበያ መረጃ',approve:'አጽድቅ',reject:'ውድቅ አድርግ',reload:'አድስ',pending:'በመጠባበቅ ላይ',notice:'ጥያቄዎች ከአስተዳዳሪ ማረጋገጫ በኋላ ይጸድቃሉ፤ ማጽደቅ ዝውውር አያከናውንም።',err:'ስህተት ተፈጥሯል'}, 
+ ti:{title:'ሕቶታት ምውጻእ',empty:'ተጸባዪ ሕቶ ምውጻእ የለን',player:'ተጻዋታይ',method:'ኣገባብ ተቐባሊ',destination:'ሓበሬታ ተቐባሊ',approve:'ኣጽድቕ',reject:'ንጸግ',reload:'ኣሐድስ',pending:'ይጽበ ኣሎ',notice:'ሕቶታት ብኣማሓዳሪ ይምርመሩ፤ ምጽዳቕ ዝውውር ኣይፍጽምን።',err:'ጌጋ ተፈጢሩ'},
+ en:{title:'Pending withdrawals',empty:'No pending withdrawal requests',player:'Player',method:'Receiving method',destination:'Receiving details',approve:'Approve',reject:'Reject',reload:'Refresh',pending:'Pending',notice:'Requests are reviewed by an administrator. Approval does not initiate a bank or Telebirr transfer.',err:'Something went wrong'}
 } as const;
 export function AdminSimulationWithdrawals(){
  const {lang}=useLanguage(); const t=TEXT[lang]??TEXT.en;
