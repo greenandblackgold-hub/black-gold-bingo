@@ -3,6 +3,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { ApiError } from '@/lib/api';
 import type { Lang } from '@/types/game';
+import { useToast } from '@/context/ToastContext';
+import { PinResetFlow } from '@/components/auth/PinResetFlow';
 
 const TEXT = {
   am: {
@@ -41,6 +43,7 @@ const LANG_LABELS: Record<Lang, string> = { am: 'አማርኛ', ti: 'ትግር�
 
 export function AuthScreen() {
   const { login, register } = useAuth();
+  const { showToast } = useToast();
   const { lang, setLang } = useLanguage();
   const t = TEXT[lang];
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -52,7 +55,7 @@ export function AuthScreen() {
   const [showConfirmPin, setShowConfirmPin] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [forgotInfo, setForgotInfo] = useState(false);
+  const [showPinReset, setShowPinReset] = useState(false);
 
   const submit = async () => {
     setBusy(true);
@@ -65,7 +68,7 @@ export function AuthScreen() {
       }
     } catch (e) {
       const code = e instanceof ApiError ? e.code : 'error';
-      setError((t as Record<string, string>)[code] ?? t.error);
+      const message = (t as Record<string, string>)[code] ?? t.error;\n      setError(message);\n      showToast('error', message);
     } finally {
       setBusy(false);
     }
@@ -114,7 +117,7 @@ export function AuthScreen() {
           </div>
 
           <div className="mb-7 grid grid-cols-2 rounded-xl border border-gold-700/40 bg-black/20 p-1">
-            <button type="button" aria-pressed={mode === 'login'} onClick={() => { setMode('login'); setError(null); setForgotInfo(false); }} className={['rounded-lg px-3 py-3 text-sm font-semibold transition', mode === 'login' ? 'bg-gradient-to-r from-gold-300 to-gold-500 text-darkbg shadow-md shadow-black/20' : 'text-gold-300/70 hover:text-gold-200'].join(' ')}>
+            <button type="button" aria-pressed={mode === 'login'} onClick={() => { setMode('login'); setError(null); setShowPinReset(false); }} className={['rounded-lg px-3 py-3 text-sm font-semibold transition', mode === 'login' ? 'bg-gradient-to-r from-gold-300 to-gold-500 text-darkbg shadow-md shadow-black/20' : 'text-gold-300/70 hover:text-gold-200'].join(' ')}>
               {t.login}
             </button>
             <button type="button" aria-pressed={mode === 'register'} onClick={() => { setMode('register'); setError(null); setForgotInfo(false); }} className={['rounded-lg px-3 py-3 text-sm font-semibold transition', mode === 'register' ? 'bg-gradient-to-r from-gold-300 to-gold-500 text-darkbg shadow-md shadow-black/20' : 'text-gold-300/70 hover:text-gold-200'].join(' ')}>
@@ -122,7 +125,7 @@ export function AuthScreen() {
             </button>
           </div>
 
-          <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); if (!busy) void submit(); }}>
+          {showPinReset ? <PinResetFlow lang={lang} onClose={() => setShowPinReset(false)} /> : <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); if (!busy) void submit(); }}>
             <div>
               <label htmlFor="auth-phone" className="mb-2 block text-sm font-medium text-gold-300">{t.phone}</label>
               <input id="auth-phone" inputMode="tel" autoComplete="tel" placeholder={t.phonePlaceholder} value={phone} onChange={(e) => setPhone(e.target.value)} className={input} />
@@ -141,10 +144,10 @@ export function AuthScreen() {
               </div>
               {mode === 'login' && (
                 <div className="mt-2 text-right">
-                  <button type="button" onClick={() => setForgotInfo((v) => !v)} className="text-xs font-medium text-gold-400 underline decoration-gold-500/50 underline-offset-4 hover:text-gold-200">{t.forgot}</button>
+                  <button type="button" onClick={() => setShowPinReset(true)} className="text-xs font-medium text-gold-400 underline decoration-gold-500/50 underline-offset-4 hover:text-gold-200">{t.forgot}</button>
                 </div>
               )}
-              {forgotInfo && mode === 'login' && <p role="status" className="mt-2 rounded-lg border border-gold-700/30 bg-gold-500/5 p-3 text-xs leading-5 text-gold-300/80">{t.forgotInfo}</p>}
+              
             </div>
             {mode === 'register' && (
               <div>
@@ -162,7 +165,7 @@ export function AuthScreen() {
           </form>
 
           {mode === 'register' && <p className="mt-5 text-center text-xs leading-5 text-gold-500/70">{t.age}</p>}
-          <p className="mt-8 text-center text-xs text-gold-700/70">© BLACK GOLD BINGO PRO</p>
+          {!showPinReset && <p className="mt-8 text-center text-xs text-gold-700/70">© BLACK GOLD BINGO PRO</p>}
         </div>
       </section>
     </main>
