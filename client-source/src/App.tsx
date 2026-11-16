@@ -103,6 +103,7 @@ function ServerApp() {
   return (
     <AppSettingsProvider>
       <LanguageProvider>
+        <ToastProvider>
         <AuthProvider>
           <AuthGate>
             <ServerProviders>
@@ -111,6 +112,7 @@ function ServerApp() {
             </ServerProviders>
           </AuthGate>
         </AuthProvider>
+        </ToastProvider>
       </LanguageProvider>
     </AppSettingsProvider>
   );
