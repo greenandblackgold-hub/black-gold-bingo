@@ -45,10 +45,10 @@ export function AppHeader({ onOpenWallet, onOpenAdmin }: { onOpenWallet: () => v
   const l = LABELS[lang];
 
   return (
-    <header className="sticky top-0 z-30 border-b border-gold-700/40 bg-darkbg/90 pt-[env(safe-area-inset-top)] backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+    <header className="sticky top-0 z-30 border-b border-gold-500/20 bg-darkbg/95 pt-[env(safe-area-inset-top)] shadow-lg shadow-black/10 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4">
         <div className="min-w-0 leading-tight">
-          <p className="truncate bg-gradient-to-r from-gold-300 via-gold-400 to-gold-600 bg-clip-text text-lg font-black text-transparent">
+          <p className="truncate bg-gradient-to-r from-gold-200 via-gold-400 to-gold-600 bg-clip-text text-base font-black tracking-wide text-transparent sm:text-lg">
             Black Gold PLC
           </p>
           {showAdminLink ? (
