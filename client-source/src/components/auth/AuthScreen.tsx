@@ -61,10 +61,11 @@ export function AuthScreen() {
     setBusy(true);
     setError(null);
     try {
-      if (mode === 'login') await login(phone, pin);
+      if (mode === 'login') { await login(phone, pin); showToast('success', lang === 'am' ? 'በተሳካ ሁኔታ ገብተዋል።' : lang === 'ti' ? 'ብዓወት ኣቲኹም።' : 'Signed in successfully.'); }
       else {
-        if (pin !== confirmPin) { setError(t.pinMismatch); return; }
+        if (pin !== confirmPin) { setError(t.pinMismatch); showToast('error', t.pinMismatch); return; }
         await register(phone, name, pin, confirmPin);
+        showToast('success', lang === 'am' ? 'መለያዎ በተሳካ ሁኔታ ተፈጥሯል።' : lang === 'ti' ? 'መለያኹም ብዓወት ተፈጢሩ።' : 'Account created successfully.');
       }
     } catch (e) {
       const code = e instanceof ApiError ? e.code : 'error';
