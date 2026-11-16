@@ -123,7 +123,7 @@ export function AuthScreen() {
             <button type="button" aria-pressed={mode === 'login'} onClick={() => { setMode('login'); setError(null); setShowPinReset(false); }} className={['rounded-lg px-3 py-3 text-sm font-semibold transition', mode === 'login' ? 'bg-gradient-to-r from-gold-300 to-gold-500 text-darkbg shadow-md shadow-black/20' : 'text-gold-300/70 hover:text-gold-200'].join(' ')}>
               {t.login}
             </button>
-            <button type="button" aria-pressed={mode === 'register'} onClick={() => { setMode('register'); setError(null); setForgotInfo(false); }} className={['rounded-lg px-3 py-3 text-sm font-semibold transition', mode === 'register' ? 'bg-gradient-to-r from-gold-300 to-gold-500 text-darkbg shadow-md shadow-black/20' : 'text-gold-300/70 hover:text-gold-200'].join(' ')}>
+            <button type="button" aria-pressed={mode === 'register'} onClick={() => { setMode('register'); setError(null); setShowPinReset(false); }} className={['rounded-lg px-3 py-3 text-sm font-semibold transition', mode === 'register' ? 'bg-gradient-to-r from-gold-300 to-gold-500 text-darkbg shadow-md shadow-black/20' : 'text-gold-300/70 hover:text-gold-200'].join(' ')}>
               {t.register}
             </button>
           </div>
