@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { translations } from '@/lib/localization';
+import { translations, formatAmount } from '@/lib/localization';
 import { api, ApiError } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -16,7 +16,7 @@ export function AdminSimulationWithdrawals(){
   <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-gold-300">{t.title}</h2><button onClick={()=>void load()} className="text-sm text-gold-400 underline">{t.reload}</button></div>
   <p className="mb-3 text-xs text-gold-500">{t.notice}</p>{error&&<p role="alert" className="mb-2 text-sm text-red-300">{error}</p>}
   {!rows.length?<p className="py-3 text-center text-sm text-gold-700">{t.empty}</p>:<ul className="space-y-2">{rows.map(w=><li key={w.id} className="rounded-xl bg-white/[0.04] p-3">
-   <div className="flex justify-between gap-2"><b className="text-lg text-gold-400">{w.amount.toFixed(2)} ETB</b><span className="text-xs text-gold-500">{t.pending}</span></div>
+   <div className="flex justify-between gap-2"><b className="text-lg text-gold-400">{formatAmount(lang, w.amount)} ETB</b><span className="text-xs text-gold-500">{t.pending}</span></div>
    <p className="mt-1 text-sm text-gold-300">{t.player}: {w.userName} · {w.userPhone}</p>
    <p className="mt-1 text-xs text-gold-500">{t.method}: {w.method||'—'} · {t.destination}: {w.destination||'—'}</p>
    <p className="mt-1 break-all font-mono text-[11px] text-gold-700">{w.id}</p>
