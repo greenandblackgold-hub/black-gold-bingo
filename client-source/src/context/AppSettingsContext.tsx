@@ -1,5 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { setAudioEnabled, setAudioVolume, setVoiceEnabled, unlockAudio } from '@/lib/audio';
+import {
+  setAudioEnabled,
+  setAudioVolume as applyAudioVolume,
+  setVoiceEnabled as applyVoiceEnabled,
+  unlockAudio,
+} from '@/lib/audio';
 
 interface AppSettingsValue {
   /** ETB per card */
@@ -52,8 +57,8 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setAudioEnabled(soundEnabled);
-    setVoiceEnabled(voiceEnabled);
-    setAudioVolume(audioVolume);
+    applyVoiceEnabled(voiceEnabled);
+    applyAudioVolume(audioVolume);
     try {
       localStorage.setItem(KEY, JSON.stringify({ soundEnabled, voiceEnabled, audioVolume }));
     } catch {
