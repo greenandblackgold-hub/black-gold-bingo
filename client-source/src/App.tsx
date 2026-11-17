@@ -35,7 +35,6 @@ function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
   const [tab, setTab] = useState<TabId>(() => (window.location.hash === '#wallet' ? 'wallet' : 'play'));
   return (
     <div className="min-h-screen pb-28">
-      <AudioCallAnnouncer />
       <AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} />
       <main className="mx-auto max-w-6xl px-4 pt-5 sm:pt-8">
         {tab === 'play' && <PlayView onGoToWallet={() => setTab('wallet')} />}
@@ -85,6 +84,7 @@ function DemoApp() {
         <BackendProvider>
           <PlayerProvider>
             <RoundProvider>
+              <AudioCallAnnouncer />
               <DemoRouter />
             </RoundProvider>
           </PlayerProvider>
