@@ -100,7 +100,7 @@ test('admin-assisted phone OTP is hidden from players and unlocks the player aft
   assert.equal(adminList.status, 200);
   const challenge = adminList.json.find(x => x.phone === phone);
   assert.ok(challenge);
-  assert.match(challenge.code, /^\\d{6}$/);
+  assert.match(challenge.code, /^\d{6}$/);
   assert.equal((await api('GET', '/api/admin/phone-verifications', { token })).status, 403);
   const verified = await api('POST', '/api/phone-verification/verify', { token, body: { code: challenge.code } });
   assert.equal(verified.status, 200, JSON.stringify(verified.json));
@@ -114,8 +114,11 @@ test('phone OTP rejects wrong codes and enforces a maximum of five attempts', as
   const registered = await api('POST', '/api/auth/register', { body: { phone, name: 'OTP Attempts', pin: '123456', pinConfirm: '123456' } });
   const token = registered.json.token;
   await api('POST', '/api/phone-verification/request', { token, body: {} });
+  const pending = await api('GET', '/api/admin/phone-verifications', { token: ctx.adminToken });
+  const realCode = pending.json.find(x => x.phone === phone).code;
+  const wrongCode = String((Number(realCode[0]) + 1) % 10) + realCode.slice(1);
   for (let i = 0; i < 5; i++) {
-    const wrong = await api('POST', '/api/phone-verification/verify', { token, body: { code: '000000' } });
+    const wrong = await api('POST', '/api/phone-verification/verify', { token, body: { code: wrongCode } });
     assert.equal(wrong.status, 400);
     assert.equal(wrong.json.error, 'invalid_otp');
   }
