@@ -27,13 +27,14 @@ test('admin-assisted phone OTP is time-limited, attempt-limited and one-time', a
   assert.equal(pending[0].phone, '0912345678');
   assert.match(pending[0].code, /^\d{6}$/);
 
-  await assert.rejects(() => auth.verifyPhoneCode(registration.user, '000000'), { code: 'invalid_otp' });
+  const wrongCode = pending[0].code === '000000' ? '000001' : '000000';
+  await assert.rejects(() => auth.verifyPhoneCode(registration.user, wrongCode), { code: 'invalid_otp' });
   const verified = await auth.verifyPhoneCode(registration.user, pending[0].code);
   assert.equal(verified.verified, true);
   assert.equal(verified.user.phoneVerified, true);
   assert.equal((await auth.listPendingPhoneVerifications()).length, 0);
 
-  await assert.rejects(() => auth.verifyPhoneCode(registration.user, pending[0].code), { code: 'invalid_otp' });
+  await assert.rejects(() => auth.verifyPhoneCode(registration.user, pending[0].code), { code: 'otp_expired' });
   await repo.close();
 });
 
