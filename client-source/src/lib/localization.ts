@@ -635,10 +635,12 @@ export const translations = {
 },
 } as const;
 
+const tigrinyaLocale = Intl.NumberFormat.supportedLocalesOf(['ti-ET']).length > 0 ? 'ti-ET' : 'en-ET';
+
 export const localeTag: Record<Lang, string> = {
   am: 'am-ET',
-  // ICU does not ship a Tigrinya locale in many browsers; use the Ethiopian numeric conventions as a stable fallback.
-  ti: 'en-ET',
+  // Prefer a native Tigrinya locale when the browser provides one; otherwise keep Ethiopian number conventions.
+  ti: tigrinyaLocale,
   en: 'en-ET',
 };
 
