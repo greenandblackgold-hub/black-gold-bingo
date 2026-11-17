@@ -623,7 +623,8 @@ export const translations = {
 
 export const localeTag: Record<Lang, string> = {
   am: 'am-ET',
-  ti: 'ti-ET',
+  // ICU does not ship a Tigrinya locale in many browsers; use the Ethiopian numeric conventions as a stable fallback.
+  ti: 'en-ET',
   en: 'en-ET',
 };
 
