@@ -47,10 +47,12 @@ test('phone OTP locks after five incorrect attempts', async () => {
     pin: '123456',
     pinConfirm: '123456',
   });
+  const pending = await auth.listPendingPhoneVerifications();
+  const wrongCode = pending[0].code === '999999' ? '999998' : '999999';
   for (let i = 0; i < 4; i += 1) {
-    await assert.rejects(() => auth.verifyPhoneCode(registration.user, '999999'));
+    await assert.rejects(() => auth.verifyPhoneCode(registration.user, wrongCode));
   }
-  await assert.rejects(() => auth.verifyPhoneCode(registration.user, '999999'), { code: 'otp_attempts_exceeded' });
-  await assert.rejects(() => auth.verifyPhoneCode(registration.user, '999999'), { code: 'otp_attempts_exceeded' });
+  await assert.rejects(() => auth.verifyPhoneCode(registration.user, wrongCode), { code: 'otp_attempts_exceeded' });
+  await assert.rejects(() => auth.verifyPhoneCode(registration.user, wrongCode), { code: 'otp_attempts_exceeded' });
   await repo.close();
 });
