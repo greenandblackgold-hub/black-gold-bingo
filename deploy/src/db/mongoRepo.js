@@ -25,6 +25,7 @@ export async function createMongoRepo({ uri, dbName }) {
   const withdrawals = db.collection('withdrawals');
   const winPayouts = db.collection('winPayouts');
   const rounds = db.collection('rounds');
+  const phoneChallenges = db.collection('phoneVerificationChallenges');
 
   async function tx(fn) {
     const session = client.startSession();
@@ -69,6 +70,7 @@ export async function createMongoRepo({ uri, dbName }) {
         withdrawals.createIndex({ externalPayoutReference: 1 }, { unique: true, partialFilterExpression: { externalPayoutReference: { $type: 'string' } } }),
         winPayouts.createIndex({ status: 1, createdAt: -1 }),
         rounds.createIndex({ round: 1 }, { unique: true }),
+        phoneChallenges.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
       ]);
       await games.updateOne({ _id: 'state' }, { $setOnInsert: { ...DEFAULT_GAME } }, { upsert: true });
     },
@@ -99,6 +101,34 @@ export async function createMongoRepo({ uri, dbName }) {
     },
     async updateUser(id, patch) {
       await users.updateOne({ _id: id }, { $set: patch });
+    },
+
+    /* phone verification: isolated collection; no wallet/game records are touched */
+    async createPhoneChallenge({ userId, codeHash, codeEncrypted, expiresAt }) {
+      await phoneChallenges.updateOne({ _id: userId }, { $set: { codeHash, codeEncrypted, expiresAt, attempts: 0, createdAt: new Date() } }, { upsert: true });
+    },
+    async getPhoneChallenge(userId) {
+      return phoneChallenges.findOne({ _id: userId });
+    },
+    async recordPhoneChallengeFailure(userId) {
+      await phoneChallenges.updateOne({ _id: userId, expiresAt: { $gt: new Date() }, attempts: { $lt: 5 } }, { $inc: { attempts: 1 } });
+    },
+    async completePhoneVerification(userId, codeHash) {
+      return tx(async (session) => {
+        const challenge = await phoneChallenges.findOne({ _id: userId, codeHash, expiresAt: { $gt: new Date() }, attempts: { $lt: 5 } }, { session });
+        if (!challenge) return false;
+        const removed = await phoneChallenges.deleteOne({ _id: userId, codeHash, expiresAt: { $gt: new Date() }, attempts: { $lt: 5 } }, { session });
+        if (removed.deletedCount !== 1) return false;
+        const updated = await users.updateOne({ _id: userId, role: 'player', phoneVerified: false }, { $set: { phoneVerified: true, phoneVerifiedAt: new Date() } }, { session });
+        return updated.modifiedCount === 1;
+      });
+    },
+    async listPendingPhoneChallenges() {
+      const rows = await phoneChallenges.find({ expiresAt: { $gt: new Date() }, attempts: { $lt: 5 } }).sort({ createdAt: 1 }).limit(200).toArray();
+      return Promise.all(rows.map(async (c) => {
+        const u = await users.findOne({ _id: c._id }, { projection: { name: 1, phone: 1, role: 1 } });
+        return u?.role === 'player' ? { userId: c._id, name: u.name, phone: u.phone, codeEncrypted: c.codeEncrypted, expiresAt: c.expiresAt, attempts: c.attempts } : null;
+      })).then((items) => items.filter(Boolean));
     },
 
     /* game state */
