@@ -22,7 +22,7 @@ export function SimulationWithdrawalPanel() {
   const submit = async () => {
     setBusy(true); setError(''); setMessage('');
     try {
-      await api.post('/api/simulation/withdrawals', { amount: Number(amount), method, destination });
+      await api.post('/api/manual/withdrawals', { amount: Number(amount), method, destination });
       await load();
       setMessage(t.ok); setAmount('50'); setDestination('');
     } catch (e) {
