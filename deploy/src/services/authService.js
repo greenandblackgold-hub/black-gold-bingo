@@ -8,7 +8,7 @@ const LOCK_MS = 15 * 60 * 1000;
 const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
 const otpHash = (secret, userId, code) => crypto.createHmac('sha256', secret).update('phone-otp:v1:' + userId + ':' + code).digest('hex');
-const encryptOtp = (secret, code) => { const key = crypto.createHash('sha256').update('phone-otp-encryption:v1:' + secret).digest(); const iv = crypto.randomBytes(12); const c = crypto.createCipheriv('aes-256-gcm', key, iv); return Buffer.concat([iv, c.getAuthTag(), Buffer.concat([c.update(code), c.final()])]).toString('base64'); };
+const encryptOtp = (secret, code) => { const key = crypto.createHash('sha256').update('phone-otp-encryption:v1:' + secret).digest(); const iv = crypto.randomBytes(12); const c = crypto.createCipheriv('aes-256-gcm', key, iv); const encrypted = Buffer.concat([c.update(code), c.final()]); return Buffer.concat([iv, c.getAuthTag(), encrypted]).toString('base64'); };
 const decryptOtp = (secret, value) => { const d = Buffer.from(value, 'base64'); const key = crypto.createHash('sha256').update('phone-otp-encryption:v1:' + secret).digest(); const c = crypto.createDecipheriv('aes-256-gcm', key, d.subarray(0,12)); c.setAuthTag(d.subarray(12,28)); return Buffer.concat([c.update(d.subarray(28)), c.final()]).toString(); };
 
 /** Accepts 09XXXXXXXX, 07XXXXXXXX, +2519XXXXXXXX, 2519XXXXXXXX and returns the local form, or null. */
