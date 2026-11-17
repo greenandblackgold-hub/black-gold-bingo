@@ -657,3 +657,11 @@ export const patternNames: Record<Lang, Record<WinPattern, string>> = {
     plus: 'Plus (+)', diamond: 'Diamond', picture_frame: 'Picture frame', six_pack: 'Six-pack', postage_stamp: 'Postage stamp',
   },
 };
+
+export function formatDateTime(lang: Lang, epochMs: number): string {
+  if (!Number.isFinite(epochMs)) return '';
+  return new Intl.DateTimeFormat(localeTag[lang] ?? 'en-ET', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(epochMs));
+}
