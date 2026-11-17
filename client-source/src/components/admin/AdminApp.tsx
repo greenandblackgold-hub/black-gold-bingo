@@ -33,7 +33,7 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
   );
 
   // Players never get any control, only this notice.
-  if (!backend.canHost) {
+  if (!backend.canHost && !SERVER_MODE) {
     return (
       <div className="grid min-h-screen place-items-center px-6">
         <div className="max-w-sm space-y-4 text-center">
