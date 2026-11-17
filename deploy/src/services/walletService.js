@@ -249,7 +249,7 @@ export function createWalletService({ repo, config, chapa }) {
       return { id: w.id, amount: etb(a), status: w.status, balance: (await repo.findUserById(user.id)).balance / 100 };
     },
 
-    listMyManualWithdrawals: (user) => repo.listManualWithdrawals({ userId: user.id }),
+    listMyManualWithdrawals: (user) => repo.listManualWithdrawals({ userId: user.id, status: null }),
     listManualWithdrawals: (filter) => repo.listManualWithdrawals(filter),
 
     async startManualWithdrawal(id, adminId) {
