@@ -121,9 +121,13 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   /* auth */
   route('POST', '/api/auth/register', 'public', 'auth', ({ body }) => { requireRegistration(); return auth.register(body); });
   route('POST', '/api/auth/login', 'public', 'auth', ({ body }) => auth.login(body));
+  route('POST', '/api/auth/pin-reset/request', 'public', 'auth', ({ body }) => auth.requestPinReset(body.phone));
+  route('POST', '/api/auth/pin-reset/complete', 'public', 'auth', ({ body }) => auth.resetPin(body));
+
   route('GET', '/api/me', 'user', 'default', ({ user }) => publicUser(user));
   route('POST', '/api/auth/phone-otp/verify', 'user', 'auth', ({ user, body }) => auth.verifyPhoneCode(user, body.code));
   route('GET', '/api/admin/phone-verifications', 'admin', 'default', () => auth.listPendingPhoneVerifications());
+  route('GET', '/api/admin/pin-resets', 'admin', 'default', () => auth.listPendingPinResets());
 
   /* game (public state; the SSE stream is handled separately below) */
   route('GET', '/api/game', 'public', 'default', () => game.getPublicState());
