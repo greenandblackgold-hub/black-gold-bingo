@@ -35,9 +35,9 @@ export function createMemoryRepo() {
     async close() {},
 
     /* users */
-    async createUser({ phone, name, pinHash, role = 'player' }) {
+    async createUser({ phone, name, pinHash, role = 'player', phoneVerified = role === 'admin' }) {
       for (const u of users.values()) if (u.phone === phone) throw new RepoError('PHONE_TAKEN');
-      const user = { id: randomToken(12), phone, name, pinHash, role, balance: 0, failedLogins: 0, lockedUntil: 0, createdAt: new Date() };
+      const user = { id: randomToken(12), phone, name, pinHash, role, phoneVerified, balance: 0, failedLogins: 0, lockedUntil: 0, createdAt: new Date() };
       users.set(user.id, user);
       return clone(user);
     },
