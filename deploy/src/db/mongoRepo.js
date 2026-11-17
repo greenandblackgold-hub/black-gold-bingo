@@ -83,8 +83,8 @@ export async function createMongoRepo({ uri, dbName }) {
     },
 
     /* users */
-    async createUser({ phone, name, pinHash, role = 'player' }) {
-      const doc = { _id: randomToken(12), phone, name, pinHash, role, balance: 0, failedLogins: 0, lockedUntil: 0, createdAt: new Date() };
+    async createUser({ phone, name, pinHash, role = 'player', phoneVerified = role === 'admin' }) {
+      const doc = { _id: randomToken(12), phone, name, pinHash, role, phoneVerified, balance: 0, failedLogins: 0, lockedUntil: 0, createdAt: new Date() };
       try {
         await users.insertOne(doc);
       } catch (e) {
