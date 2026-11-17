@@ -282,6 +282,7 @@ test('manual real-wallet withdrawals require processing and a unique external pa
   assert.equal(paid.status, 200, JSON.stringify(paid.json));
   assert.equal(paid.json.status, 'paid');
   assert.equal(paid.json.externalReference, 'BANK-REF-000001');
+  assert.equal((await api('GET', '/api/manual/withdrawals', { token: p.token })).json.find((w) => w.id === request.json.id).status, 'paid');
 
   const second = await api('POST', '/api/manual/withdrawals', {
     token: p.token, body: { amount: 50, method: 'bank', destination: '1000123456789' },
