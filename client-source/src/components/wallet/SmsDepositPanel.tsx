@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { translations } from '@/lib/localization';
+import { translations, formatAmount, formatDateTime } from '@/lib/localization';
 import { ApiError, api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -118,7 +118,7 @@ export function SmsDepositPanel() {
         <div className="space-y-4">
           <dl className="space-y-2 rounded-xl bg-white/[0.04] p-4 text-sm">
             <div className="flex justify-between gap-3"><dt className="text-gold-500">{t.reference}</dt><dd className="break-all text-right font-semibold text-gold-300">{request.reference}</dd></div>
-            <div className="flex justify-between"><dt className="text-gold-500">{t.amount}</dt><dd className="font-semibold tabular-nums text-gold-300">{request.amount.toFixed(2)}</dd></div>
+            <div className="flex justify-between"><dt className="text-gold-500">{t.amount}</dt><dd className="font-semibold tabular-nums text-gold-300">{formatAmount(lang, request.amount)}</dd></div>
           </dl>
           <p role="status" aria-live="polite" className="rounded-xl bg-white/[0.04] p-4 text-sm text-gold-300">{statusText}</p>
           {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
@@ -192,10 +192,10 @@ export function SimulationDepositHistory() {
             <li key={row.reference} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <div className="min-w-0">
                 <p className="break-all font-mono text-sm text-gold-300">{row.reference}</p>
-                <p className="mt-1 text-xs text-gold-600">{new Date(row.at).toLocaleString()}</p>
+                <p className="mt-1 text-xs text-gold-600">{formatDateTime(lang, row.at)}</p>
                 <p className="mt-1 text-xs font-semibold text-gold-400">{statusLabel(row.status)}</p>
               </div>
-              <p className="shrink-0 font-bold tabular-nums text-gold-300">{row.amount.toFixed(2)} ETB</p>
+              <p className="shrink-0 font-bold tabular-nums text-gold-300">{formatAmount(lang, row.amount)} ETB</p>
             </li>
           ))}
         </ul>
