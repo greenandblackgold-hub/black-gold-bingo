@@ -110,7 +110,7 @@ export function createAuthService({ repo, config }) {
       const p = normalizePhone(phone);
       if (!p) throw new Error('Invalid phone');
       if (!/^\d{6}$/.test(String(pin))) throw new Error('PIN must be 6 digits');
-      return repo.createUser({ phone: p, name, pinHash: await hashSecret(String(pin)), role: 'admin' });
+      return repo.createUser({ phone: p, name, pinHash: await hashSecret(String(pin)), role: 'admin', phoneVerified: true });
     },
   };
 }
