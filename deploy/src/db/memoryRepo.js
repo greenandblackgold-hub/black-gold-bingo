@@ -200,6 +200,56 @@ export function createMemoryRepo() {
       return clone(w);
     },
 
+    /* Manual withdrawals: hold real wallet funds until an admin confirms an external payout. */
+    async requestManualWithdrawal({ id, userId, amount, method, destination }) {
+      if (withdrawals.has(id)) throw new RepoError('WITHDRAWAL_ID_TAKEN');
+      credit(userId, -amount, 'manual_withdraw_hold', `manual-wd:${id}`, { id, method });
+      const w = {
+        id, userId, amount, method, destination, mode: 'manual',
+        status: 'pending', note: '', createdAt: new Date(), updatedAt: new Date(),
+      };
+      withdrawals.set(id, w);
+      return clone(w);
+    },
+    async listManualWithdrawals({ status = 'pending', userId } = {}) {
+      return [...withdrawals.values()]
+        .filter((w) => w.mode === 'manual' && (!status || w.status === status) && (!userId || w.userId === userId))
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .map((w) => {
+          const u = users.get(w.userId);
+          return {
+            ...clone(w), id: w.id, amount: w.amount / 100,
+            at: w.createdAt.getTime(), userName: u?.name ?? 'Unknown', userPhone: u?.phone ?? '',
+          };
+        });
+    },
+    async transitionManualWithdrawal(id, from, to, patch = {}) {
+      const w = withdrawals.get(id);
+      if (!w || w.mode !== 'manual' || !from.includes(w.status)) return null;
+      Object.assign(w, patch, { status: to, updatedAt: new Date() });
+      return clone(w);
+    },
+    async confirmManualWithdrawal({ id, externalReference, payoutMethod, adminId }) {
+      const w = withdrawals.get(id);
+      if (!w || w.mode !== 'manual' || w.status !== 'processing') return null;
+      const duplicate = [...withdrawals.values()].some((other) =>
+        other.mode === 'manual' && other.id !== id && other.externalPayoutReference === externalReference
+      );
+      if (duplicate) throw new RepoError('EXTERNAL_PAYOUT_REFERENCE_TAKEN');
+      Object.assign(w, {
+        status: 'paid', externalPayoutReference: externalReference,
+        payoutMethod, paidBy: adminId, paidAt: new Date(), updatedAt: new Date(),
+      });
+      return clone(w);
+    },
+    async rejectManualWithdrawalAndRefund(id, note, adminId) {
+      const w = withdrawals.get(id);
+      if (!w || w.mode !== 'manual' || w.status !== 'pending') return null;
+      credit(w.userId, w.amount, 'manual_withdraw_refund', `manual-wd-refund:${id}`, { id });
+      Object.assign(w, { status: 'rejected', note, reviewedBy: adminId, updatedAt: new Date() });
+      return clone(w);
+    },
+
     /* withdrawals: the amount is held (debited) when requested */
     async requestWithdrawal({ id, userId, amount, accountName, accountNumber, bankCode }) {
       credit(userId, -amount, 'withdraw_hold', `wd:${id}`, { id });
