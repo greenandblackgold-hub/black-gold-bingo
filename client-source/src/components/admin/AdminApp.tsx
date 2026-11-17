@@ -1,4 +1,5 @@
 import { AdminWinPayouts } from '@/components/admin/AdminWinPayouts';
+import { translations } from '@/lib/localization';
 import { AdminSimulationWithdrawals } from '@/components/admin/AdminSimulationWithdrawals';
 import { AdminDeposits } from '@/components/admin/AdminDeposits';
 import { HostView } from '@/components/host/HostView';
@@ -13,26 +14,7 @@ const LANGS: { id: Lang; label: string }[] = [
   { id: 'en', label: 'EN' },
 ];
 
-const TEXT = {
-  am: {
-    title: 'መቆጣጠሪያ ማዕከል',
-    back: '← ተጫዋች',
-    denied: 'ይህ ገጽ ለጨዋታው ባለቤት ብቻ ነው።',
-    demo: 'የሙከራ ሁነታ፦ ይህ በአንድ አሳሽ ውስጥ ብቻ የሚሰራ ማሳያ ነው፤ ማንም ሰው #host መክፈት ይችላል። ደህንነቱ የተጠበቀ አይደለም።',
-  },
-  ti: {
-    title: 'ማእከል ቁጥጥሪ',
-    back: '← ተጻዋታይ',
-    denied: 'እዚ ገጽ ን ወናኒ እቲ ጸወታ ጥራይ እዩ።',
-    demo: 'ናይ ፈተነ ኩነታት፦ እዚ ኣብ ሓደ ብሮውዘር ጥራይ ዝሰርሕ ምርኢት እዩ፤ ዝኾነ ሰብ #host ክኸፍት ይኽእል። ውሕስነት የብሉን።',
-  },
-  en: {
-    title: 'Control Center',
-    back: '← Player app',
-    denied: 'This page is for the game owner only.',
-    demo: 'Demo mode: runs in one browser only, and anyone can open #host. Not secure.',
-  },
-} as const;
+const TEXT = translations.admin;
 
 export function AdminApp({ onExit }: { onExit: () => void }) {
   const backend = useBackend();
@@ -72,7 +54,7 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
             <p className="hidden text-xs font-semibold text-gold-500 sm:block">Black Gold PLC · Bingo PRO</p>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            <div role="group" aria-label="Language" className="flex overflow-hidden rounded-full ring-1 ring-gold-700/60">
+            <div role="group" aria-label={t.languageLabel} className="flex overflow-hidden rounded-full ring-1 ring-gold-700/60">
               {LANGS.map((o) => (
                 <button
                   key={o.id}

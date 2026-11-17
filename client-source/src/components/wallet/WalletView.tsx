@@ -9,6 +9,7 @@
  * with your real payment API call when you integrate Telebirr / CBE.
  */
 import { useMemo, useState } from 'react';
+import { translations, formatAmount, formatDateTime, formatNumber } from '@/lib/localization';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
@@ -39,116 +40,7 @@ function useWalletData() {
 /* ─────────────────────────── TRANSLATIONS ─────────────────────────── */
 /* Tigrigna strings should be reviewed by a native speaker. */
 
-const STRINGS = {
-  am: {
-    balance: 'ቀሪ ሂሳብ',
-    owned: 'ያሉዎት ካርዶች',
-    deposit: 'ገንዘብ ያስገቡ',
-    method: 'የክፍያ መንገድ',
-    telebirr: 'ቴሌብር',
-    cbe: 'የኢትዮጵያ ንግድ ባንክ',
-    amount: 'መጠን (ብር)',
-    phone: 'የቴሌብር ስልክ ቁጥር',
-    account: 'የባንክ ሂሳብ ቁጥር',
-    continue: 'ቀጥል',
-    confirm: 'አረጋግጥና አስገባ',
-    back: 'ተመለስ',
-    processing: 'ክፍያው በመከናወን ላይ…',
-    success: 'ገንዘቡ ገቢ ሆኗል',
-    reference: 'የማጣቀሻ ቁጥር',
-    demo: 'ይህ የሙከራ ክፍያ ነው፤ እውነተኛ ገንዘብ አይንቀሳቀስም።',
-    buy: 'ካርድ ይግዙ',
-    price: 'የአንድ ካርድ ዋጋ',
-    count: 'የካርድ ብዛት',
-    total: 'ጠቅላላ',
-    buyBtn: 'ካርዶቹን ግዛ',
-    buying: 'በመግዛት ላይ…',
-    bought: 'ካርዶቹ ተገዝተዋል',
-    short: 'ቀሪ ሂሳብዎ በቂ አይደለም። ከላይ ገንዘብ ያስገቡ።',
-    lockedMsg: 'ካርድ መግዛት የሚቻለው ዙሩ ከመጀመሩ በፊት ነው።',
-    goPlay: 'ወደ ጨዋታ ሂድ',
-    history: 'የቅርብ ግብይቶች',
-    empty: 'እስካሁን ምንም ግብይት የለም',
-    errPhone: 'ስልክ ቁጥሩ በ09 ወይም 07 ጀምሮ 10 አሃዝ መሆን አለበት',
-    errAccount: 'የሂሳብ ቁጥሩ 13 አሃዝ መሆን አለበት',
-    errAmount: 'መጠኑ ከ10 እስከ 10,000 ብር መሆን አለበት',
-    etb: 'ብር',
-    depositTx: 'ገቢ',
-    purchaseTx: 'ካርድ ግዢ',
-  },
-  ti: {
-    balance: 'ሽሕ ሒሳብ',
-    owned: 'ዘለውኩም ካርዳት',
-    deposit: 'ገንዘብ የእትዉ',
-    method: 'መንገዲ ክፍሊት',
-    telebirr: 'ቴሌብር',
-    cbe: 'ንግዲ ባንክ ኢትዮጵያ',
-    amount: 'መጠን (ብር)',
-    phone: 'ቁጽሪ ተሌፎን ቴሌብር',
-    account: 'ቁጽሪ ሒሳብ ባንክ',
-    continue: 'ቀጽል',
-    confirm: 'ኣረጋግጽን የእቱ',
-    back: 'ተመለስ',
-    processing: 'ክፍሊት ይካየድ ኣሎ…',
-    success: 'ገንዘብ ኣትዩ',
-    reference: 'ቁጽሪ ምጥቃስ',
-    demo: 'እዚ ናይ ፈተነ ክፍሊት እዩ፤ ሓቀኛ ገንዘብ ኣይንቀሳቐስን።',
-    buy: 'ካርድ ግዝኡ',
-    price: 'ዋጋ ሓደ ካርድ',
-    count: 'ብዝሒ ካርድ',
-    total: 'ድምር',
-    buyBtn: 'ካርዳት ግዛእ',
-    buying: 'ይግዛእ ኣሎ…',
-    bought: 'ካርዳት ተገዚኦም',
-    short: 'ሒሳብኩም ኣይኣክልን። ኣብ ላዕሊ ገንዘብ የእትዉ።',
-    lockedMsg: 'ካርድ ምግዛእ ዙር ቅድሚ ምጅማሩ እዩ ዝከኣል።',
-    goPlay: 'ናብ ጸወታ ኺድ',
-    history: 'ናይ ቀረባ መዘወዚታት',
-    empty: 'ክሳብ ሕጂ ዝኾነ መዘወዚ የለን',
-    errPhone: 'ቁጽሪ ተሌፎን ብ09 ወይ 07 ጀሚሩ 10 ኣሃዝ ክኸውን ኣለዎ',
-    errAccount: 'ቁጽሪ ሒሳብ 13 ኣሃዝ ክኸውን ኣለዎ',
-    errAmount: 'መጠን ካብ 10 ክሳብ 10,000 ብር ክኸውን ኣለዎ',
-    etb: 'ብር',
-    depositTx: 'ኣታዊ',
-    purchaseTx: 'ግዛእ ካርድ',
-  },
-  en: {
-    balance: 'Balance',
-    owned: 'Cards you own',
-    deposit: 'Add money',
-    method: 'Pay with',
-    telebirr: 'Telebirr',
-    cbe: 'Commercial Bank of Ethiopia',
-    amount: 'Amount (ETB)',
-    phone: 'Telebirr phone number',
-    account: 'CBE account number',
-    continue: 'Continue',
-    confirm: 'Confirm and deposit',
-    back: 'Back',
-    processing: 'Processing payment…',
-    success: 'Deposit received',
-    reference: 'Reference',
-    demo: 'This is a demo payment. No real money moves.',
-    buy: 'Buy cards',
-    price: 'Price per card',
-    count: 'Number of cards',
-    total: 'Total',
-    buyBtn: 'Buy cards',
-    buying: 'Buying…',
-    bought: 'Cards purchased',
-    short: "Your balance doesn't cover this. Add money above.",
-    lockedMsg: 'Cards can only be bought before a round starts.',
-    goPlay: 'Go to play',
-    history: 'Recent activity',
-    empty: 'No activity yet',
-    errPhone: 'Enter 10 digits starting with 09 or 07',
-    errAccount: 'Account number must be 13 digits',
-    errAmount: 'Amount must be between 10 and 10,000 ETB',
-    etb: 'ETB',
-    depositTx: 'Deposit',
-    purchaseTx: 'Card purchase',
-  },
-} as const;
+const STRINGS = translations.wallet;
 
 type StringKey = keyof (typeof STRINGS)['en'];
 
@@ -159,8 +51,7 @@ const MIN_DEPOSIT = 10;
 const MAX_DEPOSIT = 10000;
 const MAX_CARDS = 20;
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+
 
 /** DEMO ONLY: replace with the real Telebirr / CBE request. */
 async function runMockPayment(): Promise<string> {
@@ -183,8 +74,10 @@ type Stage = 'form' | 'confirm' | 'processing' | 'done';
 function DepositPanel({
   t,
   onDeposit,
+  formatAmount,
 }: {
   t: (k: StringKey) => string;
+  formatAmount: (n: number) => string;
   onDeposit: (amount: number, method: Method, ref: string) => Promise<void>;
 }) {
   const [method, setMethod] = useState<Method>('telebirr');
@@ -324,7 +217,7 @@ function DepositPanel({
             </div>
             <div className="flex justify-between">
               <dt className="text-gold-500">{t('amount')}</dt>
-              <dd className="text-lg font-black tabular-nums text-gold-400">{fmt(amount)}</dd>
+              <dd className="text-lg font-black tabular-nums text-gold-400">{formatAmount(amount)}</dd>
             </div>
           </dl>
           <button type="button" onClick={submit} className={primaryBtn}>
@@ -351,7 +244,7 @@ function DepositPanel({
         <div className="space-y-4 py-2 text-center" role="status" aria-live="polite">
           <p className="text-xl font-black text-gold-400">{t('success')}</p>
           <p className="text-3xl font-black tabular-nums text-gold-300">
-            +{fmt(amount)} <span className="text-base font-semibold text-gold-500">{t('etb')}</span>
+            +{formatAmount(amount)} <span className="text-base font-semibold text-gold-500">{t('etb')}</span>
           </p>
           <p className="text-sm text-gold-500">
             {t('reference')}: <span className="font-mono text-gold-300">{ref}</span>
@@ -374,8 +267,12 @@ function PurchasePanel({
   onBuy,
   onGoToPlay,
   locked,
+  formatAmount,
+  formatNumber,
 }: {
   t: (k: StringKey) => string;
+  formatAmount: (n: number) => string;
+  formatNumber: (n: number) => string;
   price: number;
   balance: number;
   onBuy: (count: number, serial?: string) => Promise<{ ok: boolean; error?: string }>;
@@ -410,16 +307,16 @@ function PurchasePanel({
       <div className="mb-4 flex items-center justify-between text-sm">
         <span className="text-gold-500">{t('price')}</span>
         <span className="font-semibold tabular-nums text-gold-300">
-          {fmt(price)} {t('etb')}
+          {formatAmount(price)} {t('etb')}
         </span>
       </div>
 
       <div className="mb-4">
-        <label htmlFor="chosen-card-number" className="mb-2 block text-sm text-gold-500">የሚፈልጉት የካርድ ቁጥር (አማራጭ · 5 አሃዝ)</label>
-        <input id="chosen-card-number" inputMode="numeric" maxLength={5} placeholder="ለምሳሌ 12345 ወይም 34245" value={cardNumber}
+        <label htmlFor="chosen-card-number" className="mb-2 block text-sm text-gold-500">{t('chosenCard')}</label>
+        <input id="chosen-card-number" inputMode="numeric" maxLength={5} placeholder={t('chosenCardPlaceholder')} value={cardNumber}
           onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 5); setCardNumber(v); if (v) setCount(1); }}
           className={inputCls} />
-        <p className="mt-1 text-xs text-gold-700">ቁጥሩ በሌላ ተጫዋች ካልተያዘ ይሰጥዎታል። ከተያዘ ሌላ ቁጥር ይምረጡ።</p>
+        <p className="mt-1 text-xs text-gold-700">{t('chosenCardHelp')}</p>
       </div>
 
       <div className="mb-4 flex items-center justify-between">
@@ -437,7 +334,7 @@ function PurchasePanel({
             −
           </button>
           <span className="w-8 text-center text-2xl font-black tabular-nums text-gold-400" aria-live="polite">
-            {count}
+            {formatNumber(count)}
           </span>
           <button
             type="button"
@@ -454,7 +351,7 @@ function PurchasePanel({
       <div className="mb-4 flex items-baseline justify-between border-t border-gold-700/40 pt-4">
         <span className="text-gold-500">{t('total')}</span>
         <span className="text-2xl font-black tabular-nums text-gold-400">
-          {fmt(total)} <span className="text-sm font-semibold text-gold-500">{t('etb')}</span>
+          {formatAmount(total)} <span className="text-sm font-semibold text-gold-500">{t('etb')}</span>
         </span>
       </div>
 
@@ -493,6 +390,8 @@ function PurchasePanel({
 export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
   const { lang, cardPrice, balance, ownedCount, transactions, deposit, buyCards } = useWalletData();
   const t = (k: StringKey) => (STRINGS[lang] ?? STRINGS.en)[k];
+  const fmt = (n: number) => formatAmount(lang, n);
+  const fmtNumber = (n: number) => formatNumber(lang, n);
   const { phase } = useRound();
 
   const recent = useMemo(() => [...transactions].sort((a, b) => b.at - a.at).slice(0, 8), [transactions]);
@@ -507,13 +406,13 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
           <span className="ml-2 text-xl font-bold text-gold-500">{t('etb')}</span>
         </p>
         <p className="mt-3 text-sm text-gold-500">
-          {t('owned')}: <span className="font-bold tabular-nums text-gold-300">{ownedCount}</span>
+          {t('owned')}: <span className="font-bold tabular-nums text-gold-300">{formatNumber(lang, ownedCount)}</span>
         </p>
       </section>
 
       <div className="grid items-start gap-5 lg:grid-cols-2">
-        {SERVER_MODE ? <SmsDepositPanel /> : <DepositPanel t={t} onDeposit={deposit} />}
-        <PurchasePanel t={t} price={cardPrice} balance={balance} onBuy={buyCards} onGoToPlay={onGoToPlay} locked={phase !== 'waiting'} />
+        {SERVER_MODE ? <SmsDepositPanel /> : <DepositPanel t={t} formatAmount={fmt} onDeposit={deposit} />}
+        <PurchasePanel t={t} formatAmount={fmt} formatNumber={fmtNumber} price={cardPrice} balance={balance} onBuy={buyCards} onGoToPlay={onGoToPlay} locked={phase !== 'waiting'} />
         {SERVER_MODE && <SimulationWithdrawalPanel />}
       </div>
 
@@ -532,7 +431,7 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
                   <p className="text-sm font-semibold text-gold-300">
                     {tx.label ?? (tx.kind === 'deposit' ? t('depositTx') : t('purchaseTx'))}
                   </p>
-                  <p className="text-xs text-gold-700">{new Date(tx.at).toLocaleString()}</p>
+                  <p className="text-xs text-gold-700">{formatDateTime(lang, tx.at)}</p>
                 </div>
                 <p
                   className={[

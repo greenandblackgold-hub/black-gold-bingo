@@ -1,63 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
+import { translations, formatAmount, formatDateTime } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { api, ApiError } from '@/lib/api';
 
-const TEXT = {
-  am: {
-    title: 'የገንዘብ ማስገቢያ ጥያቄዎች',
-    empty: 'እስካሁን የቀረበ ጥያቄ የለም።',
-    approve: 'Approve · አጽድቅ',
-    reject: 'Reject · ውድቅ አድርግ',
-    refresh: 'አድስ',
-    pending: 'በመጠባበቅ ላይ',
-    amount: 'መጠን',
-    reference: 'የግብይት ማጣቀሻ',
-    player: 'ተጫዋች',
-    sent: 'የተላከበት ጊዜ',
-    error: 'ጥያቄውን ማስኬድ አልተቻለም።',
-    confirm: 'የባንክ/ቴሌብር መልዕክቱን አረጋግጠዋል? ከሆነ ብቻ Approve ይጫኑ።',
-    testOnly: 'የሙከራ ጥያቄ · ባላንስ አይጨምርም',
-    testApprove: 'TEST · የሙከራ ማጽደቅ',
-    testConfirm: 'ይህ የTEST ሙከራ ብቻ ነው። ምንም ባላንስ አይጨምርም። ለመቀጠል?',
-
-  },
-  ti: {
-    title: 'ሕቶታት ምእታው ገንዘብ',
-    empty: 'ክሳብ ሕጂ ሕቶ የለን።',
-    approve: 'Approve · ኣጽድቕ',
-    reject: 'Reject · ንጸግ',
-    refresh: 'ኣሐድስ',
-    pending: 'ይጽበ ኣሎ',
-    amount: 'መጠን',
-    reference: 'ማጣቀሻ ግብይት',
-    player: 'ተጻዋታይ',
-    sent: 'ዝተላእከሉ ግዜ',
-    error: 'ሕቶ ምስራሕ ኣይተኻእለን።',
-    confirm: 'መልእኽቲ ባንኪ/ቴሌብር ኣረጋጊጽኩምዶ? እንተኾይኑ ጥራይ Approve ጠውቑ።',
-    testOnly: 'ሙከራ ጥራይ · ሚዛን ኣይውሰኽን',
-    testApprove: 'TEST · ሙከራ ኣጽድቕ',
-    testConfirm: 'እዚ ናይ TEST ሙከራ ጥራይ እዩ። ሚዛን ኣይውሰኽን። ክትቅጽሉ?',
-
-  },
-  en: {
-    title: 'Deposit requests',
-    empty: 'There are no pending requests.',
-    approve: 'Approve',
-    reject: 'Reject',
-    refresh: 'Refresh',
-    pending: 'Pending',
-    amount: 'Amount',
-    reference: 'Transaction reference',
-    player: 'Player',
-    sent: 'Submitted',
-    error: 'Could not process the request.',
-    confirm: 'Have you verified the bank/Telebirr message? Only then approve this request.',
-    testOnly: 'TEST REQUEST · NO BALANCE CREDIT',
-    testApprove: 'TEST · Approve without credit',
-    testConfirm: 'This is only a TEST. No wallet balance will be credited. Continue?',
-
-  },
-} as const;
+const TEXT = translations.adminDeposits;
 
 interface DepositRow {
   id: string;
@@ -123,14 +69,14 @@ export function AdminDeposits() {
           {rows.map((row) => (
             <li key={row.id} className="rounded-xl bg-white/[0.04] p-3">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-lg font-black tabular-nums text-gold-400">{row.amount.toFixed(2)} ETB</span>
+                <span className="text-lg font-black tabular-nums text-gold-400">{formatAmount(lang, row.amount)} ETB</span>
                 <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs text-amber-200">{t.pending}</span>
               </div>
               {/^TEST-/i.test(row.reference) && <p className="mt-2 rounded-lg bg-sky-500/10 px-3 py-2 text-xs font-bold text-sky-200">{t.testOnly}</p>}
               <dl className="mt-2 space-y-1 text-sm">
                 <div><dt className="inline text-gold-600">{t.player}: </dt><dd className="inline text-gold-300">{row.userName} · {row.userPhone}</dd></div>
                 <div><dt className="inline text-gold-600">{t.reference}: </dt><dd className="inline break-all font-mono text-gold-300">{row.reference}</dd></div>
-                <div><dt className="inline text-gold-600">{t.sent}: </dt><dd className="inline text-gold-500">{new Date(row.at).toLocaleString()}</dd></div>
+                <div><dt className="inline text-gold-600">{t.sent}: </dt><dd className="inline text-gold-500">{formatDateTime(lang, row.at)}</dd></div>
               </dl>
               <div className="mt-3 flex flex-wrap gap-2">
                 {/^TEST-/i.test(row.reference) ? (

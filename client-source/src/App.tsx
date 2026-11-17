@@ -1,23 +1,32 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { AdminApp } from '@/components/admin/AdminApp';
-import { AppHeader } from '@/components/layout/AppHeader';
-import { BottomNav, type TabId } from '@/components/layout/BottomNav';
-import { PlayView } from '@/components/play/PlayView';
-import { WalletView } from '@/components/wallet/WalletView';
-import { VerifyView } from '@/components/verify/VerifyView';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { translations } from '@/lib/localization';
+import { useLanguage } from '@/context/LanguageContext';
+import { AudioCallAnnouncer } from '@/components/audio/AudioCallAnnouncer';
+import type { TabId } from '@/components/layout/BottomNav';
 import { AppSettingsProvider } from '@/context/AppSettingsContext';
 import { BackendProvider } from '@/context/BackendContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { PlayerProvider } from '@/context/PlayerContext';
 import { RoundProvider } from '@/context/RoundContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { AuthScreen } from '@/components/auth/AuthScreen';
 import { ToastProvider } from '@/context/ToastContext';
 import { SERVER_MODE } from '@/lib/api';
-import { PaymentReturnBanner } from '@/server/PaymentReturnBanner';
 import { ServerProviders } from '@/server/ServerProviders';
 
 const ADMIN_HASH = '#host';
+
+const AdminApp = lazy(() => import('@/components/admin/AdminApp').then((m) => ({ default: m.AdminApp })));
+const AppHeader = lazy(() => import('@/components/layout/AppHeader').then((m) => ({ default: m.AppHeader })));
+const BottomNav = lazy(() => import('@/components/layout/BottomNav').then((m) => ({ default: m.BottomNav })));
+const PlayView = lazy(() => import('@/components/play/PlayView').then((m) => ({ default: m.PlayView })));
+const WalletView = lazy(() => import('@/components/wallet/WalletView').then((m) => ({ default: m.WalletView })));
+const VerifyView = lazy(() => import('@/components/verify/VerifyView').then((m) => ({ default: m.VerifyView })));
+const AuthScreen = lazy(() => import('@/components/auth/AuthScreen').then((m) => ({ default: m.AuthScreen })));
+const PaymentReturnBanner = lazy(() => import('@/server/PaymentReturnBanner').then((m) => ({ default: m.PaymentReturnBanner })));
+
+function RouteLoading() {
+  return <div className="grid min-h-[12rem] place-items-center text-sm text-gold-400" role="status" aria-live="polite">…</div>;
+}
 
 function useHash(): string {
   const [hash, setHash] = useState(() => window.location.hash);
@@ -34,13 +43,13 @@ function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
   const [tab, setTab] = useState<TabId>(() => (window.location.hash === '#wallet' ? 'wallet' : 'play'));
   return (
     <div className="min-h-screen pb-28">
-      <AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} />
+      <Suspense fallback={<RouteLoading />}><AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} /></Suspense>
       <main className="mx-auto max-w-6xl px-4 pt-5 sm:pt-8">
-        {tab === 'play' && <PlayView onGoToWallet={() => setTab('wallet')} />}
-        {tab === 'wallet' && <WalletView onGoToPlay={() => setTab('play')} />}
-        {tab === 'verify' && <VerifyView />}
+        {tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} /></Suspense>}
+        {tab === 'wallet' && <Suspense fallback={<RouteLoading />}><WalletView onGoToPlay={() => setTab('play')} /></Suspense>}
+        {tab === 'verify' && <Suspense fallback={<RouteLoading />}><VerifyView /></Suspense>}
       </main>
-      <BottomNav active={tab} onChange={setTab} />
+      <Suspense fallback={null}><BottomNav active={tab} onChange={setTab} /></Suspense>
     </div>
   );
 }
@@ -50,13 +59,15 @@ function DemoRouter() {
   const hash = useHash();
   const openAdmin = () => { window.location.hash = ADMIN_HASH; };
   const closeAdmin = () => { window.location.hash = 'play'; };
-  return hash === ADMIN_HASH ? <AdminApp onExit={closeAdmin} /> : <PlayerShell onOpenAdmin={openAdmin} />;
+  return hash === ADMIN_HASH ? <Suspense fallback={<RouteLoading />}><AdminApp onExit={closeAdmin} /></Suspense> : <PlayerShell onOpenAdmin={openAdmin} />;
 }
 
 /** Production host route is guarded by the authenticated database role, not by the URL hash. */
 function ServerRouter() {
   const hash = useHash();
   const { user } = useAuth();
+  const { lang } = useLanguage();
+  const accessText = translations.serverAccess[lang];
   const closeAdmin = () => { window.location.hash = 'play'; };
   const openAdmin = () => {
     if (user?.role === 'admin') window.location.hash = ADMIN_HASH;
@@ -65,9 +76,9 @@ function ServerRouter() {
     return (
       <main className="grid min-h-screen place-items-center bg-black p-6 text-center text-white">
         <section className="max-w-md rounded-2xl border border-gold-500/40 bg-zinc-950 p-8">
-          <h1 className="mb-3 text-xl font-bold text-gold-400">የሆስት ፈቃድ ያስፈልጋል</h1>
-          <p className="mb-6 text-sm text-zinc-300">ይህ ክፍል ለተፈቀደለት ሆስት ብቻ ነው።</p>
-          <button className="rounded-lg bg-gold-500 px-5 py-3 font-semibold text-black" onClick={closeAdmin}>ወደ ጨዋታ ተመለስ</button>
+          <h1 className="mb-3 text-xl font-bold text-gold-400">{accessText.title}</h1>
+          <p className="mb-6 text-sm text-zinc-300">{accessText.message}</p>
+          <button className="rounded-lg bg-gold-500 px-5 py-3 font-semibold text-black" onClick={closeAdmin}>{accessText.back}</button>
         </section>
       </main>
     );
@@ -83,6 +94,7 @@ function DemoApp() {
         <BackendProvider>
           <PlayerProvider>
             <RoundProvider>
+              <AudioCallAnnouncer />
               <DemoRouter />
             </RoundProvider>
           </PlayerProvider>
@@ -95,7 +107,7 @@ function DemoApp() {
 function AuthGate({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="grid min-h-screen place-items-center text-gold-500" role="status">…</div>;
-  return user ? <>{children}</> : <AuthScreen />;
+  return user ? <>{children}</> : <Suspense fallback={<RouteLoading />}><AuthScreen /></Suspense>;
 }
 
 /** Production: server accounts, live game and database-backed host authorization. */
@@ -107,7 +119,7 @@ function ServerApp() {
         <AuthProvider>
           <AuthGate>
             <ServerProviders>
-              <PaymentReturnBanner />
+              <Suspense fallback={null}><PaymentReturnBanner /></Suspense>
               <ServerRouter />
             </ServerProviders>
           </AuthGate>

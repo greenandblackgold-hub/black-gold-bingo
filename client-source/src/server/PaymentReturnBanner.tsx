@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
+import { translations } from '@/lib/localization';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { api } from '@/lib/api';
 
-const TEXT = {
-  am: { checking: 'ክፍያዎ በመረጋገጥ ላይ ነው…', success: 'ገንዘቡ ወደ ቦርሳዎ ገብቷል', pending: 'ክፍያው አልተጠናቀቀም። ከተከፈለ ቦርሳዎ በጥቂት ደቂቃ ውስጥ ይሞላል።', failed: 'ክፍያው አልተሳካም። እባክዎ እንደገና ይሞክሩ።', close: 'ዝጋ' },
-  ti: { checking: 'ክፍሊትኩም ይረጋገጽ ኣሎ…', success: 'ገንዘብ ናብ ቦርሳኹም ኣትዩ', pending: 'ክፍሊት ኣይተወድአን። እንተተኸፊሉ ቦርሳኹም ኣብ ውሽጢ ቁሩብ ደቓይቕ ክመልእ እዩ።', failed: 'ክፍሊት ኣይተዓወተን። ደጊምኩም ፈትኑ።', close: 'ዕጸው' },
-  en: { checking: 'Confirming your payment…', success: 'Payment received. Your wallet is topped up.', pending: 'Payment not completed yet. If you paid, your wallet will update within a few minutes.', failed: 'Payment failed. Please try again.', close: 'Close' },
-} as const;
+const TEXT = translations.payment;
 
 type State = 'idle' | 'checking' | 'success' | 'pending' | 'failed';
 

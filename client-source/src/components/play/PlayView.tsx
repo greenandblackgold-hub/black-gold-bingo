@@ -5,7 +5,8 @@
  * tap-to-mark cells, "N to go" progress, and a BINGO claim bar with confetti.
  * Reads from usePlayer() and useRound(); shared types live in '@/types/game'.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { translations, patternNames } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
@@ -26,95 +27,10 @@ function usePlayData() {
 /* Move these into your central translation file if you prefer.
    Tigrigna strings should be reviewed by a native speaker. */
 
-const STRINGS = {
-  am: {
-    called: 'የወጣ ቁጥር',
-    waitingBall: 'ጨዋታው ገና አልጀመረም',
-    recent: 'ቀደም ሲል የወጡ',
-    myCards: 'የእኔ ካርዶች',
-    board: 'ሁሉም የወጡ ቁጥሮች',
-    round: 'ዙር',
-    toGo: 'ይቀራል',
-    free: 'ነጻ',
-    claim: 'ቢንጎ በል!',
-    claiming: 'በመረጋገጥ ላይ…',
-    claimSent: 'የአሸናፊነት ጥያቄዎ ተቀባ፤ የአስተዳዳሪ ማጽደቅ ይጠብቁ።',
-    claimWaiting: 'በመፈተሽ ላይ…',
-    winnerBanner: 'ዙሩ ተጠናቋል። አሸናፊ ካርድ',
-    won: 'እንኳን ደስ አለዎት! ቢንጎ!',
-    pendingPrize: 'የSimulation ሽልማቱ ወደ ቦርሳዎ የሚገባው Admin ካጸደቀ በኋላ ብቻ ነው።',
-    invalid: 'ቢንጎው አልተረጋገጠም። እንደገና ይሞክሩ።',
-    noCards: 'ለዚህ ዙር ካርድ የለዎትም',
-    noCardsHint: 'ለመጫወት ከቦርሳዎ ካርድ ይግዙ።',
-    goWallet: 'ወደ ቦርሳ ሂድ',
-    waiting: 'ቀጣዩን ዙር በመጠበቅ ላይ',
-    ended: 'ዙሩ ተጠናቅቋል',
-    card: 'ካርድ',
-    show: 'አሳይ',
-    hide: 'ደብቅ',
-  },
-  ti: {
-    called: 'ዝወጸ ቁጽሪ',
-    waitingBall: 'ጸወታ ገና ኣይጀመረን',
-    recent: 'ቀደም ዝወጹ',
-    myCards: 'ካርዳተይ',
-    board: 'ኩሎም ዝወጹ ቁጽሪታት',
-    round: 'ዙር',
-    toGo: 'ተሪፉ',
-    free: 'ነጻ',
-    claim: 'ቢንጎ በል!',
-    claiming: 'ይረጋገጽ ኣሎ…',
-    claimSent: 'ሕቶ ዓወትኩም ተቐቢሉ፤ ናይ Admin ምጽዳቕ ተጸበዩ።',
-    claimWaiting: 'ይምርመር ኣሎ…',
-    winnerBanner: 'ዙር ተወዲኡ። ዕዉት ካርድ',
-    won: 'እንኳዕ ሕጉስ! ቢንጎ!',
-    pendingPrize: 'እቲ Simulation ሽልማት Admin ምስ ኣጽደቖ ጥራይ እዩ ናብ ቦርሳኹም ዝኣቱ።',
-    invalid: 'ቢንጎ ኣይተረጋገጸን። እንደገና ፈትኑ።',
-    noCards: 'ን እዚ ዙር ካርድ የብልኩምን',
-    noCardsHint: 'ንምጽዋት ካብ ጥረ ገንዘብኩም ካርድ ግዝኡ።',
-    goWallet: 'ናብ ቦርሳ ኺድ',
-    waiting: 'ዝቕጽል ዙር ይጽበ ኣሎ',
-    ended: 'ዙር ተወዲኡ',
-    card: 'ካርድ',
-    show: 'ኣርኢ',
-    hide: 'ሕባእ',
-  },
-  en: {
-    called: 'Called number',
-    waitingBall: 'Round has not started',
-    recent: 'Previous calls',
-    myCards: 'My cards',
-    board: 'All called numbers',
-    round: 'Round',
-    toGo: 'to go',
-    free: 'FREE',
-    claim: 'Call BINGO!',
-    claiming: 'Verifying…',
-    claimSent: 'Win claim received. Waiting for admin approval.',
-    claimWaiting: 'Checking…',
-    winnerBanner: 'Round finished. Winning card',
-    won: 'Congratulations! BINGO!',
-    pendingPrize: 'The simulation prize is added to your wallet only after an admin approves it.',
-    invalid: "That bingo couldn't be verified. Try again.",
-    noCards: "You have no cards in this round",
-    noCardsHint: 'Buy cards from your wallet to play.',
-    goWallet: 'Go to wallet',
-    waiting: 'Waiting for the next round',
-    ended: 'Round finished',
-    card: 'Card',
-    show: 'Show',
-    hide: 'Hide',
-  },
-} as const;
+const STRINGS = translations.play;
 
 type StringKey = keyof (typeof STRINGS)['en'];
-const PATTERN_NAMES: Record<WinPattern, string> = {
-  any_line: 'አንድ መስመር', horizontal_line: 'ሆሪዞንታል መስመር', vertical_line: 'ቨርቲካል መስመር',
-  diagonal: 'ዲያጎናል', two_lines: 'ሁለት መስመሮች', two_horizontal_lines: 'ሁለት ሆሪዞንታል መስመሮች',
-  four_corners: 'አራቱ ማዕዘኖች', rectangle: '2×2 ሬክታንግል', two_rectangles: 'ሁለት ሬክታንግሎች',
-  half_house: 'ግማሽ ቤት', full_house: 'ፉል ሃውስ', x: 'X ቅርጽ', t: 'T ቅርጽ', l: 'L ቅርጽ',
-  plus: 'ፕላስ (+)', diamond: 'ዳይመንድ', picture_frame: 'ውጫዊ ፍሬም', six_pack: 'Six-pack', postage_stamp: 'ፖስታጅ ስታምፕ',
-};
+const PATTERN_NAMES = patternNames;
 
 
 /* ───────────────────────────── GAME LOGIC ───────────────────────────── */
@@ -326,6 +242,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   };
   const [claiming, setClaiming] = useState(false);
   const [confetti, setConfetti] = useState(false);
+  const stopConfetti = useCallback(() => setConfetti(false), []);
   const [sentRound, setSentRound] = useState<number | null>(null);
   const claimed = sentRound === roundNumber;
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
@@ -345,7 +262,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   useEffect(() => {
     if (!winner || !iWon || celebrated.current === winner.at) return;
     celebrated.current = winner.at;
-    setConfetti(true);
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) setConfetti(true);
     flash('ok', t('won'));
     play('win');
   }, [winner, iWon]);
@@ -392,10 +309,11 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         }
         .bg-cell-mark { animation: bgCellMark 260ms cubic-bezier(.2,.8,.2,1) both; }
         .bg-winner-reveal { animation: bgWinnerReveal 420ms cubic-bezier(.2,.8,.2,1) both; }
-        @keyframes bgConfetti { to { transform: translateY(110vh) rotate(var(--rot)); opacity: .9 } }
+        @keyframes bgConfetti { to { transform: translate3d(0,110vh,0) rotate(var(--rot)); opacity: .9 } }
+        .bg-confetti { will-change: transform, opacity; backface-visibility: hidden; }
         .bg-ball-pop { animation: bgBallPop 620ms cubic-bezier(.2,.8,.2,1) both, bgBallGlow 2.8s ease-in-out 620ms 2; }
         @media (prefers-reduced-motion: reduce) {
-          .bg-anim, .bg-ball-pop, .bg-cell-mark, .bg-winner-reveal { animation: none !important; }
+          .bg-anim, .bg-ball-pop, .bg-cell-mark, .bg-winner-reveal, .bg-confetti { animation: none !important; }
         }
       `}</style>
 
@@ -421,14 +339,14 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
               <p className="text-sm font-semibold text-gold-200" aria-live="polite">
                 {t('round')} <span className="font-black tabular-nums text-gold-400">#{roundNumber}</span>
               </p>
-              <p className="text-xs font-medium text-gold-500/90">የዚህ ዙር አሸናፊነት: {PATTERN_NAMES[winPattern]}</p>
+              <p className="text-xs font-medium text-gold-500/90">{t('winningPattern')}: {PATTERN_NAMES[lang][winPattern]}</p>
             </div>
           </div>
 
           <div className="min-w-0 rounded-3xl border border-gold-700/40 bg-black/25 p-4 shadow-xl shadow-black/20 backdrop-blur-sm sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-600">LIVE CALLS</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-600">{t('liveCalls')}</p>
                 <h3 className="mt-1 text-base font-bold text-gold-200">{t('recent')}</h3>
               </div>
               <span className="rounded-full border border-gold-500/25 bg-gold-500/10 px-3 py-1 text-xs font-bold tabular-nums text-gold-300">
@@ -443,7 +361,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 aria-pressed={voiceEnabled}
                 className="rounded-xl border border-gold-700/60 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-gold-300 transition-colors hover:border-gold-400/60 hover:bg-gold-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
               >
-                {voiceEnabled ? '🔊 የአማርኛ ድምፅ በርቷል · ለማጥፋት ይጫኑ' : '🔇 የአማርኛ ድምፅ አብራ'}
+                {voiceEnabled ? t('amharicVoiceOn') : t('amharicVoiceOff')}
               </button>
               <button
                 type="button"
@@ -457,7 +375,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 }}
                 className="rounded-xl border border-gold-700/60 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-gold-300 transition-colors hover:border-gold-400/60 hover:bg-gold-400/10 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
               >
-                ▶ የመጨረሻውን ጥሪ አዳምጥ
+                ▶ {t('replayCall')}
               </button>
             </div>
 
@@ -491,7 +409,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         <section className="overflow-hidden rounded-3xl border border-gold-700/40 bg-gradient-to-br from-cardbg via-cardbg to-gold-950/20 p-3 shadow-xl shadow-black/20 ring-1 ring-gold-700/20 sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-gold-700/30 pb-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-600">NUMBER TRACKER</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-600">{t('numberTracker')}</p>
               <h3 className="mt-1 text-base font-bold text-gold-200">{t('board')}</h3>
             </div>
             <span className="rounded-full border border-gold-500/25 bg-gold-500/10 px-3 py-1 text-xs font-bold tabular-nums text-gold-300">{calledNumbers.length} / 75</span>
@@ -608,23 +526,24 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         </div>
       )}
 
-      {confetti && <Confetti onDone={() => setConfetti(false)} />}
+      {confetti && <Confetti onDone={stopConfetti} />}
     </div>
   );
 }
 
 function Confetti({ onDone }: { onDone: () => void }) {
+  const particleCount = window.matchMedia('(max-width: 640px)').matches ? 14 : 28;
   useEffect(() => {
-    const timer = window.setTimeout(onDone, 2400);
+    const timer = window.setTimeout(onDone, 2700);
     return () => window.clearTimeout(timer);
   }, [onDone]);
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden" aria-hidden="true">
-      {Array.from({ length: 32 }, (_, i) => (
+      {Array.from({ length: particleCount }, (_, i) => (
         <span
           key={i}
-          className="absolute top-0 h-3 w-2 rounded-sm bg-gold-400 animate-[bgConfetti_2s_ease-out_forwards]"
+          className="bg-confetti absolute top-0 h-3 w-2 rounded-sm bg-gold-400 animate-[bgConfetti_2s_ease-out_forwards]"
           style={{
             left: `${(i * 37) % 100}%`,
             animationDelay: `${(i % 8) * 0.08}s`,

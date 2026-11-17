@@ -5,6 +5,7 @@
  * win decision now live on the server.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AudioCallAnnouncer } from '@/components/audio/AudioCallAnnouncer';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { useAuth } from '@/context/AuthContext';
 import { BackendContext } from '@/context/BackendContext';
@@ -254,7 +255,10 @@ export function ServerProviders({ children }: { children: ReactNode }) {
   return (
     <BackendContext.Provider value={backend}>
       <ServerPlayerProvider>
-        <ServerRoundProvider>{children}</ServerRoundProvider>
+        <ServerRoundProvider>
+          <AudioCallAnnouncer />
+          {children}
+        </ServerRoundProvider>
       </ServerPlayerProvider>
     </BackendContext.Provider>
   );

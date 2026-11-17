@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { translations } from '@/lib/localization';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { ApiError } from '@/lib/api';
@@ -6,38 +7,7 @@ import type { Lang } from '@/types/game';
 import { useToast } from '@/context/ToastContext';
 import { PinResetFlow } from '@/components/auth/PinResetFlow';
 
-const TEXT = {
-  am: {
-    login: 'ይግቡ', register: 'መለያ ይክፈቱ', phone: 'ስልክ ቁጥር', name: 'ሙሉ ስም', pin: '6 አሃዝ የይለፍ ቁጥር (PIN)', confirmPin: 'የይለፍ ቁጥሩን ድገሙ', pinMismatch: 'ያስገቡት PIN አይመሳሰልም።',
-    toRegister: 'መለያ የለዎትም? ይክፈቱ', toLogin: 'መለያ አለዎት? ይግቡ', busy: 'በመጠበቅ ላይ…', phonePlaceholder: '09******** / 07********',
-    invalid_phone: 'ትክክለኛ የኢትዮጵያ ስልክ ቁጥር ያስገቡ (09… ወይም 07…)', invalid_name: 'ሙሉ ስምዎን ያስገቡ', invalid_pin: 'PIN 6 አሃዝ መሆን አለበት', pin_mismatch: 'ያስገቡት PIN አይመሳሰልም።',
-    phone_taken: 'ይህ ስልክ ቁጥር ተመዝግቧል', invalid_credentials: 'ስልክ ቁጥር ወይም PIN ልክ አይደለም',
-    locked: 'ብዙ ጊዜ ሞክረዋል። ከ15 ደቂቃ በኋላ ይሞክሩ።', rate_limited: 'በጣም ብዙ ጥያቄዎች። ትንሽ ቆይተው ይሞክሩ።', network: 'ከአገልጋዩ ጋር መገናኘት አልተቻለም።', error: 'የሆነ ችግር ተፈጥሯል። እንደገና ይሞክሩ።',
-    age: '18 ዓመት እና ከዚያ በላይ ብቻ። ስልክ ቁጥሩ በSMS አይረጋገጥም፤ የራስዎን ቁጥር ብቻ ይጠቀሙ።',
-    forgot: 'የይለፍ ቁጥር ረሱት?', forgotInfo: 'የPIN ማገገሚያ አገልግሎት እስካሁን አልተዘጋጀም። እባክዎ ከአስተዳዳሪ ጋር ይገናኙ።',
-    brandLine: 'የቢንጎ ጨዋታዎን በዘመናዊ መንገድ ይደሰቱ።', welcome: 'እንኳን ደህና መጡ', formHint: 'ለመቀጠል የመለያ መረጃዎን ያስገቡ።', show: 'አሳይ', hide: 'ደብቅ',
-  },
-  ti: {
-    login: 'እቶ', register: 'መለያ ክፈት', phone: 'ቁጽሪ ተሌፎን', name: 'ምሉእ ስም', pin: '6 ኣሃዝ ምስጢራዊ ቁጽሪ (PIN)', confirmPin: 'PIN ደግም', pinMismatch: 'እቲ ዘእተኹሞ PIN ኣይመሳሰልን።',
-    toRegister: 'መለያ የብልካን? ክፈት', toLogin: 'መለያ ኣለካ? እቶ', busy: 'ይጽበ ኣሎ…', phonePlaceholder: '09******** / 07********',
-    invalid_phone: 'ቅኑዕ ናይ ኢትዮጵያ ቁጽሪ ተሌፎን የእትዉ (09… ወይ 07…)', invalid_name: 'ምሉእ ስምኩም የእትዉ', invalid_pin: 'PIN 6 ኣሃዝ ክኸውን ኣለዎ',
-    phone_taken: 'እዚ ቁጽሪ ተሌፎን ተመዝጊቡ ኣሎ', invalid_credentials: 'ቁጽሪ ተሌፎን ወይ PIN ቅኑዕ ኣይኮነን',
-    locked: 'ብዙሕ ግዜ ፈቲኖም። ድሕሪ 15 ደቓይቕ ፈትኑ።', rate_limited: 'ብዙሕ ሕቶታት። ቁሩብ ደሊኹም ፈትኑ።', network: 'ምስ ኣገልግሎት ምርካብ ኣይተኻኣለን።', error: 'ጸገም ተፈጢሩ። እንደገና ፈትኑ።',
-    age: '18 ዓመትን ልዕሊኡን ጥራይ። ቁጽሪ ተሌፎን ብSMS ኣይረጋገጽን፤ ናይ ባዕልኹም ቁጽሪ ጥራይ ተጠቐሙ።',
-    forgot: 'PIN ረሲዕካዮ?', forgotInfo: 'ናይ PIN ምምላስ ኣገልግሎት ገና ኣይተዳለወን። በጃኹም ምስ ኣመሓዳሪ ተራኸቡ።',
-    brandLine: 'ኣብ ዘመናዊ መንገዲ ቢንጎ ተጻወቱን ተዘናግዑን።', welcome: 'እንቋዕ ብደሓን መጻእኩም', formHint: 'ንምቕጻል ናይ መለያ ሓበሬታኹም የእትዉ።', show: 'ኣርኢ', hide: 'ሕባእ',
-  },
-  en: {
-    login: 'Sign in', register: 'Create account', phone: 'Phone number', name: 'Full name', pin: '6-digit PIN', confirmPin: 'Confirm PIN', pinMismatch: 'The PINs do not match.',
-    toRegister: 'New here? Create an account', toLogin: 'Already have an account? Sign in', busy: 'Please wait…', phonePlaceholder: '09******** / 07********',
-    invalid_phone: 'Enter a valid Ethiopian mobile number (09… or 07…)', invalid_name: 'Enter your full name', invalid_pin: 'PIN must be 6 digits',
-    phone_taken: 'This number is already registered', invalid_credentials: 'Wrong phone number or PIN',
-    locked: 'Too many attempts. Try again in 15 minutes.', rate_limited: 'Too many requests. Wait a moment.', network: 'Can’t reach the server.', error: 'Something went wrong. Try again.',
-    age: '18+ only. Phone numbers are not SMS-verified; use only your own number.',
-    forgot: 'Forgot your PIN?', forgotInfo: 'PIN recovery is not available yet. Please contact the administrator for assistance.',
-    brandLine: 'Enjoy your bingo experience with a modern touch.', welcome: 'Welcome back', formHint: 'Enter your account details to continue.', show: 'Show', hide: 'Hide',
-  },
-} as const;
+const TEXT = translations.auth;
 
 const LANG_LABELS: Record<Lang, string> = { am: 'አማርኛ', ti: 'ትግርኛ', en: 'English' };
 
@@ -105,7 +75,7 @@ export function AuthScreen() {
             <span className="text-sm font-black tracking-wider text-gold-300">BLACK GOLD</span>
           </div>
           <label className="ml-auto">
-            <span className="sr-only">Choose language</span>
+            <span className="sr-only">{t.languageLabel}</span>
             <select value={lang} onChange={(e) => setLang(e.target.value as Lang)} className="rounded-lg border border-gold-700/50 bg-cardbg px-3 py-2 text-sm text-gold-300 outline-none transition focus:border-gold-400">
               {(['am', 'ti', 'en'] as Lang[]).map((code) => <option key={code} value={code}>{LANG_LABELS[code]}</option>)}
             </select>

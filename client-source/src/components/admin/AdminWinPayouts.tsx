@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
+import { translations, formatAmount } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { api, ApiError } from '@/lib/api';
 
-const TEXT = {
-  am: { title: 'የቢንጎ አሸናፊ ሽልማቶች', empty: 'በመጠባበቅ ላይ ያለ የሽልማት ጥያቄ የለም', pending: 'በመጠባበቅ ላይ', approve: 'አጽድቅ', reject: 'ውድቅ አድርግ', reload: 'አድስ', round: 'ዙር', card: 'ካርድ', player: 'ተጫዋች', notice: 'ሽልማቱ ከአስተዳዳሪ ማረጋገጫ በኋላ ወደ ቦርሳ ባላንስ ብቻ ይጨመራል።', err: 'ስህተት ተፈጥሯል' },
-  ti: { title: 'ሽልማት ኣሸነፍቲ ቢንጎ', empty: 'ዝጽበ ዘሎ ሕቶ ሽልማት የለን', pending: 'ይጽበ ኣሎ', approve: 'ኣጽድቕ', reject: 'ንጸግ', reload: 'ኣሐድስ', round: 'ዙር', card: 'ካርድ', player: 'ተጻዋታይ', notice: 'ሽልማት ድሕሪ ምርግጋጽ ኣማሓዳሪ ናብ ሚዛን ቦርሳ ጥራይ ይውሰኽ።', err: 'ጌጋ ተፈጢሩ' },
-  en: { title: 'Bingo winner prizes', empty: 'No pending prize requests', pending: 'Pending', approve: 'Approve', reject: 'Reject', reload: 'Reload', round: 'Round', card: 'Card', player: 'Player', notice: 'Prizes are credited to the wallet balance after administrator review.', err: 'Something went wrong' },
-} as const;
+const TEXT = translations.adminPayouts;
 
 interface WinPayout {
   id: string;
@@ -62,7 +59,7 @@ export function AdminWinPayouts() {
           {rows.map((w) => (
             <li key={w.id} className="rounded-xl bg-white/[0.04] p-3">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-lg font-black tabular-nums text-gold-400">{w.amount.toFixed(2)} ETB</span>
+                <span className="text-lg font-black tabular-nums text-gold-400">{formatAmount(lang, w.amount)} ETB</span>
                 <span className="text-xs text-gold-500">{t.pending}</span>
               </div>
               <p className="mt-1 text-sm text-gold-300">{t.player}: {w.userName} · {w.userPhone}</p>

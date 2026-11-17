@@ -1,13 +1,10 @@
 import type { ReactNode } from 'react';
+import { translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 
 export type TabId = 'play' | 'wallet' | 'verify';
 
-const LABELS: Record<'am' | 'ti' | 'en', Record<TabId, string>> = {
-  am: { play: 'ጨዋታ', wallet: 'ቦርሳ', verify: 'አረጋግጥ' },
-  ti: { play: 'ጸወታ', wallet: 'ቦርሳ', verify: 'ኣረጋግጽ' },
-  en: { play: 'Play', wallet: 'Wallet', verify: 'Verify' },
-};
+const LABELS = translations.navigation;
 
 function Icon({ children }: { children: ReactNode }) {
   return (
@@ -45,7 +42,7 @@ export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab:
   const { lang } = useLanguage();
   return (
     <nav
-      aria-label="Main"
+      aria-label={LABELS[lang].main}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-gold-500/20 bg-darkbg/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.25)] backdrop-blur-xl"
     >
       <ul className="mx-auto grid max-w-xl grid-cols-3 px-2">

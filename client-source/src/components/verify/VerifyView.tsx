@@ -7,6 +7,7 @@
  * isWinner must come from the server response, never from the browser.
  */
 import { useMemo, useState } from 'react';
+import { translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRound } from '@/context/RoundContext';
 import type { Lang, VerifyResult } from '@/types/game';
@@ -22,65 +23,7 @@ function useVerifyData() {
 /* ─────────────────────────── TRANSLATIONS ─────────────────────────── */
 /* Tigrigna strings should be reviewed by a native speaker. */
 
-const STRINGS = {
-  am: {
-    title: 'ካርድ አረጋጋጭ',
-    hint: 'የካርድ መለያ ያስገቡና ከጨዋታው ሰርቨር መዝገብ ጋር ያመሳስሉ።',
-    label: 'የካርድ መለያ',
-    btn: 'አረጋግጥ',
-    checking: 'በመፈተሽ ላይ…',
-    valid: 'ካርዱ እውነተኛ ነው',
-    notFound: 'ይህ ካርድ በዚህ ጨዋታ አልተገኘም',
-    tampered: 'የካርዱ ቁጥሮች ከሰርቨሩ መዝገብ ጋር አይመሳሰሉም',
-    winner: 'አሸናፊ ካርድ፤ ቢንጎ ተረጋግጧል',
-    notWinner: 'ገና አሸናፊ አይደለም',
-    matched: 'የወጡ ቁጥሮች በካርዱ ላይ',
-    serial: 'ተከታታይ ቁጥር',
-    recent: 'የቅርብ ፍተሻዎች',
-    error: 'ማረጋገጥ አልተቻለም። እንደገና ይሞክሩ።',
-    badFormat: 'የካርድ መለያ ከ3 እስከ 40 ፊደል፣ ቁጥር ወይም ሰረዝ መሆን አለበት',
-    free: 'ነጻ',
-    clear: 'አጥፋ',
-  },
-  ti: {
-    title: 'መረጋገጺ ካርድ',
-    hint: 'መለለዪ ካርድ የእትዉን ምስ መዝገብ ሰርቨር ጸወታ የስማምዑ።',
-    label: 'መለለዪ ካርድ',
-    btn: 'ኣረጋግጽ',
-    checking: 'ይምርመር ኣሎ…',
-    valid: 'ካርዲ ሓቀኛ እዩ',
-    notFound: 'እዚ ካርድ ኣብዚ ጸወታ ኣይተረኽበን',
-    tampered: 'ቁጽሪታት ካርድ ምስ መዝገብ ሰርቨር ኣይሰማምዑን',
-    winner: 'ዕዉት ካርድ፤ ቢንጎ ተረጋጊጹ',
-    notWinner: 'ገና ዕዉት ኣይኮነን',
-    matched: 'ዝወጹ ቁጽሪታት ኣብ ካርድ',
-    serial: 'ተኸታታሊ ቁጽሪ',
-    recent: 'ናይ ቀረባ ምምርማራት',
-    error: 'ምርግጋጽ ኣይተኻኣለን። እንደገና ፈትኑ።',
-    badFormat: 'መለለዪ ካርድ ካብ 3 ክሳብ 40 ፊደል፣ ቁጽሪ ወይ ሰረዝ ክኸውን ኣለዎ',
-    free: 'ነጻ',
-    clear: 'ደምስስ',
-  },
-  en: {
-    title: 'Card verifier',
-    hint: "Enter a card ID to check it against the game server's record.",
-    label: 'Card ID',
-    btn: 'Verify',
-    checking: 'Checking…',
-    valid: 'Card is authentic',
-    notFound: 'This card was not found in this game',
-    tampered: "This card's numbers do not match the server record",
-    winner: 'Winning card: bingo confirmed',
-    notWinner: 'Not a winning card yet',
-    matched: 'Called numbers on this card',
-    serial: 'Serial',
-    recent: 'Recent checks',
-    error: "Couldn't verify right now. Try again.",
-    badFormat: 'Card ID must be 3 to 40 letters, digits or dashes',
-    free: 'FREE',
-    clear: 'Clear',
-  },
-} as const;
+const STRINGS = translations.verify;
 
 type StringKey = keyof (typeof STRINGS)['en'];
 
