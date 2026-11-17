@@ -50,7 +50,7 @@ export function createAuthService({ repo, config }) {
 
     async verifyPhoneVerification(user, input) {
       const code = String(input ?? '').trim();
-      if (!/^\\d{6}$/.test(code)) throw new HttpError(400, 'invalid_otp', 'Enter the six-digit code.');
+      if (!/^\d{6}$/.test(code)) throw new HttpError(400, 'invalid_otp', 'Enter the six-digit code.');
       const challenge = await repo.getPhoneVerification(user.id);
       const now = new Date();
       if (!challenge || challenge.consumedAt || new Date(challenge.expiresAt) <= now || challenge.attempts >= 5) {
