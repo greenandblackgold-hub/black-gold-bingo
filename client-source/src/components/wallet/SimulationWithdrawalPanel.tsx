@@ -9,22 +9,22 @@ type WithdrawalRow = { id: string; amount: number; method: string; destination: 
 
 export function SimulationWithdrawalPanel() {
   const [rows, setRows] = useState<WithdrawalRow[]>([]);
-  const [amount, setAmount] = useState('10');
-  const [method, setMethod] = useState('');
+  const [amount, setAmount] = useState('50');
+  const [method, setMethod] = useState('telebirr');
   const [destination, setDestination] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const { lang } = useLanguage();
   const t = TXT[lang] ?? TXT.en;
-  const load = async () => { try { setRows(await api.get<WithdrawalRow[]>('/api/simulation/withdrawals')); } catch { /* request form remains usable */ } };
+  const load = async () => { try { setRows(await api.get<WithdrawalRow[]>('/api/manual/withdrawals')); } catch { /* request form remains usable */ } };
   useEffect(() => { void load(); }, []);
   const submit = async () => {
     setBusy(true); setError(''); setMessage('');
     try {
       await api.post('/api/simulation/withdrawals', { amount: Number(amount), method, destination });
       await load();
-      setMessage(t.ok); setAmount('10'); setDestination('');
+      setMessage(t.ok); setAmount('50'); setDestination('');
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t.err);
     } finally { setBusy(false); }
