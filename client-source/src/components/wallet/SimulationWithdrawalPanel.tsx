@@ -38,11 +38,11 @@ export function SimulationWithdrawalPanel() {
       </label>
       <label className="block text-sm text-gold-500">{t.method}
         <select value={method} onChange={e => setMethod(e.target.value)} className="mt-1 w-full rounded-xl bg-cardbg px-4 py-3 text-gold-200 ring-1 ring-gold-700/50 transition focus:outline-none focus:ring-2 focus:ring-gold-400">
-          <option value="">—</option><option value="telebirr">{t.telebirr}</option><option value="bank">{t.bank}</option>
+          <option value="telebirr">{t.telebirr}</option><option value="bank">{t.bank}</option>
         </select>
       </label>
       <label className="block text-sm text-gold-500">{t.destination}
-        <input value={destination} maxLength={80} onChange={e => setDestination(e.target.value)} placeholder="09XXXXXXXX / account" className="mt-1 w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-300 ring-1 ring-gold-700/50" />
+        <input required value={destination} maxLength={80} onChange={e => setDestination(e.target.value)} placeholder="09XXXXXXXX / account" className="mt-1 w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-300 ring-1 ring-gold-700/50" />
       </label>
       {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
       {message && <p role="status" className="text-sm text-gold-300">{message}</p>}
