@@ -119,7 +119,7 @@ export async function createMongoRepo({ uri, dbName }) {
         if (!challenge) return false;
         const removed = await phoneChallenges.deleteOne({ _id: userId, codeHash, expiresAt: { $gt: new Date() }, attempts: { $lt: 5 } }, { session });
         if (removed.deletedCount !== 1) return false;
-        const updated = await users.updateOne({ _id: userId, role: 'player', phoneVerified: false }, { $set: { phoneVerified: true, phoneVerifiedAt: new Date() } }, { session });
+        const updated = await users.updateOne({ _id: userId, role: 'player', phoneVerified: { $ne: true } }, { $set: { phoneVerified: true, phoneVerifiedAt: new Date() } }, { session });
         return updated.modifiedCount === 1;
       });
     },
