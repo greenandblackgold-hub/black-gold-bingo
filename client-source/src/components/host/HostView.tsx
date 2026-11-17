@@ -139,7 +139,7 @@ export function HostView() {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!h.autoCall || !live) return;
-    const id = setInterval(() => setNow(Date.now()), 250);
+    const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [h.autoCall, live]);
   const remaining =
