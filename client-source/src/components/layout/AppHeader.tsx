@@ -1,4 +1,5 @@
 import { useAppSettings } from '@/context/AppSettingsContext';
+import { translations, formatAmount } from '@/lib/localization';
 import { useBackend } from '@/context/BackendContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
@@ -10,23 +11,7 @@ const LANGS: { id: Lang; label: string }[] = [
   { id: 'en', label: 'EN' },
 ];
 
-const LABELS = {
-  am: {
-    wallet: 'ቦርሳ ክፈት', admin: 'መቆጣጠሪያ ማዕከል', audio: 'የድምፅ ቅንብሮች',
-    effects: 'የጨዋታ ድምፆች', voice: 'የቁጥር ንግግር', volume: 'የድምፅ መጠን',
-    voiceHelp: 'በመሣሪያዎ የድምፅ ድጋፍ ይወሰናል',
-  },
-  ti: {
-    wallet: 'ቦርሳ ክፈት', admin: 'ማእከል ቁጥጥሪ', audio: 'ቅንብራት ድምጺ',
-    effects: 'ድምጺ ጸወታ', voice: 'ኣፍ ዘረባ ቁጽሪ', volume: 'መጠን ድምጺ',
-    voiceHelp: 'ኣብ ድጋፍ ድምጺ መሳርሒኻ ይምርኮስ',
-  },
-  en: {
-    wallet: 'Open wallet', admin: 'Control Center', audio: 'Audio settings',
-    effects: 'Game sound effects', voice: 'Spoken number calls', volume: 'Volume',
-    voiceHelp: 'Depends on speech voices available on your device',
-  },
-} as const;
+const LABELS = translations.header;
 
 function SpeakerIcon({ on }: { on: boolean }) {
   return (
@@ -147,7 +132,7 @@ export function AppHeader({ onOpenWallet, onOpenAdmin }: { onOpenWallet: () => v
             aria-label={l.wallet}
             className="whitespace-nowrap rounded-full bg-gold-500/15 px-3 py-1.5 text-sm font-bold tabular-nums text-gold-300 ring-1 ring-gold-500/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
           >
-            {balance.toFixed(2)} <span className="text-gold-500">ETB</span>
+            {formatAmount(lang, balance)} <span className="text-gold-500">ETB</span>
           </button>
         </div>
       </div>
