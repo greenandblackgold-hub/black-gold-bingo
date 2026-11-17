@@ -5,7 +5,7 @@
  * tap-to-mark cells, "N to go" progress, and a BINGO claim bar with confetti.
  * Reads from usePlayer() and useRound(); shared types live in '@/types/game'.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { translations, patternNames } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
@@ -242,6 +242,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   };
   const [claiming, setClaiming] = useState(false);
   const [confetti, setConfetti] = useState(false);
+  const stopConfetti = useCallback(() => setConfetti(false), []);
   const [sentRound, setSentRound] = useState<number | null>(null);
   const claimed = sentRound === roundNumber;
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
@@ -261,7 +262,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   useEffect(() => {
     if (!winner || !iWon || celebrated.current === winner.at) return;
     celebrated.current = winner.at;
-    setConfetti(true);
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) setConfetti(true);
     flash('ok', t('won'));
     play('win');
   }, [winner, iWon]);
@@ -308,10 +309,11 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         }
         .bg-cell-mark { animation: bgCellMark 260ms cubic-bezier(.2,.8,.2,1) both; }
         .bg-winner-reveal { animation: bgWinnerReveal 420ms cubic-bezier(.2,.8,.2,1) both; }
-        @keyframes bgConfetti { to { transform: translateY(110vh) rotate(var(--rot)); opacity: .9 } }
+        @keyframes bgConfetti { to { transform: translate3d(0,110vh,0) rotate(var(--rot)); opacity: .9 } }
+        .bg-confetti { will-change: transform, opacity; backface-visibility: hidden; }
         .bg-ball-pop { animation: bgBallPop 620ms cubic-bezier(.2,.8,.2,1) both, bgBallGlow 2.8s ease-in-out 620ms 2; }
         @media (prefers-reduced-motion: reduce) {
-          .bg-anim, .bg-ball-pop, .bg-cell-mark, .bg-winner-reveal { animation: none !important; }
+          .bg-anim, .bg-ball-pop, .bg-cell-mark, .bg-winner-reveal, .bg-confetti { animation: none !important; }
         }
       `}</style>
 
@@ -524,23 +526,24 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         </div>
       )}
 
-      {confetti && <Confetti onDone={() => setConfetti(false)} />}
+      {confetti && <Confetti onDone={stopConfetti} />}
     </div>
   );
 }
 
 function Confetti({ onDone }: { onDone: () => void }) {
+  const particleCount = window.matchMedia('(max-width: 640px)').matches ? 14 : 28;
   useEffect(() => {
-    const timer = window.setTimeout(onDone, 2400);
+    const timer = window.setTimeout(onDone, 2200);
     return () => window.clearTimeout(timer);
   }, [onDone]);
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden" aria-hidden="true">
-      {Array.from({ length: 32 }, (_, i) => (
+      {Array.from({ length: particleCount }, (_, i) => (
         <span
           key={i}
-          className="absolute top-0 h-3 w-2 rounded-sm bg-gold-400 animate-[bgConfetti_2s_ease-out_forwards]"
+          className="bg-confetti absolute top-0 h-3 w-2 rounded-sm bg-gold-400 animate-[bgConfetti_2s_ease-out_forwards]"
           style={{
             left: `${(i * 37) % 100}%`,
             animationDelay: `${(i % 8) * 0.08}s`,
