@@ -534,7 +534,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
 function Confetti({ onDone }: { onDone: () => void }) {
   const particleCount = window.matchMedia('(max-width: 640px)').matches ? 14 : 28;
   useEffect(() => {
-    const timer = window.setTimeout(onDone, 2200);
+    const timer = window.setTimeout(onDone, 2700);
     return () => window.clearTimeout(timer);
   }, [onDone]);
 
