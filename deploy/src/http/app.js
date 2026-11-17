@@ -122,6 +122,8 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   route('POST', '/api/auth/register', 'public', 'auth', ({ body }) => { requireRegistration(); return auth.register(body); });
   route('POST', '/api/auth/login', 'public', 'auth', ({ body }) => auth.login(body));
   route('GET', '/api/me', 'user', 'default', ({ user }) => publicUser(user));
+  route('POST', '/api/phone-verification/request', 'user', 'auth', ({ user }) => auth.requestPhoneVerification(user));
+  route('POST', '/api/phone-verification/verify', 'user', 'auth', ({ user, body }) => auth.verifyPhoneVerification(user, body.code));
 
   /* game (public state; the SSE stream is handled separately below) */
   route('GET', '/api/game', 'public', 'default', () => game.getPublicState());
@@ -236,6 +238,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
 
   /* admin */
   const admin = (method, path, handler, bucket = 'default') => route(method, path, 'admin', bucket, handler);
+  admin('GET', '/api/admin/phone-verifications', async () => auth.listPendingPhoneVerifications());
   admin('GET', '/api/admin/manual-withdrawals', async ({ query }) =>
     wallet.listManualWithdrawals({ status: query.get('status') || 'pending' }),
   );
@@ -418,6 +421,10 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
         user = await auth.authenticate(header.startsWith('Bearer ') ? header.slice(7) : '');
         if (!user) throw new HttpError(401, 'unauthorized', 'Please sign in');
         if (r.access === 'admin' && user.role !== 'admin') throw new HttpError(403, 'forbidden', 'Admins only');
+        const otpAllowed = ['/api/me', '/api/phone-verification/request', '/api/phone-verification/verify'].includes(url.pathname);
+        if (r.access === 'user' && user.role !== 'admin' && user.phoneVerified !== true && !otpAllowed) {
+          throw new HttpError(403, 'phone_not_verified', 'Verify your phone number before using this feature.');
+        }
       }
 
       const rawBody = req.method === 'POST' ? await readBody(req) : '';
