@@ -79,6 +79,7 @@ export interface AuthUser {
   role: 'player' | 'admin';
   /** ETB */
   balance: number;
+  phoneVerified?: boolean;
 }
 
 export interface ServerGameState {

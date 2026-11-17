@@ -16,6 +16,7 @@ export function createMemoryRepo() {
   const withdrawals = new Map();
   const winPayouts = new Map();
   const rounds = new Map();
+  const phoneVerifications = new Map();
   let game = { ...DEFAULT_GAME, calledNumbers: [] };
 
   const credit = (userId, amount, kind, ref, meta = {}) => {
@@ -36,7 +37,7 @@ export function createMemoryRepo() {
     /* users */
     async createUser({ phone, name, pinHash, role = 'player' }) {
       for (const u of users.values()) if (u.phone === phone) throw new RepoError('PHONE_TAKEN');
-      const user = { id: randomToken(12), phone, name, pinHash, role, balance: 0, failedLogins: 0, lockedUntil: 0, createdAt: new Date() };
+      const user = { id: randomToken(12), phone, name, pinHash, role, phoneVerified: role === 'admin', balance: 0, failedLogins: 0, lockedUntil: 0, createdAt: new Date() };
       users.set(user.id, user);
       return clone(user);
     },
@@ -51,6 +52,13 @@ export function createMemoryRepo() {
       const u = users.get(id);
       if (u) Object.assign(u, patch);
     },
+
+    /* phone verification: separate map; no game or wallet writes */
+    async savePhoneVerification(c) { phoneVerifications.set(c.userId, clone(c)); },
+    async getPhoneVerification(userId) { return clone(phoneVerifications.get(userId) ?? null); },
+    async incrementPhoneVerificationAttempts(userId, now) { const c = phoneVerifications.get(userId); if (!c || c.consumedAt || c.expiresAt <= now || c.attempts >= 5) return false; c.attempts += 1; return true; },
+    async consumePhoneVerification(userId, codeHash, now) { const c = phoneVerifications.get(userId), u = users.get(userId); if (!c || !u || c.codeHash !== codeHash || c.consumedAt || c.expiresAt <= now || c.attempts >= 5) return false; c.consumedAt = now; u.phoneVerified = true; u.phoneVerifiedAt = now; return true; },
+    async listPendingPhoneVerifications(now) { return [...phoneVerifications.values()].filter(c => !c.consumedAt && c.expiresAt > now && c.attempts < 5).map(c => { const u = users.get(c.userId); return u && !u.phoneVerified ? { ...clone(c), name: u.name, phone: u.phone } : null; }).filter(Boolean).slice(0, 200); },
 
     /* game state (optimistic concurrency on `version`) */
     async getGame() {

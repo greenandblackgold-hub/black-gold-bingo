@@ -1,4 +1,5 @@
-import { hashSecret, signJwt, verifyJwt, verifySecret } from '../util/crypto.js';
+import crypto from 'node:crypto';
+import { hashSecret, signJwt, verifyJwt, verifySecret, randomInt, randomToken, hmacHex, safeEqual } from '../util/crypto.js';
 import { HttpError, RepoError } from '../util/errors.js';
 
 const TOKEN_TTL = 7 * 24 * 3600;
@@ -12,12 +13,68 @@ export function normalizePhone(input) {
   return m ? `0${m[1]}` : null;
 }
 
-export const publicUser = (u) => ({ id: u.id, phone: u.phone, name: u.name, role: u.role, balance: u.balance / 100 });
+export const publicUser = (u) => ({ id: u.id, phone: u.phone, name: u.name, role: u.role, phoneVerified: u.phoneVerified === true, balance: u.balance / 100 });
 
 export function createAuthService({ repo, config }) {
+  const otpKey = crypto.createHash('sha256').update('black-gold-phone-otp:v1:' + config.jwtSecret).digest();
+  const encryptOtp = (code) => {
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', otpKey, iv);
+    const encryptedCode = Buffer.concat([cipher.update(code, 'utf8'), cipher.final()]);
+    return { encryptedCode: encryptedCode.toString('base64'), iv: iv.toString('base64'), tag: cipher.getAuthTag().toString('base64') };
+  };
+  const decryptOtp = (c) => {
+    const decipher = crypto.createDecipheriv('aes-256-gcm', otpKey, Buffer.from(c.iv, 'base64'));
+    decipher.setAuthTag(Buffer.from(c.tag, 'base64'));
+    return Buffer.concat([decipher.update(Buffer.from(c.encryptedCode, 'base64')), decipher.final()]).toString('utf8');
+  };
   const issue = (user) => ({ token: signJwt({ sub: user.id, role: user.role }, config.jwtSecret, TOKEN_TTL), user: publicUser(user) });
 
   return {
+    async requestPhoneVerification(user) {
+      if (user.phoneVerified) return { alreadyVerified: true };
+      const previous = await repo.getPhoneVerification(user.id);
+      const now = new Date();
+      if (previous && !previous.consumedAt && previous.createdAt && now - new Date(previous.createdAt) < 60_000) {
+        throw new HttpError(429, 'otp_wait', 'Please wait one minute before requesting another code.');
+      }
+      const code = String(randomInt(1_000_000)).padStart(6, '0');
+      const id = randomToken(16);
+      const codeHash = hmacHex(config.jwtSecret, user.id + ':' + id + ':' + code);
+      await repo.savePhoneVerification({
+        id, userId: user.id, codeHash, ...encryptOtp(code), attempts: 0,
+        createdAt: now, expiresAt: new Date(now.getTime() + 5 * 60_000), consumedAt: null,
+      });
+      return { requested: true, expiresAt: new Date(now.getTime() + 5 * 60_000).toISOString() };
+    },
+
+    async verifyPhoneVerification(user, input) {
+      const code = String(input ?? '').trim();
+      if (!/^\d{6}$/.test(code)) throw new HttpError(400, 'invalid_otp', 'Enter the six-digit code.');
+      const challenge = await repo.getPhoneVerification(user.id);
+      const now = new Date();
+      if (!challenge || challenge.consumedAt || new Date(challenge.expiresAt) <= now || challenge.attempts >= 5) {
+        throw new HttpError(400, 'otp_expired', 'The code expired. Request a new code.');
+      }
+      const candidate = hmacHex(config.jwtSecret, user.id + ':' + challenge.id + ':' + code);
+      if (!safeEqual(candidate, challenge.codeHash)) {
+        await repo.incrementPhoneVerificationAttempts(user.id, now);
+        throw new HttpError(400, 'invalid_otp', 'The code is incorrect.');
+      }
+      const consumed = await repo.consumePhoneVerification(user.id, candidate, now);
+      if (!consumed) throw new HttpError(409, 'otp_used', 'The code is expired or has already been used.');
+      return publicUser(await repo.findUserById(user.id));
+    },
+
+    async listPendingPhoneVerifications() {
+      const rows = await repo.listPendingPhoneVerifications(new Date());
+      return rows.map(c => ({
+        id: c.id, userId: c.userId, name: c.name, phone: c.phone,
+        code: decryptOtp(c), expiresAt: new Date(c.expiresAt).toISOString(),
+        attempts: c.attempts, createdAt: new Date(c.createdAt).toISOString(),
+      }));
+    },
+
     async register({ phone, name, pin, pinConfirm }) {
       if (!config.registrationEnabled) throw new HttpError(503, 'registration_disabled', 'New registrations are temporarily disabled until phone verification is ready.');
       const p = normalizePhone(phone);

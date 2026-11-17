@@ -25,6 +25,7 @@ export async function createMongoRepo({ uri, dbName }) {
   const withdrawals = db.collection('withdrawals');
   const winPayouts = db.collection('winPayouts');
   const rounds = db.collection('rounds');
+  const phoneVerifications = db.collection('phoneVerifications');
 
   async function tx(fn) {
     const session = client.startSession();
@@ -69,6 +70,8 @@ export async function createMongoRepo({ uri, dbName }) {
         withdrawals.createIndex({ externalPayoutReference: 1 }, { unique: true, partialFilterExpression: { externalPayoutReference: { $type: 'string' } } }),
         winPayouts.createIndex({ status: 1, createdAt: -1 }),
         rounds.createIndex({ round: 1 }, { unique: true }),
+        phoneVerifications.createIndex({ userId: 1 }, { unique: true }),
+        phoneVerifications.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
       ]);
       await games.updateOne({ _id: 'state' }, { $setOnInsert: { ...DEFAULT_GAME } }, { upsert: true });
     },
@@ -82,7 +85,7 @@ export async function createMongoRepo({ uri, dbName }) {
 
     /* users */
     async createUser({ phone, name, pinHash, role = 'player' }) {
-      const doc = { _id: randomToken(12), phone, name, pinHash, role, balance: 0, failedLogins: 0, lockedUntil: 0, createdAt: new Date() };
+      const doc = { _id: randomToken(12), phone, name, pinHash, role, phoneVerified: role === 'admin', balance: 0, failedLogins: 0, lockedUntil: 0, createdAt: new Date() };
       try {
         await users.insertOne(doc);
       } catch (e) {
@@ -100,6 +103,13 @@ export async function createMongoRepo({ uri, dbName }) {
     async updateUser(id, patch) {
       await users.updateOne({ _id: id }, { $set: patch });
     },
+
+    /* phone verification: separate collection; no game or wallet writes */
+    async savePhoneVerification(c) { await phoneVerifications.updateOne({ userId: c.userId }, { $set: c }, { upsert: true }); },
+    async getPhoneVerification(userId) { return phoneVerifications.findOne({ userId }); },
+    async incrementPhoneVerificationAttempts(userId, now) { const r = await phoneVerifications.updateOne({ userId, consumedAt: null, expiresAt: { $gt: now }, attempts: { $lt: 5 } }, { $inc: { attempts: 1 } }); return r.modifiedCount === 1; },
+    async consumePhoneVerification(userId, codeHash, now) { return tx(async (session) => { const c = await phoneVerifications.findOneAndUpdate({ userId, codeHash, consumedAt: null, expiresAt: { $gt: now }, attempts: { $lt: 5 } }, { $set: { consumedAt: now } }, { returnDocument: 'after', session }); if (!c) return false; const u = await users.updateOne({ _id: userId }, { $set: { phoneVerified: true, phoneVerifiedAt: now } }, { session }); if (!u.matchedCount) throw new Error('PHONE_VERIFICATION_USER_MISSING'); return true; }); },
+    async listPendingPhoneVerifications(now) { const rows = await phoneVerifications.find({ consumedAt: null, expiresAt: { $gt: now }, attempts: { $lt: 5 } }).sort({ createdAt: 1 }).limit(200).toArray(); return (await Promise.all(rows.map(async c => { const u = await users.findOne({ _id: c.userId }, { projection: { name: 1, phone: 1, phoneVerified: 1 } }); return u && !u.phoneVerified ? { ...c, name: u.name, phone: u.phone } : null; }))).filter(Boolean); },
 
     /* game state */
     async getGame() {

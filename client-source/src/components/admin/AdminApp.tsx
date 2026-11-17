@@ -1,4 +1,5 @@
 import { AdminWinPayouts } from '@/components/admin/AdminWinPayouts';
+import { AdminPhoneVerifications } from '@/components/admin/AdminPhoneVerifications';
 import { translations } from '@/lib/localization';
 import { AdminSimulationWithdrawals } from '@/components/admin/AdminSimulationWithdrawals';
 import { AdminDeposits } from '@/components/admin/AdminDeposits';
@@ -81,6 +82,7 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
           </p>
         )}
         <div className="space-y-5">
+          {SERVER_MODE && <AdminPhoneVerifications />}
           <HostView />
           {SERVER_MODE && <AdminDeposits />}
           {SERVER_MODE && <AdminWinPayouts />}
