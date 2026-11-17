@@ -119,7 +119,7 @@ function PhoneVerificationGate() {
     <h1 className="text-xl font-bold text-gold-400">ስልክዎን ያረጋግጡ</h1>
     <p className="text-sm text-gold-200/80">የማረጋገጫ ቁጥሩን ከአስተዳዳሪው በስልክ ጥሪ ይቀበሉ። SMS አይላክም።</p>
     <p className="text-sm text-gold-500">{user?.phone}</p>
-    <input aria-label="6 digit code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={e=>setCode(e.target.value.replace(/\\D/g,''))} className="w-full rounded-xl bg-black/30 p-3 text-center text-2xl tracking-[0.5em] text-gold-200" />
+    <input aria-label="6 digit code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,''))} className="w-full rounded-xl bg-black/30 p-3 text-center text-2xl tracking-[0.5em] text-gold-200" />
     {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
     <button disabled={busy || code.length!==6} className="w-full rounded-xl bg-gold-500 p-3 font-bold text-black disabled:opacity-50">{busy ? 'በመፈተሽ ላይ…' : 'አረጋግጥ'}</button>
     <button type="button" onClick={logout} className="w-full p-2 text-sm text-gold-400">ውጣ</button>
