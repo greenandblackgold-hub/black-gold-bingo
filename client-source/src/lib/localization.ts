@@ -124,6 +124,9 @@ export const translations = {
     errAccount: 'የሂሳብ ቁጥሩ 13 አሃዝ መሆን አለበት',
     errAmount: 'መጠኑ ከ10 እስከ 10,000 ብር መሆን አለበት',
     etb: 'ብር',
+    chosenCard: 'የሚፈልጉት የካርድ ቁጥር (አማራጭ · 5 አሃዝ)',
+    chosenCardPlaceholder: 'ለምሳሌ 12345 ወይም 34245',
+    chosenCardHelp: 'ቁጥሩ በሌላ ተጫዋች ካልተያዘ ይሰጥዎታል። ከተያዘ ሌላ ቁጥር ይምረጡ።',
     depositTx: 'ገቢ',
     purchaseTx: 'ካርድ ግዢ',
   },
@@ -160,6 +163,9 @@ export const translations = {
     errAccount: 'ቁጽሪ ሒሳብ 13 ኣሃዝ ክኸውን ኣለዎ',
     errAmount: 'መጠን ካብ 10 ክሳብ 10,000 ብር ክኸውን ኣለዎ',
     etb: 'ብር',
+    chosenCard: 'ዝደልይዎ ቁጽሪ ካርድ (ኣማራጺ · 5 ኣሃዝ)',
+    chosenCardPlaceholder: 'ንኣብነት 12345 ወይ 34245',
+    chosenCardHelp: 'ቁጽሪ ብኻልእ ተጻዋታይ እንተዘይተሓዚ ይወሃበኩም። እንተተሓዚ ካልእ ቁጽሪ ምረጹ።',
     depositTx: 'ኣታዊ',
     purchaseTx: 'ግዛእ ካርድ',
   },
@@ -196,6 +202,9 @@ export const translations = {
     errAccount: 'Account number must be 13 digits',
     errAmount: 'Amount must be between 10 and 10,000 ETB',
     etb: 'ETB',
+    chosenCard: 'Preferred card number (optional · 5 digits)',
+    chosenCardPlaceholder: 'e.g. 12345 or 34245',
+    chosenCardHelp: 'The number is assigned if it is not already taken by another player. If it is taken, choose another number.',
     depositTx: 'Deposit',
     purchaseTx: 'Card purchase',
   },
@@ -268,7 +277,7 @@ export const translations = {
     locked: 'ብዙ ጊዜ ሞክረዋል። ከ15 ደቂቃ በኋላ ይሞክሩ።', rate_limited: 'በጣም ብዙ ጥያቄዎች። ትንሽ ቆይተው ይሞክሩ።', network: 'ከአገልጋዩ ጋር መገናኘት አልተቻለም።', error: 'የሆነ ችግር ተፈጥሯል። እንደገና ይሞክሩ።',
     age: '18 ዓመት እና ከዚያ በላይ ብቻ። ስልክ ቁጥሩ በSMS አይረጋገጥም፤ የራስዎን ቁጥር ብቻ ይጠቀሙ።',
     forgot: 'የይለፍ ቁጥር ረሱት?', forgotInfo: 'የPIN ማገገሚያ አገልግሎት እስካሁን አልተዘጋጀም። እባክዎ ከአስተዳዳሪ ጋር ይገናኙ።',
-    brandLine: 'የቢንጎ ጨዋታዎን በዘመናዊ መንገድ ይደሰቱ።', welcome: 'እንኳን ደህና መጡ', formHint: 'ለመቀጠል የመለያ መረጃዎን ያስገቡ።', show: 'አሳይ', hide: 'ደብቅ',
+    languageLabel: 'ቋንቋ ይምረጡ', brandLine: 'የቢንጎ ጨዋታዎን በዘመናዊ መንገድ ይደሰቱ።', welcome: 'እንኳን ደህና መጡ', formHint: 'ለመቀጠል የመለያ መረጃዎን ያስገቡ።', show: 'አሳይ', hide: 'ደብቅ',
   },
   ti: {
     login: 'እቶ', register: 'መለያ ክፈት', phone: 'ቁጽሪ ተሌፎን', name: 'ምሉእ ስም', pin: '6 ኣሃዝ ምስጢራዊ ቁጽሪ (PIN)', confirmPin: 'PIN ደግም', pinMismatch: 'እቲ ዘእተኹሞ PIN ኣይመሳሰልን።',
@@ -278,7 +287,7 @@ export const translations = {
     locked: 'ብዙሕ ግዜ ፈቲኖም። ድሕሪ 15 ደቓይቕ ፈትኑ።', rate_limited: 'ብዙሕ ሕቶታት። ቁሩብ ደሊኹም ፈትኑ።', network: 'ምስ ኣገልግሎት ምርካብ ኣይተኻኣለን።', error: 'ጸገም ተፈጢሩ። እንደገና ፈትኑ።',
     age: '18 ዓመትን ልዕሊኡን ጥራይ። ቁጽሪ ተሌፎን ብSMS ኣይረጋገጽን፤ ናይ ባዕልኹም ቁጽሪ ጥራይ ተጠቐሙ።',
     forgot: 'PIN ረሲዕካዮ?', forgotInfo: 'ናይ PIN ምምላስ ኣገልግሎት ገና ኣይተዳለወን። በጃኹም ምስ ኣመሓዳሪ ተራኸቡ።',
-    brandLine: 'ኣብ ዘመናዊ መንገዲ ቢንጎ ተጻወቱን ተዘናግዑን።', welcome: 'እንቋዕ ብደሓን መጻእኩም', formHint: 'ንምቕጻል ናይ መለያ ሓበሬታኹም የእትዉ።', show: 'ኣርኢ', hide: 'ሕባእ',
+    languageLabel: 'ቋንቋ ምረጹ', brandLine: 'ኣብ ዘመናዊ መንገዲ ቢንጎ ተጻወቱን ተዘናግዑን።', welcome: 'እንቋዕ ብደሓን መጻእኩም', formHint: 'ንምቕጻል ናይ መለያ ሓበሬታኹም የእትዉ።', show: 'ኣርኢ', hide: 'ሕባእ',
   },
   en: {
     login: 'Sign in', register: 'Create account', phone: 'Phone number', name: 'Full name', pin: '6-digit PIN', confirmPin: 'Confirm PIN', pinMismatch: 'The PINs do not match.',
@@ -288,24 +297,24 @@ export const translations = {
     locked: 'Too many attempts. Try again in 15 minutes.', rate_limited: 'Too many requests. Wait a moment.', network: 'Can’t reach the server.', error: 'Something went wrong. Try again.',
     age: '18+ only. Phone numbers are not SMS-verified; use only your own number.',
     forgot: 'Forgot your PIN?', forgotInfo: 'PIN recovery is not available yet. Please contact the administrator for assistance.',
-    brandLine: 'Enjoy your bingo experience with a modern touch.', welcome: 'Welcome back', formHint: 'Enter your account details to continue.', show: 'Show', hide: 'Hide',
+    languageLabel: 'Choose language', brandLine: 'Enjoy your bingo experience with a modern touch.', welcome: 'Welcome back', formHint: 'Enter your account details to continue.', show: 'Show', hide: 'Hide',
   },
 },
   header: {
   am: {
     wallet: 'ቦርሳ ክፈት', admin: 'መቆጣጠሪያ ማዕከል', audio: 'የድምፅ ቅንብሮች',
     effects: 'የጨዋታ ድምፆች', voice: 'የቁጥር ንግግር', volume: 'የድምፅ መጠን',
-    voiceHelp: 'በመሣሪያዎ የድምፅ ድጋፍ ይወሰናል',
+    voiceHelp: 'በመሣሪያዎ የድምፅ ድጋፍ ይወሰናል', languageLabel: 'ቋንቋ',
   },
   ti: {
     wallet: 'ቦርሳ ክፈት', admin: 'ማእከል ቁጥጥሪ', audio: 'ቅንብራት ድምጺ',
     effects: 'ድምጺ ጸወታ', voice: 'ኣፍ ዘረባ ቁጽሪ', volume: 'መጠን ድምጺ',
-    voiceHelp: 'ኣብ ድጋፍ ድምጺ መሳርሒኻ ይምርኮስ',
+    voiceHelp: 'ኣብ ድጋፍ ድምጺ መሳርሒኻ ይምርኮስ', languageLabel: 'ቋንቋ',
   },
   en: {
     wallet: 'Open wallet', admin: 'Control Center', audio: 'Audio settings',
     effects: 'Game sound effects', voice: 'Spoken number calls', volume: 'Volume',
-    voiceHelp: 'Depends on speech voices available on your device',
+    voiceHelp: 'Depends on speech voices available on your device', languageLabel: 'Language',
   },
 },
   payment: {
@@ -315,19 +324,19 @@ export const translations = {
 },
   admin: {
   am: {
-    title: 'መቆጣጠሪያ ማዕከል',
+    languageLabel: 'ቋንቋ', title: 'መቆጣጠሪያ ማዕከል',
     back: '← ተጫዋች',
     denied: 'ይህ ገጽ ለጨዋታው ባለቤት ብቻ ነው።',
     demo: 'የሙከራ ሁነታ፦ ይህ በአንድ አሳሽ ውስጥ ብቻ የሚሰራ ማሳያ ነው፤ ማንም ሰው #host መክፈት ይችላል። ደህንነቱ የተጠበቀ አይደለም።',
   },
   ti: {
-    title: 'ማእከል ቁጥጥሪ',
+    languageLabel: 'ቋንቋ', title: 'ማእከል ቁጥጥሪ',
     back: '← ተጻዋታይ',
     denied: 'እዚ ገጽ ን ወናኒ እቲ ጸወታ ጥራይ እዩ።',
     demo: 'ናይ ፈተነ ኩነታት፦ እዚ ኣብ ሓደ ብሮውዘር ጥራይ ዝሰርሕ ምርኢት እዩ፤ ዝኾነ ሰብ #host ክኸፍት ይኽእል። ውሕስነት የብሉን።',
   },
   en: {
-    title: 'Control Center',
+    languageLabel: 'Language', title: 'Control Center',
     back: '← Player app',
     denied: 'This page is for the game owner only.',
     demo: 'Demo mode: runs in one browser only, and anyone can open #host. Not secure.',
@@ -614,10 +623,15 @@ export const translations = {
   ti: { title: 'ምምላስ PIN', phone: 'ቁጽሪ ተሌፎን', otp: 'ናይ ምርግጋጽ ኮድ (OTP)', newPin: 'ሓድሽ 6 ኣሃዝ PIN', confirm: 'ነቲ ሓድሽ PIN ደግም', next: 'ቀጽል', resend: 'እቲ ኮድ እንደገና ስደድ', back: 'ናብ መእተዊ ተመለስ', step: 'ደረጃ', preview: 'እዚ ናይ Frontend መርኣያ ጥራይ እዩ። SMS/OTP Backend ኣይተዳለወን፤ SMS ኣይለኣኽን፣ PIN እውን ኣይቅየርን።', timer: 'ናይ መርኣያ ግዜ ቆጸራ', unavailable: 'OTPን PINን ናይ ምምላስ Backend ክሳብ ዝዳሎ እዚ ስራሕ ኣይሰርሕን።', invalid: 'በጃኹም ቅኑዕ ሓበሬታ የእትዉ።' },
   en: { title: 'Reset your PIN', phone: 'Phone number', otp: 'Verification code (OTP)', newPin: 'New 6-digit PIN', confirm: 'Confirm new PIN', next: 'Continue', resend: 'Resend code', back: 'Back to sign in', step: 'Step', preview: 'Frontend preview only. SMS/OTP backend is not configured: no real SMS will be sent and no PIN will be changed.', timer: 'Demo countdown', unavailable: 'This action will not work until the OTP and PIN recovery backend is implemented.', invalid: 'Please enter valid information.' },
 },
+  serverAccess: {
+    am: { title: 'የሆስት ፈቃድ ያስፈልጋል', message: 'ይህ ክፍል ለተፈቀደለት ሆስት ብቻ ነው።', back: 'ወደ ጨዋታ ተመለስ' },
+    ti: { title: 'ፍቓድ ሆስት የድሊ', message: 'እዚ ክፍሊ ንዝተፈቕደሉ ሆስት ጥራይ እዩ።', back: 'ናብ ጸወታ ተመለስ' },
+    en: { title: 'Host access required', message: 'This area is available to authorized hosts only.', back: 'Back to the game' },
+  },
   navigation: {
-  am: { play: 'ጨዋታ', wallet: 'ቦርሳ', verify: 'አረጋግጥ' },
-  ti: { play: 'ጸወታ', wallet: 'ቦርሳ', verify: 'ኣረጋግጽ' },
-  en: { play: 'Play', wallet: 'Wallet', verify: 'Verify' },
+  am: { play: 'ጨዋታ', wallet: 'ቦርሳ', verify: 'አረጋግጥ', main: 'ዋና ማውጫ' },
+  ti: { play: 'ጸወታ', wallet: 'ቦርሳ', verify: 'ኣረጋግጽ', main: 'ቀንዲ ምናሌ' },
+  en: { play: 'Play', wallet: 'Wallet', verify: 'Verify', main: 'Main navigation' },
 },
 } as const;
 
