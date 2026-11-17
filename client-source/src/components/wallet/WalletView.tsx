@@ -9,7 +9,7 @@
  * with your real payment API call when you integrate Telebirr / CBE.
  */
 import { useMemo, useState } from 'react';
-import { translations } from '@/lib/localization';
+import { translations, formatAmount, formatDateTime } from '@/lib/localization';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
@@ -428,7 +428,7 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
                   <p className="text-sm font-semibold text-gold-300">
                     {tx.label ?? (tx.kind === 'deposit' ? t('depositTx') : t('purchaseTx'))}
                   </p>
-                  <p className="text-xs text-gold-700">{new Date(tx.at).toLocaleString()}</p>
+                  <p className="text-xs text-gold-700">{formatDateTime(lang, tx.at)}</p>
                 </div>
                 <p
                   className={[
