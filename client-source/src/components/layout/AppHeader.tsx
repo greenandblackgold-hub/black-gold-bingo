@@ -82,7 +82,7 @@ export function AppHeader({ onOpenWallet, onOpenAdmin }: { onOpenWallet: () => v
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
-          <div role="group" aria-label="Language" className="flex overflow-hidden rounded-full ring-1 ring-gold-700/60">
+          <div role="group" aria-label={l.languageLabel} className="flex overflow-hidden rounded-full ring-1 ring-gold-700/60">
             {LANGS.map((o) => (
               <button
                 key={o.id}
