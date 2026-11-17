@@ -1,63 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
+import { translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { api, ApiError } from '@/lib/api';
 
-const TEXT = {
-  am: {
-    title: 'የገንዘብ ማስገቢያ ጥያቄዎች',
-    empty: 'እስካሁን የቀረበ ጥያቄ የለም።',
-    approve: 'Approve · አጽድቅ',
-    reject: 'Reject · ውድቅ አድርግ',
-    refresh: 'አድስ',
-    pending: 'በመጠባበቅ ላይ',
-    amount: 'መጠን',
-    reference: 'የግብይት ማጣቀሻ',
-    player: 'ተጫዋች',
-    sent: 'የተላከበት ጊዜ',
-    error: 'ጥያቄውን ማስኬድ አልተቻለም።',
-    confirm: 'የባንክ/ቴሌብር መልዕክቱን አረጋግጠዋል? ከሆነ ብቻ Approve ይጫኑ።',
-    testOnly: 'የሙከራ ጥያቄ · ባላንስ አይጨምርም',
-    testApprove: 'TEST · የሙከራ ማጽደቅ',
-    testConfirm: 'ይህ የTEST ሙከራ ብቻ ነው። ምንም ባላንስ አይጨምርም። ለመቀጠል?',
-
-  },
-  ti: {
-    title: 'ሕቶታት ምእታው ገንዘብ',
-    empty: 'ክሳብ ሕጂ ሕቶ የለን።',
-    approve: 'Approve · ኣጽድቕ',
-    reject: 'Reject · ንጸግ',
-    refresh: 'ኣሐድስ',
-    pending: 'ይጽበ ኣሎ',
-    amount: 'መጠን',
-    reference: 'ማጣቀሻ ግብይት',
-    player: 'ተጻዋታይ',
-    sent: 'ዝተላእከሉ ግዜ',
-    error: 'ሕቶ ምስራሕ ኣይተኻእለን።',
-    confirm: 'መልእኽቲ ባንኪ/ቴሌብር ኣረጋጊጽኩምዶ? እንተኾይኑ ጥራይ Approve ጠውቑ።',
-    testOnly: 'ሙከራ ጥራይ · ሚዛን ኣይውሰኽን',
-    testApprove: 'TEST · ሙከራ ኣጽድቕ',
-    testConfirm: 'እዚ ናይ TEST ሙከራ ጥራይ እዩ። ሚዛን ኣይውሰኽን። ክትቅጽሉ?',
-
-  },
-  en: {
-    title: 'Deposit requests',
-    empty: 'There are no pending requests.',
-    approve: 'Approve',
-    reject: 'Reject',
-    refresh: 'Refresh',
-    pending: 'Pending',
-    amount: 'Amount',
-    reference: 'Transaction reference',
-    player: 'Player',
-    sent: 'Submitted',
-    error: 'Could not process the request.',
-    confirm: 'Have you verified the bank/Telebirr message? Only then approve this request.',
-    testOnly: 'TEST REQUEST · NO BALANCE CREDIT',
-    testApprove: 'TEST · Approve without credit',
-    testConfirm: 'This is only a TEST. No wallet balance will be credited. Continue?',
-
-  },
-} as const;
+const TEXT = translations.adminDeposits;
 
 interface DepositRow {
   id: string;
