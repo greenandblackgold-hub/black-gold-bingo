@@ -92,8 +92,8 @@ export function createAuthService({ repo, config }) {
     async resetPin({ phone, code, pin, pinConfirm }) {
       const p = normalizePhone(phone);
       if (!p) throw new HttpError(400, 'invalid_phone', 'Enter a valid Ethiopian mobile number');
-      if (!/^\\d{6}$/.test(String(code ?? ''))) throw new HttpError(400, 'invalid_otp', 'Enter the 6-digit reset code');
-      if (!/^\\d{6}$/.test(String(pin ?? ''))) throw new HttpError(400, 'invalid_pin', 'PIN must be 6 digits');
+      if (!/^\d{6}$/.test(String(code ?? ''))) throw new HttpError(400, 'invalid_otp', 'Enter the 6-digit reset code');
+      if (!/^\d{6}$/.test(String(pin ?? ''))) throw new HttpError(400, 'invalid_pin', 'PIN must be 6 digits');
       if (String(pin) !== String(pinConfirm ?? '')) throw new HttpError(400, 'pin_mismatch', 'PIN confirmation does not match');
       const user = await repo.findUserByPhone(p);
       const bad = new HttpError(400, 'invalid_reset_code', 'The reset code is incorrect or expired');
