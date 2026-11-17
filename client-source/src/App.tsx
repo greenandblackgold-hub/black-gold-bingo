@@ -22,6 +22,7 @@ const PlayView = lazy(() => import('@/components/play/PlayView').then((m) => ({ 
 const WalletView = lazy(() => import('@/components/wallet/WalletView').then((m) => ({ default: m.WalletView })));
 const VerifyView = lazy(() => import('@/components/verify/VerifyView').then((m) => ({ default: m.VerifyView })));
 const AuthScreen = lazy(() => import('@/components/auth/AuthScreen').then((m) => ({ default: m.AuthScreen })));
+const PhoneVerificationScreen = lazy(() => import('@/components/auth/PhoneVerificationScreen').then((m) => ({ default: m.PhoneVerificationScreen })));
 const PaymentReturnBanner = lazy(() => import('@/server/PaymentReturnBanner').then((m) => ({ default: m.PaymentReturnBanner })));
 
 function RouteLoading() {
@@ -107,7 +108,9 @@ function DemoApp() {
 function AuthGate({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="grid min-h-screen place-items-center text-gold-500" role="status">…</div>;
-  return user ? <>{children}</> : <Suspense fallback={<RouteLoading />}><AuthScreen /></Suspense>;
+  if (!user) return <Suspense fallback={<RouteLoading />}><AuthScreen /></Suspense>;
+  if (user.role !== 'admin' && user.phoneVerified !== true) return <Suspense fallback={<RouteLoading />}><PhoneVerificationScreen /></Suspense>;
+  return <>{children}</>;
 }
 
 /** Production: server accounts, live game and database-backed host authorization. */
