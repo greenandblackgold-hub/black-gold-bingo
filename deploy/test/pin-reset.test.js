@@ -23,7 +23,7 @@ test('admin-assisted PIN reset creates an admin-visible code and changes PIN exa
   const reset = await auth.resetPin({ phone: '0912345678', code: pending[0].code, pin: '654321', pinConfirm: '654321' });
   assert.equal(reset.reset, true);
   assert.equal((await auth.listPendingPinResets()).length, 0);
-  await assert.rejects(() => auth.resetPin({ phone: '0912345678', code: pending[0].code, pin: '111111', pinConfirm: '111111' }), { code: 'invalid_reset_code' });
+  await assert.rejects(() => auth.resetPin({ phone: '0912345678', code: pending[0].code, pin: '111111', pinConfirm: '111111' }), { code: 'reset_code_expired' });
   const login = await auth.login({ phone: '0912345678', pin: '654321' });
   assert.equal(login.user.phone, '0912345678');
   await assert.rejects(() => auth.login({ phone: '0912345678', pin: '123456' }), { code: 'invalid_credentials' });
