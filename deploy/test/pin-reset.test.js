@@ -18,7 +18,7 @@ test('admin-assisted PIN reset creates an admin-visible code and changes PIN exa
   const pending = await auth.listPendingPinResets();
   assert.equal(pending.length, 1);
   assert.equal(pending[0].phone, '0912345678');
-  assert.match(pending[0].code, /^\\d{6}$/);
+  assert.match(pending[0].code, /^\d{6}$/);
 
   const reset = await auth.resetPin({ phone: '0912345678', code: pending[0].code, pin: '654321', pinConfirm: '654321' });
   assert.equal(reset.reset, true);
