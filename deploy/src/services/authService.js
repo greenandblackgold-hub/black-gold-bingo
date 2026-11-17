@@ -62,7 +62,7 @@ export function createAuthService({ repo, config }) {
 
     async verifyPhoneCode(user, code) {
       const value = String(code ?? '');
-      if (!/^\\d{6}$/.test(value)) throw new HttpError(400, 'invalid_otp', 'Enter the 6-digit verification code');
+      if (!/^\d{6}$/.test(value)) throw new HttpError(400, 'invalid_otp', 'Enter the 6-digit verification code');
       if (user.role !== 'player' || user.phoneVerified !== false) return { verified: true, user: publicUser(user) };
       const c = await repo.getPhoneChallenge(user.id);
       if (!c || c.expiresAt <= new Date()) throw new HttpError(410, 'otp_expired', 'Code expired. Sign in again to request another.');
