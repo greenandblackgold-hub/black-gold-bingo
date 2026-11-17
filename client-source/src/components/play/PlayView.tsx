@@ -337,14 +337,14 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
               <p className="text-sm font-semibold text-gold-200" aria-live="polite">
                 {t('round')} <span className="font-black tabular-nums text-gold-400">#{roundNumber}</span>
               </p>
-              <p className="text-xs font-medium text-gold-500/90">የዚህ ዙር አሸናፊነት: {PATTERN_NAMES[lang][winPattern]}</p>
+              <p className="text-xs font-medium text-gold-500/90">{t('winningPattern')}: {PATTERN_NAMES[lang][winPattern]}</p>
             </div>
           </div>
 
           <div className="min-w-0 rounded-3xl border border-gold-700/40 bg-black/25 p-4 shadow-xl shadow-black/20 backdrop-blur-sm sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-600">LIVE CALLS</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-600">{t('liveCalls')}</p>
                 <h3 className="mt-1 text-base font-bold text-gold-200">{t('recent')}</h3>
               </div>
               <span className="rounded-full border border-gold-500/25 bg-gold-500/10 px-3 py-1 text-xs font-bold tabular-nums text-gold-300">
@@ -359,7 +359,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 aria-pressed={voiceEnabled}
                 className="rounded-xl border border-gold-700/60 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-gold-300 transition-colors hover:border-gold-400/60 hover:bg-gold-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
               >
-                {voiceEnabled ? '🔊 የአማርኛ ድምፅ በርቷል · ለማጥፋት ይጫኑ' : '🔇 የአማርኛ ድምፅ አብራ'}
+                {voiceEnabled ? t('amharicVoiceOn') : t('amharicVoiceOff')}
               </button>
               <button
                 type="button"
@@ -373,7 +373,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 }}
                 className="rounded-xl border border-gold-700/60 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-gold-300 transition-colors hover:border-gold-400/60 hover:bg-gold-400/10 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
               >
-                ▶ የመጨረሻውን ጥሪ አዳምጥ
+                ▶ {t('replayCall')}
               </button>
             </div>
 
@@ -407,7 +407,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         <section className="overflow-hidden rounded-3xl border border-gold-700/40 bg-gradient-to-br from-cardbg via-cardbg to-gold-950/20 p-3 shadow-xl shadow-black/20 ring-1 ring-gold-700/20 sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-gold-700/30 pb-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-600">NUMBER TRACKER</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-600">{t('numberTracker')}</p>
               <h3 className="mt-1 text-base font-bold text-gold-200">{t('board')}</h3>
             </div>
             <span className="rounded-full border border-gold-500/25 bg-gold-500/10 px-3 py-1 text-xs font-bold tabular-nums text-gold-300">{calledNumbers.length} / 75</span>
