@@ -64,7 +64,7 @@ export function createMemoryRepo() {
     },
     async completePhoneVerification(userId, codeHash) {
       const c = phoneChallenges.get(userId), u = users.get(userId);
-      if (!c || !u || u.role !== 'player' || u.phoneVerified !== false || c.codeHash !== codeHash || c.expiresAt <= new Date() || c.attempts >= 5) return false;
+      if (!c || !u || u.role !== 'player' || u.phoneVerified === true || c.codeHash !== codeHash || c.expiresAt <= new Date() || c.attempts >= 5) return false;
       phoneChallenges.delete(userId);
       u.phoneVerified = true;
       u.phoneVerifiedAt = new Date();
