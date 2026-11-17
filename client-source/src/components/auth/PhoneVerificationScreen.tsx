@@ -46,7 +46,7 @@ export function PhoneVerificationScreen() {
       <button type="button" disabled={busy} onClick={() => void request()} className="w-full rounded-xl bg-gold-500 px-4 py-3 font-bold text-black disabled:opacity-50">{t.request}</button>
       {requested && <div className="space-y-3">
         <label className="block text-sm text-gold-300" htmlFor="phone-otp">{t.code}</label>
-        <input id="phone-otp" value={code} onChange={e => setCode(e.target.value.replace(/\\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="w-full rounded-xl border border-gold-700 bg-black/30 px-4 py-3 text-center text-2xl tracking-[0.5em]" />
+        <input id="phone-otp" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="w-full rounded-xl border border-gold-700 bg-black/30 px-4 py-3 text-center text-2xl tracking-[0.5em]" />
         <button type="button" disabled={busy || code.length !== 6} onClick={() => void verify()} className="w-full rounded-xl bg-gold-500 px-4 py-3 font-bold text-black disabled:opacity-50">{t.verify}</button>
       </div>}
       {message && <p role="status" className="text-sm text-green-300">{message}</p>}
