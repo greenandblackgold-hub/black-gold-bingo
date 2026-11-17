@@ -310,11 +310,11 @@ function PurchasePanel({
       </div>
 
       <div className="mb-4">
-        <label htmlFor="chosen-card-number" className="mb-2 block text-sm text-gold-500">የሚፈልጉት የካርድ ቁጥር (አማራጭ · 5 አሃዝ)</label>
-        <input id="chosen-card-number" inputMode="numeric" maxLength={5} placeholder="ለምሳሌ 12345 ወይም 34245" value={cardNumber}
+        <label htmlFor="chosen-card-number" className="mb-2 block text-sm text-gold-500">{t('chosenCard')}</label>
+        <input id="chosen-card-number" inputMode="numeric" maxLength={5} placeholder={t('chosenCardPlaceholder')} value={cardNumber}
           onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 5); setCardNumber(v); if (v) setCount(1); }}
           className={inputCls} />
-        <p className="mt-1 text-xs text-gold-700">ቁጥሩ በሌላ ተጫዋች ካልተያዘ ይሰጥዎታል። ከተያዘ ሌላ ቁጥር ይምረጡ።</p>
+        <p className="mt-1 text-xs text-gold-700">{t('chosenCardHelp')}</p>
       </div>
 
       <div className="mb-4 flex items-center justify-between">
