@@ -26,6 +26,7 @@ export async function createMongoRepo({ uri, dbName }) {
   const winPayouts = db.collection('winPayouts');
   const rounds = db.collection('rounds');
   const phoneChallenges = db.collection('phoneVerificationChallenges');
+  const pinResetChallenges = db.collection('pinResetChallenges');
 
   async function tx(fn) {
     const session = client.startSession();
@@ -71,6 +72,7 @@ export async function createMongoRepo({ uri, dbName }) {
         winPayouts.createIndex({ status: 1, createdAt: -1 }),
         rounds.createIndex({ round: 1 }, { unique: true }),
         phoneChallenges.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+        pinResetChallenges.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
       ]);
       await games.updateOne({ _id: 'state' }, { $setOnInsert: { ...DEFAULT_GAME } }, { upsert: true });
     },
@@ -125,6 +127,34 @@ export async function createMongoRepo({ uri, dbName }) {
     },
     async listPendingPhoneChallenges() {
       const rows = await phoneChallenges.find({ expiresAt: { $gt: new Date() }, attempts: { $lt: 5 } }).sort({ createdAt: 1 }).limit(200).toArray();
+      return Promise.all(rows.map(async (c) => {
+        const u = await users.findOne({ _id: c._id }, { projection: { name: 1, phone: 1, role: 1 } });
+        return u?.role === 'player' ? { userId: c._id, name: u.name, phone: u.phone, codeEncrypted: c.codeEncrypted, expiresAt: c.expiresAt, attempts: c.attempts } : null;
+      })).then((items) => items.filter(Boolean));
+    },
+
+    /* Admin-assisted PIN recovery, separate from phone verification. */
+    async createPinResetChallenge({ userId, codeHash, codeEncrypted, expiresAt }) {
+      await pinResetChallenges.updateOne({ _id: userId }, { $set: { codeHash, codeEncrypted, expiresAt, attempts: 0, createdAt: new Date() } }, { upsert: true });
+    },
+    async getPinResetChallenge(userId) {
+      return pinResetChallenges.findOne({ _id: userId });
+    },
+    async recordPinResetFailure(userId) {
+      await pinResetChallenges.updateOne({ _id: userId, expiresAt: { $gt: new Date() }, attempts: { $lt: 5 } }, { $inc: { attempts: 1 } });
+    },
+    async completePinReset(userId, codeHash, pinHash) {
+      return tx(async (session) => {
+        const challenge = await pinResetChallenges.findOne({ _id: userId, codeHash, expiresAt: { $gt: new Date() }, attempts: { $lt: 5 } }, { session });
+        if (!challenge) return false;
+        const removed = await pinResetChallenges.deleteOne({ _id: userId, codeHash, expiresAt: { $gt: new Date() }, attempts: { $lt: 5 } }, { session });
+        if (removed.deletedCount !== 1) return false;
+        const updated = await users.updateOne({ _id: userId, role: 'player' }, { $set: { pinHash, failedLogins: 0, lockedUntil: 0, pinUpdatedAt: new Date() } }, { session });
+        return updated.modifiedCount === 1;
+      });
+    },
+    async listPendingPinResets() {
+      const rows = await pinResetChallenges.find({ expiresAt: { $gt: new Date() }, attempts: { $lt: 5 } }).sort({ createdAt: 1 }).limit(200).toArray();
       return Promise.all(rows.map(async (c) => {
         const u = await users.findOne({ _id: c._id }, { projection: { name: 1, phone: 1, role: 1 } });
         return u?.role === 'player' ? { userId: c._id, name: u.name, phone: u.phone, codeEncrypted: c.codeEncrypted, expiresAt: c.expiresAt, attempts: c.attempts } : null;
