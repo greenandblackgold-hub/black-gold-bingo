@@ -9,7 +9,7 @@
  * with your real payment API call when you integrate Telebirr / CBE.
  */
 import { useMemo, useState } from 'react';
-import { translations, formatAmount, formatDateTime } from '@/lib/localization';
+import { translations, formatAmount, formatDateTime, formatNumber } from '@/lib/localization';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
@@ -268,9 +268,11 @@ function PurchasePanel({
   onGoToPlay,
   locked,
   formatAmount,
+  formatNumber,
 }: {
   t: (k: StringKey) => string;
   formatAmount: (n: number) => string;
+  formatNumber: (n: number) => string;
   price: number;
   balance: number;
   onBuy: (count: number, serial?: string) => Promise<{ ok: boolean; error?: string }>;
@@ -332,7 +334,7 @@ function PurchasePanel({
             −
           </button>
           <span className="w-8 text-center text-2xl font-black tabular-nums text-gold-400" aria-live="polite">
-            {count}
+            {formatNumber(count)}
           </span>
           <button
             type="button"
@@ -389,6 +391,7 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
   const { lang, cardPrice, balance, ownedCount, transactions, deposit, buyCards } = useWalletData();
   const t = (k: StringKey) => (STRINGS[lang] ?? STRINGS.en)[k];
   const fmt = (n: number) => formatAmount(lang, n);
+  const fmtNumber = (n: number) => formatNumber(lang, n);
   const { phase } = useRound();
 
   const recent = useMemo(() => [...transactions].sort((a, b) => b.at - a.at).slice(0, 8), [transactions]);
@@ -403,13 +406,13 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
           <span className="ml-2 text-xl font-bold text-gold-500">{t('etb')}</span>
         </p>
         <p className="mt-3 text-sm text-gold-500">
-          {t('owned')}: <span className="font-bold tabular-nums text-gold-300">{ownedCount}</span>
+          {t('owned')}: <span className="font-bold tabular-nums text-gold-300">{formatNumber(lang, ownedCount)}</span>
         </p>
       </section>
 
       <div className="grid items-start gap-5 lg:grid-cols-2">
         {SERVER_MODE ? <SmsDepositPanel /> : <DepositPanel t={t} formatAmount={fmt} onDeposit={deposit} />}
-        <PurchasePanel t={t} formatAmount={fmt} price={cardPrice} balance={balance} onBuy={buyCards} onGoToPlay={onGoToPlay} locked={phase !== 'waiting'} />
+        <PurchasePanel t={t} formatAmount={fmt} formatNumber={fmtNumber} price={cardPrice} balance={balance} onBuy={buyCards} onGoToPlay={onGoToPlay} locked={phase !== 'waiting'} />
         {SERVER_MODE && <SimulationWithdrawalPanel />}
       </div>
 
