@@ -1,13 +1,10 @@
 import type { ReactNode } from 'react';
+import { translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 
 export type TabId = 'play' | 'wallet' | 'verify';
 
-const LABELS: Record<'am' | 'ti' | 'en', Record<TabId, string>> = {
-  am: { play: 'ጨዋታ', wallet: 'ቦርሳ', verify: 'አረጋግጥ' },
-  ti: { play: 'ጸወታ', wallet: 'ቦርሳ', verify: 'ኣረጋግጽ' },
-  en: { play: 'Play', wallet: 'Wallet', verify: 'Verify' },
-};
+const LABELS = translations.navigation;
 
 function Icon({ children }: { children: ReactNode }) {
   return (
