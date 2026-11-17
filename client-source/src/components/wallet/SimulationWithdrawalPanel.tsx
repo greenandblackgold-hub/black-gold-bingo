@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
+import { translations } from '@/lib/localization';
 import { api, ApiError } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 
-const TXT = {
-  am: { title: 'የገንዘብ ማውጫ ጥያቄ', amount: 'መጠን (ETB)', method: 'የመቀበያ ዘዴ (አማራጭ)', telebirr: 'Telebirr', bank: 'Bank', destination: 'የስልክ/አካውንት ቁጥር (አማራጭ)', send: 'ጥያቄ ላክ', busy: 'በመላክ ላይ…', ok: 'ጥያቄው ተልኳል። ሂሳቡ ተይዟል።', note: 'ጥያቄዎች በአስተዳዳሪ ይገመገማሉ፤ ማጽደቅ የባንክ/Telebirr ዝውውር አያከናውንም።', err: 'ጥያቄውን መላክ አልተቻለም' },
-  ti: { title: 'ሕቶ ምውጻእ', amount: 'መጠን (ETB)', method: 'መንገዲ ተቐባሊ (ኣማራጺ)', telebirr: 'Telebirr', bank: 'Bank', destination: 'ቁጽሪ ስልኪ/ሕሳብ (ኣማራጺ)', send: 'ሕቶ ስደድ', busy: 'ይስደድ ኣሎ…', ok: 'ሕቶ ተላኢኹ። ሒሳብ ተሓዚ።', note: 'ሕቶታት ብኣማሓዳሪ ይምርመሩ፤ ምጽዳቕ ናይ ባንክ/Telebirr ምስግጋር ኣይፍጽምን።', err: 'ሕቶ ምስዳድ ኣይተኻእለን' },
-  en: { title: 'Withdrawal request', amount: 'Amount (ETB)', method: 'Destination method (optional)', telebirr: 'Telebirr', bank: 'Bank', destination: 'Phone / account number (optional)', send: 'Submit request', busy: 'Submitting…', ok: 'Request submitted. Balance has been reserved.', note: 'Requests are reviewed by an administrator. Approval does not initiate a bank or Telebirr transfer.', err: 'Could not submit request' },
-} as const;
+const TXT = translations.withdrawPanel;
 
 type WithdrawalRow = { id: string; amount: number; method: string; destination: string; status: string; at: number };
 
