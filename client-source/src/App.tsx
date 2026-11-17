@@ -1,4 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { translations } from '@/lib/localization';
+import { useLanguage } from '@/context/LanguageContext';
 import { AdminApp } from '@/components/admin/AdminApp';
 import { AudioCallAnnouncer } from '@/components/audio/AudioCallAnnouncer';
 import { AppHeader } from '@/components/layout/AppHeader';
@@ -58,6 +60,8 @@ function DemoRouter() {
 function ServerRouter() {
   const hash = useHash();
   const { user } = useAuth();
+  const { lang } = useLanguage();
+  const accessText = translations.serverAccess[lang];
   const closeAdmin = () => { window.location.hash = 'play'; };
   const openAdmin = () => {
     if (user?.role === 'admin') window.location.hash = ADMIN_HASH;
@@ -66,9 +70,9 @@ function ServerRouter() {
     return (
       <main className="grid min-h-screen place-items-center bg-black p-6 text-center text-white">
         <section className="max-w-md rounded-2xl border border-gold-500/40 bg-zinc-950 p-8">
-          <h1 className="mb-3 text-xl font-bold text-gold-400">የሆስት ፈቃድ ያስፈልጋል</h1>
-          <p className="mb-6 text-sm text-zinc-300">ይህ ክፍል ለተፈቀደለት ሆስት ብቻ ነው።</p>
-          <button className="rounded-lg bg-gold-500 px-5 py-3 font-semibold text-black" onClick={closeAdmin}>ወደ ጨዋታ ተመለስ</button>
+          <h1 className="mb-3 text-xl font-bold text-gold-400">{accessText.title}</h1>
+          <p className="mb-6 text-sm text-zinc-300">{accessText.message}</p>
+          <button className="rounded-lg bg-gold-500 px-5 py-3 font-semibold text-black" onClick={closeAdmin}>{accessText.back}</button>
         </section>
       </main>
     );
