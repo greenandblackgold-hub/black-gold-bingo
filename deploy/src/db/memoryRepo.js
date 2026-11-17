@@ -16,6 +16,7 @@ export function createMemoryRepo() {
   const withdrawals = new Map();
   const winPayouts = new Map();
   const rounds = new Map();
+  const phoneChallenges = new Map();
   let game = { ...DEFAULT_GAME, calledNumbers: [] };
 
   const credit = (userId, amount, kind, ref, meta = {}) => {
@@ -50,6 +51,30 @@ export function createMemoryRepo() {
     async updateUser(id, patch) {
       const u = users.get(id);
       if (u) Object.assign(u, patch);
+    },
+
+    /* phone verification: isolated in-memory challenge store for tests/dev only */
+    async createPhoneChallenge({ userId, codeHash, codeEncrypted, expiresAt }) {
+      phoneChallenges.set(userId, { userId, codeHash, codeEncrypted, expiresAt, attempts: 0, createdAt: new Date() });
+    },
+    async getPhoneChallenge(userId) { return clone(phoneChallenges.get(userId) ?? null); },
+    async recordPhoneChallengeFailure(userId) {
+      const c = phoneChallenges.get(userId);
+      if (c && c.expiresAt > new Date() && c.attempts < 5) c.attempts += 1;
+    },
+    async completePhoneVerification(userId, codeHash) {
+      const c = phoneChallenges.get(userId), u = users.get(userId);
+      if (!c || !u || u.role !== 'player' || u.phoneVerified !== false || c.codeHash !== codeHash || c.expiresAt <= new Date() || c.attempts >= 5) return false;
+      phoneChallenges.delete(userId);
+      u.phoneVerified = true;
+      u.phoneVerifiedAt = new Date();
+      return true;
+    },
+    async listPendingPhoneChallenges() {
+      return [...phoneChallenges.values()].filter((c) => c.expiresAt > new Date() && c.attempts < 5).map((c) => {
+        const u = users.get(c.userId);
+        return u?.role === 'player' ? { userId: c.userId, name: u.name, phone: u.phone, codeEncrypted: c.codeEncrypted, expiresAt: c.expiresAt, attempts: c.attempts } : null;
+      }).filter(Boolean);
     },
 
     /* game state (optimistic concurrency on `version`) */
