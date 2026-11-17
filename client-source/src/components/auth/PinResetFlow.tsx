@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react';
+import { translations } from '@/lib/localization';
 import type { Lang } from '@/types/game';
 
-const COPY = {
-  am: { title: 'የPIN ማገገሚያ', phone: 'ስልክ ቁጥር', otp: 'የማረጋገጫ ኮድ (OTP)', newPin: 'አዲስ 6 አሃዝ PIN', confirm: 'አዲሱን PIN ድገሙ', next: 'ቀጥል', resend: 'ኮዱን እንደገና ላክ', back: 'ወደ መግቢያ ተመለስ', step: 'ደረጃ', preview: 'ይህ የFrontend ማሳያ ብቻ ነው። SMS/OTP Backend አልተዘጋጀም፤ እውነተኛ SMS አይላክም፣ PINም አይቀየርም።', timer: 'የማሳያ ቆጣሪ', unavailable: 'የOTP እና PIN ማገገሚያ Backend እስኪዘጋጅ ድረስ ይህ እርምጃ አይሰራም።', invalid: 'እባክዎ ትክክለኛ መረጃ ያስገቡ።' },
-  ti: { title: 'ምምላስ PIN', phone: 'ቁጽሪ ተሌፎን', otp: 'ናይ ምርግጋጽ ኮድ (OTP)', newPin: 'ሓድሽ 6 ኣሃዝ PIN', confirm: 'ነቲ ሓድሽ PIN ደግም', next: 'ቀጽል', resend: 'እቲ ኮድ እንደገና ስደድ', back: 'ናብ መእተዊ ተመለስ', step: 'ደረጃ', preview: 'እዚ ናይ Frontend መርኣያ ጥራይ እዩ። SMS/OTP Backend ኣይተዳለወን፤ SMS ኣይለኣኽን፣ PIN እውን ኣይቅየርን።', timer: 'ናይ መርኣያ ግዜ ቆጸራ', unavailable: 'OTPን PINን ናይ ምምላስ Backend ክሳብ ዝዳሎ እዚ ስራሕ ኣይሰርሕን።', invalid: 'በጃኹም ቅኑዕ ሓበሬታ የእትዉ።' },
-  en: { title: 'Reset your PIN', phone: 'Phone number', otp: 'Verification code (OTP)', newPin: 'New 6-digit PIN', confirm: 'Confirm new PIN', next: 'Continue', resend: 'Resend code', back: 'Back to sign in', step: 'Step', preview: 'Frontend preview only. SMS/OTP backend is not configured: no real SMS will be sent and no PIN will be changed.', timer: 'Demo countdown', unavailable: 'This action will not work until the OTP and PIN recovery backend is implemented.', invalid: 'Please enter valid information.' },
-} as const;
+const COPY = translations.pinReset;
 
 export function PinResetFlow({ lang, onClose }: { lang: Lang; onClose: () => void }) {
   const t = COPY[lang];
