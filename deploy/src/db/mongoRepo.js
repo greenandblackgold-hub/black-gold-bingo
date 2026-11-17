@@ -66,6 +66,7 @@ export async function createMongoRepo({ uri, dbName }) {
         payments.createIndex({ txRef: 1 }, { unique: true }),
         withdrawals.createIndex({ status: 1, createdAt: -1 }),
         withdrawals.createIndex({ userId: 1, createdAt: -1 }),
+        withdrawals.createIndex({ externalPayoutReference: 1 }, { unique: true, partialFilterExpression: { externalPayoutReference: { $type: 'string' } } }),
         winPayouts.createIndex({ status: 1, createdAt: -1 }),
         rounds.createIndex({ round: 1 }, { unique: true }),
       ]);
@@ -290,6 +291,72 @@ export async function createMongoRepo({ uri, dbName }) {
         );
         if (!w) return null;
         await moveMoney(session, { userId: w.userId, amount: w.amount, kind: 'simulation_withdraw_refund', ref: `simwd-refund:${id}`, meta: { id } });
+        return toDoc(w);
+      });
+    },
+
+    /* Manual withdrawals: real wallet funds are held until an admin records an external payout reference. */
+    async requestManualWithdrawal({ id, userId, amount, method, destination }) {
+      return tx(async (session) => {
+        await moveMoney(session, { userId, amount: -amount, kind: 'manual_withdraw_hold', ref: `manual-wd:${id}`, meta: { id, method } });
+        const doc = {
+          _id: id, userId, amount, method, destination, mode: 'manual',
+          status: 'pending', note: '', createdAt: new Date(), updatedAt: new Date(),
+        };
+        await withdrawals.insertOne(doc, { session });
+        return toDoc(doc);
+      });
+    },
+    async listManualWithdrawals({ status = 'pending', userId } = {}) {
+      const q = { mode: 'manual' };
+      if (status) q.status = status;
+      if (userId) q.userId = userId;
+      const rows = await withdrawals.find(q).sort({ createdAt: -1 }).limit(200).toArray();
+      return Promise.all(rows.map(async (w) => {
+        const u = await users.findOne({ _id: w.userId }, { projection: { name: 1, phone: 1 } });
+        return {
+          id: w._id, userId: w.userId, amount: w.amount / 100,
+          method: w.method ?? '', destination: w.destination ?? '',
+          status: w.status, note: w.note ?? '',
+          externalPayoutReference: w.externalPayoutReference ?? '',
+          payoutMethod: w.payoutMethod ?? '',
+          processingBy: w.processingBy ?? null, paidBy: w.paidBy ?? null,
+          at: new Date(w.createdAt).getTime(),
+          userName: u?.name ?? 'Unknown', userPhone: u?.phone ?? '',
+        };
+      }));
+    },
+    async transitionManualWithdrawal(id, from, to, patch = {}) {
+      const w = await withdrawals.findOneAndUpdate(
+        { _id: id, mode: 'manual', status: { $in: from } },
+        { $set: { ...patch, status: to, updatedAt: new Date() } },
+        { returnDocument: 'after' },
+      );
+      return toDoc(w);
+    },
+    async confirmManualWithdrawal({ id, externalReference, payoutMethod, adminId }) {
+      const w = await withdrawals.findOneAndUpdate(
+        { _id: id, mode: 'manual', status: 'processing' },
+        { $set: {
+          status: 'paid', externalPayoutReference: externalReference,
+          payoutMethod, paidBy: adminId, paidAt: new Date(), updatedAt: new Date(),
+        } },
+        { returnDocument: 'after' },
+      );
+      return toDoc(w);
+    },
+    async rejectManualWithdrawalAndRefund(id, note, adminId) {
+      return tx(async (session) => {
+        const w = await withdrawals.findOneAndUpdate(
+          { _id: id, mode: 'manual', status: 'pending' },
+          { $set: { status: 'rejected', note, reviewedBy: adminId, updatedAt: new Date() } },
+          { returnDocument: 'after', session },
+        );
+        if (!w) return null;
+        await moveMoney(session, {
+          userId: w.userId, amount: w.amount, kind: 'manual_withdraw_refund',
+          ref: `manual-wd-refund:${id}`, meta: { id },
+        });
         return toDoc(w);
       });
     },
