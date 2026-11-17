@@ -420,7 +420,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
         user = await auth.authenticate(header.startsWith('Bearer ') ? header.slice(7) : '');
         if (!user) throw new HttpError(401, 'unauthorized', 'Please sign in');
         if (r.access === 'admin' && user.role !== 'admin') throw new HttpError(403, 'forbidden', 'Admins only');
-        if (r.access === 'user' && user.role === 'player' && user.phoneVerified === false && url.pathname !== '/api/me' && url.pathname !== '/api/auth/phone-otp/verify') throw new HttpError(403, 'phone_verification_required', 'Verify your phone number before using this feature');
+        if (r.access === 'user' && user.role === 'player' && user.phoneVerified !== true && url.pathname !== '/api/me' && url.pathname !== '/api/auth/phone-otp/verify') throw new HttpError(403, 'phone_verification_required', 'Verify your phone number before using this feature');
       }
 
       const rawBody = req.method === 'POST' ? await readBody(req) : '';
