@@ -75,7 +75,7 @@ export function AuthScreen() {
             <span className="text-sm font-black tracking-wider text-gold-300">BLACK GOLD</span>
           </div>
           <label className="ml-auto">
-            <span className="sr-only">Choose language</span>
+            <span className="sr-only">{t.languageLabel}</span>
             <select value={lang} onChange={(e) => setLang(e.target.value as Lang)} className="rounded-lg border border-gold-700/50 bg-cardbg px-3 py-2 text-sm text-gold-300 outline-none transition focus:border-gold-400">
               {(['am', 'ti', 'en'] as Lang[]).map((code) => <option key={code} value={code}>{LANG_LABELS[code]}</option>)}
             </select>
