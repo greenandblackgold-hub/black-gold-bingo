@@ -27,6 +27,8 @@ async function newPlayer(name = 'Test Player', fund = 0) {
   const phone = newPhone();
   const r = await api('POST', '/api/auth/register', { body: { phone, name, pin: '123456', pinConfirm: '123456' } });
   assert.equal(r.status, 200, JSON.stringify(r.json));
+  // Existing game/wallet integration tests use a verified fixture; OTP behavior is covered separately below.
+  await ctx.repo.updateUser(r.json.user.id, { phoneVerified: true });
   if (fund) await ctx.repo.applyLedger({ userId: r.json.user.id, amount: fund * 100, kind: 'deposit', ref: `seed:${r.json.user.id}` });
   return { ...r.json, phone };
 }
@@ -83,6 +85,42 @@ test('register, login, wrong PIN, lockout after 5 failures', async () => {
   const locked = await api('POST', '/api/auth/login', { body: { phone, pin: '123456' } });
   assert.equal(locked.status, 429);
   assert.equal(locked.json.error, 'locked');
+});
+
+test('admin-assisted phone OTP is hidden from players and unlocks the player after one successful use', async () => {
+  const phone = newPhone();
+  const registered = await api('POST', '/api/auth/register', { body: { phone, name: 'OTP Player', pin: '123456', pinConfirm: '123456' } });
+  assert.equal(registered.status, 200);
+  assert.equal(registered.json.user.phoneVerified, false);
+  const token = registered.json.token;
+  assert.equal((await api('GET', '/api/cards', { token })).status, 403);
+  const requested = await api('POST', '/api/phone-verification/request', { token, body: {} });
+  assert.equal(requested.status, 200);
+  const adminList = await api('GET', '/api/admin/phone-verifications', { token: ctx.adminToken });
+  assert.equal(adminList.status, 200);
+  const challenge = adminList.json.find(x => x.phone === phone);
+  assert.ok(challenge);
+  assert.match(challenge.code, /^\\d{6}$/);
+  assert.equal((await api('GET', '/api/admin/phone-verifications', { token })).status, 403);
+  const verified = await api('POST', '/api/phone-verification/verify', { token, body: { code: challenge.code } });
+  assert.equal(verified.status, 200, JSON.stringify(verified.json));
+  assert.equal(verified.json.phoneVerified, true);
+  assert.equal((await api('GET', '/api/cards', { token })).status, 200);
+  assert.equal((await api('POST', '/api/phone-verification/verify', { token, body: { code: challenge.code } })).status, 400);
+});
+
+test('phone OTP rejects wrong codes and enforces a maximum of five attempts', async () => {
+  const phone = newPhone();
+  const registered = await api('POST', '/api/auth/register', { body: { phone, name: 'OTP Attempts', pin: '123456', pinConfirm: '123456' } });
+  const token = registered.json.token;
+  await api('POST', '/api/phone-verification/request', { token, body: {} });
+  for (let i = 0; i < 5; i++) {
+    const wrong = await api('POST', '/api/phone-verification/verify', { token, body: { code: '000000' } });
+    assert.equal(wrong.status, 400);
+    assert.equal(wrong.json.error, 'invalid_otp');
+  }
+  const locked = await api('POST', '/api/phone-verification/verify', { token, body: { code: '000000' } });
+  assert.equal(locked.json.error, 'otp_expired');
 });
 
 test('authorization: no token = 401, player on admin route = 403, forged token = 401', async () => {
