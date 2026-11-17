@@ -253,6 +253,50 @@ test('simulation withdrawals reserve balance, expose test destination to admins,
   assert.equal((await api('GET', '/api/admin/withdrawals/simulation?status=pending', { token: ctx.adminToken })).json.some((w) => w.id === rejectedRequest.json.id), false);
 });
 
+test('manual real-wallet withdrawals require processing and a unique external payout reference', async () => {
+  const p = await newPlayer('Manual Cashout Player', 100);
+  const invalid = await api('POST', '/api/manual/withdrawals', {
+    token: p.token, body: { amount: 20, method: 'telebirr', destination: '0912345678' },
+  });
+  assert.equal(invalid.status, 400);
+  const request = await api('POST', '/api/manual/withdrawals', {
+    token: p.token, body: { amount: 50, method: 'telebirr', destination: '0912345678' },
+  });
+  assert.equal(request.status, 200, JSON.stringify(request.json));
+  assert.equal(request.json.status, 'pending');
+  assert.equal(request.json.balance, 50);
+  assert.equal((await api('GET', '/api/manual/withdrawals', { token: p.token })).json[0].status, 'pending');
+
+  const premature = await api('POST', `/api/admin/manual-withdrawals/${request.json.id}/confirm`, {
+    token: ctx.adminToken, body: { externalReference: 'BANK-REF-000001', method: 'telebirr' },
+  });
+  assert.equal(premature.status, 409);
+
+  const started = await api('POST', `/api/admin/manual-withdrawals/${request.json.id}/start`, { token: ctx.adminToken });
+  assert.equal(started.status, 200);
+  assert.equal(started.json.status, 'processing');
+
+  const paid = await api('POST', `/api/admin/manual-withdrawals/${request.json.id}/confirm`, {
+    token: ctx.adminToken, body: { externalReference: 'BANK-REF-000001', method: 'telebirr' },
+  });
+  assert.equal(paid.status, 200, JSON.stringify(paid.json));
+  assert.equal(paid.json.status, 'paid');
+  assert.equal(paid.json.externalReference, 'BANK-REF-000001');
+  assert.equal((await api('GET', '/api/manual/withdrawals', { token: p.token })).json.find((w) => w.id === request.json.id).status, 'paid');
+
+  const second = await api('POST', '/api/manual/withdrawals', {
+    token: p.token, body: { amount: 50, method: 'bank', destination: '1000123456789' },
+  });
+  assert.equal(second.status, 200);
+  const startSecond = await api('POST', `/api/admin/manual-withdrawals/${second.json.id}/start`, { token: ctx.adminToken });
+  assert.equal(startSecond.status, 200);
+  const duplicate = await api('POST', `/api/admin/manual-withdrawals/${second.json.id}/confirm`, {
+    token: ctx.adminToken, body: { externalReference: 'BANK-REF-000001', method: 'bank' },
+  });
+  assert.equal(duplicate.status, 409);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
+});
+
 test('cards: buying, balance checks, round gating, server-issued grids', async () => {
   await freshRound();
   const p = await newPlayer('Buyer', 35);

@@ -9,22 +9,22 @@ type WithdrawalRow = { id: string; amount: number; method: string; destination: 
 
 export function SimulationWithdrawalPanel() {
   const [rows, setRows] = useState<WithdrawalRow[]>([]);
-  const [amount, setAmount] = useState('10');
-  const [method, setMethod] = useState('');
+  const [amount, setAmount] = useState('50');
+  const [method, setMethod] = useState('telebirr');
   const [destination, setDestination] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const { lang } = useLanguage();
   const t = TXT[lang] ?? TXT.en;
-  const load = async () => { try { setRows(await api.get<WithdrawalRow[]>('/api/simulation/withdrawals')); } catch { /* request form remains usable */ } };
+  const load = async () => { try { setRows(await api.get<WithdrawalRow[]>('/api/manual/withdrawals')); } catch { /* request form remains usable */ } };
   useEffect(() => { void load(); }, []);
   const submit = async () => {
     setBusy(true); setError(''); setMessage('');
     try {
-      await api.post('/api/simulation/withdrawals', { amount: Number(amount), method, destination });
+      await api.post('/api/manual/withdrawals', { amount: Number(amount), method, destination });
       await load();
-      setMessage(t.ok); setAmount('10'); setDestination('');
+      setMessage(t.ok); setAmount('50'); setDestination('');
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t.err);
     } finally { setBusy(false); }
@@ -38,11 +38,11 @@ export function SimulationWithdrawalPanel() {
       </label>
       <label className="block text-sm text-gold-500">{t.method}
         <select value={method} onChange={e => setMethod(e.target.value)} className="mt-1 w-full rounded-xl bg-cardbg px-4 py-3 text-gold-200 ring-1 ring-gold-700/50 transition focus:outline-none focus:ring-2 focus:ring-gold-400">
-          <option value="">—</option><option value="telebirr">{t.telebirr}</option><option value="bank">{t.bank}</option>
+          <option value="telebirr">{t.telebirr}</option><option value="bank">{t.bank}</option>
         </select>
       </label>
       <label className="block text-sm text-gold-500">{t.destination}
-        <input value={destination} maxLength={80} onChange={e => setDestination(e.target.value)} placeholder="09XXXXXXXX / account" className="mt-1 w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-300 ring-1 ring-gold-700/50" />
+        <input required value={destination} maxLength={80} onChange={e => setDestination(e.target.value)} placeholder="09XXXXXXXX / account" className="mt-1 w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-300 ring-1 ring-gold-700/50" />
       </label>
       {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
       {message && <p role="status" className="text-sm text-gold-300">{message}</p>}

@@ -205,6 +205,19 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
     return { id: w.id, status: w.status, balance: fresh.balance / 100 };
   });
 
+  /* Manual real-wallet withdrawals: payout is recorded only after an admin enters the external reference. */
+  route('POST', '/api/manual/withdrawals', 'user', 'money', async ({ user, body }) => {
+    const result = await wallet.requestManualWithdrawal(user, body);
+    return result;
+  });
+  route('GET', '/api/manual/withdrawals', 'user', 'default', async ({ user }) =>
+    (await wallet.listMyManualWithdrawals(user)).map((w) => ({
+      id: w.id, amount: w.amount, method: w.method, destination: w.destination,
+      status: w.status, externalPayoutReference: w.externalPayoutReference ?? '',
+      at: w.at ?? new Date(w.createdAt).getTime(),
+    })),
+  );
+
   /* payment provider callbacks (public, but never trusted: every one re-verifies with Chapa) */
   route('GET', '/api/payments/chapa/callback', 'public', 'default', async ({ query }) => {
     const ref = query.get('trx_ref') ?? query.get('tx_ref');
@@ -223,6 +236,26 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
 
   /* admin */
   const admin = (method, path, handler, bucket = 'default') => route(method, path, 'admin', bucket, handler);
+  admin('GET', '/api/admin/manual-withdrawals', async ({ query }) =>
+    wallet.listManualWithdrawals({ status: query.get('status') || 'pending' }),
+  );
+  admin('POST', '/api/admin/manual-withdrawals/:id/start', async ({ params, user }) =>
+    wallet.startManualWithdrawal(decodeURIComponent(params.id), user.id),
+    'money',
+  );
+  admin('POST', '/api/admin/manual-withdrawals/:id/confirm', async ({ params, body, user }) =>
+    wallet.confirmManualWithdrawal(
+      decodeURIComponent(params.id),
+      { externalReference: body.externalReference, method: body.method },
+      user.id,
+    ),
+    'money',
+  );
+  admin('POST', '/api/admin/manual-withdrawals/:id/reject', async ({ params, body, user }) =>
+    wallet.rejectManualWithdrawal(decodeURIComponent(params.id), body.note, user.id),
+    'money',
+  );
+
   admin('GET', '/api/admin/stats', () => repo.stats());
   admin('GET', '/api/admin/withdrawals/simulation', async ({ query }) =>
     wallet.listSimulationWithdrawals({ status: query.get('status') || 'pending' }),
