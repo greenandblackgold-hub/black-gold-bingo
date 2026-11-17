@@ -18,7 +18,7 @@ export function normalizePhone(input) {
   return m ? `0${m[1]}` : null;
 }
 
-export const publicUser = (u) => ({ id: u.id, phone: u.phone, name: u.name, role: u.role, balance: u.balance / 100, phoneVerified: u.role === 'admin' || u.phoneVerified !== false });
+export const publicUser = (u) => ({ id: u.id, phone: u.phone, name: u.name, role: u.role, balance: u.balance / 100, phoneVerified: u.role === 'admin' || u.phoneVerified === true });
 
 export function createAuthService({ repo, config }) {
   const issue = (user) => ({ token: signJwt({ sub: user.id, role: user.role }, config.jwtSecret, TOKEN_TTL), user: publicUser(user) });
@@ -56,14 +56,14 @@ export function createAuthService({ repo, config }) {
         throw bad;
       }
       if (user.failedLogins || user.lockedUntil) await repo.updateUser(user.id, { failedLogins: 0, lockedUntil: 0 });
-      if (user.role === 'player' && user.phoneVerified === false) { const c = await repo.getPhoneChallenge(user.id); if (!c || c.expiresAt <= new Date() || c.attempts >= OTP_MAX_ATTEMPTS) await createPhoneChallenge(user.id); }
+      if (user.role === 'player' && user.phoneVerified !== true) { const c = await repo.getPhoneChallenge(user.id); if (!c || c.expiresAt <= new Date() || c.attempts >= OTP_MAX_ATTEMPTS) await createPhoneChallenge(user.id); }
       return { ...issue(user), phoneVerificationRequired: user.role === 'player' && user.phoneVerified === false };
     },
 
     async verifyPhoneCode(user, code) {
       const value = String(code ?? '');
       if (!/^\d{6}$/.test(value)) throw new HttpError(400, 'invalid_otp', 'Enter the 6-digit verification code');
-      if (user.role !== 'player' || user.phoneVerified !== false) return { verified: true, user: publicUser(user) };
+      if (user.role !== 'player' || user.phoneVerified === true) return { verified: true, user: publicUser(user) };
       const c = await repo.getPhoneChallenge(user.id);
       if (!c || c.expiresAt <= new Date()) throw new HttpError(410, 'otp_expired', 'Code expired. Sign in again to request another.');
       if (c.attempts >= OTP_MAX_ATTEMPTS) throw new HttpError(429, 'otp_attempts_exceeded', 'Too many attempts. Sign in again to request another code.');
