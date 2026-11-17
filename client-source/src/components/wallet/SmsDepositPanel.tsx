@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { translations } from '@/lib/localization';
 import { ApiError, api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -11,71 +12,7 @@ type DepositRequest = {
 
 type DepositStatus = 'pending' | 'success' | 'failed' | 'amount_mismatch' | 'rejected' | 'test-approved' | 'unknown';
 
-const copy = {
-  am: {
-    title: 'የቦርሳ ገንዘብ ማስገቢያ',
-    amount: 'መጠን (ብር)',
-    reference: 'የቴሌብር / ባንክ ትራንዛክሽን ማጣቀሻ ቁጥር',
-    placeholder: 'ለምሳሌ TXN123456789',
-    submit: 'የባላንስ ጥያቄ ላክ',
-    sending: 'በመላክ ላይ…',
-    check: 'ሁኔታውን አድስ',
-    pending: 'ጥያቄው ተመዝግቧል፤ አስተዳዳሪው እስኪያረጋግጥ ይጠብቁ።',
-    rejected: 'ጥያቄው በአስተዳዳሪው ውድቅ ተደርጓል።',
-    testApproved: 'የሙከራ ጥያቄው ተፈቅዷል፤ ይህ ሙከራ ብቻ ስለሆነ ባላንስ አልጨመረም።',
-    success: 'ጥያቄው ተረጋግጧል፤ ባላንሱ ተጨምሯል።',
-    failed: 'ግብይቱ አልተሳካም።',
-    mismatch: 'የተጠየቀው መጠን ከSMS ማረጋገጫው ጋር አልተዛመደም።',
-    unknown: 'ሁኔታው አልታወቀም።',
-    note: 'ባላንሱ ከአስተዳዳሪ ማረጋገጫ በኋላ ይጨምራል።',
-    invalid: 'መጠኑ ከ10 እስከ 10,000 ብር እና እስከ 2 የአስርዮሽ ቦታ መሆን አለበት።',
-    refInvalid: 'ማጣቀሻው ከ6 እስከ 64 ፊደል/ቁጥር መሆን አለበት።',
-    used: 'ይህ ማጣቀሻ ቀድሞ ተጠቅሟል።',
-    generic: 'ጥያቄውን መላክ አልተቻለም። እንደገና ይሞክሩ።',
-  },
-  ti: {
-    title: 'ናይ ቦርሳ ገንዘብ ምእታዊ',
-    amount: 'መጠን (ብር)',
-    reference: 'ቁጽሪ ምጥቃስ ትራንዛክሽን ቴሌብር / ባንኪ',
-    placeholder: 'ንኣብነት TXN123456789',
-    submit: 'ሕቶ ሚዛን ስደድ',
-    sending: 'ይለኣኽ ኣሎ…',
-    check: 'ኩነታት ኣሐድስ',
-    pending: 'ሕቶኹም ተመዝጊቡ፤ ኣማሓዳሪ ክሳብ ዝረጋግጾ ተጸበዩ።',
-    rejected: 'ሕቶኹም ብኣማሓዳሪ ተነጺጉ።',
-    testApproved: 'ናይ ሙከራ ሕቶ ተፈቒዱ፤ ሚዛን ኣይወሰኸን።',
-    success: 'ሕቶኹም ተረጋጊጹ፤ ሚዛን ተወሲኹ።',
-    failed: 'ግብይት ኣይተዓወተን።',
-    mismatch: 'መጠን ሕቶን SMS ምርግጋጽን ኣይተሰማምዑን።',
-    unknown: 'ኩነታት ኣይተፈልጠን።',
-    note: 'ሚዛን ድሕሪ ምርግጋጽ ኣማሓዳሪ ይውሰኽ።',
-    invalid: 'መጠን ካብ 10 ክሳብ 10,000 ብር ክኸውን ኣለዎ።',
-    refInvalid: 'ማጣቀሻ ካብ 6 ክሳብ 64 ፊደላት/ቁጽርታት ክኸውን ኣለዎ።',
-    used: 'እዚ ማጣቀሻ ቀዲሙ ተጠቒሙ እዩ።',
-    generic: 'ሕቶ ምልኣኽ ኣይተኻእለን። እንደገና ፈትኑ።',
-  },
-  en: {
-    title: 'Wallet deposit request',
-    amount: 'Amount (ETB)',
-    reference: 'Telebirr / bank transaction reference',
-    placeholder: 'e.g. TXN123456789',
-    submit: 'Submit balance request',
-    sending: 'Submitting…',
-    check: 'Refresh status',
-    pending: 'Request recorded; waiting for an administrator to review it.',
-    rejected: 'The administrator rejected this request.',
-    testApproved: 'Test request approved for testing only; no wallet balance was credited.',
-    success: 'Request verified; the wallet balance has been credited.',
-    failed: 'The transaction failed.',
-    mismatch: 'The requested amount does not match the SMS confirmation.',
-    unknown: 'Status is unavailable.',
-    note: 'Wallet balance is updated after administrator review.',
-    invalid: 'Enter an amount from 10 to 10,000 ETB, with at most 2 decimal places.',
-    refInvalid: 'Reference must contain 6–64 letters, numbers, hyphens or underscores.',
-    used: 'This transaction reference has already been submitted.',
-    generic: 'Could not submit the request. Please try again.',
-  },
-} as const;
+const copy = translations.smsDeposit;
 
 const inputClass = 'w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-300 placeholder:text-gold-700 ring-1 ring-gold-700/50 focus:outline-none focus:ring-2 focus:ring-gold-400';
 
@@ -205,44 +142,7 @@ type DepositHistoryRow = {
   at: number;
 };
 
-const historyCopy = {
-  am: {
-    title: 'የዲፖዚት ጥያቄዎቼ',
-    empty: 'እስካሁን የዲፖዚት ጥያቄ የለም።',
-    pending: 'በመጠባበቅ ላይ',
-    success: 'ተጸድቋል · ባላንስ ጨምሯል',
-    rejected: 'ውድቅ ተደርጓል',
-    test: 'የሙከራ ማጽደቅ · ባላንስ አልጨመረም',
-    failed: 'አልተሳካም',
-    mismatch: 'መጠን አልተዛመደም',
-    unknown: 'ያልታወቀ',
-    refresh: 'ዝርዝሩ በየ15 ሰከንዱ ይታደሳል።',
-  },
-  ti: {
-    title: 'ናይ ዲፖዚት ሕቶታተይ',
-    empty: 'ገና ናይ ዲፖዚት ሕቶ የለን።',
-    pending: 'ይጽበ ኣሎ',
-    success: 'ጸዲቑ · ሚዛን ተወሲኹ',
-    rejected: 'ተነጺጉ',
-    test: 'ሙከራ ጥራይ · ሚዛን ኣይወሰኸን',
-    failed: 'ኣይተዓወተን',
-    mismatch: 'መጠን ኣይተሰማምዐን',
-    unknown: 'ዘይፍለጥ',
-    refresh: 'ዝርዝር ኣብ ነፍሲ ወከፍ 15 ካልኢት ይሕደስ።',
-  },
-  en: {
-    title: 'My deposit requests',
-    empty: 'No deposit requests yet.',
-    pending: 'Pending review',
-    success: 'Approved · balance credited',
-    rejected: 'Rejected',
-    test: 'Test approved · no balance credited',
-    failed: 'Failed',
-    mismatch: 'Amount mismatch',
-    unknown: 'Unknown status',
-    refresh: 'This list refreshes every 15 seconds.',
-  },
-} as const;
+const historyCopy = translations.depositHistory;
 
 export function SimulationDepositHistory() {
   const { lang } = useLanguage();
