@@ -8,6 +8,9 @@ const LOCK_MS = 15 * 60 * 1000;
 const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
 const otpHash = (secret, userId, code) => crypto.createHmac('sha256', secret).update('phone-otp:v1:' + userId + ':' + code).digest('hex');
+const pinResetHash = (secret, userId, code) => crypto.createHmac('sha256', secret).update('pin-reset:v1:' + userId + ':' + code).digest('hex');
+const encryptPinResetCode = (secret, code) => { const key = crypto.createHash('sha256').update('pin-reset-encryption:v1:' + secret).digest(); const iv = crypto.randomBytes(12); const c = crypto.createCipheriv('aes-256-gcm', key, iv); const encrypted = Buffer.concat([c.update(code), c.final()]); return Buffer.concat([iv, c.getAuthTag(), encrypted]).toString('base64'); };
+const decryptPinResetCode = (secret, value) => { const d = Buffer.from(value, 'base64'); const key = crypto.createHash('sha256').update('pin-reset-encryption:v1:' + secret).digest(); const c = crypto.createDecipheriv('aes-256-gcm', key, d.subarray(0,12)); c.setAuthTag(d.subarray(12,28)); return Buffer.concat([c.update(d.subarray(28)), c.final()]).toString(); };
 const encryptOtp = (secret, code) => { const key = crypto.createHash('sha256').update('phone-otp-encryption:v1:' + secret).digest(); const iv = crypto.randomBytes(12); const c = crypto.createCipheriv('aes-256-gcm', key, iv); const encrypted = Buffer.concat([c.update(code), c.final()]); return Buffer.concat([iv, c.getAuthTag(), encrypted]).toString('base64'); };
 const decryptOtp = (secret, value) => { const d = Buffer.from(value, 'base64'); const key = crypto.createHash('sha256').update('phone-otp-encryption:v1:' + secret).digest(); const c = crypto.createDecipheriv('aes-256-gcm', key, d.subarray(0,12)); c.setAuthTag(d.subarray(12,28)); return Buffer.concat([c.update(d.subarray(28)), c.final()]).toString(); };
 
@@ -23,6 +26,7 @@ export const publicUser = (u) => ({ id: u.id, phone: u.phone, name: u.name, role
 export function createAuthService({ repo, config }) {
   const issue = (user) => ({ token: signJwt({ sub: user.id, role: user.role }, config.jwtSecret, TOKEN_TTL), user: publicUser(user) });
   const createPhoneChallenge = async (userId) => { const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0'); const expiresAt = new Date(Date.now() + OTP_TTL_MS); await repo.createPhoneChallenge({ userId, codeHash: otpHash(config.jwtSecret, userId, code), codeEncrypted: encryptOtp(config.jwtSecret, code), expiresAt }); return expiresAt.getTime(); };
+  const createPinResetChallenge = async (userId) => { const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0'); const expiresAt = new Date(Date.now() + OTP_TTL_MS); await repo.createPinResetChallenge({ userId, codeHash: pinResetHash(config.jwtSecret, userId, code), codeEncrypted: encryptPinResetCode(config.jwtSecret, code), expiresAt }); return expiresAt.getTime(); };
 
   return {
     async register({ phone, name, pin, pinConfirm }) {
@@ -75,6 +79,40 @@ export function createAuthService({ repo, config }) {
     },
     async listPendingPhoneVerifications() {
       return (await repo.listPendingPhoneChallenges()).map((r) => ({ userId: r.userId, name: r.name, phone: r.phone, code: decryptOtp(config.jwtSecret, r.codeEncrypted), expiresAt: r.expiresAt.getTime(), attempts: r.attempts }));
+    },
+
+    async requestPinReset(phone) {
+      const p = normalizePhone(phone);
+      if (!p) throw new HttpError(400, 'invalid_phone', 'Enter a valid Ethiopian mobile number');
+      const user = await repo.findUserByPhone(p);
+      if (user?.role === 'player') await createPinResetChallenge(user.id);
+      // Always return the same response so callers cannot enumerate registered numbers.
+      return { accepted: true, message: 'If the number belongs to a player account, an admin will provide the reset code.' };
+    },
+    async resetPin({ phone, code, pin, pinConfirm }) {
+      const p = normalizePhone(phone);
+      if (!p) throw new HttpError(400, 'invalid_phone', 'Enter a valid Ethiopian mobile number');
+      if (!/^\d{6}$/.test(String(code ?? ''))) throw new HttpError(400, 'invalid_otp', 'Enter the 6-digit reset code');
+      if (!/^\d{6}$/.test(String(pin ?? ''))) throw new HttpError(400, 'invalid_pin', 'PIN must be 6 digits');
+      if (String(pin) !== String(pinConfirm ?? '')) throw new HttpError(400, 'pin_mismatch', 'PIN confirmation does not match');
+      const user = await repo.findUserByPhone(p);
+      const bad = new HttpError(400, 'invalid_reset_code', 'The reset code is incorrect or expired');
+      if (!user || user.role !== 'player') throw bad;
+      const challenge = await repo.getPinResetChallenge(user.id);
+      if (!challenge || challenge.expiresAt <= new Date()) throw new HttpError(410, 'reset_code_expired', 'The reset code expired. Request a new one.');
+      if (challenge.attempts >= OTP_MAX_ATTEMPTS) throw new HttpError(429, 'reset_attempts_exceeded', 'Too many incorrect codes. Request a new one.');
+      if (challenge.codeHash !== pinResetHash(config.jwtSecret, user.id, String(code))) {
+        await repo.recordPinResetFailure(user.id);
+        const updated = await repo.getPinResetChallenge(user.id);
+        if (updated?.attempts >= OTP_MAX_ATTEMPTS) throw new HttpError(429, 'reset_attempts_exceeded', 'Too many incorrect codes. Request a new one.');
+        throw bad;
+      }
+      const pinHash = await hashSecret(String(pin));
+      if (!(await repo.completePinReset(user.id, challenge.codeHash, pinHash))) throw bad;
+      return { reset: true };
+    },
+    async listPendingPinResets() {
+      return (await repo.listPendingPinResets()).map((r) => ({ userId: r.userId, name: r.name, phone: r.phone, code: decryptPinResetCode(config.jwtSecret, r.codeEncrypted), expiresAt: r.expiresAt.getTime(), attempts: r.attempts }));
     },
 
     /** Resolves a Bearer token to a fresh user record (role and balance always come from the database). */
