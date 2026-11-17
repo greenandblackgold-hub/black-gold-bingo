@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode, type FormEvent } from 'react';
 import { translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { AudioCallAnnouncer } from '@/components/audio/AudioCallAnnouncer';
@@ -109,7 +109,7 @@ function PhoneVerificationGate() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const submit = async (event: React.FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setError('');
     try { await api.post('/api/auth/phone-otp/verify', { code }); await refresh(); }
     catch (e) { setError(e instanceof Error ? e.message : 'ኮዱ አልተቀበለም።'); }
