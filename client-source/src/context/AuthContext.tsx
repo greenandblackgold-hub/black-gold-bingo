@@ -9,6 +9,8 @@ interface AuthValue {
   logout: () => void;
   /** Re-read the profile (balance) from the server. */
   refresh: () => Promise<void>;
+  requestPhoneVerification: () => Promise<void>;
+  verifyPhoneVerification: (code: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -55,7 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(r.user);
   }, []);
 
-  const value = useMemo<AuthValue>(() => ({ user, loading, login, register, logout, refresh }), [user, loading, login, register, logout, refresh]);
+  const requestPhoneVerification = useCallback(async () => { await api.post('/api/phone-verification/request', {}); }, []);
+  const verifyPhoneVerification = useCallback(async (code: string) => { const fresh = await api.post<AuthUser>('/api/phone-verification/verify', { code }); setUser(fresh); }, []);
+  const value = useMemo<AuthValue>(() => ({ user, loading, login, register, logout, refresh, requestPhoneVerification, verifyPhoneVerification }), [user, loading, login, register, logout, refresh, requestPhoneVerification, verifyPhoneVerification]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
