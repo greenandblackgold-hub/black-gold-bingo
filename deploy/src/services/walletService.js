@@ -220,6 +220,77 @@ export function createWalletService({ repo, config, chapa }) {
       return { id, status: 'rejected', refunded: true };
     },
 
+    /* ───────────── manual real-wallet withdrawals ───────────── */
+
+    async requestManualWithdrawal(user, { amount, method, destination }) {
+      const a = toSantim(amount);
+      if (!Number.isSafeInteger(a) || a < config.minWithdraw) {
+        throw new HttpError(400, 'invalid_amount', `Minimum withdrawal is ${etb(config.minWithdraw)} ETB`);
+      }
+      const receiveMethod = String(method ?? '').trim().toLowerCase();
+      if (!['telebirr', 'bank'].includes(receiveMethod)) {
+        throw new HttpError(400, 'invalid_method', 'Choose Telebirr or Bank.');
+      }
+      const target = String(destination ?? '').trim().slice(0, 80);
+      if (target.length < 5) throw new HttpError(400, 'invalid_destination', 'Enter a valid account or Telebirr number.');
+      const id = 'mwd-' + randomToken(10);
+      let w;
+      try {
+        w = await repo.requestManualWithdrawal({
+          id, userId: user.id, amount: a, method: receiveMethod, destination: target,
+        });
+      } catch (e) {
+        if (e instanceof RepoError && e.code === 'INSUFFICIENT_FUNDS') {
+          throw new HttpError(402, 'insufficient_funds', 'Not enough wallet balance.');
+        }
+        throw e;
+      }
+      log('manual_withdrawal_requested', { id, userId: user.id, amount: etb(a), method: receiveMethod });
+      return { id: w.id, amount: etb(a), status: w.status, balance: (await repo.findUserById(user.id)).balance / 100 };
+    },
+
+    listMyManualWithdrawals: (user) => repo.listManualWithdrawals({ userId: user.id }),
+    listManualWithdrawals: (filter) => repo.listManualWithdrawals(filter),
+
+    async startManualWithdrawal(id, adminId) {
+      const w = await repo.transitionManualWithdrawal(id, ['pending'], 'processing', {
+        processingBy: adminId, processingAt: new Date(),
+      });
+      if (!w) throw new HttpError(409, 'wrong_status', 'Manual withdrawal is no longer pending.');
+      log('manual_withdrawal_processing_started', { id, adminId, userId: w.userId, amount: etb(w.amount) });
+      return { id, status: 'processing' };
+    },
+
+    async confirmManualWithdrawal(id, { externalReference, method }, adminId) {
+      const reference = String(externalReference ?? '').trim();
+      const payoutMethod = String(method ?? '').trim().toLowerCase();
+      if (!/^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$/.test(reference)) {
+        throw new HttpError(400, 'invalid_external_reference', 'Enter a valid external transaction reference.');
+      }
+      if (!['telebirr', 'bank'].includes(payoutMethod)) {
+        throw new HttpError(400, 'invalid_method', 'Choose Telebirr or Bank.');
+      }
+      let w;
+      try {
+        w = await repo.confirmManualWithdrawal({ id, externalReference: reference, payoutMethod, adminId });
+      } catch (e) {
+        if (e?.code === 'EXTERNAL_PAYOUT_REFERENCE_TAKEN' || e?.code === 11000 || e?.errorResponse?.code === 11000) {
+          throw new HttpError(409, 'external_reference_used', 'This external payout reference has already been used.');
+        }
+        throw e;
+      }
+      if (!w) throw new HttpError(409, 'wrong_status', 'Withdrawal must be processing before it can be confirmed as paid.');
+      log('manual_withdrawal_paid_confirmed', { id, adminId, externalReference: reference, payoutMethod });
+      return { id, status: 'paid', externalReference: reference, method: payoutMethod };
+    },
+
+    async rejectManualWithdrawal(id, note, adminId) {
+      const w = await repo.rejectManualWithdrawalAndRefund(id, String(note ?? '').slice(0, 200), adminId);
+      if (!w) throw new HttpError(409, 'wrong_status', 'Only a pending manual withdrawal can be rejected and refunded.');
+      log('manual_withdrawal_rejected_refunded', { id, adminId, userId: w.userId, amount: etb(w.amount) });
+      return { id, status: 'rejected', refunded: true };
+    },
+
     /* ───────────── cash-out ───────────── */
 
     async requestWithdrawal(user, { amount, accountName, accountNumber, bankCode }) {
