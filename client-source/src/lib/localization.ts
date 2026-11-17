@@ -507,7 +507,7 @@ export const translations = {
   adminWithdrawals: {
  am:{title:'የገንዘብ ማውጫ ጥያቄዎች',empty:'በመጠባበቅ ላይ ያለ የመውጫ ጥያቄ የለም',player:'ተጫዋች',method:'የመቀበያ ዘዴ',destination:'የመቀበያ መረጃ',approve:'አጽድቅ',reject:'ውድቅ አድርግ',reload:'አድስ',pending:'በመጠባበቅ ላይ',notice:'ጥያቄዎች ከአስተዳዳሪ ማረጋገጫ በኋላ ይጸድቃሉ፤ ማጽደቅ ዝውውር አያከናውንም።',err:'ስህተት ተፈጥሯል'}, 
  ti:{title:'ሕቶታት ምውጻእ',empty:'ተጸባዪ ሕቶ ምውጻእ የለን',player:'ተጻዋታይ',method:'ኣገባብ ተቐባሊ',destination:'ሓበሬታ ተቐባሊ',approve:'ኣጽድቕ',reject:'ንጸግ',reload:'ኣሐድስ',pending:'ይጽበ ኣሎ',notice:'ሕቶታት ብኣማሓዳሪ ይምርመሩ፤ ምጽዳቕ ዝውውር ኣይፍጽምን።',err:'ጌጋ ተፈጢሩ'},
- en:{title:'Pending withdrawals',empty:'No pending withdrawal requests',player:'Player',method:'Receiving method',destination:'Receiving details',approve:'Approve',reject:'Reject',reload:'Refresh',pending:'Pending',notice:'Requests are reviewed by an administrator. Approval does not initiate a bank or Telebirr transfer.',err:'Something went wrong'}
+ en:{title:'Pending withdrawals',empty:'No pending withdrawal requests',player:'Player',method:'Receiving method',destination:'Receiving details',approve:'Approve',reject:'Reject',reload:'Refresh',pending:'Pending',notice:'The administrator records the external bank or Telebirr reference after the transfer is sent.',err:'Something went wrong'}
 },
   account: { am: { out: 'ውጣ' }, ti: { out: 'ውጻእ' }, en: { out: 'Sign out' } },
   smsDeposit: {
@@ -614,9 +614,9 @@ export const translations = {
   },
 },
   withdrawPanel: {
-  am: { title: 'የገንዘብ ማውጫ ጥያቄ', amount: 'መጠን (ETB)', method: 'የመቀበያ ዘዴ (አማራጭ)', telebirr: 'Telebirr', bank: 'Bank', destination: 'የስልክ/አካውንት ቁጥር (አማራጭ)', send: 'ጥያቄ ላክ', busy: 'በመላክ ላይ…', ok: 'ጥያቄው ተልኳል። ሂሳቡ ተይዟል።', note: 'ጥያቄዎች በአስተዳዳሪ ይገመገማሉ፤ ማጽደቅ የባንክ/Telebirr ዝውውር አያከናውንም።', err: 'ጥያቄውን መላክ አልተቻለም' },
-  ti: { title: 'ሕቶ ምውጻእ', amount: 'መጠን (ETB)', method: 'መንገዲ ተቐባሊ (ኣማራጺ)', telebirr: 'Telebirr', bank: 'Bank', destination: 'ቁጽሪ ስልኪ/ሕሳብ (ኣማራጺ)', send: 'ሕቶ ስደድ', busy: 'ይስደድ ኣሎ…', ok: 'ሕቶ ተላኢኹ። ሒሳብ ተሓዚ።', note: 'ሕቶታት ብኣማሓዳሪ ይምርመሩ፤ ምጽዳቕ ናይ ባንክ/Telebirr ምስግጋር ኣይፍጽምን።', err: 'ሕቶ ምስዳድ ኣይተኻእለን' },
-  en: { title: 'Withdrawal request', amount: 'Amount (ETB)', method: 'Destination method (optional)', telebirr: 'Telebirr', bank: 'Bank', destination: 'Phone / account number (optional)', send: 'Submit request', busy: 'Submitting…', ok: 'Request submitted. Balance has been reserved.', note: 'Requests are reviewed by an administrator. Approval does not initiate a bank or Telebirr transfer.', err: 'Could not submit request' },
+  am: { title: 'የገንዘብ ማውጫ ጥያቄ', amount: 'መጠን (ETB)', method: 'የመቀበያ ዘዴ', telebirr: 'Telebirr', bank: 'Bank', destination: 'የስልክ/አካውንት ቁጥር', send: 'ጥያቄ ላክ', busy: 'በመላክ ላይ…', ok: 'ጥያቄው ተልኳል። ሂሳቡ ተይዟል።', note: 'ገንዘቡ በባንክ/Telebirr ከተላከ በኋላ አስተዳዳሪው የውጭ ማጣቀሻ ቁጥር በማስገባት ያረጋግጣል።', err: 'ጥያቄውን መላክ አልተቻለም' },
+  ti: { title: 'ሕቶ ምውጻእ', amount: 'መጠን (ETB)', method: 'መንገዲ ተቐባሊ', telebirr: 'Telebirr', bank: 'Bank', destination: 'ቁጽሪ ስልኪ/ሕሳብ', send: 'ሕቶ ስደድ', busy: 'ይስደድ ኣሎ…', ok: 'ሕቶ ተላኢኹ። ሒሳብ ተሓዚ።', note: 'ገንዘብ ባንኪ/Telebirr ምስ ተላእከ ኣማሓዳሪ መወከሲ ቁጽሪ ብምእታው የረጋግጾ።', err: 'ሕቶ ምስዳድ ኣይተኻእለን' },
+  en: { title: 'Withdrawal request', amount: 'Amount (ETB)', method: 'Destination method', telebirr: 'Telebirr', bank: 'Bank', destination: 'Phone / account number', send: 'Submit request', busy: 'Submitting…', ok: 'Request submitted. Balance has been reserved.', note: 'Requests are reviewed by an administrator. Approval does not initiate a bank or Telebirr transfer.', err: 'Could not submit request' },
 },
   pinReset: {
   am: { title: 'የPIN ማገገሚያ', phone: 'ስልክ ቁጥር', otp: 'የማረጋገጫ ኮድ (OTP)', newPin: 'አዲስ 6 አሃዝ PIN', confirm: 'አዲሱን PIN ድገሙ', next: 'ቀጥል', resend: 'ኮዱን እንደገና ላክ', back: 'ወደ መግቢያ ተመለስ', step: 'ደረጃ', preview: 'ይህ የFrontend ማሳያ ብቻ ነው። SMS/OTP Backend አልተዘጋጀም፤ እውነተኛ SMS አይላክም፣ PINም አይቀየርም።', timer: 'የማሳያ ቆጣሪ', unavailable: 'የOTP እና PIN ማገገሚያ Backend እስኪዘጋጅ ድረስ ይህ እርምጃ አይሰራም።', invalid: 'እባክዎ ትክክለኛ መረጃ ያስገቡ።' },
