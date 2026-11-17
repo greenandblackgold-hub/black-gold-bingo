@@ -17,6 +17,7 @@ export function createMemoryRepo() {
   const winPayouts = new Map();
   const rounds = new Map();
   const phoneChallenges = new Map();
+  const pinResetChallenges = new Map();
   let game = { ...DEFAULT_GAME, calledNumbers: [] };
 
   const credit = (userId, amount, kind, ref, meta = {}) => {
@@ -72,6 +73,29 @@ export function createMemoryRepo() {
     },
     async listPendingPhoneChallenges() {
       return [...phoneChallenges.values()].filter((c) => c.expiresAt > new Date() && c.attempts < 5).map((c) => {
+        const u = users.get(c.userId);
+        return u?.role === 'player' ? { userId: c.userId, name: u.name, phone: u.phone, codeEncrypted: c.codeEncrypted, expiresAt: c.expiresAt, attempts: c.attempts } : null;
+      }).filter(Boolean);
+    },
+
+    /* Admin-assisted PIN recovery, separate from phone verification. */
+    async createPinResetChallenge({ userId, codeHash, codeEncrypted, expiresAt }) {
+      pinResetChallenges.set(userId, { userId, codeHash, codeEncrypted, expiresAt, attempts: 0, createdAt: new Date() });
+    },
+    async getPinResetChallenge(userId) { return clone(pinResetChallenges.get(userId) ?? null); },
+    async recordPinResetFailure(userId) {
+      const c = pinResetChallenges.get(userId);
+      if (c && c.expiresAt > new Date() && c.attempts < 5) c.attempts += 1;
+    },
+    async completePinReset(userId, codeHash, pinHash) {
+      const c = pinResetChallenges.get(userId), u = users.get(userId);
+      if (!c || !u || u.role !== 'player' || c.codeHash !== codeHash || c.expiresAt <= new Date() || c.attempts >= 5) return false;
+      pinResetChallenges.delete(userId);
+      Object.assign(u, { pinHash, failedLogins: 0, lockedUntil: 0, pinUpdatedAt: new Date() });
+      return true;
+    },
+    async listPendingPinResets() {
+      return [...pinResetChallenges.values()].filter((c) => c.expiresAt > new Date() && c.attempts < 5).map((c) => {
         const u = users.get(c.userId);
         return u?.role === 'player' ? { userId: c.userId, name: u.name, phone: u.phone, codeEncrypted: c.codeEncrypted, expiresAt: c.expiresAt, attempts: c.attempts } : null;
       }).filter(Boolean);
