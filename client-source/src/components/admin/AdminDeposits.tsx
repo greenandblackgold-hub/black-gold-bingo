@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { translations } from '@/lib/localization';
+import { translations, formatAmount, formatDateTime } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { api, ApiError } from '@/lib/api';
 
@@ -69,14 +69,14 @@ export function AdminDeposits() {
           {rows.map((row) => (
             <li key={row.id} className="rounded-xl bg-white/[0.04] p-3">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-lg font-black tabular-nums text-gold-400">{row.amount.toFixed(2)} ETB</span>
+                <span className="text-lg font-black tabular-nums text-gold-400">{formatAmount(lang, row.amount)} ETB</span>
                 <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs text-amber-200">{t.pending}</span>
               </div>
               {/^TEST-/i.test(row.reference) && <p className="mt-2 rounded-lg bg-sky-500/10 px-3 py-2 text-xs font-bold text-sky-200">{t.testOnly}</p>}
               <dl className="mt-2 space-y-1 text-sm">
                 <div><dt className="inline text-gold-600">{t.player}: </dt><dd className="inline text-gold-300">{row.userName} · {row.userPhone}</dd></div>
                 <div><dt className="inline text-gold-600">{t.reference}: </dt><dd className="inline break-all font-mono text-gold-300">{row.reference}</dd></div>
-                <div><dt className="inline text-gold-600">{t.sent}: </dt><dd className="inline text-gold-500">{new Date(row.at).toLocaleString()}</dd></div>
+                <div><dt className="inline text-gold-600">{t.sent}: </dt><dd className="inline text-gold-500">{formatDateTime(lang, row.at)}</dd></div>
               </dl>
               <div className="mt-3 flex flex-wrap gap-2">
                 {/^TEST-/i.test(row.reference) ? (
