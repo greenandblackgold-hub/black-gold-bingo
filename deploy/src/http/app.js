@@ -122,6 +122,8 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   route('POST', '/api/auth/register', 'public', 'auth', ({ body }) => { requireRegistration(); return auth.register(body); });
   route('POST', '/api/auth/login', 'public', 'auth', ({ body }) => auth.login(body));
   route('GET', '/api/me', 'user', 'default', ({ user }) => publicUser(user));
+  route('POST', '/api/auth/phone-otp/verify', 'user', 'auth', ({ user, body }) => auth.verifyPhoneCode(user, body.code));
+  route('GET', '/api/admin/phone-verifications', 'admin', 'default', () => auth.listPendingPhoneVerifications());
 
   /* game (public state; the SSE stream is handled separately below) */
   route('GET', '/api/game', 'public', 'default', () => game.getPublicState());
@@ -418,6 +420,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
         user = await auth.authenticate(header.startsWith('Bearer ') ? header.slice(7) : '');
         if (!user) throw new HttpError(401, 'unauthorized', 'Please sign in');
         if (r.access === 'admin' && user.role !== 'admin') throw new HttpError(403, 'forbidden', 'Admins only');
+        if (r.access === 'user' && user.role === 'player' && user.phoneVerified !== true && url.pathname !== '/api/me' && url.pathname !== '/api/auth/phone-otp/verify') throw new HttpError(403, 'phone_verification_required', 'Verify your phone number before using this feature');
       }
 
       const rawBody = req.method === 'POST' ? await readBody(req) : '';

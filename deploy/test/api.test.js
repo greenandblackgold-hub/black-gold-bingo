@@ -27,8 +27,13 @@ async function newPlayer(name = 'Test Player', fund = 0) {
   const phone = newPhone();
   const r = await api('POST', '/api/auth/register', { body: { phone, name, pin: '123456', pinConfirm: '123456' } });
   assert.equal(r.status, 200, JSON.stringify(r.json));
+  const queue = await api('GET', '/api/admin/phone-verifications', { token: ctx.adminToken });
+  const pending = queue.json.find((item) => item.phone === phone);
+  assert.ok(pending, 'new player OTP must appear in the admin verification queue');
+  const verified = await api('POST', '/api/auth/phone-otp/verify', { token: r.json.token, body: { code: pending.code } });
+  assert.equal(verified.status, 200, JSON.stringify(verified.json));
   if (fund) await ctx.repo.applyLedger({ userId: r.json.user.id, amount: fund * 100, kind: 'deposit', ref: `seed:${r.json.user.id}` });
-  return { ...r.json, phone };
+  return { ...r.json, user: verified.json.user, phone };
 }
 
 before(async () => {

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode, type FormEvent } from 'react';
 import { translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { AudioCallAnnouncer } from '@/components/audio/AudioCallAnnouncer';
@@ -10,7 +10,7 @@ import { PlayerProvider } from '@/context/PlayerContext';
 import { RoundProvider } from '@/context/RoundContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
-import { SERVER_MODE } from '@/lib/api';
+import { api, SERVER_MODE } from '@/lib/api';
 import { ServerProviders } from '@/server/ServerProviders';
 
 const ADMIN_HASH = '#host';
@@ -104,10 +104,34 @@ function DemoApp() {
   );
 }
 
+function PhoneVerificationGate() {
+  const { user, refresh, logout } = useAuth();
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const submit = async (event: FormEvent) => {
+    event.preventDefault(); setBusy(true); setError('');
+    try { await api.post('/api/auth/phone-otp/verify', { code }); await refresh(); }
+    catch (e) { setError(e instanceof Error ? e.message : 'ኮዱ አልተቀበለም።'); }
+    finally { setBusy(false); }
+  };
+  return <main className="grid min-h-screen place-items-center bg-darkbg px-5 text-gold-100"><form onSubmit={submit} className="w-full max-w-md space-y-4 rounded-2xl bg-cardbg p-6 ring-1 ring-gold-500/40">
+    <h1 className="text-xl font-bold text-gold-400">ስልክዎን ያረጋግጡ</h1>
+    <p className="text-sm text-gold-200/80">የማረጋገጫ ቁጥሩን ከአስተዳዳሪው በስልክ ጥሪ ይቀበሉ። SMS አይላክም።</p>
+    <p className="text-sm text-gold-500">{user?.phone}</p>
+    <input aria-label="6 digit code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,''))} className="w-full rounded-xl bg-black/30 p-3 text-center text-2xl tracking-[0.5em] text-gold-200" />
+    {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
+    <button disabled={busy || code.length!==6} className="w-full rounded-xl bg-gold-500 p-3 font-bold text-black disabled:opacity-50">{busy ? 'በመፈተሽ ላይ…' : 'አረጋግጥ'}</button>
+    <button type="button" onClick={logout} className="w-full p-2 text-sm text-gold-400">ውጣ</button>
+  </form></main>;
+}
+
 function AuthGate({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="grid min-h-screen place-items-center text-gold-500" role="status">…</div>;
-  return user ? <>{children}</> : <Suspense fallback={<RouteLoading />}><AuthScreen /></Suspense>;
+  if (!user) return <Suspense fallback={<RouteLoading />}><AuthScreen /></Suspense>;
+  if (user.role === 'player' && user.phoneVerified === false) return <PhoneVerificationGate />;
+  return <>{children}</>;
 }
 
 /** Production: server accounts, live game and database-backed host authorization. */
