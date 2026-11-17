@@ -1,7 +1,8 @@
 import { useAuth } from '@/context/AuthContext';
+import { translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 
-const TEXT = { am: { out: 'ውጣ' }, ti: { out: 'ውጻእ' }, en: { out: 'Sign out' } } as const;
+const TEXT = translations.account;
 
 export function AccountPanel() {
   const { user, logout } = useAuth();
