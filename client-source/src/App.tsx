@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { AdminApp } from '@/components/admin/AdminApp';
+import { AudioCallAnnouncer } from '@/components/audio/AudioCallAnnouncer';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { BottomNav, type TabId } from '@/components/layout/BottomNav';
 import { PlayView } from '@/components/play/PlayView';
@@ -34,6 +35,7 @@ function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
   const [tab, setTab] = useState<TabId>(() => (window.location.hash === '#wallet' ? 'wallet' : 'play'));
   return (
     <div className="min-h-screen pb-28">
+      <AudioCallAnnouncer />
       <AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} />
       <main className="mx-auto max-w-6xl px-4 pt-5 sm:pt-8">
         {tab === 'play' && <PlayView onGoToWallet={() => setTab('wallet')} />}
