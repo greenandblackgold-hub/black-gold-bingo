@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState, type ReactNode, type FormEvent } f
 import { translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { AudioCallAnnouncer } from '@/components/audio/AudioCallAnnouncer';
+import { PlayerFeatures } from '@/components/play/PlayerFeatures';
 import type { TabId } from '@/components/layout/BottomNav';
 import { AppSettingsProvider } from '@/context/AppSettingsContext';
 import { BackendProvider } from '@/context/BackendContext';
@@ -48,6 +49,7 @@ function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
         {tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} /></Suspense>}
         {tab === 'wallet' && <Suspense fallback={<RouteLoading />}><WalletView onGoToPlay={() => setTab('play')} /></Suspense>}
         {tab === 'verify' && <Suspense fallback={<RouteLoading />}><VerifyView /></Suspense>}
+        {tab === 'settings' && <PlayerFeatures onGoToWallet={() => setTab('wallet')} settingsOnly />}
       </main>
       <Suspense fallback={null}><BottomNav active={tab} onChange={setTab} /></Suspense>
     </div>
