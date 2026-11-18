@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 
-export type TabId = 'play' | 'wallet' | 'verify';
+export type TabId = 'play' | 'wallet' | 'verify' | 'settings';
 
 const LABELS = translations.navigation;
 
@@ -34,9 +34,12 @@ const ICONS: Record<TabId, ReactNode> = {
       <path d="m9 12 2 2 4-4" />
     </Icon>
   ),
+  settings: (
+    <Icon><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1h-2.6v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1A1.7 1.7 0 0 0 8 15a1.7 1.7 0 0 0-1.5-1H6.4v-2.6h.1A1.7 1.7 0 0 0 8 10a1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V5h2.6v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1v2.6h-.1a1.7 1.7 0 0 0-1.5 1z" /></Icon>
+  ),
 };
 
-const ORDER: TabId[] = ['play', 'wallet', 'verify'];
+const ORDER: TabId[] = ['play', 'wallet', 'verify', 'settings'];
 
 export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab: TabId) => void }) {
   const { lang } = useLanguage();
@@ -45,7 +48,7 @@ export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab:
       aria-label={LABELS[lang].main}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-gold-500/20 bg-darkbg/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.25)] backdrop-blur-xl"
     >
-      <ul className="mx-auto grid max-w-xl grid-cols-3 px-2">
+      <ul className="mx-auto grid max-w-xl grid-cols-4 px-2">
         {ORDER.map((id) => {
           const on = id === active;
           return (
