@@ -149,7 +149,6 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
               <button
                 key={`${r}-${c}`}
                 style={isMarked && !isCalled ? { backgroundColor: markColor } : undefined}
-                style={isMarked && !isCalled ? { backgroundColor: markColor } : undefined}
                 type="button"
                 disabled={isFree || !active}
                 aria-pressed={isMarked}
