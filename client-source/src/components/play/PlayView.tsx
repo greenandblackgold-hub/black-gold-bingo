@@ -13,6 +13,7 @@ import { useRound } from '@/context/RoundContext';
 import { play } from '@/lib/audio';
 import { findWinningPattern } from '@/lib/bingo';
 import type { BingoCard, Lang, Pos, WinPattern } from '@/types/game';
+import { PlayerFeatures } from '@/components/play/PlayerFeatures';
 
 /* ───────────────────────────── CONTEXT WIRING ───────────────────────────── */
 
@@ -466,6 +467,8 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           </div>
         )}
       </div>
+
+      <PlayerFeatures />
 
       {/* Claim bar (sits above BottomNav) */}
       {(winners.length > 0 || message) && (
