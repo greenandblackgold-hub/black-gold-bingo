@@ -85,9 +85,10 @@ type CardViewProps = {
   t: (key: StringKey) => string;
   onToggle: (n: number) => void;
   pattern: WinPattern;
+  markColor: string;
 };
 
-function CardView({ card, marks, called, active, t, onToggle, pattern }: CardViewProps) {
+function CardView({ card, marks, called, active, t, onToggle, pattern, markColor }: CardViewProps) {
   const { toGo, winningLine } = useMemo(() => analyze(card.grid, marks, called, pattern), [card.grid, marks, called, pattern]);
   const winSet = useMemo(() => new Set((winningLine ?? []).map(([r, c]) => `${r}-${c}`)), [winningLine]);
   const hasWin = !!winningLine;
@@ -147,6 +148,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern }: CardVie
             return (
               <button
                 key={`${r}-${c}`}
+                style={isMarked && !isCalled ? { backgroundColor: markColor } : undefined}
                 type="button"
                 disabled={isFree || !active}
                 aria-pressed={isMarked}
@@ -155,7 +157,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern }: CardVie
                 className={[
                   'relative grid aspect-square min-w-0 place-items-center overflow-hidden rounded-lg border text-base font-extrabold tabular-nums shadow-sm transition-all duration-200 active:scale-[0.91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-200 sm:rounded-xl sm:text-lg',
                   isMarked && !isCalled
-                    ? 'bg-gradient-to-br from-gold-200 via-gold-400 to-gold-600 border-gold-200/80 text-[#17130a] shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_3px_12px_rgba(212,175,55,.22)] bg-cell-mark'
+                    ? 'border-white/70 text-[#17130a] shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_3px_12px_rgba(212,175,55,.22)] bg-cell-mark'
                     : 'border-white/[0.055] bg-gradient-to-br from-white/[0.065] to-white/[0.015] text-gold-200/90 hover:border-gold-500/40',
                   isCalled
                     ? 'bg-gradient-to-br from-sky-400 via-blue-500 to-blue-700 border-white text-white ring-1 ring-white/80 shadow-[0_0_12px_rgba(59,130,246,.55)]'
@@ -325,6 +327,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 t={t}
                 onToggle={(n) => toggleMark(card.id, n)}
                 pattern={winPattern}
+                markColor={markColor}
               />
             ))}
           </div>
