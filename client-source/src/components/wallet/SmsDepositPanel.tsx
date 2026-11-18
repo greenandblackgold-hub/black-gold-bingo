@@ -36,7 +36,6 @@ export function SmsDepositPanel() {
     setError('');
     try {
       const created = await api.post<DepositRequest>('/api/simulation/deposits', {
-        amount: numericAmount,
         provider,
         message: message.trim(),
       });
@@ -44,6 +43,7 @@ export function SmsDepositPanel() {
       setStatus('pending');
     } catch (e) {
       if (e instanceof ApiError && e.code === 'reference_used') setError(t.used);
+      else if (e instanceof ApiError && e.code === 'invalid_sms_message') setError(t.messageInvalid);
       else if (e instanceof ApiError && e.code === 'invalid_amount') setError(t.invalid);
       else if (e instanceof ApiError && e.code === 'invalid_reference') setError(t.refInvalid);
       else setError(t.generic);
