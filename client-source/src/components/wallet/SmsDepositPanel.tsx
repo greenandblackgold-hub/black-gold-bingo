@@ -97,7 +97,6 @@ export function SmsDepositPanel() {
               <dl className="space-y-1">
                 <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.accountName}</dt><dd className="text-right text-gold-200">ቤተሊሄም ፍጹም</dd></div>
                 <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.accountNumber}</dt><dd className="font-mono text-gold-200">1000737138686</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.phoneNumber}</dt><dd className="font-mono text-gold-200">0998974422</dd></div>
               </dl>
             )}
           </div>
