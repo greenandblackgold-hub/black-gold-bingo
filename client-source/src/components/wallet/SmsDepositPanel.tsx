@@ -86,6 +86,21 @@ export function SmsDepositPanel() {
               <option value="Telebirr">Telebirr</option><option value="CBE">Commercial Bank of Ethiopia</option>
             </select>
           </div>
+          <div className="rounded-xl border border-gold-700/40 bg-black/25 p-4 text-sm">
+            <p className="mb-2 font-semibold text-gold-300">{t.sendTo}</p>
+            {provider === 'Telebirr' ? (
+              <dl className="space-y-1">
+                <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.accountName}</dt><dd className="text-right text-gold-200">ኣሊክሳንደር ደጀን</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.phoneNumber}</dt><dd className="font-mono text-gold-200">0978202822</dd></div>
+              </dl>
+            ) : (
+              <dl className="space-y-1">
+                <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.accountName}</dt><dd className="text-right text-gold-200">ቤተሊሄም ፍጹም</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.accountNumber}</dt><dd className="font-mono text-gold-200">1000737138686</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.phoneNumber}</dt><dd className="font-mono text-gold-200">0998974422</dd></div>
+              </dl>
+            )}
+          </div>
           <div>
             <label htmlFor="simulation-deposit-message" className="mb-2 block text-sm text-gold-500">{t.message}</label>
             <textarea id="simulation-deposit-message" className={`${inputClass} min-h-32 resize-y`} autoComplete="off" maxLength={4000} placeholder={t.messagePlaceholder} value={message} onChange={(event) => setMessage(event.target.value)} disabled={busy} />
