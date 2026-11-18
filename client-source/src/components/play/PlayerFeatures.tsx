@@ -41,7 +41,7 @@ const RULES = [
 
 export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = false }: { onGoToWallet: () => void; settingsOnly?: boolean; menuOnly?: boolean }) {
   const { lang, setLang } = useLanguage();
-  const { balance, cards, transactions } = usePlayer();
+  const { balance, cards, transactions, markedByCard, clearMarks, removeCards } = usePlayer();
   const { cardPrice, audioVolume, setAudioVolume } = useAppSettings();
   const { calledNumbers, roundNumber, phase, winner, winPattern, roundPrizeEtb, roundCardCount } = useRound();
   const { soundEnabled, setSoundEnabled, voiceEnabled, setVoiceEnabled } = useAppSettings();
