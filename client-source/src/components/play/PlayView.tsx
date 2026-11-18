@@ -134,7 +134,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
           ))}
         </div>
 
-        <div className="grid grid-cols-1 gap-1.5 sm:gap-2">
+        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
         {card.grid.flatMap((row, r) =>
           row.map((v, c) => {
             const isFree = v === null;
@@ -293,7 +293,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           <h2 className="text-base font-black tracking-wide text-gold-200 sm:text-lg">የተጠሩ ቁጥሮች</h2>
           <span className="rounded-full border border-gold-500/30 bg-black/40 px-3 py-1 text-xs font-bold tabular-nums text-gold-300">{calledNumbers.length}/75</span>
         </div>
-        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+        <div className="grid grid-cols-1 gap-1.5 sm:gap-2">
           {LETTERS.map((letter, column) => {
             const palette = [
               'bg-orange-500 text-white border-orange-200',
@@ -304,7 +304,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             ][column];
             return <div key={letter} className="min-w-0 rounded-xl border border-white/10 bg-black/30 p-1.5 sm:p-2">
               <h3 className="mb-1.5 text-center text-base font-black text-gold-200 sm:text-lg">{letter}</h3>
-              <div className="grid grid-cols-15 gap-1">
+              <div className="grid grid-cols-[repeat(15,minmax(0,1fr))] gap-1">
                 {Array.from({length:15},(_,index)=>column*15+index+1).map((number)=>{
                   const isCalled=called.has(number);
                   const isLatest=number===current;
