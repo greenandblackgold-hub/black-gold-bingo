@@ -123,6 +123,14 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
     [reloadCards, reloadLedger, refresh],
   );
 
+  // Player-only display controls: marks and hidden invalid cards stay local to this device.
+  const clearMarks = useCallback(() => setMarks({}), []);
+  const removeCards = useCallback((ids: string[]) => {
+    const removed = new Set(ids);
+    setCards((current) => current.filter((card) => !removed.has(card.id)));
+    setMarks((current) => Object.fromEntries(Object.entries(current).filter(([id]) => !removed.has(id))));
+  }, []);
+
   // New round: forget old marks, fetch this round's (empty) card list and the fresh balance.
   const clearCards = useCallback(() => {
     setMarks({});
@@ -144,8 +152,10 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
       },
       buyCards,
       clearCards,
+      clearMarks,
+      removeCards,
     }),
-    [user, cards, markedByCard, transactions, toggleMark, buyCards, clearCards],
+    [user, cards, markedByCard, transactions, toggleMark, buyCards, clearCards, clearMarks, removeCards],
   );
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
