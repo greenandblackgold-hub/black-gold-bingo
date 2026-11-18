@@ -50,6 +50,8 @@ export interface PlayerContextValue {
   buyCards: (count: number, serial?: string) => Promise<{ ok: boolean; error?: string }>;
   /** Removes all cards and marks (called when a new round is set up). */
   clearCards: () => void;
+  clearMarks: () => void;
+  removeCards: (ids: string[]) => void;
 }
 
 /** Game state shared by everyone. Only the host may write it. */
