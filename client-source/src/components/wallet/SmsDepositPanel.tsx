@@ -6,6 +6,7 @@ import { useLanguage } from '@/context/LanguageContext';
 type DepositRequest = {
   reference: string;
   amount: number;
+  provider?: string;
   status: 'pending' | 'success' | 'failed' | 'amount_mismatch' | 'rejected';
   currency: 'ETB';
 };
@@ -19,35 +20,30 @@ const inputClass = 'w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-300 pl
 export function SmsDepositPanel() {
   const { lang } = useLanguage();
   const t = copy[lang] ?? copy.en;
-  const [amount, setAmount] = useState('100');
-  const [reference, setReference] = useState('');
+  const [provider, setProvider] = useState<'Telebirr' | 'CBE'>('Telebirr');
+  const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [request, setRequest] = useState<DepositRequest | null>(null);
   const [status, setStatus] = useState<DepositStatus | null>(null);
 
   const submit = async () => {
-    const numericAmount = Number(amount);
-    const cleanReference = reference.trim();
-    if (!Number.isFinite(numericAmount) || numericAmount < 10 || numericAmount > 10000 || !/^\d+(\.\d{1,2})?$/.test(amount)) {
-      setError(t.invalid);
-      return;
-    }
-    if (!/^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$/.test(cleanReference)) {
-      setError(t.refInvalid);
+    if (message.trim().length < 20 || message.trim().length > 4000) {
+      setError(t.messageInvalid);
       return;
     }
     setBusy(true);
     setError('');
     try {
       const created = await api.post<DepositRequest>('/api/simulation/deposits', {
-        amount: numericAmount,
-        reference: cleanReference,
+        provider,
+        message: message.trim(),
       });
       setRequest(created);
       setStatus('pending');
     } catch (e) {
       if (e instanceof ApiError && e.code === 'reference_used') setError(t.used);
+      else if (e instanceof ApiError && e.code === 'invalid_sms_message') setError(t.messageInvalid);
       else if (e instanceof ApiError && e.code === 'invalid_amount') setError(t.invalid);
       else if (e instanceof ApiError && e.code === 'invalid_reference') setError(t.refInvalid);
       else setError(t.generic);
@@ -85,28 +81,30 @@ export function SmsDepositPanel() {
       {!request ? (
         <div className="space-y-4">
           <div>
-            <label htmlFor="simulation-deposit-amount" className="mb-2 block text-sm text-gold-500">{t.amount}</label>
-            <input
-              id="simulation-deposit-amount"
-              className={inputClass}
-              inputMode="decimal"
-              value={amount}
-              onChange={(event) => setAmount(event.target.value.replace(/[^0-9.]/g, ''))}
-              disabled={busy}
-            />
+            <label htmlFor="simulation-deposit-provider" className="mb-2 block text-sm text-gold-500">{t.provider}</label>
+            <select id="simulation-deposit-provider" className={inputClass} value={provider} onChange={(event) => setProvider(event.target.value as 'Telebirr' | 'CBE')} disabled={busy}>
+              <option value="Telebirr">Telebirr</option><option value="CBE">Commercial Bank of Ethiopia</option>
+            </select>
+          </div>
+          <div className="rounded-xl border border-gold-700/40 bg-black/25 p-4 text-sm">
+            <p className="mb-2 font-semibold text-gold-300">{t.sendTo}</p>
+            {provider === 'Telebirr' ? (
+              <dl className="space-y-1">
+                <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.accountName}</dt><dd className="text-right text-gold-200">ኣሊክሳንደር ደጀን</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.phoneNumber}</dt><dd className="font-mono text-gold-200">0978202822</dd></div>
+              </dl>
+            ) : (
+              <dl className="space-y-1">
+                <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.accountName}</dt><dd className="text-right text-gold-200">ቤተሊሄም ፍጹም</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.accountNumber}</dt><dd className="font-mono text-gold-200">1000737138686</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-gold-600">{t.phoneNumber}</dt><dd className="font-mono text-gold-200">0998974422</dd></div>
+              </dl>
+            )}
           </div>
           <div>
-            <label htmlFor="simulation-deposit-reference" className="mb-2 block text-sm text-gold-500">{t.reference}</label>
-            <input
-              id="simulation-deposit-reference"
-              className={inputClass}
-              autoComplete="off"
-              maxLength={64}
-              placeholder={t.placeholder}
-              value={reference}
-              onChange={(event) => setReference(event.target.value.trimStart())}
-              disabled={busy}
-            />
+            <label htmlFor="simulation-deposit-message" className="mb-2 block text-sm text-gold-500">{t.message}</label>
+            <textarea id="simulation-deposit-message" className={`${inputClass} min-h-32 resize-y`} autoComplete="off" maxLength={4000} placeholder={t.messagePlaceholder} value={message} onChange={(event) => setMessage(event.target.value)} disabled={busy} />
+            <p className="mt-1 text-xs text-gold-700">{t.messageHelp}</p>
           </div>
           {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
           <button type="button" onClick={submit} disabled={busy} className="w-full rounded-xl bg-gradient-to-r from-gold-300 via-gold-500 to-gold-600 py-3.5 font-bold text-darkbg shadow-lg shadow-gold-900/20 transition duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:ring-offset-2 focus-visible:ring-offset-darkbg disabled:cursor-not-allowed disabled:opacity-50">

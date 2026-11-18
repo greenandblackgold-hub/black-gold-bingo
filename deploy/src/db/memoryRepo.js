@@ -153,7 +153,7 @@ export function createMemoryRepo() {
     async listWinPayouts({ status = 'pending' } = {}) {
       return [...winPayouts.values()].filter((p) => !status || p.status === status).sort((a,b) => b.createdAt-a.createdAt).map((p) => {
         const u = users.get(p.userId);
-        return { ...clone(p), amount: p.amount / 100, userName: u?.name ?? 'Unknown', userPhone: u?.phone ?? '' };
+        return { ...clone(p), amount: p.amount / 100, rawMessage: p.rawMessage ?? '', provider: p.provider ?? '', userName: u?.name ?? 'Unknown', userPhone: u?.phone ?? '' };
       });
     },
     async approveWinPayout(id) {
@@ -179,9 +179,9 @@ export function createMemoryRepo() {
     },
 
     /* deposits */
-    async createPayment({ txRef, userId, amount, source = 'chapa' }) {
+    async createPayment({ txRef, userId, amount, source = 'chapa', rawMessage, provider }) {
       if (payments.has(txRef)) throw new RepoError('PAYMENT_REFERENCE_TAKEN');
-      payments.set(txRef, { txRef, userId, amount, source, status: 'pending', createdAt: new Date() });
+      payments.set(txRef, { txRef, userId, amount, source, rawMessage, provider, status: 'pending', createdAt: new Date() });
     },
     async getPayment(txRef) {
       return clone(payments.get(txRef) ?? null);
@@ -200,7 +200,7 @@ export function createMemoryRepo() {
         .slice(0, 200)
         .map((p) => {
           const user = users.get(p.userId);
-          return { id: p.txRef, reference: p.txRef, userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: p.createdAt.getTime() };
+          return { id: p.txRef, reference: p.txRef, rawMessage: p.rawMessage ?? '', provider: p.provider ?? '', userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: p.createdAt.getTime() };
         });
     },
     /** pending -> success and credit the wallet, exactly once. */

@@ -1,31 +1,55 @@
 import { randomToken } from '../util/crypto.js';
 import { HttpError, RepoError } from '../util/errors.js';
 import { log } from '../util/log.js';
+import { parseBankSms } from '../payments/bankSmsParser.js';
 
 const etb = (santim) => santim / 100;
 const toSantim = (etbAmount) => Math.round(Number(etbAmount) * 100);
 
 export function createWalletService({ repo, config, chapa }) {
   const service = {
-    /** Simulation wallet: player registers the transaction reference; only a signed SMS webhook can credit it. */
-    async startSmsSimulationDeposit(user, { reference, amount: amountEtb }) {
-      const txRef = String(reference ?? '').trim();
-      const amount = toSantim(amountEtb);
-      if (!/^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$/.test(txRef)) {
-        throw new HttpError(400, 'invalid_reference', 'Enter a valid transaction reference (6-64 letters or numbers).');
+    /** Player submits the complete provider SMS. Parsed details are cross-checked before it enters admin review. */
+    async startSmsSimulationDeposit(user, input = {}) {
+      // Compatibility for existing clients; the wallet UI now submits the full SMS.
+      if (!input.message) {
+        const txRef = String(input.reference ?? '').trim();
+        const amount = toSantim(input.amount);
+        if (!/^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$/.test(txRef)) throw new HttpError(400, 'invalid_reference', 'Enter a valid transaction reference (6-64 letters or numbers).');
+        if (!Number.isSafeInteger(amount) || amount < config.minDeposit || amount > config.maxDeposit) throw new HttpError(400, 'invalid_amount', `Deposit between ${etb(config.minDeposit)} and ${etb(config.maxDeposit)} ETB`);
+        try { await repo.createPayment({ txRef, userId: user.id, amount, source: 'manual-simulation' }); }
+        catch (error) {
+          if (error?.code === 'PAYMENT_REFERENCE_TAKEN' || error?.code === 11000 || error?.errorResponse?.code === 11000) throw new HttpError(409, 'reference_used', 'This transaction reference has already been submitted.');
+          throw error;
+        }
+        return { reference: txRef, amount: etb(amount), status: 'pending', currency: 'ETB' };
       }
+      const { message: rawMessage, provider } = input;
+      const message = String(rawMessage ?? '').trim();
+      if (message.length < 20 || message.length > 4000) {
+        throw new HttpError(400, 'invalid_sms_message', 'Paste the complete transaction SMS (20-4000 characters).');
+      }
+      let parsed;
+      try {
+        parsed = parseBankSms({ sender: provider, text: message });
+      } catch (error) {
+        throw new HttpError(400, 'invalid_sms_message', 'The message is not a recognizable incoming Telebirr or CBE transfer SMS.');
+      }
+      const amount = toSantim(parsed.amount);
       if (!Number.isSafeInteger(amount) || amount < config.minDeposit || amount > config.maxDeposit) {
         throw new HttpError(400, 'invalid_amount', `Deposit between ${etb(config.minDeposit)} and ${etb(config.maxDeposit)} ETB`);
       }
       try {
-        await repo.createPayment({ txRef, userId: user.id, amount, source: 'manual-simulation' });
+        await repo.createPayment({
+          txRef: parsed.reference, userId: user.id, amount, source: 'sms-simulation',
+          rawMessage: message, provider: parsed.provider,
+        });
       } catch (error) {
         if (error?.code === 'PAYMENT_REFERENCE_TAKEN' || error?.code === 11000 || error?.errorResponse?.code === 11000) {
           throw new HttpError(409, 'reference_used', 'This transaction reference has already been submitted.');
         }
         throw error;
       }
-      return { reference: txRef, amount: etb(amount), status: 'pending', currency: 'ETB' };
+      return { reference: parsed.reference, amount: etb(amount), provider: parsed.provider, status: 'pending', currency: 'ETB' };
     },
 
     async simulationDepositStatus(user, txRef) {
