@@ -225,6 +225,8 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
       roundNumber: g?.roundNumber ?? 1,
       calledNumbers: g?.calledNumbers ?? [],
       winner: g?.winner ?? null,
+      roundPrizeEtb: g?.roundPrizeEtb ?? 0,
+      roundCardCount: g?.roundCardCount ?? 0,
       claims: [], // the server judges claims instantly; there is nothing for a host to review
       startRound: () => void admin('round/start'),
       endRound: () => void admin('round/end'),
