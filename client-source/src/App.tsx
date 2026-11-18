@@ -62,7 +62,7 @@ function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
             <div><p className="text-[10px] font-bold uppercase tracking-[.28em] text-amber-400">BLACK GOLD BINGO</p><h2 className="mt-1 text-lg font-black text-amber-100">Menu</h2></div>
             <button type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="rounded-xl border border-amber-300/30 bg-black/40 px-4 py-2 text-sm font-bold text-amber-200 hover:bg-amber-400/10">ዝጋ ✕</button>
           </header>
-          <div className="overflow-y-auto overscroll-contain px-4 pb-6"><PlayerFeatures onGoToWallet={() => { setMenuOpen(false); setTab('wallet'); }} /></div>
+          <div className="overflow-y-auto overscroll-contain px-4 pb-6"><PlayerFeatures onGoToWallet={() => { setMenuOpen(false); setTab('wallet'); }} menuOnly /></div>
         </section>
       </div>}
       <Suspense fallback={null}><BottomNav active={menuOpen ? 'menu' : tab} onChange={handleNavChange} /></Suspense>
