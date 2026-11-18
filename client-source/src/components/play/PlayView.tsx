@@ -149,6 +149,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
               <button
                 key={`${r}-${c}`}
                 style={isMarked && !isCalled ? { backgroundColor: markColor } : undefined}
+                style={isMarked && !isCalled ? { backgroundColor: markColor } : undefined}
                 type="button"
                 disabled={isFree || !active}
                 aria-pressed={isMarked}
@@ -198,6 +199,11 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   );
 
   const [claiming, setClaiming] = useState(false);
+  const [cardColumns, setCardColumns] = useState(2);
+  const [autoMarkEnabled, setAutoMarkEnabled] = useState(false);
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
+  const [cardOrder, setCardOrder] = useState<'oldest'|'newest'>('oldest');
+  const [markColor, setMarkColor] = useState('#d4af37');
   const [confetti, setConfetti] = useState(false);
   const stopConfetti = useCallback(() => setConfetti(false), []);
   const [sentRound, setSentRound] = useState<number | null>(null);
@@ -206,6 +212,16 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const messageTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => () => clearTimeout(messageTimer.current), []);
+
+  useEffect(() => {
+    const load = () => { try { const cols=Number(localStorage.getItem('bgb.cardsPerRow')); setCardColumns([2,3,4].includes(cols)?cols:2); setAutoMarkEnabled(localStorage.getItem('bgb.autoMark')==='on'); setCardOrder(localStorage.getItem('bgb.cardOrder')==='newest'?'newest':'oldest'); setMarkColor(localStorage.getItem('bgb.markColor')||'#d4af37'); const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]'); setSelectedCardIds(Array.isArray(ids)?ids:[]); } catch { /* retain defaults */ } };
+    load(); window.addEventListener('bgb-player-settings',load); return ()=>window.removeEventListener('bgb-player-settings',load);
+  }, []);
+
+  useEffect(() => {
+    if (!autoMarkEnabled || !active || calledNumbers.length===0) return;
+    for (const card of cards) { const marks=new Set(markedByCard[card.id]??[]); for (const n of calledNumbers) if (card.grid.some(row=>row.includes(n)) && !marks.has(n)) { toggleMark(card.id,n); marks.add(n); } }
+  }, [autoMarkEnabled,active,calledNumbers,cards,markedByCard,toggleMark]);
 
   const flash = (kind: 'ok' | 'err', text: string) => {
     setMessage({ kind, text });
@@ -316,8 +332,8 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {cards.map((card) => (
+          <div className="grid gap-4" style={{gridTemplateColumns: `repeat(${cardColumns}, minmax(0, 1fr))`}}>
+            {[...cards].sort((a,b)=>cardOrder==='oldest'?Number(a.serial)-Number(b.serial):Number(b.serial)-Number(a.serial)).filter(card=>selectedCardIds.length===0||selectedCardIds.includes(card.id)).map((card) => (
               <CardView
                 key={card.id}
                 card={card}
