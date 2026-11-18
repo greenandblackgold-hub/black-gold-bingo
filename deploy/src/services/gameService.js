@@ -58,10 +58,9 @@ export function createGameService({ repo, config, now = Date.now }) {
     timer = null;
     let due = null;
     if (g.phase === 'waiting') due = g.nextRoundAt ?? (now() + ROUND_INTERVAL_MS);
-    else if (g.phase === 'running') due = Math.min(
-      g.nextCallAt ?? (now() + g.callIntervalSec * 1000),
-      g.roundEndsAt ?? (now() + ROUND_INTERVAL_MS),
-    );
+    else if (g.phase === 'running') due = g.autoCall
+      ? Math.min(g.nextCallAt ?? (now() + g.callIntervalSec * 1000), g.roundEndsAt ?? (now() + ROUND_INTERVAL_MS))
+      : (g.roundEndsAt ?? (now() + ROUND_INTERVAL_MS));
     else if (g.phase === 'ended') due = g.nextRoundAt ?? (now() + ROUND_INTERVAL_MS);
     if (due === null) return;
     timer = setTimeout(tick, Math.max(0, due - now()));
@@ -136,7 +135,11 @@ export function createGameService({ repo, config, now = Date.now }) {
     /* ───────────── host / admin ───────────── */
 
     startRound: () =>
-      mutate('waiting', () => ({ phase: 'running', calledNumbers: [], winner: null, autoCall: false, nextCallAt: null })),
+      mutate('waiting', () => ({
+        phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
+        autoCall: true, callIntervalSec: AUTO_CALL_SECONDS, nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
+        roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, nextRoundAt: null,
+      })),
 
     endRound: () => mutate('running', () => ({ phase: 'ended', autoCall: false, nextCallAt: null })),
 
@@ -245,8 +248,9 @@ export function createGameService({ repo, config, now = Date.now }) {
       const prize = Math.floor((g.pot * config.prizePercent) / 100);
       const settled = await repo.settleWin({ round: g.roundNumber, card, prize, ref: `win:${g.roundNumber}:${card.code}` });
       if (!settled) return { ok: false, reason: 'already_won' };
-      schedule(settled);
-      broadcast(settled);
+      const advanced = await repo.casGame(settled.version, { nextRoundAt: (g.roundStartedAt ?? now()) + ROUND_INTERVAL_MS }) ?? await repo.getGame();
+      schedule(advanced);
+      broadcast(advanced);
       log('prize_pending_admin_approval', { round: g.roundNumber, card: card.code, userId: user.id, etb: prize / 100, potEtb: g.pot / 100 });
       return { ok: true, prize: prize / 100, payoutStatus: 'pending' };
     },
