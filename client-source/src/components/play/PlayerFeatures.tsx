@@ -4,7 +4,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { formatAmount } from '@/lib/localization';
-import { AccountPanel } from '@/components/wallet/AccountPanel';
 
 const TELEBIRR = ['0914708903', '0983931020', '0908725881'];
 const RULES = [
@@ -141,7 +140,6 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
           </div>
         ))}
       </div>
-      <AccountPanel />
       <p className="pb-2 text-center text-xs text-gold-700">Black Gold Bingo · ደንበኛ አገልግሎት</p>
     </section>
   );
