@@ -117,6 +117,31 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
         <div className="space-y-2 p-3 sm:p-4">
           <div className="flex items-center gap-2"><span className="text-lg">ⓘ</span><h3 className={`font-bold ${title}`}>መረጃ</h3></div>
           <p className={`text-xs leading-5 ${muted}`}>በቴሌብር (0978202822 — ኣሊክሳንደር ደጀን) ወይም በንግድ ባንክ (1000737138686 — ቤተሊሄም ፍጹም) ሙሉ ደረሰኝ በማስገባት ገቢ (Deposit) ማድረግ ትችላላችሁ። iPhone የምትጠቀሙ ደንበኞች Google Chrome ላይ www.blackgoldbingo.com በመፈለግ መጠቀም ትችላላችሁ።</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            {[
+              ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
+              ['የዙሩ የተሸጡ ካርዶች', SERVER_MODE && roundCardCount !== undefined ? String(roundCardCount) : '—'],
+              ['የአሁኑ ዋና ሽልማት', SERVER_MODE && roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ETB` : '—'],
+              ['አካውንት ቀሪ ሂሳብ', `${formatAmount(lang, balance)} ETB`],
+              ['ጠቅላላ ካርቴላ', String(cards.length)],
+            ].map(([label, value]) => (
+              <div key={label} className={`rounded-lg border p-2 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
+                <p className={`text-[10px] leading-4 ${muted}`}>{label}</p><p className={`mt-0.5 text-xs font-black tabular-nums ${title}`}>{value}</p>
+              </div>
+            ))}
+          </div>
+          <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
+            <span className={muted}>የዙሩ ሁኔታ</span>
+            <strong className={title}>{calledNumbers.length} / 75 ኳሶች</strong>
+          </div>
+          <div className="space-y-1.5">
+            {['B','I','N','G','O'].map((letter, i) => (
+              <div key={letter} className="grid grid-cols-[1.4rem_repeat(15,minmax(0,1fr))] items-center gap-1 rounded-lg border border-gold-700/30 bg-black/25 p-1">
+                <span className="text-center text-xs font-black text-gold-300">{letter}</span>
+                {Array.from({length:15},(_,j)=>i*15+j+1).map((n)=>(<span key={n} className={["grid h-6 min-w-0 place-items-center rounded text-[9px] font-semibold tabular-nums",calledNumbers.includes(n) ? "border border-white bg-blue-600 text-white" : "bg-white/[0.035] text-gold-600"].join(" ")}>{n}</span>))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>}
       {(menuOnly || settingsOnly) && <div className={`overflow-hidden rounded-2xl border ${panel}`}>
