@@ -119,3 +119,114 @@ button { touch-action: manipulation; }
     animation-iteration-count: 1 !important;
   }
 }
+
+
+/* Final screenshot-led refinements: rich black surfaces, warm gold hierarchy, and consistent page rhythm. */
+.premium-ui {
+  isolation: isolate;
+  background-color: #070707;
+  background-image:
+    radial-gradient(ellipse at 12% 0%, rgba(214, 173, 69, .12), transparent 32rem),
+    radial-gradient(ellipse at 88% 34%, rgba(142, 98, 22, .08), transparent 30rem),
+    linear-gradient(180deg, #090909 0%, #050505 48%, #090806 100%);
+}
+.premium-ui main {
+  color: #f3dfad;
+}
+.premium-ui h1,
+.premium-ui h2,
+.premium-ui h3 {
+  text-wrap: balance;
+}
+.premium-ui section[class*="rounded-"],
+.premium-ui [class*="rounded-2xl"][class*="bg-cardbg"],
+.premium-ui [class*="rounded-3xl"][class*="bg-cardbg"] {
+  background-color: rgba(13, 12, 9, .96);
+  border-color: rgba(214, 173, 69, .27);
+}
+.premium-ui [class*="bg-white/"] {
+  background-color: rgba(214, 173, 69, .035);
+}
+.premium-ui [class*="bg-zinc-950"],
+.premium-ui [class*="bg-zinc-900"],
+.premium-ui [class*="bg-[#111116]"],
+.premium-ui [class*="bg-[#101014]"] {
+  background-color: #090909;
+}
+.premium-ui [class*="border-gold-"] {
+  border-color: rgba(214, 173, 69, .3);
+}
+.premium-ui [class*="ring-gold-"] {
+  --tw-ring-color: rgba(214, 173, 69, .28);
+}
+.premium-ui [class*="text-zinc-300"],
+.premium-ui [class*="text-zinc-400"],
+.premium-ui [class*="text-zinc-500"] {
+  color: rgba(238, 218, 170, .68);
+}
+.premium-ui input:not([type="range"]),
+.premium-ui select,
+.premium-ui textarea {
+  border: 1px solid rgba(214, 173, 69, .32);
+  border-radius: .85rem;
+  background: linear-gradient(180deg, #10100e, #080808);
+}
+.premium-ui input[type="password"],
+.premium-ui input[inputmode="numeric"],
+.premium-ui input[autocomplete="one-time-code"] {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .12em;
+}
+.premium-ui button:disabled {
+  cursor: not-allowed;
+}
+.premium-ui button[class*="bg-gradient-to"],
+.premium-ui button[class*="bg-gold-"] {
+  border: 1px solid rgba(255, 226, 151, .28);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .12);
+}
+.premium-ui nav button[aria-current="page"] {
+  background: linear-gradient(180deg, rgba(214, 173, 69, .13), rgba(214, 173, 69, .035));
+  box-shadow: inset 0 2px 0 rgba(246, 215, 122, .75);
+}
+.premium-ui .host-anim {
+  border: 1px solid rgba(255, 231, 166, .65);
+  box-shadow: 0 0 0 5px rgba(214, 173, 69, .08), 0 22px 70px rgba(190, 142, 35, .24);
+}
+.premium-ui [class*="bg-gradient-to-br"][class*="from-gold-700"] {
+  background-image: linear-gradient(145deg, rgba(117, 79, 16, .62), #14110a 48%, #090909 100%);
+}
+.premium-ui [role="alert"],
+.premium-ui [role="status"] {
+  border-radius: .85rem;
+}
+.premium-ui .premium-progress,
+.premium-ui [aria-label="Registration progress"] {
+  color: #f6d77a;
+}
+.premium-ui [aria-label="Registration progress"] span,
+.premium-ui [class*="grid-cols-3"][class*="gap-2"] > span {
+  box-shadow: 0 0 14px rgba(214, 173, 69, .12);
+}
+.premium-ui table,
+.premium-ui [role="table"] {
+  border-color: rgba(214, 173, 69, .22);
+}
+.premium-ui ::selection {
+  color: #090806;
+  background: #f6d77a;
+}
+@media (min-width: 1024px) {
+  .premium-ui main.mx-auto {
+    padding-top: 2rem;
+  }
+}
+@media (max-width: 640px) {
+  .premium-ui main.mx-auto {
+    padding-left: .875rem;
+    padding-right: .875rem;
+  }
+  .premium-ui section[class*="rounded-"] {
+    border-radius: 1.15rem;
+  }
+}
