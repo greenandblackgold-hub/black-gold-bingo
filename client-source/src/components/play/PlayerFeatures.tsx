@@ -99,8 +99,6 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
               </div>
             ))}
           </div>
-            ))}
-          </div>
           <div className="flex items-center justify-between rounded-xl border border-gold-700/30 bg-black/25 px-3 py-3">
             <div><p className="text-xs text-gold-600">አካውንት ቀሪ ሂሳብ</p><p className="text-xl font-black text-gold-300">{formatAmount(lang, balance)} <span className="text-xs">ETB</span></p></div>
             <div className="text-right"><p className="text-xs text-gold-600">ጠቅላላ ካርቴላ</p><p className="text-xl font-black text-gold-300">{cards.length}</p></div>
