@@ -11,6 +11,7 @@ export function createGameService({ repo, config, now = Date.now }) {
   const signCard = (code, round, grid) => hmacHex(cardSecret, `${code}|${round}|${JSON.stringify(grid)}`);
   let timer = null;
   const ROUND_INTERVAL_MS = 10 * 60 * 1000;
+  const ROUND_DURATION_MS = 8 * 60 * 1000;
   const AUTO_CALL_SECONDS = 8;
   const randomPattern = () => { const ids = Object.keys(WIN_PATTERNS); return ids[randomInt(ids.length)]; };
 
@@ -78,7 +79,7 @@ export function createGameService({ repo, config, now = Date.now }) {
             phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
             autoCall: true, callIntervalSec: AUTO_CALL_SECONDS,
             nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
-            roundStartedAt: now(), roundEndsAt: now() + ROUND_INTERVAL_MS, nextRoundAt: null,
+            roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, nextRoundAt: null,
           }));
         } else schedule(g);
         return;
@@ -92,7 +93,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         await mutate('ended', (current) => ({
           phase: 'waiting', roundNumber: current.roundNumber + 1, calledNumbers: [], winner: null,
           autoCall: false, nextCallAt: null, roundStartedAt: null, roundEndsAt: null,
-          nextRoundAt: now() + ROUND_INTERVAL_MS, pot: 0,
+          nextRoundAt: (current.roundStartedAt ?? now()) + ROUND_INTERVAL_MS, pot: 0,
         }));
         return;
       }
