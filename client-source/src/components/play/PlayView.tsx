@@ -151,7 +151,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
                 aria-label={isFree ? t('free') : `${LETTERS[c]} ${v}`}
                 onClick={() => v !== null && isCalled && onToggle(v)}
                 className={[
-                  'relative grid aspect-square min-w-0 place-items-center overflow-hidden rounded-lg border text-lg font-black tabular-nums shadow-sm transition-all duration-200 active:scale-[0.91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-200 sm:rounded-xl sm:text-2xl',
+                  'relative grid aspect-square min-w-0 place-items-center overflow-hidden rounded-lg border text-xl font-black tabular-nums shadow-sm transition-all duration-200 active:scale-[0.91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-200 sm:rounded-xl sm:text-2xl',
                   isMarked && !isCalled
                     ? 'border-white/70 text-[#17130a] shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_3px_12px_rgba(212,175,55,.22)] bg-cell-mark'
                     : 'border-white/[0.055] bg-gradient-to-br from-white/[0.065] to-white/[0.015] text-gold-200/90 hover:border-gold-500/40',
@@ -161,7 +161,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
                   inWin ? 'z-[1] outline outline-2 outline-white shadow-[0_0_18px_rgba(255,245,190,.75)]' : '',
                 ].join(' ')}
               >
-                {isFree ? <span className="text-xs font-black">★</span> : v}
+                {isFree ? null : v}
               </button>
             );
           }),
@@ -362,7 +362,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           </div>
         ) : (
           <div className="overflow-x-auto pb-3">
-            <div className="grid min-w-max gap-4" style={{gridTemplateColumns: `repeat(${cardColumns}, minmax(230px, 1fr))`}}>
+            <div className="grid min-w-max gap-4" style={{gridTemplateColumns: `repeat(${cardColumns}, minmax(250px, 1fr))`}}>
               {[...cards].sort((a,b)=>cardOrder==='oldest'?Number(a.serial)-Number(b.serial):Number(b.serial)-Number(a.serial)).filter(card=>selectedCardIds.length===0||selectedCardIds.includes(card.id)).map((card) => (
                 <CardView
                   key={card.id}
