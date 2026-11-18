@@ -144,6 +144,31 @@ test('deposit via mock Chapa: credited once, replays and wrong amounts are harml
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 100);
 });
 
+test('full Telebirr and CBE SMS deposits extract amount/reference and retain original message for admin review', async () => {
+  const p = await newPlayer();
+  const sms = 'You have received ETB 125.50. Transaction ID: TB123456789. Thank you.';
+  const created = await api('POST', '/api/simulation/deposits', {
+    token: p.token,
+    body: { provider: 'Telebirr', message: sms },
+  });
+  assert.equal(created.status, 200, JSON.stringify(created.json));
+  assert.equal(created.json.reference, 'TB123456789');
+  assert.equal(created.json.amount, 125.5);
+  assert.equal(created.json.provider, 'telebirr');
+  assert.equal(created.json.status, 'pending');
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
+
+  const listed = await api('GET', '/api/admin/deposits?status=pending', { token: ctx.adminToken });
+  const row = listed.json.find((item) => item.reference === 'TB123456789');
+  assert.ok(row, 'admin should see the submitted SMS deposit');
+  assert.equal(row.rawMessage, sms);
+  assert.equal(row.provider, 'telebirr');
+
+  const approved = await api('POST', '/api/admin/deposits/TB123456789/approve', { token: ctx.adminToken });
+  assert.equal(approved.status, 200, JSON.stringify(approved.json));
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
+});
+
 test('simulation deposits require admin review and credit exactly once', async () => {
   const p = await newPlayer();
   const created = await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: 125.50, reference: 'TXN-ADMIN-12345' } });
