@@ -36,19 +36,24 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
     two_rectangles: 'ሁለት ሬክታንግሎች', half_house: 'ግማሽ ቤት (12 ቁጥሮች)',
     full_house: 'ሙሉ ካርድ', x: 'X ቅርጽ', t: 'T ቅርጽ', l: 'L ቅርጽ',
     plus: 'ፕላስ (+)', diamond: 'ዳይመንድ', picture_frame: 'ውጫዊ ፍሬም',
-    six_pack: 'Six-pack', postage_stamp: 'Postage stamp',
+    six_pack: 'Six-pack', postage_stamp: 'Postage stamp', three_lines: 'ሶስት መስመሮች', four_lines: 'አራት መስመሮች', top_bottom: 'ላይኛውና ታችኛው መስመር', left_right: 'ግራና ቀኝ መስመሮች', checkerboard: 'ቼከርቦርድ', center_cross: 'መካከለኛ መስቀል', coverall: 'ሙሉ ካርድ',
   };
   const patternCells = (r: number, c: number) => {
     switch (winPattern) {
       case 'vertical_line': return c === 2;
       case 'diagonal': case 'x': return r === c || r + c === 4;
       case 'four_corners': return (r === 0 || r === 4) && (c === 0 || c === 4);
-      case 'half_house': return r < 2 || (r === 2 && c < 2) || (r === 3 && c < 2) || (r === 4 && c < 2);
+      case 'half_house': return r * 5 + c < 12;
       case 'full_house': return true;
       case 't': return r === 0 || c === 2;
       case 'l': return c === 0 || r === 4;
       case 'plus': return r === 2 || c === 2;
       case 'picture_frame': return r === 0 || r === 4 || c === 0 || c === 4;
+      case 'top_bottom': return r === 0 || r === 4;
+      case 'left_right': return c === 0 || c === 4;
+      case 'checkerboard': return (r + c) % 2 === 0;
+      case 'center_cross': return r === 2 || c === 2;
+      case 'three_lines': case 'four_lines': return r === 0 || r === 2 || r === 4 || (winPattern === 'four_lines' && (r === 1 || r === 3));
       default: return r === 2;
     }
   };
