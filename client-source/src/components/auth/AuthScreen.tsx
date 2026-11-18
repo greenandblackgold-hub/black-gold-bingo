@@ -9,13 +9,7 @@ import { PinResetFlow } from '@/components/auth/PinResetFlow';
 
 const TEXT = translations.auth;
 const LANG_LABELS: Record<Lang, string> = { am: 'አማርኛ', ti: 'ትግርኛ', en: 'English' };
-const BINGO_LETTERS = [
-  { letter: 'B', color: 'bg-emerald-500', shadow: 'shadow-emerald-500/30' },
-  { letter: 'I', color: 'bg-cyan-500', shadow: 'shadow-cyan-500/30' },
-  { letter: 'N', color: 'bg-indigo-500', shadow: 'shadow-indigo-500/30' },
-  { letter: 'G', color: 'bg-pink-600', shadow: 'shadow-pink-600/30' },
-  { letter: 'O', color: 'bg-orange-500', shadow: 'shadow-orange-500/30' },
-];
+const BINGO_LETTERS = ['B', 'I', 'N', 'G', 'O'] as const;
 
 export function AuthScreen() {
   const { login, register } = useAuth();
@@ -67,8 +61,8 @@ export function AuthScreen() {
   const branding = (
     <div className="relative flex flex-col items-center text-center">
       <div className="flex items-center justify-center gap-2.5 sm:gap-3" aria-label="BINGO">
-        {BINGO_LETTERS.map(({ letter, color, shadow }) => (
-          <span key={letter} className={['grid h-11 w-11 place-items-center rounded-full text-lg font-black text-white shadow-lg sm:h-14 sm:w-14 sm:text-xl', color, shadow].join(' ')}>{letter}</span>
+        {BINGO_LETTERS.map((letter) => (
+          <span key={letter} className="grid h-11 w-11 place-items-center rounded-full border border-gold-200/70 bg-gradient-to-br from-gold-100 via-gold-400 to-gold-700 text-lg font-black text-[#171208] shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_8px_24px_rgba(190,145,42,.2)] sm:h-14 sm:w-14 sm:text-xl">{letter}</span>
         ))}
       </div>
       <p className="mt-5 text-xs font-semibold tracking-[0.32em] text-gold-400/80">BLACK GOLD BINGO PRO</p>
@@ -76,7 +70,7 @@ export function AuthScreen() {
   );
 
   return (
-    <main className="min-h-screen bg-[#08080b] lg:grid lg:grid-cols-2">
+    <main className="premium-ui min-h-screen bg-[#08080b] lg:grid lg:grid-cols-2">
       <section className="relative hidden min-h-screen flex-col items-center justify-center overflow-hidden border-r border-gold-500/15 bg-[radial-gradient(ellipse_at_50%_38%,#202027_0%,#101014_42%,#050507_100%)] px-10 py-16 lg:flex">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,215,0,0.10),transparent_30%,transparent_70%,rgba(255,215,0,0.07))]" />
         <div className="pointer-events-none absolute -left-40 top-[-8rem] h-[34rem] w-[34rem] rounded-full bg-gold-400/10 blur-[110px]" />
