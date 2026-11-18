@@ -304,7 +304,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             ][column];
             return <div key={letter} className="min-w-0 rounded-xl border border-white/10 bg-black/30 p-1.5 sm:p-2">
               <h3 className="mb-1.5 text-center text-base font-black text-gold-200 sm:text-lg">{letter}</h3>
-              <div className="grid grid-cols-3 gap-1 sm:grid-cols-2 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-1">
                 {Array.from({length:15},(_,index)=>column*15+index+1).map((number)=>{
                   const isCalled=called.has(number);
                   const isLatest=number===current;
