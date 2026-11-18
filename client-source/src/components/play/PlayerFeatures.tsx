@@ -4,6 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { formatAmount } from '@/lib/localization';
+import { AccountPanel } from '@/components/wallet/AccountPanel';
 
 const TELEBIRR = ['0914708903', '0983931020', '0908725881'];
 const RULES = [
@@ -13,11 +14,11 @@ const RULES = [
   'የገንዘብ ግብይት ማስረጃዎን ሙሉ በሙሉ ያስገቡ።',
 ];
 
-export function PlayerFeatures() {
+export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
   const { lang, setLang } = useLanguage();
   const { balance, cards } = usePlayer();
-  const { cardPrice } = useAppSettings();
-  const { calledNumbers, roundNumber, phase } = useRound();
+  const { cardPrice, audioVolume, setAudioVolume } = useAppSettings();
+  const { calledNumbers, roundNumber, phase, winner } = useRound();
   const { soundEnabled, setSoundEnabled, voiceEnabled, setVoiceEnabled } = useAppSettings();
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try { return localStorage.getItem('bgb.playerTheme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
@@ -50,6 +51,8 @@ export function PlayerFeatures() {
 
   const rows = [
     { id: 'messages', label: 'መልዕክቶች', icon: '✉' },
+    { id: 'wallet', label: 'ማስገባት · ማውጣት · የግብይት ታሪክ', icon: '◈' },
+    { id: 'gameHistory', label: 'የጨዋታ ታሪክ', icon: '◷' },
     { id: 'settings', label: 'ሴቲንግ', icon: '⚙' },
     { id: 'contact', label: 'ያግኙን', icon: '☎' },
     { id: 'rules', label: 'የጨዋታ ደንቦችና ሕጎች', icon: '▤' },
@@ -89,12 +92,14 @@ export function PlayerFeatures() {
             <span className={muted}>ዙር #{roundNumber} · {phase === 'running' ? 'በጨዋታ ላይ' : phase === 'waiting' ? 'በመጠባበቅ ላይ' : 'ተጠናቋል'}</span>
             <strong className={title}>{calledNumbers.length} / 75 ኳሶች</strong>
           </div>
-          <div className="grid grid-cols-5 gap-1.5">
+          <div className="space-y-1.5">
             {['B','I','N','G','O'].map((letter, i) => (
-              <div key={letter} className={`rounded-lg border p-2 text-center ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
-                <p className={`font-black ${title}`}>{letter}</p>
-                <p className={`text-[10px] tabular-nums ${muted}`}>{i*15+1}–{i*15+15}</p>
+              <div key={letter} className="grid grid-cols-[1.4rem_repeat(15,minmax(0,1fr))] items-center gap-1 rounded-lg border border-gold-700/30 bg-black/25 p-1">
+                <span className="text-center text-xs font-black text-gold-300">{letter}</span>
+                {Array.from({length:15},(_,j)=>i*15+j+1).map((n)=>(<span key={n} className={["grid h-6 min-w-0 place-items-center rounded text-[9px] font-semibold tabular-nums",calledNumbers.includes(n) ? "border border-white bg-blue-600 text-white" : "bg-white/[0.035] text-gold-600"].join(" ")}>{n}</span>))}
               </div>
+            ))}
+          </div>
             ))}
           </div>
           <div className="flex items-center justify-between rounded-xl border border-gold-700/30 bg-black/25 px-3 py-3">
@@ -113,12 +118,15 @@ export function PlayerFeatures() {
             </button>
             {expanded === row.id && (
               <div className="space-y-3 px-4 pb-4">
-                {row.id === 'messages' && <p className={`text-sm ${muted}`}>መልዕክቶችዎ በዚህ ክፍል ይታያሉ።</p>}
+                {row.id === 'messages' && <p className={`text-sm ${muted}`}>የአስተዳዳሪ መልዕክቶች የሚታዩበት ክፍል።</p>}
+                {row.id === 'wallet' && <button type="button" onClick={onGoToWallet} className="w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-600 px-4 py-3 font-bold text-zinc-950">ወደ አካውንት ሂድ — ማስገባት / ማውጣት / የግብይት ታሪክ</button>}
+                {row.id === 'gameHistory' && <p className={`text-sm ${muted}`}>የቀደሙ ዙሮች ታሪክ በBackend ላይ ስላልተቀመጠ አሁን ማሳየት አይቻልም።</p>}
                 {row.id === 'settings' && (
                   <div className="space-y-4 text-sm">
                     <div><p className={`mb-2 font-semibold ${title}`}>ገጽታ</p><div className="flex gap-2"><button type="button" onClick={() => setPlayerTheme('light')} aria-pressed={light} className={`rounded-lg border px-4 py-2 ${light ? 'border-amber-500 bg-amber-100 text-amber-900' : 'border-current/20'}`}>ብርሃን</button><button type="button" onClick={() => setPlayerTheme('dark')} aria-pressed={!light} className={`rounded-lg border px-4 py-2 ${!light ? 'border-amber-400 bg-zinc-900 text-amber-200' : 'border-current/20'}`}>ጨለማ</button></div></div>
                     <label className="flex items-center justify-between gap-3"><span>ድምጽ ውጤቶች</span><input type="checkbox" checked={soundEnabled} onChange={(e) => setSoundEnabled(e.target.checked)} /></label>
                     <label className="flex items-center justify-between gap-3"><span>የቁጥር ድምጽ</span><input type="checkbox" checked={voiceEnabled} onChange={(e) => setVoiceEnabled(e.target.checked)} /></label>
+                    <label className="block"><span className="mb-2 block">የድምጽ መጠን</span><input type="range" min="0" max="1" step="0.05" value={audioVolume} onChange={(e) => setAudioVolume(Number(e.target.value))} className="w-full accent-yellow-500" /></label>
                     <div><p className={`mb-2 font-semibold ${title}`}>ቋንቋ</p><div className="flex flex-wrap gap-2">{[['am','አማርኛ'],['ti','ትግርኛ'],['en','English']].map(([id,label]) => <button key={id} type="button" onClick={() => setLang(id as 'am'|'ti'|'en')} aria-pressed={lang === id} className={`rounded-lg border px-3 py-2 ${lang === id ? 'border-amber-400 bg-amber-400/15' : 'border-current/20'}`}>{label}</button>)}</div></div>
                     <label className="flex items-center justify-between gap-3"><span>ማሳወቂያዎች</span><input type="checkbox" checked={notifications} onChange={(e) => void enableNotifications(e.target.checked)} /></label>
                     {'Notification' in window && Notification.permission === 'denied' && <p className="text-xs text-amber-600">ማሳወቂያ በbrowser ቅንብርዎ ተዘግቷል። በጣቢያ ቅንብሮች ውስጥ ይፍቀዱ።</p>}
@@ -133,6 +141,7 @@ export function PlayerFeatures() {
           </div>
         ))}
       </div>
+      <AccountPanel />
       <p className="pb-2 text-center text-xs text-gold-700">Black Gold Bingo · ደንበኛ አገልግሎት</p>
     </section>
   );
