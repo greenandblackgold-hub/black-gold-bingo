@@ -42,6 +42,12 @@ function useHash(): string {
 /** Player app: Play, Wallet and Verify only. */
 function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
   const [tab, setTab] = useState<TabId>(() => (window.location.hash === '#wallet' ? 'wallet' : 'play'));
+  const [menuOpen, setMenuOpen] = useState(false);
+  const handleNavChange = (next: TabId) => {
+    if (next === 'menu') { setMenuOpen(true); return; }
+    setMenuOpen(false);
+    setTab(next);
+  };
   return (
     <div className="premium-ui min-h-screen pb-28">
       <Suspense fallback={<RouteLoading />}><AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} /></Suspense>
@@ -49,9 +55,17 @@ function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
         {tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} /></Suspense>}
         {tab === 'wallet' && <Suspense fallback={<RouteLoading />}><WalletView onGoToPlay={() => setTab('play')} /></Suspense>}
         {tab === 'verify' && <Suspense fallback={<RouteLoading />}><VerifyView /></Suspense>}
-        {tab === 'settings' && <PlayerFeatures onGoToWallet={() => setTab('wallet')} settingsOnly />}
       </main>
-      <Suspense fallback={null}><BottomNav active={tab} onChange={setTab} /></Suspense>
+      {menuOpen && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Menu">
+        <section className="relative flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-amber-400/35 bg-[#090909] shadow-[0_24px_90px_rgba(0,0,0,.8)] sm:rounded-3xl">
+          <header className="flex shrink-0 items-center justify-between border-b border-amber-400/20 bg-gradient-to-r from-zinc-950 via-zinc-900 to-amber-950 px-5 py-4">
+            <div><p className="text-[10px] font-bold uppercase tracking-[.28em] text-amber-400">BLACK GOLD BINGO</p><h2 className="mt-1 text-lg font-black text-amber-100">Menu</h2></div>
+            <button type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="rounded-xl border border-amber-300/30 bg-black/40 px-4 py-2 text-sm font-bold text-amber-200 hover:bg-amber-400/10">ዝጋ ✕</button>
+          </header>
+          <div className="overflow-y-auto overscroll-contain px-4 pb-6"><PlayerFeatures onGoToWallet={() => { setMenuOpen(false); setTab('wallet'); }} /></div>
+        </section>
+      </div>}
+      <Suspense fallback={null}><BottomNav active={menuOpen ? 'menu' : tab} onChange={handleNavChange} /></Suspense>
     </div>
   );
 }

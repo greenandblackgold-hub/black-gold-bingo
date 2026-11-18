@@ -242,7 +242,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-2">
-      <PlayerFeatures onGoToWallet={onGoToWallet} />
       <style>{`
         @keyframes bgBallPop {
           0% { transform: scale(.68) rotate(-9deg); opacity: 0; filter: brightness(1.35); }
