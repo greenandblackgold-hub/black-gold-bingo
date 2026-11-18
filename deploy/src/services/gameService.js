@@ -102,6 +102,14 @@ export function createGameService({ repo, config, now = Date.now }) {
       }
       schedule(g);
     } catch (e) {
+      if (e instanceof HttpError && e.code === 'all_drawn') {
+        await service.setAuto(false).catch(() => undefined);
+        return;
+      }
+      if (e instanceof HttpError && e.code === 'wrong_phase') {
+        schedule(await repo.getGame());
+        return;
+      }
       console.error('automatic round scheduler failed', e);
       timer = setTimeout(tick, 2000);
       timer.unref?.();
