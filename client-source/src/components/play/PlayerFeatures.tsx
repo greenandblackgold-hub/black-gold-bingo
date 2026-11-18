@@ -83,7 +83,6 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false }: { onGoToW
   const rows = [
     { id: 'messages', label: 'መልዕክቶች', icon: '✉' },
     { id: 'settings', label: 'ሴቲንግ', icon: '⚙' },
-    { id: 'contact', label: 'ያግኙን', icon: '☎' },
     { id: 'rules', label: 'የጨዋታ ደንቦችና ሕጎች', icon: '▤' },
     { id: 'app', label: 'መተግበሪያ', icon: '▣' },
   ];
