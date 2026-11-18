@@ -116,7 +116,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
           className={[
             'rounded-xl border-2 px-5 py-2 text-base font-black tracking-[0.22em] transition-all',
             hasWin || isWinner
-              ? 'border-red-300 bg-red-600 text-white shadow-[0_0_22px_rgba(239,68,68,.75)] animate-[bingoFlash_.85s_ease-in-out_infinite]'
+              ? 'border-red-300 bg-red-600 text-white shadow-[0_0_22px_rgba(239,68,68,.75)] bg-bingo-flash'
               : 'border-gold-700/50 bg-black/30 text-gold-400',
             !hasWin || !active || isWinner ? 'cursor-default' : 'cursor-pointer hover:scale-[1.03] active:scale-95',
           ].join(' ')}
@@ -259,6 +259,9 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
       <PlayerFeatures onGoToWallet={onGoToWallet} />
       <style>{`
         @keyframes bingoFlash { 0%,100% { opacity:1; filter:brightness(1); box-shadow:0 0 12px rgba(239,68,68,.55) } 50% { opacity:.42; filter:brightness(1.7); box-shadow:0 0 30px rgba(239,68,68,1) } }
+        .bg-bingo-flash { animation: bingoFlash .85s ease-in-out infinite; }
+        @keyframes calledNumberFlash { 0%,100% { transform:scale(1); filter:brightness(1); box-shadow:0 0 8px currentColor } 50% { transform:scale(1.13); filter:brightness(1.7); box-shadow:0 0 20px currentColor } }
+        .bg-called-latest { animation: calledNumberFlash .8s ease-in-out infinite; }
         @keyframes bgBallPop {
           0% { transform: scale(.68) rotate(-9deg); opacity: 0; filter: brightness(1.35); }
           68% { transform: scale(1.07) rotate(2deg); opacity: 1; }
@@ -284,9 +287,41 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         .bg-confetti { will-change: transform, opacity; backface-visibility: hidden; }
         .bg-ball-pop { animation: bgBallPop 620ms cubic-bezier(.2,.8,.2,1) both, bgBallGlow 2.8s ease-in-out 620ms 2; }
         @media (prefers-reduced-motion: reduce) {
-          .bg-anim, .bg-ball-pop, .bg-cell-mark, .bg-winner-reveal, .bg-confetti, .animate-\\[bingoFlash_\\.85s_ease-in-out_infinite\\] { animation: none !important; }
+          .bg-anim, .bg-ball-pop, .bg-cell-mark, .bg-winner-reveal, .bg-confetti, .bg-bingo-flash, .bg-called-latest { animation: none !important; }
         }
       `}</style>
+
+      <section className="rounded-2xl border border-gold-700/40 bg-zinc-950/80 p-3 shadow-xl sm:p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-base font-black tracking-wide text-gold-200 sm:text-lg">የተጠሩ ቁጥሮች</h2>
+          <span className="rounded-full border border-gold-500/30 bg-black/40 px-3 py-1 text-xs font-bold tabular-nums text-gold-300">{calledNumbers.length}/75</span>
+        </div>
+        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+          {LETTERS.map((letter, column) => {
+            const palette = [
+              'bg-orange-500 text-white border-orange-200',
+              'bg-sky-600 text-white border-sky-200',
+              'bg-emerald-600 text-white border-emerald-200',
+              'bg-violet-600 text-white border-violet-200',
+              'bg-rose-600 text-white border-rose-200',
+            ][column];
+            return <div key={letter} className="min-w-0 rounded-xl border border-white/10 bg-black/30 p-1.5 sm:p-2">
+              <h3 className="mb-1.5 text-center text-base font-black text-gold-200 sm:text-lg">{letter}</h3>
+              <div className="grid grid-cols-3 gap-1 sm:grid-cols-2 md:grid-cols-3">
+                {Array.from({length:15},(_,index)=>column*15+index+1).map((number)=>{
+                  const isCalled=called.has(number);
+                  const isLatest=number===current;
+                  return <span key={number} aria-label={`${letter}-${number}${isCalled?' called':''}`} className={[
+                    'grid min-h-7 place-items-center rounded-md border border-transparent py-1 text-xs font-black tabular-nums sm:min-h-8 sm:text-sm',
+                    isCalled ? palette : 'bg-white/[0.035] text-gold-700',
+                    isLatest ? 'bg-called-latest ring-2 ring-white' : '',
+                  ].join(' ')}>{number}</span>;
+                })}
+              </div>
+            </div>;
+          })}
+        </div>
+      </section>
 
       {winner && (
         <div className="space-y-2">
