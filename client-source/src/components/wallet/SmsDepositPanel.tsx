@@ -15,7 +15,7 @@ type DepositStatus = 'pending' | 'success' | 'failed' | 'amount_mismatch' | 'rej
 
 const copy = translations.smsDeposit;
 
-const inputClass = 'w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-300 placeholder:text-gold-700 ring-1 ring-gold-700/50 focus:outline-none focus:ring-2 focus:ring-gold-400';
+const inputClass = 'w-full rounded-lg bg-white/[0.05] px-3 py-2.5 text-sm text-gold-300 placeholder:text-gold-700 ring-1 ring-gold-700/50 focus:outline-none focus:ring-2 focus:ring-gold-400';
 
 export function SmsDepositPanel() {
   const { lang } = useLanguage();
@@ -76,17 +76,17 @@ export function SmsDepositPanel() {
     : t.unknown;
 
   return (
-    <section className="rounded-2xl border border-gold-600/30 bg-gradient-to-b from-white/[0.045] to-transparent p-5 shadow-[0_18px_50px_rgba(0,0,0,0.22)] sm:p-6" aria-labelledby="simulation-wallet-title">
-      <h2 id="simulation-wallet-title" className="mb-4 text-lg font-bold text-gold-300">{t.title}</h2>
+    <section className="rounded-xl border border-gold-600/30 bg-gradient-to-b from-white/[0.045] to-transparent p-3 shadow-[0_10px_28px_rgba(0,0,0,0.18)] sm:p-4" aria-labelledby="simulation-wallet-title">
+      <h2 id="simulation-wallet-title" className="mb-3 text-base font-bold text-gold-300">{t.title}</h2>
       {!request ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div>
-            <label htmlFor="simulation-deposit-provider" className="mb-2 block text-sm text-gold-500">{t.provider}</label>
+            <label htmlFor="simulation-deposit-provider" className="mb-1 block text-xs text-gold-500">{t.provider}</label>
             <select id="simulation-deposit-provider" className={inputClass} value={provider} onChange={(event) => setProvider(event.target.value as 'Telebirr' | 'CBE')} disabled={busy}>
               <option value="Telebirr">Telebirr</option><option value="CBE">Commercial Bank of Ethiopia</option>
             </select>
           </div>
-          <div className="rounded-xl border border-gold-700/40 bg-black/25 p-4 text-sm">
+          <div className="rounded-lg border border-gold-700/40 bg-black/25 p-3 text-xs">
             <p className="mb-2 font-semibold text-gold-300">{t.sendTo}</p>
             {provider === 'Telebirr' ? (
               <dl className="space-y-1">
@@ -101,18 +101,18 @@ export function SmsDepositPanel() {
             )}
           </div>
           <div>
-            <label htmlFor="simulation-deposit-message" className="mb-2 block text-sm text-gold-500">{t.message}</label>
-            <textarea id="simulation-deposit-message" className={`${inputClass} min-h-32 resize-y`} autoComplete="off" maxLength={4000} placeholder={t.messagePlaceholder} value={message} onChange={(event) => setMessage(event.target.value)} disabled={busy} />
-            <p className="mt-1 text-xs text-gold-700">{t.messageHelp}</p>
+            <label htmlFor="simulation-deposit-message" className="mb-1 block text-xs text-gold-500">{t.message}</label>
+            <textarea id="simulation-deposit-message" className={`${inputClass} min-h-20 resize-y`} autoComplete="off" maxLength={4000} placeholder={t.messagePlaceholder} value={message} onChange={(event) => setMessage(event.target.value)} disabled={busy} />
+            <p className="mt-1 text-[11px] leading-snug text-gold-700">{t.messageHelp}</p>
           </div>
           {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
-          <button type="button" onClick={submit} disabled={busy} className="w-full rounded-xl bg-gradient-to-r from-gold-300 via-gold-500 to-gold-600 py-3.5 font-bold text-darkbg shadow-lg shadow-gold-900/20 transition duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:ring-offset-2 focus-visible:ring-offset-darkbg disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={submit} disabled={busy} className="w-full rounded-lg bg-gradient-to-r from-gold-300 via-gold-500 to-gold-600 py-2.5 text-sm font-bold text-darkbg shadow-md shadow-gold-900/20 transition duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:ring-offset-2 focus-visible:ring-offset-darkbg disabled:cursor-not-allowed disabled:opacity-50">
             {busy ? t.sending : t.submit}
           </button>
-          <p className="text-xs leading-relaxed text-gold-600">{t.note}</p>
+          <p className="text-[11px] leading-snug text-gold-600">{t.note}</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <dl className="space-y-2 rounded-xl bg-white/[0.04] p-4 text-sm">
             <div className="flex justify-between gap-3"><dt className="text-gold-500">{t.reference}</dt><dd className="break-all text-right font-semibold text-gold-300">{request.reference}</dd></div>
             <div className="flex justify-between"><dt className="text-gold-500">{t.amount}</dt><dd className="font-semibold tabular-nums text-gold-300">{formatAmount(lang, request.amount)}</dd></div>
@@ -124,7 +124,7 @@ export function SmsDepositPanel() {
               {busy ? t.sending : t.check}
             </button>
           )}
-          <p className="text-xs leading-relaxed text-gold-600">{t.note}</p>
+          <p className="text-[11px] leading-snug text-gold-600">{t.note}</p>
         </div>
       )}
     </section>
