@@ -7,6 +7,45 @@ import { formatAmount } from '@/lib/localization';
 import { SERVER_MODE } from '@/lib/api';
 
 const TELEBIRR = ['0978202822', '0998974422', '0714767695'];
+ type PatternOption = { label: string; cells: number[] };
+ const row = (r:number) => Array.from({length:5},(_,c)=>r*5+c);
+ const col = (c:number) => Array.from({length:5},(_,r)=>r*5+c);
+ const A=[0,6,12,18,24], B=[4,8,12,16,20];
+ const merge=(...a:number[][])=>[...new Set(a.flat())].sort((x,y)=>x-y);
+ function getPatternOptions(p:string):PatternOption[]{
+ const all=Array.from({length:25},(_,i)=>i);
+ switch(p){
+ case 'two_lines': return [
+ {label:'ሁለት አግድም መስመሮች',cells:merge(row(0),row(4))},
+ {label:'ሁለት ቁመት መስመሮች',cells:merge(col(0),col(4))},
+ {label:'ሁለት ዲያጎናል መስመሮች',cells:merge(A,B)},
+ {label:'አግድም + ቁመት',cells:merge(row(2),col(2))},
+ {label:'አግድም + ዲያጎናል',cells:merge(row(0),A)},
+ {label:'ቁመት + ዲያጎናል',cells:merge(col(0),B)}];
+ case 'two_horizontal_lines': return [0,1,2,3].map(n=>({label:`አግድም ${n+1} እና ${n+2} መስመር`,cells:merge(row(n),row(n+1))}));
+ case 'any_line': return [{label:'አግድም',cells:row(2)},{label:'ቁመት',cells:col(2)},{label:'ዲያጎናል ↘',cells:A},{label:'ዲያጎናል ↙',cells:B}];
+ case 'horizontal_line': return [0,1,2,3,4].map(n=>({label:`አግድም ${n+1}ኛ መስመር`,cells:row(n)}));
+ case 'vertical_line': return [0,1,2,3,4].map(n=>({label:`ቁመት ${n+1}ኛ መስመር`,cells:col(n)}));
+ case 'diagonal': case 'x': return [{label:'X ዲያጎናል',cells:merge(A,B)}];
+ case 'three_lines': return [{label:'3 አግድም መስመሮች',cells:merge(row(0),row(2),row(4))},{label:'3 ቁመት መስመሮች',cells:merge(col(0),col(2),col(4))}];
+ case 'four_lines': return [{label:'4 አግድም መስመሮች',cells:merge(row(0),row(1),row(3),row(4))},{label:'4 ቁመት መስመሮች',cells:merge(col(0),col(1),col(3),col(4))}];
+ case 'full_house': case 'coverall': return [{label:'ሙሉ 25 ቦታዎች',cells:all}];
+ case 'four_corners': return [{label:'አራቱ ማዕዘኖች',cells:[0,4,20,24]}];
+ case 'half_house': return [{label:'12 ቦታዎች',cells:all.slice(0,12)}];
+ case 'top_bottom': return [{label:'ላይኛው + ታችኛው',cells:merge(row(0),row(4))}];
+ case 'left_right': return [{label:'ግራ + ቀኝ',cells:merge(col(0),col(4))}];
+ case 'plus': case 'center_cross': return [{label:'መካከለኛ መስቀል',cells:merge(row(2),col(2))}];
+ case 't': return [{label:'T ቅርጽ',cells:merge(row(0),col(2))}];
+ case 'l': return [{label:'L ቅርጽ',cells:merge(col(0),row(4))}];
+ case 'picture_frame': return [{label:'ውጫዊ ፍሬም',cells:all.filter(i=>Math.floor(i/5)===0||Math.floor(i/5)===4||i%5===0||i%5===4)}];
+ case 'checkerboard': return [{label:'ቼከርቦርድ',cells:all.filter(i=>(Math.floor(i/5)+i%5)%2===0)}];
+ case 'rectangle': return [{label:'2×2 ሬክታንግል',cells:[6,7,11,12]}];
+ case 'two_rectangles': return [{label:'ሁለት ሬክታንግሎች',cells:merge([0,1,5,6],[18,19,23,24])}];
+ case 'six_pack': return [{label:'Six-pack',cells:[6,7,8,11,12,13]}];
+ case 'postage_stamp': return [{label:'Postage stamp',cells:[0,1,5,6]}];
+ case 'diamond': return [{label:'ዳይመንድ',cells:[2,6,8,10,14,16,18,22]}];
+ default: return [{label:p.replaceAll('_',' '),cells:row(2)}];
+ }}
 const RULES = [
   'ካርቴላ ለመግዛት በአካውንትዎ በቂ ቀሪ ሂሳብ ሊኖር ይገባል።',
   'የጨዋታ ቁጥሮችን በጥንቃቄ ይከታተሉ፤ የወጣ ቁጥር ብቻ በካርቴላዎ ላይ ምልክት ያድርጉ።',
@@ -27,6 +66,8 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
     try { return localStorage.getItem('bgb.playerNotifications') === 'on'; } catch { return false; }
   });
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [showPatternOptions, setShowPatternOptions] = useState(false);
+  const [selectedPatternOption, setSelectedPatternOption] = useState(0);
   const light = theme === 'light';
   const patternNames: Record<string, string> = {
     any_line: 'አንድ መስመር', horizontal_line: 'አንድ አግድም መስመር',
@@ -38,25 +79,8 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
     plus: 'ፕላስ (+)', diamond: 'ዳይመንድ', picture_frame: 'ውጫዊ ፍሬም',
     six_pack: 'Six-pack', postage_stamp: 'Postage stamp', three_lines: 'ሶስት መስመሮች', four_lines: 'አራት መስመሮች', top_bottom: 'ላይኛውና ታችኛው መስመር', left_right: 'ግራና ቀኝ መስመሮች', checkerboard: 'ቼከርቦርድ', center_cross: 'መካከለኛ መስቀል', coverall: 'ሙሉ ካርድ',
   };
-  const patternCells = (r: number, c: number) => {
-    switch (winPattern) {
-      case 'vertical_line': return c === 2;
-      case 'diagonal': case 'x': return r === c || r + c === 4;
-      case 'four_corners': return (r === 0 || r === 4) && (c === 0 || c === 4);
-      case 'half_house': return r * 5 + c < 12;
-      case 'full_house': return true;
-      case 't': return r === 0 || c === 2;
-      case 'l': return c === 0 || r === 4;
-      case 'plus': return r === 2 || c === 2;
-      case 'picture_frame': return r === 0 || r === 4 || c === 0 || c === 4;
-      case 'top_bottom': return r === 0 || r === 4;
-      case 'left_right': return c === 0 || c === 4;
-      case 'checkerboard': return (r + c) % 2 === 0;
-      case 'center_cross': return r === 2 || c === 2;
-      case 'three_lines': case 'four_lines': return r === 0 || r === 2 || r === 4 || (winPattern === 'four_lines' && (r === 1 || r === 3));
-      default: return r === 2;
-    }
-  };
+  const patternOptions = getPatternOptions(winPattern);
+  const activePatternOption = patternOptions[selectedPatternOption % patternOptions.length] ?? patternOptions[0];
   const panel = light ? 'border-amber-300 bg-amber-50 text-zinc-900' : 'border-gold-700/40 bg-zinc-950/70 text-gold-100';
   const muted = light ? 'text-zinc-600' : 'text-gold-600';
   const title = light ? 'text-amber-800' : 'text-gold-300';
@@ -100,22 +124,30 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
               <p className="mt-1 text-base font-extrabold text-amber-300">{patternNames[winPattern] ?? winPattern.replaceAll('_', ' ')}</p>
               <p className="mt-1 text-xs text-amber-200/70">ዙር #{roundNumber} · {phase === 'running' ? 'በጨዋታ ላይ' : phase === 'waiting' ? 'በመጠባበቅ ላይ' : 'ተጠናቋል'}</p>
             </div>
-            <div className="grid h-20 w-20 shrink-0 grid-cols-5 gap-1 rounded-2xl border border-amber-300/40 bg-black/40 p-2 shadow-lg shadow-amber-900/30 sm:h-24 sm:w-24" aria-label="Winning pattern preview">
-              {Array.from({ length: 25 }, (_, i) => <span key={i} className={`rounded-[2px] ${patternCells(Math.floor(i / 5), i % 5) ? 'bg-sky-400 ring-1 ring-white/80' : 'bg-white/10'}`} />)}
-            </div>
+            <button type="button" onClick={() => setShowPatternOptions(true)} aria-label="የሚቻሉ የአሸናፊነት ቅርጾችን አሳይ" className="group shrink-0 rounded-2xl border border-amber-300/50 bg-black/40 p-2 text-left shadow-lg shadow-amber-900/30 focus:outline-none focus:ring-2 focus:ring-amber-300">
+              <span className="grid h-16 w-16 grid-cols-5 gap-1 sm:h-20 sm:w-20" aria-hidden="true">{Array.from({length:25},(_,i)=><span key={i} className={`rounded-[2px] ${activePatternOption.cells.includes(i)?'bg-sky-400 ring-1 ring-white/80':'bg-white/10'}`}/>)}</span>
+              <span className="mt-1 block text-center text-[9px] font-bold text-amber-200">ሊነካ ይችላል · ዝርዝር</span>
+            </button>
           </div>
         </div>
-        <div className="space-y-3 p-4 sm:p-5">
+        {showPatternOptions && <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="የBingo አሸናፊነት ቅርጾች">
+          <div className="max-h-[82vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-amber-400/50 bg-zinc-950 p-4 text-amber-50 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-base font-black text-amber-200">የሚቻሉ የአሸናፊነት ቅርጾች</h3><p className="mt-1 text-xs text-amber-100/60">{patternNames[winPattern] ?? winPattern.replaceAll('_',' ')} · {patternOptions.length} አማራጮች</p></div><button type="button" onClick={() => setShowPatternOptions(false)} className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold">ዝጋ ✕</button></div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{patternOptions.map((option,index)=><button key={option.label} type="button" onClick={()=>setSelectedPatternOption(index)} aria-pressed={selectedPatternOption===index} className={`flex items-center gap-3 rounded-xl border p-3 text-left ${selectedPatternOption===index?'border-sky-300 bg-sky-950/60':'border-amber-900 bg-black/30'}`}>
+              <span className="grid h-14 w-14 shrink-0 grid-cols-5 gap-0.5 rounded-lg bg-black p-1">{Array.from({length:25},(_,i)=><span key={i} className={`rounded-[1px] ${option.cells.includes(i)?'bg-sky-400':'bg-white/10'}`}/>)}</span><span className="text-xs font-bold leading-5">{option.label}{selectedPatternOption===index&&<span className="mt-1 block text-[10px] text-sky-300">የተመረጠ ማሳያ</span>}</span>
+            </button>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-100/60">እነዚህ የሚቻሉ የአሸናፊነት ቅርጾች ምሳሌዎች ናቸው፤ ትክክለኛው ማረጋገጫ በስርዓቱ ይከናወናል።</p>
+          </div></div>}
+        <div className="space-y-2 p-3 sm:p-4">
           <div className="flex items-center gap-2"><span className="text-lg">ⓘ</span><h3 className={`font-bold ${title}`}>መረጃ</h3></div>
-          <p className={`text-sm leading-7 ${muted}`}>በቴሌብር (0978202822 — ኣሊክሳንደር ደጀን) ወይም በንግድ ባንክ (1000737138686 — ቤተሊሄም ፍጹም) ሙሉ ደረሰኝ በማስገባት ገቢ (Deposit) ማድረግ ትችላላችሁ። iPhone የምትጠቀሙ ደንበኞች Google Chrome ላይ www.bingo1020.com በመፈለግ መጠቀም ትችላላችሁ።</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <p className={`text-xs leading-5 ${muted}`}>በቴሌብር (0978202822 — ኣሊክሳንደር ደጀን) ወይም በንግድ ባንክ (1000737138686 — ቤተሊሄም ፍጹም) ሙሉ ደረሰኝ በማስገባት ገቢ (Deposit) ማድረግ ትችላላችሁ። iPhone የምትጠቀሙ ደንበኞች Google Chrome ላይ www.bingo1020.com በመፈለግ መጠቀም ትችላላችሁ።</p>
+          <div className="grid grid-cols-3 gap-1.5">
             {[
               ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
               ['የዙሩ የተሸጡ ካርዶች', SERVER_MODE && roundCardCount !== undefined ? String(roundCardCount) : '—'],
               ['የአሁኑ ዋና ሽልማት', SERVER_MODE && roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ETB` : '—'],
             ].map(([label, value]) => (
-              <div key={label} className={`rounded-xl border p-3 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
-                <p className={`text-[11px] ${muted}`}>{label}</p><p className={`mt-1 text-sm font-black tabular-nums ${title}`}>{value}</p>
+              <div key={label} className={`rounded-lg border p-2 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
+                <p className={`text-[10px] leading-4 ${muted}`}>{label}</p><p className={`mt-0.5 text-xs font-black tabular-nums ${title}`}>{value}</p>
               </div>
             ))}
           </div>
