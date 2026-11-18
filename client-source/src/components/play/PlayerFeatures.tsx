@@ -8,7 +8,6 @@ import { patternMasks } from '@/lib/bingo';
 import type { WinPattern } from '@/types/game';
 import { SERVER_MODE } from '@/lib/api';
 
-const TELEBIRR = ['0978202822', '0998974422', '0714767695'];
 type PatternOption = { label: string; cells: number[] };
 const PATTERN_LABELS: Record<string,string> = {
   any_line:'አንድ መስመር', horizontal_line:'አግድም መስመር', vertical_line:'ቁመት መስመር',
@@ -119,7 +118,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false }: { onGoToW
           </div></div>}
         <div className="space-y-2 p-3 sm:p-4">
           <div className="flex items-center gap-2"><span className="text-lg">ⓘ</span><h3 className={`font-bold ${title}`}>መረጃ</h3></div>
-          <p className={`text-xs leading-5 ${muted}`}>በቴሌብር (0978202822 — ኣሊክሳንደር ደጀን) ወይም በንግድ ባንክ (1000737138686 — ቤተሊሄም ፍጹም) ሙሉ ደረሰኝ በማስገባት ገቢ (Deposit) ማድረግ ትችላላችሁ። iPhone የምትጠቀሙ ደንበኞች Google Chrome ላይ www.bingo1020.com በመፈለግ መጠቀም ትችላላችሁ።</p>
+          <p className={`text-xs leading-5 ${muted}`}>በቴሌብር (0978202822 — ኣሊክሳንደር ደጀን) ወይም በንግድ ባንክ (1000737138686 — ቤተሊሄም ፍጹም) ሙሉ ደረሰኝ በማስገባት ገቢ (Deposit) ማድረግ ትችላላችሁ። iPhone የምትጠቀሙ ደንበኞች Google Chrome ላይ www.blackgoldbingo.com በመፈለግ መጠቀም ትችላላችሁ።</p>
           <div className="mb-2 flex justify-end"><button type="button" onClick={() => toggle('history')} aria-expanded={expanded === 'history'} className="rounded-xl border border-amber-400/40 bg-black/35 px-4 py-2 text-xs font-bold text-amber-200 shadow-lg hover:bg-amber-400/10">▤ ታሪክ <span className="ml-2">{expanded === 'history' ? '−' : '+'}</span></button></div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             {[
@@ -184,9 +183,9 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false }: { onGoToW
                     <p className={`text-xs ${muted}`}>ካርቴላ ካስመዘገቡ ብቻ ማሳወቂያ ለማግኘት የbrowser ፈቃድ ያስፈልጋል።</p>
                   </div>
                 )}
-                {row.id === 'contact' && <div className="space-y-2 text-sm"><p className={title}>ስልክ</p>{TELEBIRR.map((phone) => <a key={phone} href={`tel:${phone}`} className="block font-mono text-amber-500 underline">{phone}</a>)}</div>}
+                {row.id === 'contact' && <div className="space-y-2 text-sm"><p className={title}>ተጨማሪ መረጃ ከፈለጉ 0978202822 ወይም 0998974422 ይደዉሉ ኣናመሰግናልን</p></div>}
                 {row.id === 'rules' && <ol className={`list-decimal space-y-2 pl-5 text-sm leading-6 ${muted}`}>{RULES.map((rule) => <li key={rule}>{rule}</li>)}</ol>}
-                {row.id === 'app' && <div className="text-sm"><p className={title}>የAndroid መተግበሪያ አውርድ</p><p className={`mt-1 text-xs ${muted}`}>የማውረጃ አገናኝ ሲገኝ ከዚህ ይቀርባል።</p></div>}
+                
               </div>
             )}
           </div>
