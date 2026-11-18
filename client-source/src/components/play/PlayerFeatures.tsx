@@ -29,7 +29,7 @@ function getPatternOptions(pattern: WinPattern): PatternOption[] {
   const stride = Math.max(1, Math.ceil(masks.length / 12));
   const samples = masks.filter((_,i)=>i%stride===0).slice(0,12);
   return samples.map((mask,index)=>({
-    label: masks.length===1 ? (PATTERN_LABELS[pattern] ?? pattern.replaceAll('_',' ')) : `${PATTERN_LABELS[pattern] ?? pattern.replaceAll('_',' ')} · ${index+1}`,
+    label: masks.length===1 ? (PATTERN_LABELS[pattern] ?? pattern.replace(/_/g, ' ')) : `${PATTERN_LABELS[pattern] ?? pattern.replace(/_/g, ' ')} · ${index+1}`,
     cells: mask.map(([r,c])=>r*5+c),
   }));
 }
@@ -99,7 +99,7 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[.28em] text-amber-300">BLACK GOLD BINGO</p>
               <h2 className="mt-1 text-xl font-black text-amber-100 sm:text-2xl">የአሁኑ ዙር የBingo ዓይነት</h2>
-              <p className="mt-1 text-base font-extrabold text-amber-300">{patternNames[winPattern] ?? winPattern.replaceAll('_', ' ')}</p>
+              <p className="mt-1 text-base font-extrabold text-amber-300">{patternNames[winPattern] ?? winPattern.replace(/_/g, ' ')}</p>
               <p className="mt-1 text-xs text-amber-200/70">ዙር #{roundNumber} · {phase === 'running' ? 'በጨዋታ ላይ' : phase === 'waiting' ? 'በመጠባበቅ ላይ' : 'ተጠናቋል'}</p>
             </div>
             <button type="button" onClick={() => setShowPatternOptions(true)} aria-label="የሚቻሉ የአሸናፊነት ቅርጾችን አሳይ" className="group shrink-0 rounded-2xl border border-amber-300/50 bg-black/40 p-2 text-left shadow-lg shadow-amber-900/30 focus:outline-none focus:ring-2 focus:ring-amber-300">
@@ -110,7 +110,7 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
         </div>
         {showPatternOptions && <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="የBingo አሸናፊነት ቅርጾች">
           <div className="max-h-[82vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-amber-400/50 bg-zinc-950 p-4 text-amber-50 shadow-2xl">
-            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-base font-black text-amber-200">የሚቻሉ የአሸናፊነት ቅርጾች</h3><p className="mt-1 text-xs text-amber-100/60">{patternNames[winPattern] ?? winPattern.replaceAll('_',' ')} · {patternOptions.length} አማራጮች</p></div><button type="button" onClick={() => setShowPatternOptions(false)} className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold">ዝጋ ✕</button></div>
+            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-base font-black text-amber-200">የሚቻሉ የአሸናፊነት ቅርጾች</h3><p className="mt-1 text-xs text-amber-100/60">{patternNames[winPattern] ?? winPattern.replace(/_/g, ' ')} · {patternOptions.length} አማራጮች</p></div><button type="button" onClick={() => setShowPatternOptions(false)} className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold">ዝጋ ✕</button></div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{patternOptions.map((option,index)=><button key={option.label} type="button" onClick={()=>setSelectedPatternOption(index)} aria-pressed={selectedPatternOption===index} className={`flex items-center gap-3 rounded-xl border p-3 text-left ${selectedPatternOption===index?'border-sky-300 bg-sky-950/60':'border-amber-900 bg-black/30'}`}>
               <span className="grid h-14 w-14 shrink-0 grid-cols-5 gap-0.5 rounded-lg bg-black p-1">{Array.from({length:25},(_,i)=><span key={i} className={`rounded-[1px] ${option.cells.includes(i)?'bg-sky-400':'bg-white/10'}`}/>)}</span><span className="text-xs font-bold leading-5">{option.label}{selectedPatternOption===index&&<span className="mt-1 block text-[10px] text-sky-300">የተመረጠ ማሳያ</span>}</span>
             </button>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-100/60">እነዚህ የሚቻሉ የአሸናፊነት ቅርጾች ምሳሌዎች ናቸው፤ ትክክለኛው ማረጋገጫ በስርዓቱ ይከናወናል።</p>
