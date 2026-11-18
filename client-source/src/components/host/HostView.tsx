@@ -185,6 +185,13 @@ export function HostView() {
           <option value="rectangle">2×2 ሬክታንግል</option>
           <option value="two_rectangles">ሁለት ሬክታንግሎች</option>
           <option value="postage_stamp">ፖስታጅ ስታምፕ</option>
+          <option value="three_lines">ሶስት መስመሮች</option>
+          <option value="four_lines">ኣራት መስመሮች</option>
+          <option value="top_bottom">ላይኛውና ታችኛው መስመር</option>
+          <option value="left_right">ግራና ቀኝ መስመሮች</option>
+          <option value="checkerboard">ቼከርቦርድ</option>
+          <option value="center_cross">መካከለኛ መስቀል</option>
+          <option value="coverall">ሙሉ ካርድ</option>
           <option value="six_pack">2×3 ሬክታንግል (Six-pack)</option>
           <option value="half_house">ግማሽ ቤት (12 ቁጥሮች)</option>
           <option value="full_house">ፉል ሃውስ / ሙሉ ካርድ</option>

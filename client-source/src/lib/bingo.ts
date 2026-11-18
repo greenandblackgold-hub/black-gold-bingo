@@ -71,14 +71,21 @@ export function findWinningLine(grid: (number | null)[][], called: Set<number>):
 }
 
 
-export type WinPattern = 'any_line'|'horizontal_line'|'vertical_line'|'diagonal'|'two_lines'|'two_horizontal_lines'|'four_corners'|'rectangle'|'two_rectangles'|'half_house'|'full_house'|'x'|'t'|'l'|'plus'|'diamond'|'picture_frame'|'six_pack'|'postage_stamp';
+export type WinPattern = import('@/types/game').WinPattern;
 const p=(r:number,c:number):Pos=>[r,c];
 const ROWS=Array.from({length:5},(_,r)=>Array.from({length:5},(_,c)=>p(r,c)));
 const COLS=Array.from({length:5},(_,c)=>Array.from({length:5},(_,r)=>p(r,c)));
 const D1=Array.from({length:5},(_,i)=>p(i,i)), D2=Array.from({length:5},(_,i)=>p(i,4-i));
 const ALL_LINES=[...ROWS,...COLS,D1,D2];
 const unique=(groups:Pos[][]):Pos[]=>groups.flat().filter(([r,c],i,a)=>a.findIndex(([x,y])=>x===r&&y===c)===i);
-const combinations=(items:Pos[][],n:number):Pos[][][]=>items.flatMap((_,i)=>i+n<=items.length?[items.slice(i,i+n)]:[]);
+const combinations=(items:Pos[][],n:number):Pos[][][]=>{
+ const out:Pos[][][]=[];
+ const choose=(start:number,picked:Pos[][])=>{
+  if(picked.length===n){out.push(picked);return;}
+  for(let i=start;i<=items.length-(n-picked.length);i++)choose(i+1,[...picked,items[i]]);
+ };
+ choose(0,[]);return out;
+};
 const BLOCKS:Pos[][]=[];
 for(let r=0;r<4;r++)for(let c=0;c<4;c++)BLOCKS.push([p(r,c),p(r,c+1),p(r+1,c),p(r+1,c+1)]);
 const SIX:Pos[][]=[];
@@ -92,11 +99,17 @@ export function patternMasks(pattern:WinPattern='any_line'):Pos[][] {
   case 'diagonal':return [D1,D2];
   case 'two_lines':return combinations(ALL_LINES,2).map(unique);
   case 'two_horizontal_lines':return combinations(ROWS,2).map(unique);
+  case 'three_lines':return combinations(ALL_LINES,3).map(unique);
+  case 'four_lines':return combinations(ALL_LINES,4).map(unique);
+  case 'top_bottom':return [unique([ROWS[0],ROWS[4]])];
+  case 'left_right':return [unique([COLS[0],COLS[4]])];
+  case 'checkerboard':return [Array.from({length:25},(_,i)=>p(Math.floor(i/5),i%5)).filter(([r,c])=>(r+c)%2===0)];
+  case 'center_cross':return [unique([ROWS[2],COLS[2]])];
   case 'four_corners':return [[p(0,0),p(0,4),p(4,0),p(4,4)]];
   case 'rectangle':return BLOCKS;
   case 'postage_stamp':return [[p(0,0),p(0,1),p(1,0),p(1,1)],[p(0,3),p(0,4),p(1,3),p(1,4)],[p(3,0),p(3,1),p(4,0),p(4,1)],[p(3,3),p(3,4),p(4,3),p(4,4)]];
   case 'two_rectangles':return combinations(BLOCKS,2).map(unique);
-  case 'full_house':return [NON_FREE];
+  case 'full_house':case 'coverall':return [NON_FREE];
   case 'x':return [unique([D1,D2])];
   case 't':return [unique([ROWS[0],COLS[2]])];
   case 'l':return [unique([COLS[0],ROWS[4]])];

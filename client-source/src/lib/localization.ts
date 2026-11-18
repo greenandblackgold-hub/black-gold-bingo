@@ -668,6 +668,8 @@ export const patternNames: Record<Lang, Record<WinPattern, string>> = {
     four_corners: 'አራቱ ማዕዘኖች', rectangle: 'አራት ማዕዘን', two_rectangles: 'ሁለት አራት ማዕዘኖች',
     half_house: 'ግማሽ ቤት', full_house: 'ሙሉ ቤት', x: 'X ቅርጽ', t: 'T ቅርጽ', l: 'L ቅርጽ',
     plus: 'ፕላስ (+)', diamond: 'አልማዝ', picture_frame: 'የምስል ፍሬም', six_pack: 'ስድስት ሳጥኖች', postage_stamp: 'የፖስታ ማህተም',
+    three_lines: 'ሶስት መስመሮች', four_lines: 'ኣራት መስመሮች', top_bottom: 'ላይኛውና ታችኛው',
+    left_right: 'ግራና ቀኝ', checkerboard: 'ቼከርቦርድ', center_cross: 'መካከለኛ መስቀል', coverall: 'ሙሉ ካርድ',
   },
   ti: {
     any_line: 'ሓደ መስመር', horizontal_line: 'ኣግዳሚ መስመር', vertical_line: 'ቁመታዊ መስመር',
@@ -675,6 +677,8 @@ export const patternNames: Record<Lang, Record<WinPattern, string>> = {
     four_corners: 'ኣርባዕቲኦም ኩርናዓት', rectangle: 'ሬክታንግል', two_rectangles: 'ክልተ ሬክታንግል',
     half_house: 'ፍርቂ ገዛ', full_house: 'ምሉእ ገዛ', x: 'ቅርጺ X', t: 'ቅርጺ T', l: 'ቅርጺ L',
     plus: 'ፕላስ (+)', diamond: 'ኣልማዝ', picture_frame: 'ፍሬም ስእሊ', six_pack: 'ሽዱሽተ ሳጹናት', postage_stamp: 'ማሕተም ፖስታ',
+    three_lines: 'ሰለስተ መስመራት', four_lines: 'ኣርባዕተ መስመራት', top_bottom: 'ላዕለዋይን ታሕተዋይን',
+    left_right: 'ጸጋምን የማንን', checkerboard: 'ቼከርቦርድ', center_cross: 'ማእከላይ መስቀል', coverall: 'ምሉእ ካርድ',
   },
   en: {
     any_line: 'Any line', horizontal_line: 'Horizontal line', vertical_line: 'Vertical line',
@@ -682,6 +686,8 @@ export const patternNames: Record<Lang, Record<WinPattern, string>> = {
     four_corners: 'Four corners', rectangle: 'Rectangle', two_rectangles: 'Two rectangles',
     half_house: 'Half house', full_house: 'Full house', x: 'X pattern', t: 'T pattern', l: 'L pattern',
     plus: 'Plus (+)', diamond: 'Diamond', picture_frame: 'Picture frame', six_pack: 'Six-pack', postage_stamp: 'Postage stamp',
+    three_lines: 'Three lines', four_lines: 'Four lines', top_bottom: 'Top and bottom rows',
+    left_right: 'Left and right columns', checkerboard: 'Checkerboard', center_cross: 'Center cross', coverall: 'Coverall',
   },
 };
 

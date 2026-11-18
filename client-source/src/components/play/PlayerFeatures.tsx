@@ -4,48 +4,35 @@ import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { formatAmount } from '@/lib/localization';
+import { patternMasks } from '@/lib/bingo';
+import type { WinPattern } from '@/types/game';
 import { SERVER_MODE } from '@/lib/api';
 
 const TELEBIRR = ['0978202822', '0998974422', '0714767695'];
- type PatternOption = { label: string; cells: number[] };
- const row = (r:number) => Array.from({length:5},(_,c)=>r*5+c);
- const col = (c:number) => Array.from({length:5},(_,r)=>r*5+c);
- const A=[0,6,12,18,24], B=[4,8,12,16,20];
- const merge=(...a:number[][])=>[...new Set(a.flat())].sort((x,y)=>x-y);
- function getPatternOptions(p:string):PatternOption[]{
- const all=Array.from({length:25},(_,i)=>i);
- switch(p){
- case 'two_lines': return [
- {label:'ሁለት አግድም መስመሮች',cells:merge(row(0),row(4))},
- {label:'ሁለት ቁመት መስመሮች',cells:merge(col(0),col(4))},
- {label:'ሁለት ዲያጎናል መስመሮች',cells:merge(A,B)},
- {label:'አግድም + ቁመት',cells:merge(row(2),col(2))},
- {label:'አግድም + ዲያጎናል',cells:merge(row(0),A)},
- {label:'ቁመት + ዲያጎናል',cells:merge(col(0),B)}];
- case 'two_horizontal_lines': return [0,1,2,3].map(n=>({label:`አግድም ${n+1} እና ${n+2} መስመር`,cells:merge(row(n),row(n+1))}));
- case 'any_line': return [{label:'አግድም',cells:row(2)},{label:'ቁመት',cells:col(2)},{label:'ዲያጎናል ↘',cells:A},{label:'ዲያጎናል ↙',cells:B}];
- case 'horizontal_line': return [0,1,2,3,4].map(n=>({label:`አግድም ${n+1}ኛ መስመር`,cells:row(n)}));
- case 'vertical_line': return [0,1,2,3,4].map(n=>({label:`ቁመት ${n+1}ኛ መስመር`,cells:col(n)}));
- case 'diagonal': case 'x': return [{label:'X ዲያጎናል',cells:merge(A,B)}];
- case 'three_lines': return [{label:'3 አግድም መስመሮች',cells:merge(row(0),row(2),row(4))},{label:'3 ቁመት መስመሮች',cells:merge(col(0),col(2),col(4))}];
- case 'four_lines': return [{label:'4 አግድም መስመሮች',cells:merge(row(0),row(1),row(3),row(4))},{label:'4 ቁመት መስመሮች',cells:merge(col(0),col(1),col(3),col(4))}];
- case 'full_house': case 'coverall': return [{label:'ሙሉ 25 ቦታዎች',cells:all}];
- case 'four_corners': return [{label:'አራቱ ማዕዘኖች',cells:[0,4,20,24]}];
- case 'half_house': return [{label:'12 ቦታዎች',cells:all.slice(0,12)}];
- case 'top_bottom': return [{label:'ላይኛው + ታችኛው',cells:merge(row(0),row(4))}];
- case 'left_right': return [{label:'ግራ + ቀኝ',cells:merge(col(0),col(4))}];
- case 'plus': case 'center_cross': return [{label:'መካከለኛ መስቀል',cells:merge(row(2),col(2))}];
- case 't': return [{label:'T ቅርጽ',cells:merge(row(0),col(2))}];
- case 'l': return [{label:'L ቅርጽ',cells:merge(col(0),row(4))}];
- case 'picture_frame': return [{label:'ውጫዊ ፍሬም',cells:all.filter(i=>Math.floor(i/5)===0||Math.floor(i/5)===4||i%5===0||i%5===4)}];
- case 'checkerboard': return [{label:'ቼከርቦርድ',cells:all.filter(i=>(Math.floor(i/5)+i%5)%2===0)}];
- case 'rectangle': return [{label:'2×2 ሬክታንግል',cells:[6,7,11,12]}];
- case 'two_rectangles': return [{label:'ሁለት ሬክታንግሎች',cells:merge([0,1,5,6],[18,19,23,24])}];
- case 'six_pack': return [{label:'Six-pack',cells:[6,7,8,11,12,13]}];
- case 'postage_stamp': return [{label:'Postage stamp',cells:[0,1,5,6]}];
- case 'diamond': return [{label:'ዳይመንድ',cells:[2,6,8,10,14,16,18,22]}];
- default: return [{label:p.replaceAll('_',' '),cells:row(2)}];
- }}
+type PatternOption = { label: string; cells: number[] };
+const PATTERN_LABELS: Record<string,string> = {
+  any_line:'አንድ መስመር', horizontal_line:'አግድም መስመር', vertical_line:'ቁመት መስመር',
+  diagonal:'ዲያጎናል', two_lines:'ሁለት መስመሮች', two_horizontal_lines:'ሁለት አግድም መስመሮች',
+  four_corners:'አራቱ ማዕዘኖች', rectangle:'2×2 ሬክታንግል', two_rectangles:'ሁለት ሬክታንግሎች',
+  half_house:'ግማሽ ቤት (12 ቁጥሮች)', full_house:'ሙሉ ካርድ', x:'X ቅርጽ',
+  t:'T ቅርጽ', l:'L ቅርጽ', plus:'ፕላስ (+)', diamond:'ዳይመንድ',
+  picture_frame:'ውጫዊ ፍሬም', six_pack:'Six-pack', postage_stamp:'Postage stamp',
+  three_lines:'ሶስት መስመሮች', four_lines:'አራት መስመሮች',
+  top_bottom:'ላይኛውና ታችኛው መስመር', left_right:'ግራና ቀኝ መስመሮች',
+  checkerboard:'ቼከርቦርድ', center_cross:'መካከለኛ መስቀል', coverall:'ሙሉ ካርድ',
+};
+function getPatternOptions(pattern: WinPattern): PatternOption[] {
+  const masks = pattern === 'half_house'
+    ? [Array.from({length:25},(_,i)=>i).filter(i=>i!==12).slice(0,12).map(i=>[Math.floor(i/5),i%5] as [number,number])]
+    : patternMasks(pattern);
+  // Large combinatorial patterns are sampled evenly; every thumbnail is still a real backend rule mask.
+  const stride = Math.max(1, Math.ceil(masks.length / 12));
+  const samples = masks.filter((_,i)=>i%stride===0).slice(0,12);
+  return samples.map((mask,index)=>({
+    label: masks.length===1 ? (PATTERN_LABELS[pattern] ?? pattern.replace(/_/g, ' ')) : `${PATTERN_LABELS[pattern] ?? pattern.replace(/_/g, ' ')} · ${index+1}`,
+    cells: mask.map(([r,c])=>r*5+c),
+  }));
+}
 const RULES = [
   'ካርቴላ ለመግዛት በአካውንትዎ በቂ ቀሪ ሂሳብ ሊኖር ይገባል።',
   'የጨዋታ ቁጥሮችን በጥንቃቄ ይከታተሉ፤ የወጣ ቁጥር ብቻ በካርቴላዎ ላይ ምልክት ያድርጉ።',
@@ -69,16 +56,7 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
   const [showPatternOptions, setShowPatternOptions] = useState(false);
   const [selectedPatternOption, setSelectedPatternOption] = useState(0);
   const light = theme === 'light';
-  const patternNames: Record<string, string> = {
-    any_line: 'አንድ መስመር', horizontal_line: 'አንድ አግድም መስመር',
-    vertical_line: 'አንድ ቁመት መስመር', diagonal: 'ዲያጎናል',
-    two_lines: 'ሁለት መስመሮች', two_horizontal_lines: 'ሁለት አግድም መስመሮች',
-    four_corners: 'አራቱ ማዕዘኖች', rectangle: '2×2 ሬክታንግል',
-    two_rectangles: 'ሁለት ሬክታንግሎች', half_house: 'ግማሽ ቤት (12 ቁጥሮች)',
-    full_house: 'ሙሉ ካርድ', x: 'X ቅርጽ', t: 'T ቅርጽ', l: 'L ቅርጽ',
-    plus: 'ፕላስ (+)', diamond: 'ዳይመንድ', picture_frame: 'ውጫዊ ፍሬም',
-    six_pack: 'Six-pack', postage_stamp: 'Postage stamp', three_lines: 'ሶስት መስመሮች', four_lines: 'አራት መስመሮች', top_bottom: 'ላይኛውና ታችኛው መስመር', left_right: 'ግራና ቀኝ መስመሮች', checkerboard: 'ቼከርቦርድ', center_cross: 'መካከለኛ መስቀል', coverall: 'ሙሉ ካርድ',
-  };
+  const patternNames = PATTERN_LABELS;
   const patternOptions = getPatternOptions(winPattern);
   const activePatternOption = patternOptions[selectedPatternOption % patternOptions.length] ?? patternOptions[0];
   const panel = light ? 'border-amber-300 bg-amber-50 text-zinc-900' : 'border-gold-700/40 bg-zinc-950/70 text-gold-100';
@@ -121,7 +99,7 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[.28em] text-amber-300">BLACK GOLD BINGO</p>
               <h2 className="mt-1 text-xl font-black text-amber-100 sm:text-2xl">የአሁኑ ዙር የBingo ዓይነት</h2>
-              <p className="mt-1 text-base font-extrabold text-amber-300">{patternNames[winPattern] ?? winPattern.replaceAll('_', ' ')}</p>
+              <p className="mt-1 text-base font-extrabold text-amber-300">{patternNames[winPattern] ?? winPattern.replace(/_/g, ' ')}</p>
               <p className="mt-1 text-xs text-amber-200/70">ዙር #{roundNumber} · {phase === 'running' ? 'በጨዋታ ላይ' : phase === 'waiting' ? 'በመጠባበቅ ላይ' : 'ተጠናቋል'}</p>
             </div>
             <button type="button" onClick={() => setShowPatternOptions(true)} aria-label="የሚቻሉ የአሸናፊነት ቅርጾችን አሳይ" className="group shrink-0 rounded-2xl border border-amber-300/50 bg-black/40 p-2 text-left shadow-lg shadow-amber-900/30 focus:outline-none focus:ring-2 focus:ring-amber-300">
@@ -132,7 +110,7 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
         </div>
         {showPatternOptions && <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="የBingo አሸናፊነት ቅርጾች">
           <div className="max-h-[82vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-amber-400/50 bg-zinc-950 p-4 text-amber-50 shadow-2xl">
-            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-base font-black text-amber-200">የሚቻሉ የአሸናፊነት ቅርጾች</h3><p className="mt-1 text-xs text-amber-100/60">{patternNames[winPattern] ?? winPattern.replaceAll('_',' ')} · {patternOptions.length} አማራጮች</p></div><button type="button" onClick={() => setShowPatternOptions(false)} className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold">ዝጋ ✕</button></div>
+            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-base font-black text-amber-200">የሚቻሉ የአሸናፊነት ቅርጾች</h3><p className="mt-1 text-xs text-amber-100/60">{patternNames[winPattern] ?? winPattern.replace(/_/g, ' ')} · {patternOptions.length} አማራጮች</p></div><button type="button" onClick={() => setShowPatternOptions(false)} className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold">ዝጋ ✕</button></div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{patternOptions.map((option,index)=><button key={option.label} type="button" onClick={()=>setSelectedPatternOption(index)} aria-pressed={selectedPatternOption===index} className={`flex items-center gap-3 rounded-xl border p-3 text-left ${selectedPatternOption===index?'border-sky-300 bg-sky-950/60':'border-amber-900 bg-black/30'}`}>
               <span className="grid h-14 w-14 shrink-0 grid-cols-5 gap-0.5 rounded-lg bg-black p-1">{Array.from({length:25},(_,i)=><span key={i} className={`rounded-[1px] ${option.cells.includes(i)?'bg-sky-400':'bg-white/10'}`}/>)}</span><span className="text-xs font-bold leading-5">{option.label}{selectedPatternOption===index&&<span className="mt-1 block text-[10px] text-sky-300">የተመረጠ ማሳያ</span>}</span>
             </button>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-100/60">እነዚህ የሚቻሉ የአሸናፊነት ቅርጾች ምሳሌዎች ናቸው፤ ትክክለኛው ማረጋገጫ በስርዓቱ ይከናወናል።</p>
