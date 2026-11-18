@@ -1,7 +1,7 @@
 import { randomToken, randomInt, hmacHex, safeEqual } from '../util/crypto.js';
 import { HttpError, RepoError } from '../util/errors.js';
 import { log } from '../util/log.js';
-import { ALL_NUMBERS, findWinningPattern, generateGrid, isValidGrid, isWinPattern, newCardCode } from '../game/engine.js';
+import { ALL_NUMBERS, WIN_PATTERNS, findWinningPattern, generateGrid, isValidGrid, isWinPattern, newCardCode } from '../game/engine.js';
 
 const clampSec = (n) => Math.min(60, Math.max(1, Math.round(Number(n) || 5)));
 
@@ -10,6 +10,10 @@ export function createGameService({ repo, config, now = Date.now }) {
   const cardSecret = hmacHex(config.jwtSecret, 'card-signing');
   const signCard = (code, round, grid) => hmacHex(cardSecret, `${code}|${round}|${JSON.stringify(grid)}`);
   let timer = null;
+  const ROUND_INTERVAL_MS = 10 * 60 * 1000;
+  const ROUND_DURATION_MS = 8 * 60 * 1000;
+  const AUTO_CALL_SECONDS = 8;
+  const randomPattern = () => { const ids = Object.keys(WIN_PATTERNS); return ids[randomInt(ids.length)]; };
 
   /** What every connected browser may see. Never includes anyone's card grid or user id. */
   const publicState = (g) => ({
@@ -47,29 +51,68 @@ export function createGameService({ repo, config, now = Date.now }) {
     throw new HttpError(409, 'conflict', 'Please retry');
   }
 
-  /* ───────────── auto-call scheduler (survives restarts: its state lives in the database) ───────────── */
+  /* ───────────── persistent automatic round + number scheduler ───────────── */
 
   function schedule(g) {
     if (timer) clearTimeout(timer);
     timer = null;
-    if (g.phase !== 'running' || !g.autoCall) return;
-    const due = g.nextCallAt ?? now() + g.callIntervalSec * 1000;
+    let due = null;
+    if (g.phase === 'waiting') due = g.nextRoundAt ?? (now() + ROUND_INTERVAL_MS);
+    else if (g.phase === 'running') due = g.autoCall
+      ? Math.min(g.nextCallAt ?? (now() + g.callIntervalSec * 1000), g.roundEndsAt ?? (now() + ROUND_INTERVAL_MS))
+      : (g.roundEndsAt ?? (now() + ROUND_INTERVAL_MS));
+    else if (g.phase === 'ended') due = g.nextRoundAt ?? (now() + ROUND_INTERVAL_MS);
+    if (due === null) return;
     timer = setTimeout(tick, Math.max(0, due - now()));
     timer.unref?.();
   }
 
   async function tick() {
     try {
-      await service.draw();
+      const g = await repo.getGame();
+      if (g.phase === 'waiting') {
+        if (!g.nextRoundAt) {
+          await mutate('waiting', () => ({ nextRoundAt: now() + ROUND_INTERVAL_MS }));
+        } else if (g.nextRoundAt <= now()) {
+          await mutate('waiting', () => ({
+            phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
+            autoCall: true, callIntervalSec: AUTO_CALL_SECONDS,
+            nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
+            roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, nextRoundAt: null,
+          }));
+        } else schedule(g);
+        return;
+      }
+      if (g.phase === 'ended' || (g.phase === 'running' && g.roundEndsAt && g.roundEndsAt <= now())) {
+        const ending = g.phase === 'running' ? await mutate('running', () => ({ phase: 'ended', autoCall: false, nextCallAt: null })) : g;
+        await repo.archiveRound({
+          round: ending.roundNumber, calledNumbers: ending.calledNumbers, winner: ending.winner,
+          winPattern: ending.winPattern ?? 'any_line', pot: ending.pot, endedAt: new Date(now()),
+        });
+        await mutate('ended', (current) => ({
+          phase: 'waiting', roundNumber: current.roundNumber + 1, calledNumbers: [], winner: null,
+          autoCall: false, nextCallAt: null, roundStartedAt: null, roundEndsAt: null,
+          nextRoundAt: (current.roundStartedAt ?? now()) + ROUND_INTERVAL_MS, pot: 0,
+        }));
+        return;
+      }
+      if (g.phase === 'running' && g.autoCall) {
+        await service.draw();
+        return;
+      }
+      schedule(g);
     } catch (e) {
       if (e instanceof HttpError && e.code === 'all_drawn') {
         await service.setAuto(false).catch(() => undefined);
-      } else if (!(e instanceof HttpError)) {
-        console.error('auto-call tick failed', e);
-        // Try again shortly rather than silently stopping the game.
-        timer = setTimeout(tick, 2000);
-        timer.unref?.();
+        return;
       }
+      if (e instanceof HttpError && e.code === 'wrong_phase') {
+        schedule(await repo.getGame());
+        return;
+      }
+      console.error('automatic round scheduler failed', e);
+      timer = setTimeout(tick, 2000);
+      timer.unref?.();
     }
   }
 
@@ -83,7 +126,14 @@ export function createGameService({ repo, config, now = Date.now }) {
     },
     /** Call once at boot to continue an interrupted auto-call. */
     async resume() {
-      schedule(await repo.getGame());
+      let g = await repo.getGame();
+      if (g.phase === 'waiting' && !g.nextRoundAt) {
+        g = await repo.casGame(g.version, { nextRoundAt: now() + ROUND_INTERVAL_MS }) ?? await repo.getGame();
+      }
+      if (g.phase === 'ended' && !g.nextRoundAt) {
+        g = await repo.casGame(g.version, { nextRoundAt: now() + ROUND_INTERVAL_MS }) ?? await repo.getGame();
+      }
+      schedule(g);
     },
     stop() {
       if (timer) clearTimeout(timer);
@@ -93,7 +143,11 @@ export function createGameService({ repo, config, now = Date.now }) {
     /* ───────────── host / admin ───────────── */
 
     startRound: () =>
-      mutate('waiting', () => ({ phase: 'running', calledNumbers: [], winner: null, autoCall: false, nextCallAt: null })),
+      mutate('waiting', () => ({
+        phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
+        autoCall: true, callIntervalSec: AUTO_CALL_SECONDS, nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
+        roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, nextRoundAt: null,
+      })),
 
     endRound: () => mutate('running', () => ({ phase: 'ended', autoCall: false, nextCallAt: null })),
 
@@ -202,8 +256,9 @@ export function createGameService({ repo, config, now = Date.now }) {
       const prize = Math.floor((g.pot * config.prizePercent) / 100);
       const settled = await repo.settleWin({ round: g.roundNumber, card, prize, ref: `win:${g.roundNumber}:${card.code}` });
       if (!settled) return { ok: false, reason: 'already_won' };
-      schedule(settled);
-      broadcast(settled);
+      const advanced = await repo.casGame(settled.version, { nextRoundAt: (g.roundStartedAt ?? now()) + ROUND_INTERVAL_MS }) ?? await repo.getGame();
+      schedule(advanced);
+      broadcast(advanced);
       log('prize_pending_admin_approval', { round: g.roundNumber, card: card.code, userId: user.id, etb: prize / 100, potEtb: g.pot / 100 });
       return { ok: true, prize: prize / 100, payoutStatus: 'pending' };
     },

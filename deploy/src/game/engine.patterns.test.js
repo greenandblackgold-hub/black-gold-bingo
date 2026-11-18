@@ -12,7 +12,7 @@ const grid = [
 const nums = (positions) => new Set(positions.map(([r,c]) => grid[r][c]).filter(Number.isInteger));
 
 test('supports the requested pattern catalogue', () => {
-  for (const id of ['any_line','horizontal_line','vertical_line','diagonal','two_lines','two_horizontal_lines','four_corners','rectangle','two_rectangles','half_house','full_house','x','t','l','plus','diamond','picture_frame','six_pack','postage_stamp']) {
+  for (const id of ['any_line','horizontal_line','vertical_line','diagonal','two_lines','two_horizontal_lines','four_corners','rectangle','two_rectangles','half_house','full_house','x','t','l','plus','diamond','picture_frame','six_pack','postage_stamp','three_lines','four_lines','top_bottom','left_right','checkerboard','center_cross','coverall']) {
     assert.equal(isWinPattern(id), true, id);
   }
   assert.equal(isWinPattern('unknown'), false);
@@ -41,4 +41,13 @@ test('a 2x2 rectangle and postage stamp are recognized', () => {
   const topLeft = nums([[0,0],[0,1],[1,0],[1,1]]);
   assert.equal(findWinningPattern(grid, topLeft, 'rectangle').missing, 0);
   assert.equal(findWinningPattern(grid, topLeft, 'postage_stamp').missing, 0);
+});
+
+test('additional line, edge and coverage patterns are recognized', () => {
+  const all = nums(Array.from({length:25},(_,i)=>[Math.floor(i/5),i%5]).filter(([r,c])=>r!==2||c!==2));
+  assert.equal(findWinningPattern(grid, all, 'coverall').missing, 0);
+  assert.equal(findWinningPattern(grid, all, 'checkerboard').missing, 0);
+  assert.equal(findWinningPattern(grid, all, 'center_cross').missing, 0);
+  assert.equal(findWinningPattern(grid, all, 'three_lines').missing, 0);
+  assert.equal(findWinningPattern(grid, all, 'four_lines').missing, 0);
 });

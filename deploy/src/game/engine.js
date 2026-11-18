@@ -9,6 +9,9 @@ export const WIN_PATTERNS = {
   half_house: 'Half house (12 numbers)', full_house: 'Full house / blackout',
   x: 'X shape', t: 'T shape', l: 'L shape', plus: 'Plus sign', diamond: 'Diamond',
   picture_frame: 'Picture frame', six_pack: 'Six-pack (2×3 rectangle)', postage_stamp: 'Postage stamp',
+  three_lines: 'Three lines', four_lines: 'Four lines', top_bottom: 'Top and bottom rows',
+  left_right: 'Left and right columns', checkerboard: 'Checkerboard', center_cross: 'Center cross',
+  coverall: 'Coverall / blackout',
 };
 export function isWinPattern(value) { return Object.hasOwn(WIN_PATTERNS, value); }
 export function shuffle(items) {
@@ -68,11 +71,17 @@ export function patternMasks(pattern='any_line') {
     case 'diagonal': return [d1,d2];
     case 'two_lines': return combos(allLines,2).map(g=>combine(...g));
     case 'two_horizontal_lines': return combos(rows,2).map(g=>combine(...g));
+    case 'three_lines': return combos(allLines,3).map(g=>combine(...g));
+    case 'four_lines': return combos(allLines,4).map(g=>combine(...g));
+    case 'top_bottom': return [combine(rows[0],rows[4])];
+    case 'left_right': return [combine(cols[0],cols[4])];
+    case 'checkerboard': return [Array.from({length:25},(_,i)=>pos(Math.floor(i/5),i%5)).filter(([r,c])=>(r+c)%2===0)];
+    case 'center_cross': return [combine(rows[2],cols[2])];
     case 'four_corners': return [corners];
     case 'rectangle': return rectangles;
     case 'postage_stamp': return [[pos(0,0),pos(0,1),pos(1,0),pos(1,1)],[pos(0,3),pos(0,4),pos(1,3),pos(1,4)],[pos(3,0),pos(3,1),pos(4,0),pos(4,1)],[pos(3,3),pos(3,4),pos(4,3),pos(4,4)]];
     case 'two_rectangles': return combos(rectangles,2).map(g=>combine(...g));
-    case 'full_house': return [nonFree];
+    case 'full_house': case 'coverall': return [nonFree];
     case 'x': return [combine(d1,d2)];
     case 't': return [combine(rows[0],cols[2])];
     case 'l': return [combine(cols[0],rows[4])];
