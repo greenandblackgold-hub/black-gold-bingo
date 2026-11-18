@@ -156,8 +156,6 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false }: { onGoToW
             {historyExpanded === 'game' && <p className="px-3 py-3 text-xs leading-5 text-gold-600">የቀደሙ ዙሮች ዝርዝር በBackend ላይ ስላልተቀመጠ አሁን ማሳየት አይቻልም።</p>}
           </div>}
         </div>
-      </div>
-
       </div>}
       <div className={`overflow-hidden rounded-2xl border ${panel}`}>
         {rows.filter(row => settingsOnly ? row.id === 'settings' : row.id !== 'settings').map((row) => (
