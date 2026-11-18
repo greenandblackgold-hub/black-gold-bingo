@@ -95,6 +95,8 @@ export interface ServerGameState {
   /** ETB */
   cardPrice: number;
   serverTime: number;
+  roundPrizeEtb: number;
+  roundCardCount: number;
 }
 
 export interface ServerWithdrawal {
