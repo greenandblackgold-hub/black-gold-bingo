@@ -119,6 +119,8 @@ export interface RoundContextValue {
   /** In call order, values 1..75. */
   calledNumbers: number[];
   winner: SharedGame['winner'];
+  roundPrizeEtb?: number;
+  roundCardCount?: number;
   /** Host only: open claims for the current round (empty for players). */
   claims: HostClaim[];
   /** waiting -> running (host only) */
