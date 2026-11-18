@@ -122,6 +122,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [cardPrice],
   );
 
+  const clearMarks = useCallback(() => {
+    setState((s) => ({ ...s, markedByCard: {} }));
+  }, []);
+
+  const removeCards = useCallback((ids: string[]) => {
+    const remove = new Set(ids);
+    setState((s) => ({ ...s, cards: s.cards.filter((c) => !remove.has(c.id)), markedByCard: Object.fromEntries(Object.entries(s.markedByCard).filter(([id]) => !remove.has(id))) }));
+  }, []);
+
   const clearCards = useCallback(() => {
     setState((s) => ({ ...s, cards: [], markedByCard: {} }));
   }, []);
@@ -136,8 +145,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       deposit,
       buyCards,
       clearCards,
+      clearMarks,
+      removeCards,
     }),
-    [state, toggleMark, deposit, buyCards, clearCards],
+    [state, toggleMark, deposit, buyCards, clearCards, clearMarks, removeCards],
   );
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;

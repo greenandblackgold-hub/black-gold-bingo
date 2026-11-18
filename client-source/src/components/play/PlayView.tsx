@@ -85,9 +85,10 @@ type CardViewProps = {
   t: (key: StringKey) => string;
   onToggle: (n: number) => void;
   pattern: WinPattern;
+  markColor: string;
 };
 
-function CardView({ card, marks, called, active, t, onToggle, pattern }: CardViewProps) {
+function CardView({ card, marks, called, active, t, onToggle, pattern, markColor }: CardViewProps) {
   const { toGo, winningLine } = useMemo(() => analyze(card.grid, marks, called, pattern), [card.grid, marks, called, pattern]);
   const winSet = useMemo(() => new Set((winningLine ?? []).map(([r, c]) => `${r}-${c}`)), [winningLine]);
   const hasWin = !!winningLine;
@@ -147,6 +148,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern }: CardVie
             return (
               <button
                 key={`${r}-${c}`}
+                style={isMarked ? { backgroundColor: markColor } : undefined}
                 type="button"
                 disabled={isFree || !active}
                 aria-pressed={isMarked}
@@ -155,10 +157,10 @@ function CardView({ card, marks, called, active, t, onToggle, pattern }: CardVie
                 className={[
                   'relative grid aspect-square min-w-0 place-items-center overflow-hidden rounded-lg border text-base font-extrabold tabular-nums shadow-sm transition-all duration-200 active:scale-[0.91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-200 sm:rounded-xl sm:text-lg',
                   isMarked && !isCalled
-                    ? 'bg-gradient-to-br from-gold-200 via-gold-400 to-gold-600 border-gold-200/80 text-[#17130a] shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_3px_12px_rgba(212,175,55,.22)] bg-cell-mark'
+                    ? 'border-white/70 text-[#17130a] shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_3px_12px_rgba(212,175,55,.22)] bg-cell-mark'
                     : 'border-white/[0.055] bg-gradient-to-br from-white/[0.065] to-white/[0.015] text-gold-200/90 hover:border-gold-500/40',
                   isCalled
-                    ? 'bg-gradient-to-br from-sky-400 via-blue-500 to-blue-700 border-white text-white ring-1 ring-white/80 shadow-[0_0_12px_rgba(59,130,246,.55)]'
+                    ? isMarked ? 'border-white/80 text-[#17130a] ring-1 ring-white/80' : 'bg-gradient-to-br from-sky-400 via-blue-500 to-blue-700 border-white text-white ring-1 ring-white/80 shadow-[0_0_12px_rgba(59,130,246,.55)]'
                     : '',
                   inWin ? 'z-[1] outline outline-2 outline-white shadow-[0_0_18px_rgba(255,245,190,.75)]' : '',
                 ].join(' ')}
@@ -196,6 +198,11 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   );
 
   const [claiming, setClaiming] = useState(false);
+  const [cardColumns, setCardColumns] = useState(2);
+  const [autoMarkEnabled, setAutoMarkEnabled] = useState(false);
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
+  const [cardOrder, setCardOrder] = useState<'oldest'|'newest'>('oldest');
+  const [markColor, setMarkColor] = useState('#d4af37');
   const [confetti, setConfetti] = useState(false);
   const stopConfetti = useCallback(() => setConfetti(false), []);
   const [sentRound, setSentRound] = useState<number | null>(null);
@@ -204,6 +211,16 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const messageTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => () => clearTimeout(messageTimer.current), []);
+
+  useEffect(() => {
+    const load = () => { try { const cols=Number(localStorage.getItem('bgb.cardsPerRow')); setCardColumns([2,3,4].includes(cols)?cols:2); setAutoMarkEnabled(localStorage.getItem('bgb.autoMark')==='on'); setCardOrder(localStorage.getItem('bgb.cardOrder')==='newest'?'newest':'oldest'); setMarkColor(localStorage.getItem('bgb.markColor')||'#d4af37'); const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]'); setSelectedCardIds(Array.isArray(ids)?ids:[]); } catch { /* retain defaults */ } };
+    load(); window.addEventListener('bgb-player-settings',load); return ()=>window.removeEventListener('bgb-player-settings',load);
+  }, []);
+
+  useEffect(() => {
+    if (!autoMarkEnabled || !active || calledNumbers.length===0) return;
+    for (const card of cards) { const marks=new Set(markedByCard[card.id]??[]); for (const n of calledNumbers) if (card.grid.some(row=>row.includes(n)) && !marks.has(n)) { toggleMark(card.id,n); marks.add(n); } }
+  }, [autoMarkEnabled,active,calledNumbers,cards,markedByCard,toggleMark]);
 
   const flash = (kind: 'ok' | 'err', text: string) => {
     setMessage({ kind, text });
@@ -314,8 +331,8 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {cards.map((card) => (
+          <div className="grid gap-4" style={{gridTemplateColumns: `repeat(${cardColumns}, minmax(0, 1fr))`}}>
+            {[...cards].sort((a,b)=>cardOrder==='oldest'?Number(a.serial)-Number(b.serial):Number(b.serial)-Number(a.serial)).filter(card=>selectedCardIds.length===0||selectedCardIds.includes(card.id)).map((card) => (
               <CardView
                 key={card.id}
                 card={card}
@@ -325,6 +342,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 t={t}
                 onToggle={(n) => toggleMark(card.id, n)}
                 pattern={winPattern}
+                markColor={markColor}
               />
             ))}
           </div>
