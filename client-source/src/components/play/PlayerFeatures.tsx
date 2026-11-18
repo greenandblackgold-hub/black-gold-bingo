@@ -3,7 +3,7 @@ import { useAppSettings } from '@/context/AppSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
-import { formatAmount } from '@/lib/localization';
+import { formatAmount, formatDateTime } from '@/lib/localization';
 import { patternMasks } from '@/lib/bingo';
 import type { WinPattern } from '@/types/game';
 import { SERVER_MODE } from '@/lib/api';
@@ -40,9 +40,9 @@ const RULES = [
   'የገንዘብ ግብይት ማስረጃዎን ሙሉ በሙሉ ያስገቡ።',
 ];
 
-export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
+export function PlayerFeatures({ onGoToWallet, settingsOnly = false }: { onGoToWallet: () => void; settingsOnly?: boolean }) {
   const { lang, setLang } = useLanguage();
-  const { balance, cards } = usePlayer();
+  const { balance, cards, transactions } = usePlayer();
   const { cardPrice, audioVolume, setAudioVolume } = useAppSettings();
   const { calledNumbers, roundNumber, phase, winner, winPattern, roundPrizeEtb, roundCardCount } = useRound();
   const { soundEnabled, setSoundEnabled, voiceEnabled, setVoiceEnabled } = useAppSettings();
@@ -52,7 +52,8 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
   const [notifications, setNotifications] = useState(() => {
     try { return localStorage.getItem('bgb.playerNotifications') === 'on'; } catch { return false; }
   });
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(settingsOnly ? 'settings' : null);
+  const [historyExpanded, setHistoryExpanded] = useState<'wallet' | 'game' | null>(null);
   const [showPatternOptions, setShowPatternOptions] = useState(false);
   const [selectedPatternOption, setSelectedPatternOption] = useState(0);
   const light = theme === 'light';
@@ -83,8 +84,8 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
   const rows = [
     { id: 'messages', label: 'መልዕክቶች', icon: '✉' },
     { id: 'wallet', label: 'ማስገባት · ማውጣት · የግብይት ታሪክ', icon: '◈' },
-    { id: 'gameHistory', label: 'የጨዋታ ታሪክ', icon: '◷' },
     { id: 'settings', label: 'ሴቲንግ', icon: '⚙' },
+    { id: 'gameHistory', label: 'የጨዋታ ታሪክ', icon: '◷' },
     { id: 'contact', label: 'ያግኙን', icon: '☎' },
     { id: 'rules', label: 'የጨዋታ ደንቦችና ሕጎች', icon: '▤' },
     { id: 'app', label: 'መተግበሪያ', icon: '▣' },
@@ -92,7 +93,8 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
 
   return (
     <section className="mt-6 space-y-4" aria-label="Player information and settings">
-      <div className={`overflow-hidden rounded-2xl border ${panel} shadow-xl`}>
+      {settingsOnly && <h2 className="text-lg font-black text-gold-300">⚙ ሴቲንግ</h2>}
+      {!settingsOnly && <div className={`overflow-hidden rounded-2xl border ${panel} shadow-xl`}>
         <div className="relative overflow-hidden bg-gradient-to-r from-zinc-950 via-zinc-900 to-amber-950 px-4 py-5 sm:px-6">
           <div className="pointer-events-none absolute -right-8 -top-12 h-40 w-40 rounded-full border-[18px] border-amber-300/10" />
           <div className="relative flex items-center justify-between gap-3">
@@ -118,11 +120,14 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
         <div className="space-y-2 p-3 sm:p-4">
           <div className="flex items-center gap-2"><span className="text-lg">ⓘ</span><h3 className={`font-bold ${title}`}>መረጃ</h3></div>
           <p className={`text-xs leading-5 ${muted}`}>በቴሌብር (0978202822 — ኣሊክሳንደር ደጀን) ወይም በንግድ ባንክ (1000737138686 — ቤተሊሄም ፍጹም) ሙሉ ደረሰኝ በማስገባት ገቢ (Deposit) ማድረግ ትችላላችሁ። iPhone የምትጠቀሙ ደንበኞች Google Chrome ላይ www.bingo1020.com በመፈለግ መጠቀም ትችላላችሁ።</p>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="mb-2 flex justify-end"><button type="button" onClick={() => toggle('history')} aria-expanded={expanded === 'history'} className="rounded-xl border border-amber-400/40 bg-black/35 px-4 py-2 text-xs font-bold text-amber-200 shadow-lg hover:bg-amber-400/10">▤ ታሪክ <span className="ml-2">{expanded === 'history' ? '−' : '+'}</span></button></div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             {[
               ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
               ['የዙሩ የተሸጡ ካርዶች', SERVER_MODE && roundCardCount !== undefined ? String(roundCardCount) : '—'],
               ['የአሁኑ ዋና ሽልማት', SERVER_MODE && roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ETB` : '—'],
+              ['አካውንት ቀሪ ሂሳብ', `${formatAmount(lang, balance)} ETB`],
+              ['ጠቅላላ ካርቴላ', String(cards.length)],
             ].map(([label, value]) => (
               <div key={label} className={`rounded-lg border p-2 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
                 <p className={`text-[10px] leading-4 ${muted}`}>{label}</p><p className={`mt-0.5 text-xs font-black tabular-nums ${title}`}>{value}</p>
@@ -141,15 +146,22 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-between rounded-xl border border-gold-700/30 bg-black/25 px-3 py-3">
-            <div><p className="text-xs text-gold-600">አካውንት ቀሪ ሂሳብ</p><p className="text-xl font-black text-gold-300">{formatAmount(lang, balance)} <span className="text-xs">ETB</span></p></div>
-            <div className="text-right"><p className="text-xs text-gold-600">ጠቅላላ ካርቴላ</p><p className="text-xl font-black text-gold-300">{cards.length}</p></div>
-          </div>
+
+          {expanded === 'history' && <div className="space-y-2 rounded-xl border border-amber-400/25 bg-black/25 p-3">
+            <button type="button" onClick={() => setHistoryExpanded(v => v === 'wallet' ? null : 'wallet')} aria-expanded={historyExpanded === 'wallet'} className="flex w-full items-center justify-between rounded-lg border border-gold-700/30 px-3 py-3 text-left text-sm font-semibold text-gold-200">◈ ማስገባት · ማውጣት · የግብይት ታሪክ <span>{historyExpanded === 'wallet' ? '−' : '+'}</span></button>
+            {historyExpanded === 'wallet' && <div className="space-y-2 px-2 py-1">
+              {(transactions ?? []).length === 0 ? <p className="py-3 text-center text-xs text-gold-600">ገና የግብይት ታሪክ የለም።</p> : (transactions ?? []).slice().sort((a,b)=>b.at-a.at).map(tx => <div key={tx.id} className="flex items-center justify-between gap-3 border-b border-gold-700/20 py-2 text-xs"><div className="min-w-0"><p className="font-semibold text-gold-200">{tx.label ?? (tx.kind === 'deposit' ? 'ማስገባት' : 'ካርድ ግዢ')}</p><p className="text-[10px] text-gold-700">{formatDateTime(lang, tx.at)}</p></div><strong className={tx.amount >= 0 ? 'shrink-0 text-emerald-300' : 'shrink-0 text-amber-300'}>{tx.amount >= 0 ? '+' : '−'}{formatAmount(lang, Math.abs(tx.amount))} ETB</strong></div>)}
+              <button type="button" onClick={onGoToWallet} className="w-full rounded-lg bg-amber-400/10 px-3 py-2 text-xs font-bold text-amber-200">ወደ ቦርሳ ዝርዝር ሂድ</button>
+            </div>}
+            <button type="button" onClick={() => setHistoryExpanded(v => v === 'game' ? null : 'game')} aria-expanded={historyExpanded === 'game'} className="flex w-full items-center justify-between rounded-lg border border-gold-700/30 px-3 py-3 text-left text-sm font-semibold text-gold-200">◷ የጨዋታ ታሪክ <span>{historyExpanded === 'game' ? '−' : '+'}</span></button>
+            {historyExpanded === 'game' && <p className="px-3 py-3 text-xs leading-5 text-gold-600">የቀደሙ ዙሮች ዝርዝር በBackend ላይ ስላልተቀመጠ አሁን ማሳየት አይቻልም።</p>}
+          </div>}
         </div>
       </div>
 
+      </div>}
       <div className={`overflow-hidden rounded-2xl border ${panel}`}>
-        {rows.map((row) => (
+        {rows.filter(row => settingsOnly ? row.id === 'settings' : row.id !== 'settings').map((row) => (
           <div key={row.id} className="border-b border-current/10 last:border-0">
             <button type="button" onClick={() => toggle(row.id)} aria-expanded={expanded === row.id} className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left">
               <span className="flex items-center gap-3 font-semibold"><span className={`grid h-9 w-9 place-items-center rounded-xl ${light ? 'bg-amber-100 text-amber-800' : 'bg-gold-500/10 text-gold-300'}`}>{row.icon}</span>{row.label}</span>
@@ -158,7 +170,7 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
             {expanded === row.id && (
               <div className="space-y-3 px-4 pb-4">
                 {row.id === 'messages' && <p className={`text-sm ${muted}`}>የአስተዳዳሪ መልዕክቶች የሚታዩበት ክፍል።</p>}
-                {row.id === 'wallet' && <button type="button" onClick={onGoToWallet} className="w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-600 px-4 py-3 font-bold text-zinc-950">ወደ አካውንት ሂድ — ማስገባት / ማውጣት / የግብይት ታሪክ</button>}
+                {row.id === 'wallet' && <button type="button" onClick={onGoToWallet} className="w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-600 px-4 py-3 font-bold text-zinc-950">ወደ አካውንት ሂድ — ማስገባት / ማውጣት</button>}
                 {row.id === 'gameHistory' && <p className={`text-sm ${muted}`}>የቀደሙ ዙሮች ታሪክ በBackend ላይ ስላልተቀመጠ አሁን ማሳየት አይቻልም።</p>}
                 {row.id === 'settings' && (
                   <div className="space-y-4 text-sm">
@@ -180,7 +192,7 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
           </div>
         ))}
       </div>
-      <p className="pb-2 text-center text-xs text-gold-700">Black Gold Bingo · ደንበኛ አገልግሎት</p>
+      {!settingsOnly && <p className="pb-2 text-center text-xs text-gold-700">Black Gold Bingo · ደንበኛ አገልግሎት</p>}
     </section>
   );
 }

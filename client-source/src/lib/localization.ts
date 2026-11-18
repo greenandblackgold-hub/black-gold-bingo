@@ -630,9 +630,9 @@ export const translations = {
     en: { title: 'Host access required', message: 'This area is available to authorized hosts only.', back: 'Back to the game' },
   },
   navigation: {
-  am: { play: 'ጨዋታ', wallet: 'ቦርሳ', verify: 'አረጋግጥ', main: 'ዋና ማውጫ' },
-  ti: { play: 'ጸወታ', wallet: 'ቦርሳ', verify: 'ኣረጋግጽ', main: 'ቀንዲ ምናሌ' },
-  en: { play: 'Play', wallet: 'Wallet', verify: 'Verify', main: 'Main navigation' },
+  am: { play: 'ጨዋታ', wallet: 'ቦርሳ', verify: 'አረጋግጥ', settings: 'ሴቲንግ', main: 'ዋና ማውጫ' },
+  ti: { play: 'ጸወታ', wallet: 'ቦርሳ', verify: 'ኣረጋግጽ', settings: 'ቅንብራት', main: 'ቀንዲ ምናሌ' },
+  en: { play: 'Play', wallet: 'Wallet', verify: 'Verify', settings: 'Settings', main: 'Main navigation' },
 },
 } as const;
 
