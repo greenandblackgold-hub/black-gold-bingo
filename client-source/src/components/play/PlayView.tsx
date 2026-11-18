@@ -86,9 +86,11 @@ type CardViewProps = {
   onToggle: (n: number) => void;
   pattern: WinPattern;
   markColor: string;
+  onClaim: () => void;
+  isWinner: boolean;
 };
 
-function CardView({ card, marks, called, active, t, onToggle, pattern, markColor }: CardViewProps) {
+function CardView({ card, marks, called, active, t, onToggle, pattern, markColor, onClaim, isWinner }: CardViewProps) {
   const { toGo, winningLine } = useMemo(() => analyze(card.grid, marks, called, pattern), [card.grid, marks, called, pattern]);
   const winSet = useMemo(() => new Set((winningLine ?? []).map(([r, c]) => `${r}-${c}`)), [winningLine]);
   const hasWin = !!winningLine;
@@ -105,28 +107,22 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
       {hasWin && (
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-gold-300 to-transparent" aria-hidden="true" />
       )}
-      <header className="mb-3 flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[9px] font-black uppercase tracking-[0.22em] text-gold-600">GOLD EDITION</p>
-          <h3 className="mt-0.5 truncate font-bold text-gold-200">
-            {t('card')} <span className="text-gold-400">#{card.serial}</span>
-          </h3>
-          <span className="select-all font-mono text-[10px] text-gold-600">{card.id}</span>
-        </div>
-        {active && (
-          <span
-            className={[
-              'shrink-0 rounded-full border px-3 py-1 text-[11px] font-black tabular-nums tracking-wide transition-colors',
-              hasWin
-                ? 'border-gold-200 bg-gradient-to-r from-gold-200 via-gold-400 to-gold-500 text-darkbg shadow-[0_0_20px_rgba(255,215,0,.35)]'
-                : toGo <= 2
-                  ? 'border-gold-400/60 bg-gold-400/15 text-gold-200'
-                  : 'border-gold-700/40 bg-black/20 text-gold-500',
-            ].join(' ')}
-          >
-            {hasWin ? '✦ BINGO ✦' : `${toGo} ${t('toGo')}`}
-          </span>
-        )}
+      <header className="mb-3 flex items-center justify-center">
+        <button
+          type="button"
+          onClick={onClaim}
+          disabled={!hasWin || !active || isWinner}
+          aria-label={isWinner ? 'BINGO winner' : hasWin ? 'Claim BINGO' : `BINGO, ${toGo} ${t('toGo')}`}
+          className={[
+            'rounded-xl border-2 px-5 py-2 text-base font-black tracking-[0.22em] transition-all',
+            hasWin || isWinner
+              ? 'border-red-300 bg-red-600 text-white shadow-[0_0_22px_rgba(239,68,68,.75)] animate-[bingoFlash_.85s_ease-in-out_infinite]'
+              : 'border-gold-700/50 bg-black/30 text-gold-400',
+            !hasWin || !active || isWinner ? 'cursor-default' : 'cursor-pointer hover:scale-[1.03] active:scale-95',
+          ].join(' ')}
+        >
+          BINGO
+        </button>
       </header>
 
       <div className="rounded-2xl border border-gold-700/35 bg-black/25 p-2.5 shadow-inner shadow-black/30 sm:p-3">
@@ -155,7 +151,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
                 aria-label={isFree ? t('free') : `${LETTERS[c]} ${v}`}
                 onClick={() => v !== null && isCalled && onToggle(v)}
                 className={[
-                  'relative grid aspect-square min-w-0 place-items-center overflow-hidden rounded-lg border text-base font-extrabold tabular-nums shadow-sm transition-all duration-200 active:scale-[0.91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-200 sm:rounded-xl sm:text-lg',
+                  'relative grid aspect-square min-w-0 place-items-center overflow-hidden rounded-lg border text-lg font-black tabular-nums shadow-sm transition-all duration-200 active:scale-[0.91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-200 sm:rounded-xl sm:text-2xl',
                   isMarked && !isCalled
                     ? 'border-white/70 text-[#17130a] shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_3px_12px_rgba(212,175,55,.22)] bg-cell-mark'
                     : 'border-white/[0.055] bg-gradient-to-br from-white/[0.065] to-white/[0.015] text-gold-200/90 hover:border-gold-500/40',
@@ -239,11 +235,12 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
     play('win');
   }, [winner, iWon]);
 
-  const handleClaim = async () => {
-    if (!winners.length || claiming) return;
+  const handleClaim = async (cardId?: string) => {
+    const target = cardId ? cards.find((card) => card.id === cardId && winners.some((item) => item.id === cardId)) : winners[0];
+    if (!target || claiming) return;
     setClaiming(true);
     try {
-      const res = await claimBingo(winners[0].id);
+      const res = await claimBingo(target.id);
       if (res.ok) {
         setSentRound(roundNumber);
         flash('ok', t('claimSent'));
@@ -261,6 +258,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-2">
       <PlayerFeatures onGoToWallet={onGoToWallet} />
       <style>{`
+        @keyframes bingoFlash { 0%,100% { opacity:1; filter:brightness(1); box-shadow:0 0 12px rgba(239,68,68,.55) } 50% { opacity:.42; filter:brightness(1.7); box-shadow:0 0 30px rgba(239,68,68,1) } }
         @keyframes bgBallPop {
           0% { transform: scale(.68) rotate(-9deg); opacity: 0; filter: brightness(1.35); }
           68% { transform: scale(1.07) rotate(2deg); opacity: 1; }
@@ -286,7 +284,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         .bg-confetti { will-change: transform, opacity; backface-visibility: hidden; }
         .bg-ball-pop { animation: bgBallPop 620ms cubic-bezier(.2,.8,.2,1) both, bgBallGlow 2.8s ease-in-out 620ms 2; }
         @media (prefers-reduced-motion: reduce) {
-          .bg-anim, .bg-ball-pop, .bg-cell-mark, .bg-winner-reveal, .bg-confetti { animation: none !important; }
+          .bg-anim, .bg-ball-pop, .bg-cell-mark, .bg-winner-reveal, .bg-confetti, .animate-\\[bingoFlash_\\.85s_ease-in-out_infinite\\] { animation: none !important; }
         }
       `}</style>
 
@@ -331,20 +329,24 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             </button>
           </div>
         ) : (
-          <div className="grid gap-4" style={{gridTemplateColumns: `repeat(${cardColumns}, minmax(0, 1fr))`}}>
-            {[...cards].sort((a,b)=>cardOrder==='oldest'?Number(a.serial)-Number(b.serial):Number(b.serial)-Number(a.serial)).filter(card=>selectedCardIds.length===0||selectedCardIds.includes(card.id)).map((card) => (
-              <CardView
-                key={card.id}
-                card={card}
-                marks={markSets[card.id]}
-                called={called}
-                active={active}
-                t={t}
-                onToggle={(n) => toggleMark(card.id, n)}
-                pattern={winPattern}
-                markColor={markColor}
-              />
-            ))}
+          <div className="overflow-x-auto pb-3">
+            <div className="grid min-w-max gap-4" style={{gridTemplateColumns: `repeat(${cardColumns}, minmax(230px, 1fr))`}}>
+              {[...cards].sort((a,b)=>cardOrder==='oldest'?Number(a.serial)-Number(b.serial):Number(b.serial)-Number(a.serial)).filter(card=>selectedCardIds.length===0||selectedCardIds.includes(card.id)).map((card) => (
+                <CardView
+                  key={card.id}
+                  card={card}
+                  marks={markSets[card.id]}
+                  called={called}
+                  active={active}
+                  t={t}
+                  onToggle={(n) => toggleMark(card.id, n)}
+                  pattern={winPattern}
+                  markColor={markColor}
+                  onClaim={() => void handleClaim(card.id)}
+                  isWinner={winner?.cardId === card.id}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
