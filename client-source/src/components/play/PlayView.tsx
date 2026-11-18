@@ -201,8 +201,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const [markColor, setMarkColor] = useState('#d4af37');
   const [confetti, setConfetti] = useState(false);
   const stopConfetti = useCallback(() => setConfetti(false), []);
-  const [sentRound, setSentRound] = useState<number | null>(null);
-  const claimed = sentRound === roundNumber;
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const messageTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -235,14 +233,13 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
     play('win');
   }, [winner, iWon]);
 
-  const handleClaim = async (cardId?: string) => {
-    const target = cardId ? cards.find((card) => card.id === cardId && winners.some((item) => item.id === cardId)) : winners[0];
+  const handleClaim = async (cardId: string) => {
+    const target = winners.find((item) => item.id === cardId);
     if (!target || claiming) return;
     setClaiming(true);
     try {
       const res = await claimBingo(target.id);
       if (res.ok) {
-        setSentRound(roundNumber);
         flash('ok', t('claimSent'));
       } else {
         flash('err', t('invalid'));
@@ -387,32 +384,11 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
       </div>
 
 
-      {/* Claim bar (sits above BottomNav) */}
-      {(winners.length > 0 || message) && (
+      {message && (
         <div className="fixed inset-x-0 bottom-24 z-40 px-4">
-          <div className="mx-auto max-w-md space-y-2">
-            {message && (
-              <p
-                role="status"
-                className={[
-                  'rounded-xl px-4 py-2 text-center text-sm font-semibold',
-                  message.kind === 'ok' ? 'bg-gold-400 text-darkbg' : 'bg-red-900/80 text-red-100',
-                ].join(' ')}
-              >
-                {message.text}
-              </p>
-            )}
-            {winners.length > 0 && (
-              <button
-                type="button"
-                onClick={handleClaim}
-                disabled={claiming || claimed}
-                className="w-full rounded-2xl bg-gradient-to-br from-gold-300 via-gold-400 to-gold-600 py-4 text-xl font-black text-darkbg shadow-[0_10px_40px_-6px_rgba(255,215,0,0.7)] active:scale-95 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
-              >
-                {claiming ? t('claiming') : claimed ? t('claimWaiting') : t('claim')}
-              </button>
-            )}
-          </div>
+          <p role="status" className={`mx-auto max-w-md rounded-xl px-4 py-2 text-center text-sm font-semibold ${message.kind === 'ok' ? 'bg-gold-400 text-darkbg' : 'bg-red-900/80 text-red-100'}`}>
+            {message.text}
+          </p>
         </div>
       )}
 
