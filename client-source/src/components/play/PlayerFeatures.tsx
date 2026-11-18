@@ -6,7 +6,6 @@ import { useRound } from '@/context/RoundContext';
 import { formatAmount, formatDateTime } from '@/lib/localization';
 import { patternMasks } from '@/lib/bingo';
 import type { WinPattern } from '@/types/game';
-import { SERVER_MODE } from '@/lib/api';
 
 type PatternOption = { label: string; cells: number[] };
 const PATTERN_LABELS: Record<string,string> = {
@@ -42,8 +41,8 @@ const RULES = [
 export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = false }: { onGoToWallet: () => void; settingsOnly?: boolean; menuOnly?: boolean }) {
   const { lang, setLang } = useLanguage();
   const { cards, transactions, clearMarks, removeCards } = usePlayer();
-  const { audioVolume, setAudioVolume } = useAppSettings();
-  const { calledNumbers, roundNumber, phase, winner, winPattern, roundPrizeEtb, roundCardCount, verifyCard } = useRound();
+  const { cardPrice, audioVolume, setAudioVolume } = useAppSettings();
+  const { calledNumbers, roundNumber, phase, winner, winPattern, roundPrizeEtb, verifyCard } = useRound();
   const { soundEnabled, setSoundEnabled, voiceEnabled, setVoiceEnabled } = useAppSettings();
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try { return localStorage.getItem('bgb.playerTheme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
@@ -115,6 +114,24 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
               <span className="grid h-14 w-14 shrink-0 grid-cols-5 gap-0.5 rounded-lg bg-black p-1">{Array.from({length:25},(_,i)=><span key={i} className={`rounded-[1px] ${option.cells.includes(i)?'bg-sky-400':'bg-white/10'}`}/>)}</span><span className="text-xs font-bold leading-5">{option.label}{selectedPatternOption===index&&<span className="mt-1 block text-[10px] text-sky-300">የተመረጠ ማሳያ</span>}</span>
             </button>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-100/60">እነዚህ የሚቻሉ የአሸናፊነት ቅርጾች ምሳሌዎች ናቸው፤ ትክክለኛው ማረጋገጫ በስርዓቱ ይከናወናል።</p>
           </div></div>}
+        <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 sm:p-4">
+          <div className={`rounded-xl border p-3 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
+            <p className={`text-[10px] leading-4 ${muted}`}>የካርድ ዋጋ</p>
+            <p className={`mt-1 text-sm font-black tabular-nums ${title}`}>{formatAmount(lang, cardPrice)} ETB</p>
+          </div>
+          <div className={`rounded-xl border p-3 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
+            <p className={`text-[10px] leading-4 ${muted}`}>የአሁኑ ዋና ሽልማት</p>
+            <p className={`mt-1 text-sm font-black tabular-nums ${title}`}>{roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ETB` : '—'}</p>
+          </div>
+          <div className={`rounded-xl border p-3 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
+            <p className={`text-[10px] leading-4 ${muted}`}>ጠቅላላ ካርቴላ</p>
+            <p className={`mt-1 text-sm font-black tabular-nums ${title}`}>{cards.length}</p>
+          </div>
+          <div className={`col-span-2 flex items-center justify-between rounded-xl border px-3 py-2 text-sm sm:col-span-3 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
+            <span className={muted}>የዙሩ ሁኔታ</span>
+            <strong className={title}>{calledNumbers.length} / 75 ኳሶች</strong>
+          </div>
+        </div>
      </div>}
       {(menuOnly || settingsOnly) && <div className={`overflow-hidden rounded-2xl border ${panel}`}>
         {rows.filter(row => settingsOnly ? row.id === 'settings' : menuOnly ? ['info','messages','settings','rules','app','history','contact'].includes(row.id) : true).map((row) => (
