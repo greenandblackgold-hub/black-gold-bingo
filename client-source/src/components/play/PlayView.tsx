@@ -6,7 +6,7 @@
  * Reads from usePlayer() and useRound(); shared types live in '@/types/game'.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { translations, patternNames } from '@/lib/localization';
+import { translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
@@ -30,7 +30,6 @@ function usePlayData() {
 const STRINGS = translations.play;
 
 type StringKey = keyof (typeof STRINGS)['en'];
-const PATTERN_NAMES = patternNames;
 
 
 /* ───────────────────────────── GAME LOGIC ───────────────────────────── */
@@ -375,7 +374,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
               <span>{t('board')} <span className="ml-1 text-xs font-bold text-gold-500">({calledNumbers.length})</span></span>
               <span className="text-xs font-bold text-gold-500">{showBoard ? '− ' + t('hide') : '＋ ' + t('show')}</span>
             </button>
-          </div>
         </div>
       </section>
 
