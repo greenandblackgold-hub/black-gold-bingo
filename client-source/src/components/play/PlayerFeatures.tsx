@@ -84,6 +84,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false }: { onGoToW
   const rows = [
     { id: 'messages', label: 'መልዕክቶች', icon: '✉' },
     { id: 'wallet', label: 'ማስገባት · ማውጣት · የግብይት ታሪክ', icon: '◈' },
+    { id: 'settings', label: 'ሴቲንግ', icon: '⚙' },
     { id: 'gameHistory', label: 'የጨዋታ ታሪክ', icon: '◷' },
     { id: 'contact', label: 'ያግኙን', icon: '☎' },
     { id: 'rules', label: 'የጨዋታ ደንቦችና ሕጎች', icon: '▤' },
@@ -119,6 +120,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false }: { onGoToW
         <div className="space-y-2 p-3 sm:p-4">
           <div className="flex items-center gap-2"><span className="text-lg">ⓘ</span><h3 className={`font-bold ${title}`}>መረጃ</h3></div>
           <p className={`text-xs leading-5 ${muted}`}>በቴሌብር (0978202822 — ኣሊክሳንደር ደጀን) ወይም በንግድ ባንክ (1000737138686 — ቤተሊሄም ፍጹም) ሙሉ ደረሰኝ በማስገባት ገቢ (Deposit) ማድረግ ትችላላችሁ። iPhone የምትጠቀሙ ደንበኞች Google Chrome ላይ www.bingo1020.com በመፈለግ መጠቀም ትችላላችሁ።</p>
+          <div className="mb-2 flex justify-end"><button type="button" onClick={() => toggle('history')} aria-expanded={expanded === 'history'} className="rounded-xl border border-amber-400/40 bg-black/35 px-4 py-2 text-xs font-bold text-amber-200 shadow-lg hover:bg-amber-400/10">▤ ታሪክ <span className="ml-2">{expanded === 'history' ? '−' : '+'}</span></button></div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             {[
               ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
@@ -144,9 +146,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false }: { onGoToW
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-end">
-            <button type="button" onClick={() => toggle('history')} aria-expanded={expanded === 'history'} className="rounded-xl border border-amber-400/40 bg-black/35 px-4 py-2 text-xs font-bold text-amber-200 shadow-lg hover:bg-amber-400/10">▤ ታሪክ <span className="ml-2">{expanded === 'history' ? '−' : '+'}</span></button>
-          </div>
+
           {expanded === 'history' && <div className="space-y-2 rounded-xl border border-amber-400/25 bg-black/25 p-3">
             <button type="button" onClick={() => setHistoryExpanded(v => v === 'wallet' ? null : 'wallet')} aria-expanded={historyExpanded === 'wallet'} className="flex w-full items-center justify-between rounded-lg border border-gold-700/30 px-3 py-3 text-left text-sm font-semibold text-gold-200">◈ ማስገባት · ማውጣት · የግብይት ታሪክ <span>{historyExpanded === 'wallet' ? '−' : '+'}</span></button>
             {historyExpanded === 'wallet' && <div className="space-y-2 px-2 py-1">
