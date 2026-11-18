@@ -68,15 +68,20 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   }, [reloadCards, reloadLedger]);
 
   // Admin-approved deposits and prizes change the server wallet outside the player's session.
-  // Refresh the profile and ledger periodically, and immediately when the player returns.
+  // Refresh the profile and ledger at most every five seconds, and immediately when the player returns.
+  // Prevent overlapping requests when a slow network response outlasts the polling interval.
   useEffect(() => {
-    const refreshWallet = () => {
-      if (document.visibilityState !== 'hidden') {
-        void refresh();
-        void reloadLedger();
+    let refreshInFlight = false;
+    const refreshWallet = async () => {
+      if (document.visibilityState === 'hidden' || refreshInFlight) return;
+      refreshInFlight = true;
+      try {
+        await Promise.allSettled([refresh(), reloadLedger()]);
+      } finally {
+        refreshInFlight = false;
       }
     };
-    const timer = window.setInterval(refreshWallet, 15_000);
+    const timer = window.setInterval(() => void refreshWallet(), 5_000);
     window.addEventListener('focus', refreshWallet);
     document.addEventListener('visibilitychange', refreshWallet);
     return () => {
