@@ -200,7 +200,7 @@ export function createMemoryRepo() {
         .slice(0, 200)
         .map((p) => {
           const user = users.get(p.userId);
-          return { id: p.txRef, reference: p.txRef, userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: p.createdAt.getTime() };
+          return { id: p.txRef, reference: p.txRef, rawMessage: p.rawMessage ?? '', provider: p.provider ?? '', userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: p.createdAt.getTime() };
         });
     },
     /** pending -> success and credit the wallet, exactly once. */
