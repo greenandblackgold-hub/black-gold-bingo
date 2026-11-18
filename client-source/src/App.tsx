@@ -42,7 +42,7 @@ function useHash(): string {
 function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
   const [tab, setTab] = useState<TabId>(() => (window.location.hash === '#wallet' ? 'wallet' : 'play'));
   return (
-    <div className="min-h-screen pb-28">
+    <div className="premium-ui min-h-screen pb-28">
       <Suspense fallback={<RouteLoading />}><AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} /></Suspense>
       <main className="mx-auto max-w-6xl px-4 pt-5 sm:pt-8">
         {tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} /></Suspense>}
@@ -74,7 +74,7 @@ function ServerRouter() {
   };
   if (hash === ADMIN_HASH && user?.role !== 'admin') {
     return (
-      <main className="grid min-h-screen place-items-center bg-black p-6 text-center text-white">
+      <main className="premium-ui grid min-h-screen place-items-center bg-black p-6 text-center text-white">
         <section className="max-w-md rounded-2xl border border-gold-500/40 bg-zinc-950 p-8">
           <h1 className="mb-3 text-xl font-bold text-gold-400">{accessText.title}</h1>
           <p className="mb-6 text-sm text-zinc-300">{accessText.message}</p>
@@ -115,7 +115,7 @@ function PhoneVerificationGate() {
     catch (e) { setError(e instanceof Error ? e.message : 'ኮዱ አልተቀበለም።'); }
     finally { setBusy(false); }
   };
-  return <main className="grid min-h-screen place-items-center bg-darkbg px-5 text-gold-100"><form onSubmit={submit} className="w-full max-w-md space-y-4 rounded-2xl bg-cardbg p-6 ring-1 ring-gold-500/40">
+  return <main className="premium-ui grid min-h-screen place-items-center bg-darkbg px-5 text-gold-100"><form onSubmit={submit} className="w-full max-w-md space-y-4 rounded-2xl bg-cardbg p-6 ring-1 ring-gold-500/40">
     <h1 className="text-xl font-bold text-gold-400">ስልክዎን ያረጋግጡ</h1>
     <p className="text-sm text-gold-200/80">የማረጋገጫ ቁጥሩን ከአስተዳዳሪው በስልክ ጥሪ ይቀበሉ። SMS አይላክም።</p>
     <p className="text-sm text-gold-500">{user?.phone}</p>
