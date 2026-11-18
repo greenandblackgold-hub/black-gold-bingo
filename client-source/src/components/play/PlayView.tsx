@@ -316,7 +316,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             </div>;
           })}
         </div>
-        </div>
       </section>
 
       {winner && (
