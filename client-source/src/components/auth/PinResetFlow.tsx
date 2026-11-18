@@ -18,6 +18,8 @@ export function PinResetFlow({ lang, onClose }: { lang: Lang; onClose: () => voi
   const [notice, setNotice] = useState('');
   const [noticeKind, setNoticeKind] = useState<NoticeKind>('info');
   const [busy, setBusy] = useState(false);
+  const [showPin, setShowPin] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (step !== 2 || seconds <= 0) return;
@@ -78,16 +80,24 @@ export function PinResetFlow({ lang, onClose }: { lang: Lang; onClose: () => voi
 
   const timerText = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
   const noticeStyle = noticeKind === 'success'
-    ? 'border-emerald-500/30 bg-emerald-950/40 text-emerald-200'
+    ? 'border-gold-300/45 bg-gold-400/10 text-gold-100'
     : noticeKind === 'error'
-      ? 'border-red-500/30 bg-red-950/40 text-red-200'
+      ? 'border-gold-500/45 bg-black/70 text-gold-200'
       : 'border-gold-500/20 bg-gold-500/5 text-gold-200';
+  const visibilityLabel = (visible: boolean) => lang === 'am' ? (visible ? 'ደብቅ' : 'አሳይ') : lang === 'ti' ? (visible ? 'ሕባእ' : 'ኣርኢ') : (visible ? 'Hide' : 'Show');
 
   return (
     <section className="rounded-2xl border border-gold-700/40 bg-[#101014] p-5 shadow-xl shadow-black/20 sm:p-6" aria-label={t.title}>
       <h3 className="mb-4 text-xl font-bold text-white">{t.title}</h3>
-      <p className="mb-5 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3.5 text-xs leading-5 text-amber-200">{t.adminHelp}</p>
-      <p className="mb-3 text-xs font-semibold tracking-wide text-gold-500">{t.step} {Math.min(step, 3)} / 3</p>
+      <p className="mb-5 rounded-xl border border-gold-500/25 bg-gold-500/[0.06] p-3.5 text-xs leading-5 text-gold-200">{t.adminHelp}</p>
+      <div className="mb-5">
+        <div className="mb-2 flex items-center justify-between text-xs font-semibold tracking-wide text-gold-400">
+          <span>{t.step}</span><span className="tabular-nums">{Math.min(step, 3)} / 3</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {[1, 2, 3].map((item) => <span key={item} className={['h-1.5 rounded-full', step >= item ? 'bg-gradient-to-r from-gold-300 to-gold-500' : 'bg-black ring-1 ring-gold-800/70'].join(' ')} />)}
+        </div>
+      </div>
       {step === 1 && <label className="block text-sm font-semibold text-gold-300">{t.phone}<input required className={field + ' mt-2'} inputMode="tel" autoComplete="tel" placeholder="09******** / 07********" value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^0-9+]/g, '').slice(0, 13))} /></label>}
       {step === 2 && <div className="space-y-4">
         <label className="block text-sm font-semibold text-gold-300">{t.otp}<input required className={field + ' mt-2 text-center text-xl tracking-[0.45em]'} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} /></label>
@@ -97,8 +107,18 @@ export function PinResetFlow({ lang, onClose }: { lang: Lang; onClose: () => voi
         </div>
       </div>}
       {step === 3 && <div className="space-y-3">
-        <label className="block text-sm font-semibold text-gold-300">{t.newPin}<input required className={field + ' mt-2'} type="password" inputMode="numeric" autoComplete="new-password" pattern="[0-9]{6}" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} /></label>
-        <label className="block text-sm font-semibold text-gold-300">{t.confirm}<input required className={field + ' mt-2'} type="password" inputMode="numeric" autoComplete="new-password" pattern="[0-9]{6}" maxLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value.replace(/\D/g, '').slice(0, 6))} /></label>
+        <label className="block text-sm font-semibold text-gold-300">{t.newPin}
+          <span className="relative mt-2 block">
+            <input required className={field + ' pr-20'} type={showPin ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" pattern="[0-9]{6}" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))} />
+            <button type="button" onClick={() => setShowPin((value) => !value)} aria-pressed={showPin} className="absolute inset-y-0 right-3 text-xs font-bold text-gold-400">{visibilityLabel(showPin)}</button>
+          </span>
+        </label>
+        <label className="block text-sm font-semibold text-gold-300">{t.confirm}
+          <span className="relative mt-2 block">
+            <input required className={field + ' pr-20'} type={showConfirm ? 'text' : 'password'} inputMode="numeric" autoComplete="new-password" pattern="[0-9]{6}" maxLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value.replace(/\D/g, '').slice(0, 6))} />
+            <button type="button" onClick={() => setShowConfirm((value) => !value)} aria-pressed={showConfirm} className="absolute inset-y-0 right-3 text-xs font-bold text-gold-400">{visibilityLabel(showConfirm)}</button>
+          </span>
+        </label>
       </div>}
       {notice && <p role={noticeKind === 'error' ? 'alert' : 'status'} aria-live="polite" className={'mt-4 rounded-xl border p-3.5 text-xs leading-5 ' + noticeStyle}>{notice}</p>}
       <div className="mt-5 flex flex-wrap gap-3">

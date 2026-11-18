@@ -56,6 +56,7 @@ export function AuthScreen() {
   const input = 'w-full rounded-xl border border-gold-700/40 bg-[#111116] px-4 py-3.5 text-gold-100 placeholder:text-gold-700/80 outline-none transition focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20';
   const passwordType = showPin ? 'text' : 'password';
   const pinStrength = pin.length < 4 ? 0 : new Set(pin).size <= 2 ? 1 : pin.length < 6 ? 1 : new Set(pin).size <= 3 ? 2 : 3;
+  const registerProgress = [phone.length >= 10, name.trim().length >= 2, pin.length === 6, confirmPin.length === 6 && pin === confirmPin].filter(Boolean).length;
   const strengthLabels = lang === 'am' ? ['PIN ያስገቡ', 'ደካማ', 'መካከለኛ', 'ጥሩ'] : lang === 'ti' ? ['PIN የእትዉ', 'ድኹም', 'ማእከላይ', 'ጽቡቕ'] : ['Enter a PIN', 'Weak', 'Fair', 'Good'];
 
   const branding = (
@@ -71,7 +72,7 @@ export function AuthScreen() {
 
   return (
     <main className="premium-ui min-h-screen bg-[#08080b] lg:grid lg:grid-cols-2">
-      <section className="relative hidden min-h-screen flex-col items-center justify-center overflow-hidden border-r border-gold-500/15 bg-[radial-gradient(ellipse_at_50%_38%,#202027_0%,#101014_42%,#050507_100%)] px-10 py-16 lg:flex">
+      <section className="relative hidden min-h-screen flex-col items-center justify-center overflow-hidden border-r border-gold-500/15 bg-[radial-gradient(ellipse_at_50%_38%,#171207_0%,#090909_42%,#030303_100%)] px-10 py-16 lg:flex">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,215,0,0.10),transparent_30%,transparent_70%,rgba(255,215,0,0.07))]" />
         <div className="pointer-events-none absolute -left-40 top-[-8rem] h-[34rem] w-[34rem] rounded-full bg-gold-400/10 blur-[110px]" />
         <div className="pointer-events-none absolute -bottom-48 -right-36 h-[34rem] w-[34rem] rounded-full bg-gold-500/10 blur-[120px]" />
@@ -100,7 +101,18 @@ export function AuthScreen() {
           <div className="mb-7">
             <p className="mb-2 text-xs font-bold tracking-[0.24em] text-gold-500">BLACK GOLD BINGO PRO</p>
             <h2 className="text-3xl font-bold text-white">{mode === 'login' ? t.welcome : t.register}</h2>
-            <p className="mt-2 text-sm leading-6 text-zinc-400">{t.formHint}</p>
+            <p className="mt-2 text-sm leading-6 text-gold-200/65">{t.formHint}</p>
+            {mode === 'register' && (
+              <div className="mt-5" aria-label="Registration progress" aria-live="polite">
+                <div className="mb-2 flex items-center justify-between text-xs font-semibold">
+                  <span className="tracking-wide text-gold-400">{lang === 'am' ? 'የምዝገባ ሂደት' : lang === 'ti' ? 'ሂደት ምዝገባ' : 'Registration progress'}</span>
+                  <span className="tabular-nums text-gold-200">{registerProgress}/4</span>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[1, 2, 3, 4].map((step) => <span key={step} className={['h-1.5 rounded-full transition-colors', registerProgress >= step ? 'bg-gradient-to-r from-gold-300 to-gold-500' : 'bg-gold-950 ring-1 ring-gold-800/70'].join(' ')} />)}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mb-7 grid grid-cols-2 rounded-2xl border border-gold-700/30 bg-[#111116] p-1.5">
@@ -132,7 +144,7 @@ export function AuthScreen() {
               {mode === 'register' && (
                 <div className="mt-2" aria-live="polite">
                   <div className="mb-1.5 flex gap-1.5">
-                    {[1, 2, 3].map((level) => <span key={level} className={['h-1.5 flex-1 rounded-full transition-colors', pinStrength >= level ? level === 1 ? 'bg-red-400' : level === 2 ? 'bg-amber-400' : 'bg-emerald-400' : 'bg-zinc-700'].join(' ')} />)}
+                    {[1, 2, 3].map((level) => <span key={level} className={['h-1.5 flex-1 rounded-full transition-colors', pinStrength >= level ? level === 1 ? 'bg-gold-700' : level === 2 ? 'bg-gold-500' : 'bg-gold-300' : 'bg-zinc-700'].join(' ')} />)}
                   </div>
                   <p className="text-xs text-zinc-400">{strengthLabels[pinStrength]}{pin.length === 6 ? '' : ' · ' + (lang === 'am' ? '6 አሃዝ ያስፈልጋል' : lang === 'ti' ? '6 ኣሃዝ የድሊ' : '6 digits required')}</p>
                 </div>
