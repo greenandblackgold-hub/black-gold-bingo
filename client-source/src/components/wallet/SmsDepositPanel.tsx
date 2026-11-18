@@ -20,7 +20,6 @@ const inputClass = 'w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-300 pl
 export function SmsDepositPanel() {
   const { lang } = useLanguage();
   const t = copy[lang] ?? copy.en;
-  const [amount, setAmount] = useState('100');
   const [provider, setProvider] = useState<'Telebirr' | 'CBE'>('Telebirr');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -29,11 +28,6 @@ export function SmsDepositPanel() {
   const [status, setStatus] = useState<DepositStatus | null>(null);
 
   const submit = async () => {
-    const numericAmount = Number(amount);
-    if (!Number.isFinite(numericAmount) || numericAmount < 10 || numericAmount > 10000 || !/^\d+(\.\d{1,2})?$/.test(amount)) {
-      setError(t.invalid);
-      return;
-    }
     if (message.trim().length < 20 || message.trim().length > 4000) {
       setError(t.messageInvalid);
       return;
@@ -86,17 +80,6 @@ export function SmsDepositPanel() {
       <h2 id="simulation-wallet-title" className="mb-4 text-lg font-bold text-gold-300">{t.title}</h2>
       {!request ? (
         <div className="space-y-4">
-          <div>
-            <label htmlFor="simulation-deposit-amount" className="mb-2 block text-sm text-gold-500">{t.amount}</label>
-            <input
-              id="simulation-deposit-amount"
-              className={inputClass}
-              inputMode="decimal"
-              value={amount}
-              onChange={(event) => setAmount(event.target.value.replace(/[^0-9.]/g, ''))}
-              disabled={busy}
-            />
-          </div>
           <div>
             <label htmlFor="simulation-deposit-provider" className="mb-2 block text-sm text-gold-500">{t.provider}</label>
             <select id="simulation-deposit-provider" className={inputClass} value={provider} onChange={(event) => setProvider(event.target.value as 'Telebirr' | 'CBE')} disabled={busy}>
