@@ -148,7 +148,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
             return (
               <button
                 key={`${r}-${c}`}
-                style={isMarked && !isCalled ? { backgroundColor: markColor } : undefined}
+                style={isMarked ? { backgroundColor: markColor } : undefined}
                 type="button"
                 disabled={isFree || !active}
                 aria-pressed={isMarked}
@@ -160,7 +160,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
                     ? 'border-white/70 text-[#17130a] shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_3px_12px_rgba(212,175,55,.22)] bg-cell-mark'
                     : 'border-white/[0.055] bg-gradient-to-br from-white/[0.065] to-white/[0.015] text-gold-200/90 hover:border-gold-500/40',
                   isCalled
-                    ? 'bg-gradient-to-br from-sky-400 via-blue-500 to-blue-700 border-white text-white ring-1 ring-white/80 shadow-[0_0_12px_rgba(59,130,246,.55)]'
+                    ? isMarked ? 'border-white/80 text-[#17130a] ring-1 ring-white/80' : 'bg-gradient-to-br from-sky-400 via-blue-500 to-blue-700 border-white text-white ring-1 ring-white/80 shadow-[0_0_12px_rgba(59,130,246,.55)]'
                     : '',
                   inWin ? 'z-[1] outline outline-2 outline-white shadow-[0_0_18px_rgba(255,245,190,.75)]' : '',
                 ].join(' ')}
