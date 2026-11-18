@@ -5,7 +5,7 @@ import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { formatAmount } from '@/lib/localization';
 
-const TELEBIRR = ['0914708903', '0983931020', '0908725881'];
+const TELEBIRR = ['0978202822', '0998974422', '0714767695'];
 const RULES = [
   'ካርቴላ ለመግዛት በአካውንትዎ በቂ ቀሪ ሂሳብ ሊኖር ይገባል።',
   'የጨዋታ ቁጥሮችን በጥንቃቄ ይከታተሉ፤ የወጣ ቁጥር ብቻ በካርቴላዎ ላይ ምልክት ያድርጉ።',
@@ -130,7 +130,7 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
                     <p className={`text-xs ${muted}`}>ካርቴላ ካስመዘገቡ ብቻ ማሳወቂያ ለማግኘት የbrowser ፈቃድ ያስፈልጋል።</p>
                   </div>
                 )}
-                {row.id === 'contact' && <div className="space-y-2 text-sm"><p className={title}>ስልክ</p>{TELEBIRR.map((phone) => <a key={phone} href={`tel:${phone}`} className="block font-mono text-amber-500 underline">{phone}</a>)}<p className={`pt-2 ${muted}`}>Telegram · TikTok</p></div>}
+                {row.id === 'contact' && <div className="space-y-2 text-sm"><p className={title}>ስልክ</p>{TELEBIRR.map((phone) => <a key={phone} href={`tel:${phone}`} className="block font-mono text-amber-500 underline">{phone}</a>)}</div>}
                 {row.id === 'rules' && <ol className={`list-decimal space-y-2 pl-5 text-sm leading-6 ${muted}`}>{RULES.map((rule) => <li key={rule}>{rule}</li>)}</ol>}
                 {row.id === 'app' && <div className="text-sm"><p className={title}>የAndroid መተግበሪያ አውርድ</p><p className={`mt-1 text-xs ${muted}`}>የማውረጃ አገናኝ ሲገኝ ከዚህ ይቀርባል።</p></div>}
               </div>
