@@ -515,7 +515,7 @@ export const translations = {
     title: 'የቦርሳ ገንዘብ ማስገቢያ',
     amount: 'መጠን (ብር)',
     reference: 'የትራንዛክሽን ማጣቀሻ',
-    provider: 'የክፍያ አይነት', message: 'ሙሉ የተላከው የSMS መልዕክት', messagePlaceholder: 'ከTelebirr ወይም CBE የደረሰዎትን ሙሉ SMS እዚህ ይለጥፉ', messageHelp: 'ሙሉ መልዕክቱን ይለጥፉ፤ ማጣቀሻና መጠኑ በራስ-ሰር ይነበባሉ።', messageInvalid: 'እባክዎ ሙሉ እና ትክክለኛውን SMS ያስገቡ።',
+    provider: 'የክፍያ አይነት', sendTo: 'ገንዘብ የሚላክበት አካውንት', accountName: 'የአካውንት ስም', accountNumber: 'የአካውንት ቁጥር', phoneNumber: 'ስልክ ቁጥር', message: 'ሙሉ የተላከው የSMS መልዕክት', messagePlaceholder: 'ከTelebirr ወይም CBE የደረሰዎትን ሙሉ SMS እዚህ ይለጥፉ', messageHelp: 'ሙሉ መልዕክቱን ይለጥፉ፤ ማጣቀሻና መጠኑ በራስ-ሰር ይነበባሉ።', messageInvalid: 'እባክዎ ሙሉ እና ትክክለኛውን SMS ያስገቡ።',
     placeholder: 'ለምሳሌ TXN123456789',
     submit: 'የባላንስ ጥያቄ ላክ',
     sending: 'በመላክ ላይ…',
@@ -536,7 +536,7 @@ export const translations = {
   ti: {
     title: 'ናይ ቦርሳ ገንዘብ ምእታዊ',
     amount: 'መጠን (ብር)',
-    reference: 'ቁጽሪ ምጥቃስ', provider: 'ዓይነት ክፍሊት', message: 'ምሉእ SMS መልእኽቲ', messagePlaceholder: 'ካብ Telebirr ወይ CBE ዝመጸኩም ምሉእ SMS ኣብዚ ለጥፉ', messageHelp: 'ምሉእ መልእኽቲ ለጥፉ፤ መወከሲን መጠንን ብኣውቶማቲክ ይንበብ።', messageInvalid: 'ቅኑዕ ምሉእ SMS የእትዉ።',
+    reference: 'ቁጽሪ ምጥቃስ', provider: 'ዓይነት ክፍሊት', sendTo: 'ገንዘብ ዝለኣኸሉ ኣካውንት', accountName: 'ስም ኣካውንት', accountNumber: 'ቁጽሪ ኣካውንት', phoneNumber: 'ቁጽሪ ስልኪ', message: 'ምሉእ SMS መልእኽቲ', messagePlaceholder: 'ካብ Telebirr ወይ CBE ዝመጸኩም ምሉእ SMS ኣብዚ ለጥፉ', messageHelp: 'ምሉእ መልእኽቲ ለጥፉ፤ መወከሲን መጠንን ብኣውቶማቲክ ይንበብ።', messageInvalid: 'ቅኑዕ ምሉእ SMS የእትዉ።',
     placeholder: 'ንኣብነት TXN123456789',
     submit: 'ሕቶ ሚዛን ስደድ',
     sending: 'ይለኣኽ ኣሎ…',
@@ -557,7 +557,7 @@ export const translations = {
   en: {
     title: 'Wallet deposit request',
     amount: 'Amount (ETB)',
-    reference: 'Transaction reference', provider: 'Payment provider', message: 'Full transaction SMS message', messagePlaceholder: 'Paste the complete SMS received from Telebirr or CBE', messageHelp: 'Paste the whole message. The transaction reference and amount are extracted automatically.', messageInvalid: 'Paste a complete valid transaction SMS message.',
+    reference: 'Transaction reference', provider: 'Payment provider', sendTo: 'Send your deposit to', accountName: 'Account name', accountNumber: 'Account number', phoneNumber: 'Phone number', message: 'Full transaction SMS message', messagePlaceholder: 'Paste the complete SMS received from Telebirr or CBE', messageHelp: 'Paste the whole message. The transaction reference and amount are extracted automatically.', messageInvalid: 'Paste a complete valid transaction SMS message.',
     placeholder: 'e.g. TXN123456789',
     submit: 'Submit balance request',
     sending: 'Submitting…',
