@@ -468,7 +468,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         )}
       </div>
 
-      <PlayerFeatures />
+      <PlayerFeatures onGoToWallet={onGoToWallet} />
 
       {/* Claim bar (sits above BottomNav) */}
       {(winners.length > 0 || message) && (
