@@ -43,7 +43,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const { lang, setLang } = useLanguage();
   const { balance, cards, transactions, markedByCard, clearMarks, removeCards } = usePlayer();
   const { cardPrice, audioVolume, setAudioVolume } = useAppSettings();
-  const { calledNumbers, roundNumber, phase, winner, winPattern, roundPrizeEtb, roundCardCount } = useRound();
+  const { calledNumbers, roundNumber, phase, winner, winPattern, roundPrizeEtb, roundCardCount, verifyCard } = useRound();
   const { soundEnabled, setSoundEnabled, voiceEnabled, setVoiceEnabled } = useAppSettings();
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try { return localStorage.getItem('bgb.playerTheme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
