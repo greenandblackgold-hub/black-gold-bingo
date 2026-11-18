@@ -38,30 +38,6 @@ type StringKey = keyof (typeof STRINGS)['en'];
 const LETTERS = ['B', 'I', 'N', 'G', 'O'] as const;
 const letterFor = (n: number) => LETTERS[Math.min(4, Math.floor((n - 1) / 15))];
 
-const AMHARIC_ONES = ['','አንድ','ሁለት','ሶስት','አራት','አምስት','ስድስት','ሰባት','ስምንት','ዘጠኝ','አስር','አስራ አንድ','አስራ ሁለት','አስራ ሶስት','አስራ አራት','አስራ አምስት','አስራ ስድስት','አስራ ሰባት','አስራ ስምንት','አስራ ዘጠኝ'];
-const AMHARIC_TENS: Record<number, string> = { 20: 'ሃያ', 30: 'ሰላሳ', 40: 'አርባ', 50: 'ሃምሳ', 60: 'ስልሳ', 70: 'ሰባ' };
-const AMHARIC_LETTERS: Record<string, string> = { B: 'ቢ', I: 'አይ', N: 'ኤን', G: 'ጂ', O: 'ኦ' };
-function amharicNumber(n: number): string {
-  if (n <= 19) return AMHARIC_ONES[n] ?? String(n);
-  const ten = Math.floor(n / 10) * 10;
-  const unit = n % 10;
-  return unit === 0 ? (AMHARIC_TENS[ten] ?? String(n)) : `${AMHARIC_TENS[ten] ?? ten} ${AMHARIC_ONES[unit]}`;
-}
-function speakAmharicCall(n: number) {
-  if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return;
-  window.speechSynthesis.cancel();
-  const letter = AMHARIC_LETTERS[letterFor(n)] ?? letterFor(n);
-  const utterance = new SpeechSynthesisUtterance(`${letter}... ${amharicNumber(n)}`);
-  utterance.lang = 'am-ET';
-  utterance.rate = 0.76;
-  utterance.pitch = 1;
-  utterance.volume = 1;
-  const voices = window.speechSynthesis.getVoices();
-  const amharicVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('am'));
-  if (amharicVoice) utterance.voice = amharicVoice;
-  window.speechSynthesis.speak(utterance);
-}
-
 const LINES: Pos[][] = (() => {
   const out: Pos[][] = [];
   for (let i = 0; i < 5; i++) {
@@ -219,26 +195,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
     [active, cards, markSets, called, winPattern],
   );
 
-  const [showBoard, setShowBoard] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(() => {
-    try { return localStorage.getItem('bgb.amharicVoice') !== 'off'; } catch { return true; }
-  });
-  const previousCall = useRef<number | null>(null);
-  useEffect(() => {
-    if (current === null) { previousCall.current = null; return; }
-    if (previousCall.current !== null && current !== previousCall.current && voiceEnabled) {
-      speakAmharicCall(current);
-    }
-    previousCall.current = current;
-  }, [current, voiceEnabled]);
-  const toggleVoice = () => {
-    setVoiceEnabled((enabled) => {
-      const next = !enabled;
-      try { localStorage.setItem('bgb.amharicVoice', next ? 'on' : 'off'); } catch { /* ignore */ }
-      if (!next && 'speechSynthesis' in window) window.speechSynthesis.cancel();
-      return next;
-    });
-  };
   const [claiming, setClaiming] = useState(false);
   const [confetti, setConfetti] = useState(false);
   const stopConfetti = useCallback(() => setConfetti(false), []);
@@ -286,6 +242,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-2">
+      <PlayerFeatures onGoToWallet={onGoToWallet} />
       <style>{`
         @keyframes bgBallPop {
           0% { transform: scale(.68) rotate(-9deg); opacity: 0; filter: brightness(1.35); }
@@ -315,100 +272,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           .bg-anim, .bg-ball-pop, .bg-cell-mark, .bg-winner-reveal, .bg-confetti { animation: none !important; }
         }
       `}</style>
-
-      {/* Call stage */}
-      <section className="relative isolate overflow-hidden rounded-[2rem] border border-gold-500/25 bg-[radial-gradient(ellipse_at_top_left,rgba(212,175,55,0.16),transparent_48%),linear-gradient(135deg,rgba(133,90,0,0.16),rgba(20,20,25,0.98)_48%,rgba(10,10,12,1))] p-4 shadow-2xl shadow-black/30 ring-1 ring-gold-700/40 sm:p-6 lg:p-8">
-        <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-gold-400/10 blur-3xl" aria-hidden="true" />
-        <div className="relative grid items-center gap-4">
-          <div className="flex min-w-0 flex-col items-center gap-4 py-2 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/25 bg-black/25 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-gold-300 shadow-inner shadow-black/20">
-              <span className="h-1.5 w-1.5 rounded-full bg-gold-400 shadow-[0_0_10px_rgba(255,215,0,.9)]" />
-              {t('called')}
-            </div>
-            <div className="relative grid min-h-[9.5rem] min-w-[9.5rem] place-items-center rounded-full bg-[radial-gradient(circle,rgba(255,215,0,0.12),transparent_68%)] p-2 sm:min-h-[12rem] sm:min-w-[12rem]">
-              {current !== null ? (
-                <Ball key={current} n={current} />
-              ) : (
-                <div className="grid h-32 w-32 place-items-center rounded-full border-2 border-dashed border-gold-700/80 bg-black/20 px-4 text-center text-sm font-medium text-gold-400 sm:h-40 sm:w-40">
-                  {phase === 'ended' ? t('ended') : t('waitingBall')}
-                </div>
-              )}
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-gold-200" aria-live="polite">
-                {t('round')} <span className="font-black tabular-nums text-gold-400">#{roundNumber}</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-2">
-              <button
-                type="button"
-                onClick={toggleVoice}
-                aria-pressed={voiceEnabled}
-                className="rounded-xl border border-gold-700/60 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-gold-300 transition-colors hover:border-gold-400/60 hover:bg-gold-400/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
-              >
-                {voiceEnabled ? t('amharicVoiceOn') : t('amharicVoiceOff')}
-              </button>
-              <button
-                type="button"
-                disabled={current === null}
-                onClick={() => {
-                  if (current !== null) {
-                    setVoiceEnabled(true);
-                    try { localStorage.setItem('bgb.amharicVoice', 'on'); } catch { /* ignore */ }
-                    speakAmharicCall(current);
-                  }
-                }}
-                className="rounded-xl border border-gold-700/60 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-gold-300 transition-colors hover:border-gold-400/60 hover:bg-gold-400/10 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
-              >
-                ▶ {t('replayCall')}
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowBoard((s) => !s)}
-              aria-expanded={showBoard}
-              className="flex w-full max-w-md items-center justify-between rounded-xl border border-gold-700/40 bg-white/[0.03] px-4 py-3 text-left text-sm font-semibold text-gold-300 transition-colors hover:border-gold-400/50 hover:bg-gold-400/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
-            >
-              <span>{t('board')} <span className="ml-1 text-xs font-bold text-gold-500">({calledNumbers.length})</span></span>
-              <span className="text-xs font-bold text-gold-500">{showBoard ? '− ' + t('hide') : '＋ ' + t('show')}</span>
-            </button>
-        </div>
-      </section>
-
-      {showBoard && (
-        <section className="overflow-hidden rounded-2xl border border-gold-700/40 bg-gradient-to-br from-cardbg via-cardbg to-gold-950/20 p-2 shadow-lg shadow-black/20 ring-1 ring-gold-700/20 sm:p-3">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-gold-700/30 pb-2">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-600">{t('numberTracker')}</p>
-              <h3 className="mt-1 text-base font-bold text-gold-200">{t('board')}</h3>
-            </div>
-            <span className="rounded-full border border-gold-500/25 bg-gold-500/10 px-3 py-1 text-xs font-bold tabular-nums text-gold-300">{calledNumbers.length} / 75</span>
-          </div>
-          <div className="space-y-1.5 overflow-x-auto">
-            {LETTERS.map((l, col) => (
-              <div key={l} className="grid min-w-[22rem] grid-cols-[1.5rem_repeat(15,minmax(0,1fr))] items-center gap-1 rounded-lg border border-gold-700/25 bg-black/20 p-1">
-                <span className="grid h-6 place-items-center rounded-md bg-gold-500/15 text-xs font-black text-gold-300">{l}</span>
-                {Array.from({ length: 15 }, (_, i) => col * 15 + i + 1).map((n) => (
-                  <span
-                    key={n}
-                    className={[
-                      'grid h-6 min-w-0 place-items-center rounded text-[9px] font-semibold tabular-nums transition-colors',
-                      called.has(n)
-                        ? 'bg-gradient-to-br from-gold-300 to-gold-600 text-darkbg shadow-[0_1px_5px_rgba(212,175,55,.2)]'
-                        : 'bg-white/[0.025] text-gold-700/80',
-                    ].join(' ')}
-                  >
-                    {n}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       {winner && (
         <div className="space-y-2">
@@ -468,7 +331,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         )}
       </div>
 
-      <PlayerFeatures onGoToWallet={onGoToWallet} />
 
       {/* Claim bar (sits above BottomNav) */}
       {(winners.length > 0 || message) && (
