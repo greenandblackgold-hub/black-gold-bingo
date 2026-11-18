@@ -178,11 +178,11 @@ function CardView({ card, marks, called, active, t, onToggle, pattern }: CardVie
                 onClick={() => v !== null && isCalled && onToggle(v)}
                 className={[
                   'relative grid aspect-square min-w-0 place-items-center overflow-hidden rounded-lg border text-base font-extrabold tabular-nums shadow-sm transition-all duration-200 active:scale-[0.91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-200 sm:rounded-xl sm:text-lg',
-                  isMarked
+                  isMarked && !isCalled
                     ? 'bg-gradient-to-br from-gold-200 via-gold-400 to-gold-600 border-gold-200/80 text-[#17130a] shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_3px_12px_rgba(212,175,55,.22)] bg-cell-mark'
                     : 'border-white/[0.055] bg-gradient-to-br from-white/[0.065] to-white/[0.015] text-gold-200/90 hover:border-gold-500/40',
-                  isCalled && !isMarked
-                    ? 'bg-anim border-gold-400/80 text-gold-100 ring-1 ring-gold-400/60 animate-[bgHint_1.6s_ease-in-out_infinite]'
+                  isCalled
+                    ? 'bg-gradient-to-br from-sky-400 via-blue-500 to-blue-700 border-white text-white ring-1 ring-white/80 shadow-[0_0_12px_rgba(59,130,246,.55)]'
                     : '',
                   inWin ? 'z-[1] outline outline-2 outline-white shadow-[0_0_18px_rgba(255,245,190,.75)]' : '',
                 ].join(' ')}
