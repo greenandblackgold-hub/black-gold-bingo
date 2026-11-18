@@ -8,6 +8,8 @@ const TEXT = translations.adminDeposits;
 interface DepositRow {
   id: string;
   reference: string;
+  rawMessage?: string;
+  provider?: string;
   userId: string;
   userName: string;
   userPhone: string;
@@ -76,6 +78,8 @@ export function AdminDeposits() {
               <dl className="mt-2 space-y-1 text-sm">
                 <div><dt className="inline text-gold-600">{t.player}: </dt><dd className="inline text-gold-300">{row.userName} · {row.userPhone}</dd></div>
                 <div><dt className="inline text-gold-600">{t.reference}: </dt><dd className="inline break-all font-mono text-gold-300">{row.reference}</dd></div>
+                {row.provider && <div><dt className="inline text-gold-600">Provider: </dt><dd className="inline text-gold-300">{row.provider}</dd></div>}
+                {row.rawMessage && <div className="mt-2"><dt className="mb-1 block text-gold-600">Full transaction SMS:</dt><dd className="whitespace-pre-wrap break-words rounded-lg bg-black/30 p-3 text-xs leading-relaxed text-gold-200">{row.rawMessage}</dd></div>}
                 <div><dt className="inline text-gold-600">{t.sent}: </dt><dd className="inline text-gold-500">{formatDateTime(lang, row.at)}</dd></div>
               </dl>
               <div className="mt-3 flex flex-wrap gap-2">
