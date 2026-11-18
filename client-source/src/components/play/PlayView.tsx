@@ -293,7 +293,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           <h2 className="text-base font-black tracking-wide text-gold-200 sm:text-lg">የተጠሩ ቁጥሮች</h2>
           <span className="rounded-full border border-gold-500/30 bg-black/40 px-3 py-1 text-xs font-bold tabular-nums text-gold-300">{calledNumbers.length}/75</span>
         </div>
-        <div className="grid grid-cols-1 gap-1.5 sm:gap-2">
+        <div className="space-y-1.5">
           {LETTERS.map((letter, column) => {
             const palette = [
               'bg-orange-500 text-white border-orange-200',
@@ -302,21 +302,20 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
               'bg-violet-600 text-white border-violet-200',
               'bg-rose-600 text-white border-rose-200',
             ][column];
-            return <div key={letter} className="min-w-0 rounded-xl border border-white/10 bg-black/30 p-1.5 sm:p-2">
-              <h3 className="mb-1.5 text-center text-base font-black text-gold-200 sm:text-lg">{letter}</h3>
-              <div className="grid grid-cols-[repeat(15,minmax(0,1fr))] gap-1">
-                {Array.from({length:15},(_,index)=>column*15+index+1).map((number)=>{
-                  const isCalled=called.has(number);
-                  const isLatest=number===current;
-                  return <span key={number} aria-label={`${letter}-${number}${isCalled?' called':''}`} className={[
-                    'grid min-h-7 place-items-center rounded-md border border-transparent py-1 text-xs font-black tabular-nums sm:min-h-8 sm:text-sm',
-                    isCalled ? palette : 'bg-white/[0.035] text-gold-700',
-                    isLatest ? 'bg-called-latest ring-2 ring-white' : '',
-                  ].join(' ')}>{number}</span>;
-                })}
-              </div>
+            return <div key={letter} className="grid grid-cols-[1.4rem_repeat(15,minmax(0,1fr))] items-center gap-1 rounded-lg border border-gold-700/30 bg-black/25 p-1">
+              <span className="text-center text-xs font-black text-gold-300">{letter}</span>
+              {Array.from({length:15},(_,index)=>column*15+index+1).map((number)=>{
+                const isCalled=called.has(number);
+                const isLatest=number===current;
+                return <span key={number} aria-label={`${letter}-${number}${isCalled?' called':''}`} className={[
+                  'grid h-6 min-w-0 place-items-center rounded text-[9px] font-semibold tabular-nums',
+                  isCalled ? palette : 'bg-white/[0.035] text-gold-600',
+                  isLatest ? 'bg-called-latest ring-2 ring-white' : '',
+                ].join(' ')}>{number}</span>;
+              })}
             </div>;
           })}
+        </div>
         </div>
       </section>
 
