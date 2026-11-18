@@ -269,8 +269,8 @@ export async function createMongoRepo({ uri, dbName }) {
     },
 
     /* deposits */
-    async createPayment({ txRef, userId, amount, source = 'chapa' }) {
-      await payments.insertOne({ txRef, userId, amount, source, status: 'pending', createdAt: new Date() });
+    async createPayment({ txRef, userId, amount, source = 'chapa', rawMessage, provider }) {
+      await payments.insertOne({ txRef, userId, amount, source, rawMessage, provider, status: 'pending', createdAt: new Date() });
     },
     async getPayment(txRef) {
       return payments.findOne({ txRef });
@@ -289,7 +289,7 @@ export async function createMongoRepo({ uri, dbName }) {
       const rows = await payments.find(filter).sort({ createdAt: -1 }).limit(200).toArray();
       return Promise.all(rows.map(async (p) => {
         const user = await users.findOne({ _id: p.userId }, { projection: { name: 1, phone: 1 } });
-        return { id: p.txRef, reference: p.txRef, userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: new Date(p.createdAt).getTime() };
+        return { id: p.txRef, reference: p.txRef, rawMessage: p.rawMessage ?? '', provider: p.provider ?? '', userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: new Date(p.createdAt).getTime() };
       }));
     },
     async confirmDeposit({ txRef, chapaRef }) {
