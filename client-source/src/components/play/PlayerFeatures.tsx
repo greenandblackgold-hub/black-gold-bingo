@@ -4,48 +4,35 @@ import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { formatAmount } from '@/lib/localization';
+import { patternMasks } from '@/lib/bingo';
+import type { WinPattern } from '@/types/game';
 import { SERVER_MODE } from '@/lib/api';
 
 const TELEBIRR = ['0978202822', '0998974422', '0714767695'];
- type PatternOption = { label: string; cells: number[] };
- const row = (r:number) => Array.from({length:5},(_,c)=>r*5+c);
- const col = (c:number) => Array.from({length:5},(_,r)=>r*5+c);
- const A=[0,6,12,18,24], B=[4,8,12,16,20];
- const merge=(...a:number[][])=>[...new Set(a.flat())].sort((x,y)=>x-y);
- function getPatternOptions(p:string):PatternOption[]{
- const all=Array.from({length:25},(_,i)=>i);
- switch(p){
- case 'two_lines': return [
- {label:'ሁለት አግድም መስመሮች',cells:merge(row(0),row(4))},
- {label:'ሁለት ቁመት መስመሮች',cells:merge(col(0),col(4))},
- {label:'ሁለት ዲያጎናል መስመሮች',cells:merge(A,B)},
- {label:'አግድም + ቁመት',cells:merge(row(2),col(2))},
- {label:'አግድም + ዲያጎናል',cells:merge(row(0),A)},
- {label:'ቁመት + ዲያጎናል',cells:merge(col(0),B)}];
- case 'two_horizontal_lines': return [0,1,2,3].map(n=>({label:`አግድም ${n+1} እና ${n+2} መስመር`,cells:merge(row(n),row(n+1))}));
- case 'any_line': return [{label:'አግድም',cells:row(2)},{label:'ቁመት',cells:col(2)},{label:'ዲያጎናል ↘',cells:A},{label:'ዲያጎናል ↙',cells:B}];
- case 'horizontal_line': return [0,1,2,3,4].map(n=>({label:`አግድም ${n+1}ኛ መስመር`,cells:row(n)}));
- case 'vertical_line': return [0,1,2,3,4].map(n=>({label:`ቁመት ${n+1}ኛ መስመር`,cells:col(n)}));
- case 'diagonal': case 'x': return [{label:'X ዲያጎናል',cells:merge(A,B)}];
- case 'three_lines': return [{label:'3 አግድም መስመሮች',cells:merge(row(0),row(2),row(4))},{label:'3 ቁመት መስመሮች',cells:merge(col(0),col(2),col(4))}];
- case 'four_lines': return [{label:'4 አግድም መስመሮች',cells:merge(row(0),row(1),row(3),row(4))},{label:'4 ቁመት መስመሮች',cells:merge(col(0),col(1),col(3),col(4))}];
- case 'full_house': case 'coverall': return [{label:'ሙሉ 25 ቦታዎች',cells:all}];
- case 'four_corners': return [{label:'አራቱ ማዕዘኖች',cells:[0,4,20,24]}];
- case 'half_house': return [{label:'12 ቦታዎች',cells:all.slice(0,12)}];
- case 'top_bottom': return [{label:'ላይኛው + ታችኛው',cells:merge(row(0),row(4))}];
- case 'left_right': return [{label:'ግራ + ቀኝ',cells:merge(col(0),col(4))}];
- case 'plus': case 'center_cross': return [{label:'መካከለኛ መስቀል',cells:merge(row(2),col(2))}];
- case 't': return [{label:'T ቅርጽ',cells:merge(row(0),col(2))}];
- case 'l': return [{label:'L ቅርጽ',cells:merge(col(0),row(4))}];
- case 'picture_frame': return [{label:'ውጫዊ ፍሬም',cells:all.filter(i=>Math.floor(i/5)===0||Math.floor(i/5)===4||i%5===0||i%5===4)}];
- case 'checkerboard': return [{label:'ቼከርቦርድ',cells:all.filter(i=>(Math.floor(i/5)+i%5)%2===0)}];
- case 'rectangle': return [{label:'2×2 ሬክታንግል',cells:[6,7,11,12]}];
- case 'two_rectangles': return [{label:'ሁለት ሬክታንግሎች',cells:merge([0,1,5,6],[18,19,23,24])}];
- case 'six_pack': return [{label:'Six-pack',cells:[6,7,8,11,12,13]}];
- case 'postage_stamp': return [{label:'Postage stamp',cells:[0,1,5,6]}];
- case 'diamond': return [{label:'ዳይመንድ',cells:[2,6,8,10,14,16,18,22]}];
- default: return [{label:p.replaceAll('_',' '),cells:row(2)}];
- }}
+type PatternOption = { label: string; cells: number[] };
+const PATTERN_LABELS: Record<string,string> = {
+  any_line:'አንድ መስመር', horizontal_line:'አግድም መስመር', vertical_line:'ቁመት መስመር',
+  diagonal:'ዲያጎናል', two_lines:'ሁለት መስመሮች', two_horizontal_lines:'ሁለት አግድም መስመሮች',
+  four_corners:'አራቱ ማዕዘኖች', rectangle:'2×2 ሬክታንግል', two_rectangles:'ሁለት ሬክታንግሎች',
+  half_house:'ግማሽ ቤት (12 ቁጥሮች)', full_house:'ሙሉ ካርድ', x:'X ቅርጽ',
+  t:'T ቅርጽ', l:'L ቅርጽ', plus:'ፕላስ (+)', diamond:'ዳይመንድ',
+  picture_frame:'ውጫዊ ፍሬም', six_pack:'Six-pack', postage_stamp:'Postage stamp',
+  three_lines:'ሶስት መስመሮች', four_lines:'አራት መስመሮች',
+  top_bottom:'ላይኛውና ታችኛው መስመር', left_right:'ግራና ቀኝ መስመሮች',
+  checkerboard:'ቼከርቦርድ', center_cross:'መካከለኛ መስቀል', coverall:'ሙሉ ካርድ',
+};
+function getPatternOptions(pattern: WinPattern): PatternOption[] {
+  const masks = pattern === 'half_house'
+    ? [Array.from({length:25},(_,i)=>i).filter(i=>i!==12).slice(0,12).map(i=>[Math.floor(i/5),i%5] as [number,number])]
+    : patternMasks(pattern);
+  // Large combinatorial patterns are sampled evenly; every thumbnail is still a real backend rule mask.
+  const stride = Math.max(1, Math.ceil(masks.length / 12));
+  const samples = masks.filter((_,i)=>i%stride===0).slice(0,12);
+  return samples.map((mask,index)=>({
+    label: masks.length===1 ? (PATTERN_LABELS[pattern] ?? pattern.replaceAll('_',' ')) : `${PATTERN_LABELS[pattern] ?? pattern.replaceAll('_',' ')} · ${index+1}`,
+    cells: mask.map(([r,c])=>r*5+c),
+  }));
+}
 const RULES = [
   'ካርቴላ ለመግዛት በአካውንትዎ በቂ ቀሪ ሂሳብ ሊኖር ይገባል።',
   'የጨዋታ ቁጥሮችን በጥንቃቄ ይከታተሉ፤ የወጣ ቁጥር ብቻ በካርቴላዎ ላይ ምልክት ያድርጉ።',
@@ -69,16 +56,7 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
   const [showPatternOptions, setShowPatternOptions] = useState(false);
   const [selectedPatternOption, setSelectedPatternOption] = useState(0);
   const light = theme === 'light';
-  const patternNames: Record<string, string> = {
-    any_line: 'አንድ መስመር', horizontal_line: 'አንድ አግድም መስመር',
-    vertical_line: 'አንድ ቁመት መስመር', diagonal: 'ዲያጎናል',
-    two_lines: 'ሁለት መስመሮች', two_horizontal_lines: 'ሁለት አግድም መስመሮች',
-    four_corners: 'አራቱ ማዕዘኖች', rectangle: '2×2 ሬክታንግል',
-    two_rectangles: 'ሁለት ሬክታንግሎች', half_house: 'ግማሽ ቤት (12 ቁጥሮች)',
-    full_house: 'ሙሉ ካርድ', x: 'X ቅርጽ', t: 'T ቅርጽ', l: 'L ቅርጽ',
-    plus: 'ፕላስ (+)', diamond: 'ዳይመንድ', picture_frame: 'ውጫዊ ፍሬም',
-    six_pack: 'Six-pack', postage_stamp: 'Postage stamp', three_lines: 'ሶስት መስመሮች', four_lines: 'አራት መስመሮች', top_bottom: 'ላይኛውና ታችኛው መስመር', left_right: 'ግራና ቀኝ መስመሮች', checkerboard: 'ቼከርቦርድ', center_cross: 'መካከለኛ መስቀል', coverall: 'ሙሉ ካርድ',
-  };
+  const patternNames = PATTERN_LABELS;
   const patternOptions = getPatternOptions(winPattern);
   const activePatternOption = patternOptions[selectedPatternOption % patternOptions.length] ?? patternOptions[0];
   const panel = light ? 'border-amber-300 bg-amber-50 text-zinc-900' : 'border-gold-700/40 bg-zinc-950/70 text-gold-100';
