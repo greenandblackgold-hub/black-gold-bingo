@@ -76,7 +76,7 @@ export function AuthScreen() {
   );
 
   return (
-    <main className="min-h-screen bg-[#08080b] lg:grid lg:grid-cols-2">
+    <main className="premium-ui min-h-screen bg-[#08080b] lg:grid lg:grid-cols-2">
       <section className="relative hidden min-h-screen flex-col items-center justify-center overflow-hidden border-r border-gold-500/15 bg-[radial-gradient(ellipse_at_50%_38%,#202027_0%,#101014_42%,#050507_100%)] px-10 py-16 lg:flex">
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,215,0,0.10),transparent_30%,transparent_70%,rgba(255,215,0,0.07))]" />
         <div className="pointer-events-none absolute -left-40 top-[-8rem] h-[34rem] w-[34rem] rounded-full bg-gold-400/10 blur-[110px]" />
