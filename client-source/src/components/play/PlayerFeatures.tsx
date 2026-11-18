@@ -4,6 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { formatAmount } from '@/lib/localization';
+import { SERVER_MODE } from '@/lib/api';
 
 const TELEBIRR = ['0978202822', '0998974422', '0714767695'];
 const RULES = [
@@ -17,7 +18,7 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
   const { lang, setLang } = useLanguage();
   const { balance, cards } = usePlayer();
   const { cardPrice, audioVolume, setAudioVolume } = useAppSettings();
-  const { calledNumbers, roundNumber, phase, winner } = useRound();
+  const { calledNumbers, roundNumber, phase, winner, winPattern, roundPrizeEtb, roundCardCount } = useRound();
   const { soundEnabled, setSoundEnabled, voiceEnabled, setVoiceEnabled } = useAppSettings();
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try { return localStorage.getItem('bgb.playerTheme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
@@ -27,6 +28,35 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
   });
   const [expanded, setExpanded] = useState<string | null>(null);
   const light = theme === 'light';
+  const patternNames: Record<string, string> = {
+    any_line: 'አንድ መስመር', horizontal_line: 'አንድ አግድም መስመር',
+    vertical_line: 'አንድ ቁመት መስመር', diagonal: 'ዲያጎናል',
+    two_lines: 'ሁለት መስመሮች', two_horizontal_lines: 'ሁለት አግድም መስመሮች',
+    four_corners: 'አራቱ ማዕዘኖች', rectangle: '2×2 ሬክታንግል',
+    two_rectangles: 'ሁለት ሬክታንግሎች', half_house: 'ግማሽ ቤት (12 ቁጥሮች)',
+    full_house: 'ሙሉ ካርድ', x: 'X ቅርጽ', t: 'T ቅርጽ', l: 'L ቅርጽ',
+    plus: 'ፕላስ (+)', diamond: 'ዳይመንድ', picture_frame: 'ውጫዊ ፍሬም',
+    six_pack: 'Six-pack', postage_stamp: 'Postage stamp', three_lines: 'ሶስት መስመሮች', four_lines: 'አራት መስመሮች', top_bottom: 'ላይኛውና ታችኛው መስመር', left_right: 'ግራና ቀኝ መስመሮች', checkerboard: 'ቼከርቦርድ', center_cross: 'መካከለኛ መስቀል', coverall: 'ሙሉ ካርድ',
+  };
+  const patternCells = (r: number, c: number) => {
+    switch (winPattern) {
+      case 'vertical_line': return c === 2;
+      case 'diagonal': case 'x': return r === c || r + c === 4;
+      case 'four_corners': return (r === 0 || r === 4) && (c === 0 || c === 4);
+      case 'half_house': return r * 5 + c < 12;
+      case 'full_house': return true;
+      case 't': return r === 0 || c === 2;
+      case 'l': return c === 0 || r === 4;
+      case 'plus': return r === 2 || c === 2;
+      case 'picture_frame': return r === 0 || r === 4 || c === 0 || c === 4;
+      case 'top_bottom': return r === 0 || r === 4;
+      case 'left_right': return c === 0 || c === 4;
+      case 'checkerboard': return (r + c) % 2 === 0;
+      case 'center_cross': return r === 2 || c === 2;
+      case 'three_lines': case 'four_lines': return r === 0 || r === 2 || r === 4 || (winPattern === 'four_lines' && (r === 1 || r === 3));
+      default: return r === 2;
+    }
+  };
   const panel = light ? 'border-amber-300 bg-amber-50 text-zinc-900' : 'border-gold-700/40 bg-zinc-950/70 text-gold-100';
   const muted = light ? 'text-zinc-600' : 'text-gold-600';
   const title = light ? 'text-amber-800' : 'text-gold-300';
@@ -66,21 +96,23 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
           <div className="relative flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[.28em] text-amber-300">BLACK GOLD BINGO</p>
-              <h2 className="mt-1 text-2xl font-black text-amber-100 sm:text-3xl">ግማሽ ቤት <span className="text-base font-semibold text-amber-300">(Half House)</span></h2>
-              <p className="mt-1 text-xs text-amber-200/70">የቀጥታ የBingo ጨዋታ</p>
+              <h2 className="mt-1 text-xl font-black text-amber-100 sm:text-2xl">የአሁኑ ዙር የBingo ዓይነት</h2>
+              <p className="mt-1 text-base font-extrabold text-amber-300">{patternNames[winPattern] ?? winPattern.replaceAll('_', ' ')}</p>
+              <p className="mt-1 text-xs text-amber-200/70">ዙር #{roundNumber} · {phase === 'running' ? 'በጨዋታ ላይ' : phase === 'waiting' ? 'በመጠባበቅ ላይ' : 'ተጠናቋል'}</p>
             </div>
-            <div className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border border-amber-300/40 bg-black/40 text-4xl shadow-lg shadow-amber-900/30 sm:h-24 sm:w-24">🎱</div>
+            <div className="grid h-20 w-20 shrink-0 grid-cols-5 gap-1 rounded-2xl border border-amber-300/40 bg-black/40 p-2 shadow-lg shadow-amber-900/30 sm:h-24 sm:w-24" aria-label="Winning pattern preview">
+              {Array.from({ length: 25 }, (_, i) => <span key={i} className={`rounded-[2px] ${patternCells(Math.floor(i / 5), i % 5) ? 'bg-sky-400 ring-1 ring-white/80' : 'bg-white/10'}`} />)}
+            </div>
           </div>
         </div>
         <div className="space-y-3 p-4 sm:p-5">
           <div className="flex items-center gap-2"><span className="text-lg">ⓘ</span><h3 className={`font-bold ${title}`}>መረጃ</h3></div>
-          <p className={`text-sm leading-7 ${muted}`}>በቴሌብር ({TELEBIRR.join(', ')}) ወይም በንግድ ባንክ (1000795392347 — ተስፋይ ኣለም ገብረ) ሙሉ ደረሰኝ በማስገባት ገቢ (Deposit) ማድረግ ትችላላችሁ። iPhone የምትጠቀሙ ደንበኞች Google Chrome ላይ www.bingo1020.com በመፈለግ መጠቀም ትችላላችሁ።</p>
+          <p className={`text-sm leading-7 ${muted}`}>በቴሌብር (0978202822 — ኣሊክሳንደር ደጀን) ወይም በንግድ ባንክ (1000737138686 — ቤተሊሄም ፍጹም) ሙሉ ደረሰኝ በማስገባት ገቢ (Deposit) ማድረግ ትችላላችሁ። iPhone የምትጠቀሙ ደንበኞች Google Chrome ላይ www.bingo1020.com በመፈለግ መጠቀም ትችላላችሁ።</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {[
               ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
-              ['የጨዋታ ብዛት', String(cards.length)],
-              ['ዋና ሽልማት', '65,000 ETB'],
-              ['በማሰርያ ሽልማት', '8,000 ETB'],
+              ['የዙሩ የተሸጡ ካርዶች', SERVER_MODE && roundCardCount !== undefined ? String(roundCardCount) : '—'],
+              ['የአሁኑ ዋና ሽልማት', SERVER_MODE && roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ETB` : '—'],
             ].map(([label, value]) => (
               <div key={label} className={`rounded-xl border p-3 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
                 <p className={`text-[11px] ${muted}`}>{label}</p><p className={`mt-1 text-sm font-black tabular-nums ${title}`}>{value}</p>
@@ -88,7 +120,7 @@ export function PlayerFeatures({ onGoToWallet }: { onGoToWallet: () => void }) {
             ))}
           </div>
           <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
-            <span className={muted}>ዙር #{roundNumber} · {phase === 'running' ? 'በጨዋታ ላይ' : phase === 'waiting' ? 'በመጠባበቅ ላይ' : 'ተጠናቋል'}</span>
+            <span className={muted}>የዙሩ ሁኔታ</span>
             <strong className={title}>{calledNumbers.length} / 75 ኳሶች</strong>
           </div>
           <div className="space-y-1.5">

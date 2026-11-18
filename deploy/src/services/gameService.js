@@ -27,6 +27,8 @@ export function createGameService({ repo, config, now = Date.now }) {
     winner: g.winner ? { cardId: g.winner.cardCode, serial: g.winner.serial, at: g.winner.at } : null,
     roomId: config.roomId,
     cardPrice: config.cardPrice / 100,
+    roundPrizeEtb: Math.floor(((g.pot ?? 0) * config.prizePercent) / 100) / 100,
+    roundCardCount: config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0,
     serverTime: now(),
   });
 

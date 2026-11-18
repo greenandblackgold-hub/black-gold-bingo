@@ -9,7 +9,7 @@
 export type Lang = 'am' | 'ti' | 'en';
 export type Phase = 'waiting' | 'running' | 'ended';
 export type PayMethod = 'telebirr' | 'cbe';
-export type WinPattern = 'any_line'|'horizontal_line'|'vertical_line'|'diagonal'|'two_lines'|'two_horizontal_lines'|'four_corners'|'rectangle'|'two_rectangles'|'half_house'|'full_house'|'x'|'t'|'l'|'plus'|'diamond'|'picture_frame'|'six_pack'|'postage_stamp';
+export type WinPattern = 'any_line'|'horizontal_line'|'vertical_line'|'diagonal'|'two_lines'|'two_horizontal_lines'|'four_corners'|'rectangle'|'two_rectangles'|'half_house'|'full_house'|'x'|'t'|'l'|'plus'|'diamond'|'picture_frame'|'six_pack'|'postage_stamp'|'three_lines'|'four_lines'|'top_bottom'|'left_right'|'checkerboard'|'center_cross'|'coverall';
 
 /** [row, column] on a 5x5 card. */
 export type Pos = [number, number];
@@ -119,6 +119,8 @@ export interface RoundContextValue {
   /** In call order, values 1..75. */
   calledNumbers: number[];
   winner: SharedGame['winner'];
+  roundPrizeEtb?: number;
+  roundCardCount?: number;
   /** Host only: open claims for the current round (empty for players). */
   claims: HostClaim[];
   /** waiting -> running (host only) */
