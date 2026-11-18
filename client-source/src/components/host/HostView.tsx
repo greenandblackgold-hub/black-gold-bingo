@@ -159,6 +159,9 @@ export function HostView() {
       {/* Top bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <RoomBadge roomId={h.roomId} t={t} />
+        <div className="rounded-xl border border-gold-500/30 bg-cardbg px-4 py-2 text-sm text-gold-300">
+          የዙሩ የተሸጡ ካርዶች: <strong className="ml-1 text-lg font-black text-gold-200 tabular-nums">{h.roundCardCount ?? 0}</strong>
+        </div>
         <span
           className={[
             'rounded-full px-3.5 py-1.5 text-sm font-semibold',
