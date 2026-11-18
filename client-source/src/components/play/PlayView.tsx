@@ -206,7 +206,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
 
   const called = useMemo(() => new Set(calledNumbers), [calledNumbers]);
   const current = calledNumbers.length ? calledNumbers[calledNumbers.length - 1] : null;
-  const recent = calledNumbers.slice(-6, -1).reverse();
   const active = phase === 'running';
 
   const markSets = useMemo(() => {
@@ -320,7 +319,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
       {/* Call stage */}
       <section className="relative isolate overflow-hidden rounded-[2rem] border border-gold-500/25 bg-[radial-gradient(ellipse_at_top_left,rgba(212,175,55,0.16),transparent_48%),linear-gradient(135deg,rgba(133,90,0,0.16),rgba(20,20,25,0.98)_48%,rgba(10,10,12,1))] p-4 shadow-2xl shadow-black/30 ring-1 ring-gold-700/40 sm:p-6 lg:p-8">
         <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-gold-400/10 blur-3xl" aria-hidden="true" />
-        <div className="relative grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.85fr)] lg:gap-10">
+        <div className="relative grid items-center gap-4">
           <div className="flex min-w-0 flex-col items-center gap-4 py-2 text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/25 bg-black/25 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-gold-300 shadow-inner shadow-black/20">
               <span className="h-1.5 w-1.5 rounded-full bg-gold-400 shadow-[0_0_10px_rgba(255,215,0,.9)]" />
@@ -339,22 +338,10 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
               <p className="text-sm font-semibold text-gold-200" aria-live="polite">
                 {t('round')} <span className="font-black tabular-nums text-gold-400">#{roundNumber}</span>
               </p>
-              <p className="text-xs font-medium text-gold-500/90">{t('winningPattern')}: {PATTERN_NAMES[lang][winPattern]}</p>
             </div>
           </div>
 
-          <div className="min-w-0 rounded-3xl border border-gold-700/40 bg-black/25 p-4 shadow-xl shadow-black/20 backdrop-blur-sm sm:p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-600">{t('liveCalls')}</p>
-                <h3 className="mt-1 text-base font-bold text-gold-200">{t('recent')}</h3>
-              </div>
-              <span className="rounded-full border border-gold-500/25 bg-gold-500/10 px-3 py-1 text-xs font-bold tabular-nums text-gold-300">
-                {calledNumbers.length} / 75
-              </span>
-            </div>
-
-            <div className="mb-4 flex flex-wrap gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
               <button
                 type="button"
                 onClick={toggleVoice}
@@ -379,24 +366,11 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
               </button>
             </div>
 
-            <div className="grid grid-cols-5 gap-2" aria-label={t('recent')}>
-              {recent.length > 0 ? recent.map((n) => (
-                <div key={n} className="flex min-w-0 flex-col items-center gap-1.5 rounded-2xl border border-gold-700/30 bg-gradient-to-b from-gold-500/[0.09] to-transparent px-1 py-2">
-                  <span className="text-[10px] font-black tracking-wider text-gold-600">{letterFor(n)}</span>
-                  <Ball n={n} size="sm" />
-                </div>
-              )) : (
-                <div className="col-span-5 rounded-2xl border border-dashed border-gold-700/50 bg-white/[0.02] px-3 py-5 text-center text-xs text-gold-600">
-                  {t('waitingBall')}
-                </div>
-              )}
-            </div>
-
             <button
               type="button"
               onClick={() => setShowBoard((s) => !s)}
               aria-expanded={showBoard}
-              className="mt-5 flex w-full items-center justify-between rounded-xl border border-gold-700/40 bg-white/[0.03] px-4 py-3 text-left text-sm font-semibold text-gold-300 transition-colors hover:border-gold-400/50 hover:bg-gold-400/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
+              className="flex w-full max-w-md items-center justify-between rounded-xl border border-gold-700/40 bg-white/[0.03] px-4 py-3 text-left text-sm font-semibold text-gold-300 transition-colors hover:border-gold-400/50 hover:bg-gold-400/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
             >
               <span>{t('board')} <span className="ml-1 text-xs font-bold text-gold-500">({calledNumbers.length})</span></span>
               <span className="text-xs font-bold text-gold-500">{showBoard ? '− ' + t('hide') : '＋ ' + t('show')}</span>
@@ -406,33 +380,31 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
       </section>
 
       {showBoard && (
-        <section className="overflow-hidden rounded-3xl border border-gold-700/40 bg-gradient-to-br from-cardbg via-cardbg to-gold-950/20 p-3 shadow-xl shadow-black/20 ring-1 ring-gold-700/20 sm:p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-gold-700/30 pb-3">
+        <section className="overflow-hidden rounded-2xl border border-gold-700/40 bg-gradient-to-br from-cardbg via-cardbg to-gold-950/20 p-2 shadow-lg shadow-black/20 ring-1 ring-gold-700/20 sm:p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-gold-700/30 pb-2">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-600">{t('numberTracker')}</p>
               <h3 className="mt-1 text-base font-bold text-gold-200">{t('board')}</h3>
             </div>
             <span className="rounded-full border border-gold-500/25 bg-gold-500/10 px-3 py-1 text-xs font-bold tabular-nums text-gold-300">{calledNumbers.length} / 75</span>
           </div>
-          <div className="grid grid-cols-5 gap-2 sm:gap-3">
+          <div className="space-y-1.5 overflow-x-auto">
             {LETTERS.map((l, col) => (
-              <div key={l} className="min-w-0 rounded-2xl border border-gold-700/30 bg-black/20 p-1.5 sm:p-3">
-                <div className="mb-2 rounded-lg border border-gold-500/20 bg-gradient-to-b from-gold-400/15 to-transparent py-1.5 text-center text-sm font-black tracking-widest text-gold-300 sm:mb-3 sm:py-2 sm:text-base">{l}</div>
-                <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
-                  {Array.from({ length: 15 }, (_, i) => col * 15 + i + 1).map((n) => (
-                    <span
-                      key={n}
-                      className={[
-                        'grid aspect-square place-items-center rounded-md text-[10px] font-semibold tabular-nums transition-colors sm:rounded-lg sm:text-xs',
-                        called.has(n)
-                          ? 'bg-gradient-to-br from-gold-300 to-gold-600 text-darkbg shadow-[0_2px_10px_rgba(212,175,55,.2)]'
-                          : 'bg-white/[0.025] text-gold-700/80',
-                      ].join(' ')}
-                    >
-                      {n}
-                    </span>
-                  ))}
-                </div>
+              <div key={l} className="grid min-w-[22rem] grid-cols-[1.5rem_repeat(15,minmax(0,1fr))] items-center gap-1 rounded-lg border border-gold-700/25 bg-black/20 p-1">
+                <span className="grid h-6 place-items-center rounded-md bg-gold-500/15 text-xs font-black text-gold-300">{l}</span>
+                {Array.from({ length: 15 }, (_, i) => col * 15 + i + 1).map((n) => (
+                  <span
+                    key={n}
+                    className={[
+                      'grid h-6 min-w-0 place-items-center rounded text-[9px] font-semibold tabular-nums transition-colors',
+                      called.has(n)
+                        ? 'bg-gradient-to-br from-gold-300 to-gold-600 text-darkbg shadow-[0_1px_5px_rgba(212,175,55,.2)]'
+                        : 'bg-white/[0.025] text-gold-700/80',
+                    ].join(' ')}
+                  >
+                    {n}
+                  </span>
+                ))}
               </div>
             ))}
           </div>
