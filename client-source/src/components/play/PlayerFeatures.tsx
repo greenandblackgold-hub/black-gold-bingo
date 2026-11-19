@@ -154,7 +154,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
               label === 'ካርድ ግዛ' ? (
                 <button key={label} type="button" onClick={() => { setPurchaseMessage(null); setShowCardPurchase(true); }} className={`min-w-0 rounded-lg border p-2 text-left transition hover:border-amber-400 ${light ? 'border-amber-300 bg-amber-100' : 'border-amber-400/50 bg-amber-400/10'}`}>
                   <p className="text-[10px] leading-4 text-amber-600">ካርድ ግዛ</p>
-                  <p className="mt-0.5 text-xs font-black text-amber-400">ግዢ ለመጀመር ይጫኑ</p>
+                  <p className="mt-0.5 flex items-center gap-1 text-xs font-black text-amber-400"><span aria-hidden="true" className="text-lg font-black leading-none text-red-500">＋</span>ካርድ ይጨምሩ</p>
                 </button>
               ) : (
                 <div key={label} className={`rounded-lg border p-2 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
