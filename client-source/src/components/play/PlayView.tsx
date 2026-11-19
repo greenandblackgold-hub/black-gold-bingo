@@ -205,7 +205,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
     for (const card of cards) { const marks=new Set(markedByCard[card.id]??[]); for (const n of calledNumbers) if (card.grid.some(row=>row.includes(n)) && !marks.has(n)) { toggleMark(card.id,n); marks.add(n); } }
   }, [active,calledNumbers,cards,markedByCard,toggleMark]);
 
-remove claim toast helper  // The host decides: celebrate when the accepted winner is one of my cards.
+  // The host decides: celebrate when the accepted winner is one of my cards.
   const celebrated = useRef<number | null>(null);
   const iWon = !!winner && cards.some((c) => c.id === winner.cardId);
   useEffect(() => {
