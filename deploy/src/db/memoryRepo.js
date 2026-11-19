@@ -127,13 +127,27 @@ export function createMemoryRepo() {
       return { balance: r.balance, game: clone(game) };
     },
     async listCards(userId, round) {
-      return [...cards.values()].filter((c) => c.userId === userId && c.round === round).sort((a, b) => a.serial - b.serial).map(clone);
+      return [...cards.values()].filter((c) => c.userId === userId && c.round === round).sort((a, b) => Number(a.serial) - Number(b.serial)).map(clone);
     },
     async countCards(userId, round) {
       return [...cards.values()].filter((c) => c.userId === userId && c.round === round).length;
     },
     async getCard(code) {
       return clone(cards.get(code) ?? null);
+    },
+    async lockCard({ code, userId, round, expectedVersion }) {
+      if (game.phase !== 'running' || game.roundNumber !== round || game.version !== expectedVersion) return false;
+      const card = cards.get(code);
+      if (!card || card.userId !== userId || card.round !== round || card.lockedAt) return false;
+      cards.set(code, { ...card, lockedAt: new Date(), lockReason: 'false_bingo' });
+      return true;
+    },
+    async unlockCard(code) {
+      const card = cards.get(code);
+      if (!card || !card.lockedAt) return false;
+      const { lockedAt, lockReason, ...unlocked } = card;
+      cards.set(code, unlocked);
+      return true;
     },
 
     /** End the round and create a pending prize request; never credit the wallet here. */
