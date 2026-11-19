@@ -52,6 +52,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
     try { return localStorage.getItem('bgb.playerNotifications') === 'on'; } catch { return false; }
   });
   const [expanded, setExpanded] = useState<string | null>(settingsOnly ? 'settings' : null);
+  const [inlineMenuOpen, setInlineMenuOpen] = useState(false);
   const [showPatternOptions, setShowPatternOptions] = useState(false);
   const [selectedPatternOption, setSelectedPatternOption] = useState(0);
   const light = theme === 'light';
@@ -115,8 +116,11 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
             </button>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-100/60">እነዚህ የሚቻሉ የአሸናፊነት ቅርጾች ምሳሌዎች ናቸው፤ ትክክለኛው ማረጋገጫ በስርዓቱ ይከናወናል።</p>
           </div></div>}
         <div className="space-y-2 p-3 sm:p-4">
-          <div className="flex items-center gap-2"><span className="text-lg">ⓘ</span><h3 className={`font-bold ${title}`}>መረጃ</h3></div>
-          <p className={`text-xs leading-5 ${muted}`}>በቴሌብር (0978202822 — ኣሊክሳንደር ደጀን) ወይም በንግድ ባንክ (1000737138686 — ቤተሊሄም ፍጹም) ሙሉ ደረሰኝ በማስገባት ገቢ (Deposit) ማድረግ ትችላላችሁ። iPhone የምትጠቀሙ ደንበኞች Google Chrome ላይ www.blackgoldbingo.com በመፈለግ መጠቀም ትችላላችሁ።</p>
+          <nav aria-label="ዋና ምናሌ" className="rounded-xl border border-gold-500/30 bg-black/25 p-2">
+            <button type="button" onClick={() => setInlineMenuOpen((open) => !open)} aria-expanded={inlineMenuOpen} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left font-bold text-gold-300 hover:bg-gold-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300">
+              <span>☰ ምናሌ</span><span aria-hidden="true">{inlineMenuOpen ? '−' : '+'}</span>
+            </button>
+          </nav>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             {[
               ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
@@ -144,7 +148,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
           </div>
         </div>
       </div>}
-      {(menuOnly || settingsOnly) && <div className={`overflow-hidden rounded-2xl border ${panel}`}>
+      {(menuOnly || settingsOnly || inlineMenuOpen) && <div className={`overflow-hidden rounded-2xl border ${panel}`}>
         {rows.filter(row => settingsOnly ? row.id === 'settings' : menuOnly ? ['messages','settings','rules','app','history','contact'].includes(row.id) : true).map((row) => (
           <div key={row.id} className="border-b border-current/10 last:border-0">
             <button type="button" onClick={() => toggle(row.id)} aria-expanded={expanded === row.id} className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left">
