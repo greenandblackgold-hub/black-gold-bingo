@@ -67,6 +67,8 @@ const allLines = [...rows,...cols,d1,d2];
 const rectangles = [];
 for(let r=0;r<4;r++) for(let c=0;c<4;c++) rectangles.push([pos(r,c),pos(r,c+1),pos(r+1,c),pos(r+1,c+1)]);
 const sixPacks = [];
+const ninePacks = [];
+for(let r=0;r<3;r++) for(let c=0;c<3;c++) ninePacks.push(Array.from({length:3},(_,dr)=>Array.from({length:3},(_,dc)=>pos(r+dr,c+dc))).flat());
 for(let r=0;r<4;r++) for(let c=0;c<3;c++) sixPacks.push(Array.from({length:2},(_,dr)=>Array.from({length:3},(_,dc)=>pos(r+dr,c+dc))).flat());
 for(let r=0;r<3;r++) for(let c=0;c<4;c++) sixPacks.push(Array.from({length:3},(_,dr)=>Array.from({length:2},(_,dc)=>pos(r+dr,c+dc))).flat());
 const nonFree = Array.from({length:25},(_,i)=>pos(Math.floor(i/5),i%5)).filter(([r,c])=>r!==2||c!==2);
@@ -128,6 +130,20 @@ export function patternMasks(pattern='any_line') {
     case 'cross_and_corners': return [combine(rows[2],cols[2],corners)];
     case 'frame_and_center': return [combine(frame,[pos(2,2)])];
     case 'double_cross': return [combine(rows[2],cols[2],d1,d2)];
+    case 'nine_pack': return ninePacks;
+    case 'filled_diamond': return [[pos(0,2),pos(1,1),pos(1,2),pos(1,3),pos(2,0),pos(2,1),pos(2,2),pos(2,3),pos(2,4),pos(3,1),pos(3,2),pos(3,3),pos(4,2)]];
+    case 'window_pane': return [combine(frame,rows[2],cols[2])];
+    case 'staircase': return [[pos(0,0),pos(1,0),pos(1,1),pos(2,1),pos(2,2),pos(3,2),pos(3,3),pos(4,3),pos(4,4)]];
+    case 'hourglass': return [combine(rows[0],rows[4],d1,d2)];
+    case 'bow_tie': return [[pos(0,0),pos(0,4),pos(1,1),pos(1,3),...rows[2],pos(3,1),pos(3,3),pos(4,0),pos(4,4)]];
+    case 'ladder': return [combine(cols[0],cols[4],rows[1],rows[3])];
+    case 'railroad_tracks': return [combine(cols[1],cols[3],rows[0],rows[2],rows[4])];
+    case 'lucky_seven': return [combine(rows[0],d2)];
+    case 'letter_h': return [combine(cols[0],cols[4],rows[2])];
+    case 'letter_e': return [combine(cols[0],rows[0],rows[2],rows[4])];
+    case 'letter_c': return [combine(cols[0],rows[0],rows[4])];
+    case 'letter_n': return [combine(cols[0],cols[4],d1)];
+    case 'letter_w': return [combine(cols[0],cols[4],[pos(3,1),pos(4,2),pos(3,3)])];
     default: return allLines;
   }
 }
