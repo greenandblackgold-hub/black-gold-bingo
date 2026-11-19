@@ -670,6 +670,9 @@ export const patternNames: Record<Lang, Record<WinPattern, string>> = {
     plus: 'ፕላስ (+)', diamond: 'አልማዝ', picture_frame: 'የምስል ፍሬም', six_pack: 'ስድስት ሳጥኖች', postage_stamp: 'የፖስታ ማህተም',
     three_lines: 'ሶስት መስመሮች', four_lines: 'ኣራት መስመሮች', top_bottom: 'ላይኛውና ታችኛው',
     left_right: 'ግራና ቀኝ', checkerboard: 'ቼከርቦርድ', center_cross: 'መካከለኛ መስቀል', coverall: 'ሙሉ ካርድ',
+    line_through_free: 'ፍሪ የሚነካ መስመር', line_avoiding_free: 'ፍሪ የማይነካ መስመር', two_lines_through_free: 'ፍሪ የሚነኩ ሁለት መስመሮች', two_lines_avoiding_free: 'ፍሪ የማይነኩ ሁለት መስመሮች',
+    two_rectangles_touching: 'የሚገናኙ ሁለት ሬክታንግሎች', two_rectangles_separate: 'የተለያዩ ሁለት ሬክታንግሎች', inner_frame: 'ውስጣዊ ፍሬም', inner_square: 'ውስጣዊ 3×3 ካሬ', four_postage_stamps: 'አራት ፖስታ ስታምፖች',
+    z: 'Z ቅርጽ', u: 'U ቅርጽ', s: 'S ቅርጽ', arrow_up: 'ወደ ላይ ቀስት', arrow_down: 'ወደ ታች ቀስት', star: 'ኮከብ', cross_and_corners: 'መስቀልና አራቱ ማዕዘኖች', frame_and_center: 'ፍሬምና መካከለኛው', double_cross: 'ድርብ መስቀል',
   },
   ti: {
     any_line: 'ሓደ መስመር', horizontal_line: 'ኣግዳሚ መስመር', vertical_line: 'ቁመታዊ መስመር',
@@ -679,6 +682,9 @@ export const patternNames: Record<Lang, Record<WinPattern, string>> = {
     plus: 'ፕላስ (+)', diamond: 'ኣልማዝ', picture_frame: 'ፍሬም ስእሊ', six_pack: 'ሽዱሽተ ሳጹናት', postage_stamp: 'ማሕተም ፖስታ',
     three_lines: 'ሰለስተ መስመራት', four_lines: 'ኣርባዕተ መስመራት', top_bottom: 'ላዕለዋይን ታሕተዋይን',
     left_right: 'ጸጋምን የማንን', checkerboard: 'ቼከርቦርድ', center_cross: 'ማእከላይ መስቀል', coverall: 'ምሉእ ካርድ',
+    line_through_free: 'መስመር ብፍሪ ዝሓልፍ', line_avoiding_free: 'ብፍሪ ዘይሓልፍ መስመር', two_lines_through_free: 'ክልተ መስመራት ብፍሪ ዝሓልፋ', two_lines_avoiding_free: 'ክልተ መስመራት ብፍሪ ዘይሓልፋ',
+    two_rectangles_touching: 'ዝተራኸቡ ክልተ ሬክታንግል', two_rectangles_separate: 'ዝተፈላለዩ ክልተ ሬክታንግል', inner_frame: 'ውሽጣዊ ፍሬም', inner_square: 'ውሽጣዊ 3×3 ካሬ', four_postage_stamps: 'ኣርባዕተ ማሕተማት ፖስታ',
+    z: 'ቅርጺ Z', u: 'ቅርጺ U', s: 'ቅርጺ S', arrow_up: 'ልዕሊ ዝመርሕ ፍላጻ', arrow_down: 'ታሕቲ ዝመርሕ ፍላጻ', star: 'ኮኾብ', cross_and_corners: 'መስቀልን ኣርባዕተ ኩርናዓትን', frame_and_center: 'ፍሬምን ማእከልን', double_cross: 'ድርብ መስቀል',
   },
   en: {
     any_line: 'Any line', horizontal_line: 'Horizontal line', vertical_line: 'Vertical line',
@@ -688,6 +694,9 @@ export const patternNames: Record<Lang, Record<WinPattern, string>> = {
     plus: 'Plus (+)', diamond: 'Diamond', picture_frame: 'Picture frame', six_pack: 'Six-pack', postage_stamp: 'Postage stamp',
     three_lines: 'Three lines', four_lines: 'Four lines', top_bottom: 'Top and bottom rows',
     left_right: 'Left and right columns', checkerboard: 'Checkerboard', center_cross: 'Center cross', coverall: 'Coverall',
+    line_through_free: 'Line through FREE', line_avoiding_free: 'Line avoiding FREE', two_lines_through_free: 'Two lines through FREE', two_lines_avoiding_free: 'Two lines avoiding FREE',
+    two_rectangles_touching: 'Two touching rectangles', two_rectangles_separate: 'Two separate rectangles', inner_frame: 'Inner frame', inner_square: 'Inner 3×3 square', four_postage_stamps: 'Four postage stamps',
+    z: 'Z shape', u: 'U shape', s: 'S shape', arrow_up: 'Up arrow', arrow_down: 'Down arrow', star: 'Star', cross_and_corners: 'Cross and four corners', frame_and_center: 'Frame and center', double_cross: 'Double cross',
   },
 };
 
