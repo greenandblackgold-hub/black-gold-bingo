@@ -92,6 +92,15 @@ const SIX:Pos[][]=[];
 for(let r=0;r<4;r++)for(let c=0;c<3;c++)SIX.push(Array.from({length:2},(_,dr)=>Array.from({length:3},(_,dc)=>p(r+dr,c+dc))).flat());
 for(let r=0;r<3;r++)for(let c=0;c<4;c++)SIX.push(Array.from({length:3},(_,dr)=>Array.from({length:2},(_,dc)=>p(r+dr,c+dc))).flat());
 const NON_FREE=Array.from({length:25},(_,i)=>p(Math.floor(i/5),i%5)).filter(([r,c])=>r!==2||c!==2);
+const CENTER_LINES=[ROWS[2],COLS[2],D1,D2];
+const NO_FREE_LINES=[...ROWS.filter((_,i)=>i!==2),...COLS.filter((_,i)=>i!==2)];
+const POSTAGE=[[p(0,0),p(0,1),p(1,0),p(1,1)],[p(0,3),p(0,4),p(1,3),p(1,4)],[p(3,0),p(3,1),p(4,0),p(4,1)],[p(3,3),p(3,4),p(4,3),p(4,4)]];
+const RECTANGLE_PAIRS=combinations(BLOCKS,2).filter(([a,b])=>!a.some(([r,c])=>b.some(([rr,cc])=>r===rr&&c===cc)));
+const edgeAdjacent=(a:Pos[],b:Pos[])=>a.some(([r,c])=>b.some(([rr,cc])=>Math.abs(r-rr)+Math.abs(c-cc)===1));
+const TOUCHING_RECTANGLES=RECTANGLE_PAIRS.filter(([a,b])=>edgeAdjacent(a,b));
+const SEPARATE_RECTANGLES=RECTANGLE_PAIRS.filter(([a,b])=>!edgeAdjacent(a,b));
+const INNER_FRAME=Array.from({length:9},(_,i)=>p(Math.floor(i/3)+1,i%3+1)).filter(([r,c])=>r===1||r===3||c===1||c===3);
+const INNER_SQUARE=Array.from({length:9},(_,i)=>p(Math.floor(i/3)+1,i%3+1));
 export function patternMasks(pattern:WinPattern='any_line'):Pos[][] {
  switch(pattern){
   case 'horizontal_line':return ROWS;
@@ -117,6 +126,25 @@ export function patternMasks(pattern:WinPattern='any_line'):Pos[][] {
   case 'diamond':return [[p(0,2),p(1,1),p(1,3),p(2,0),p(2,4),p(3,1),p(3,3),p(4,2)]];
   case 'picture_frame':return [Array.from({length:25},(_,i)=>p(Math.floor(i/5),i%5)).filter(([r,c])=>r===0||r===4||c===0||c===4)];
   case 'six_pack':return SIX;
+  case 'half_house':return [NON_FREE.slice(0,12)];
+  case 'line_through_free':return CENTER_LINES;
+  case 'line_avoiding_free':return NO_FREE_LINES;
+  case 'two_lines_through_free':return combinations(CENTER_LINES,2).map(unique);
+  case 'two_lines_avoiding_free':return combinations(NO_FREE_LINES,2).map(unique);
+  case 'two_rectangles_touching':return TOUCHING_RECTANGLES.map(unique);
+  case 'two_rectangles_separate':return SEPARATE_RECTANGLES.map(unique);
+  case 'inner_frame':return [INNER_FRAME];
+  case 'inner_square':return [INNER_SQUARE];
+  case 'four_postage_stamps':return [unique(POSTAGE)];
+  case 'z':return [unique([ROWS[0],D2,ROWS[4]])];
+  case 'u':return [unique([COLS[0],COLS[4],ROWS[4]])];
+  case 's':return [[...ROWS[0].slice(0,4),p(1,0),...ROWS[2].slice(0,4),p(3,3),...ROWS[4].slice(0,4)]];
+  case 'arrow_up':return [[p(0,2),p(1,1),p(1,2),p(1,3),p(2,2),p(3,2),p(4,2)]];
+  case 'arrow_down':return [[p(0,2),p(1,2),p(2,2),p(3,1),p(3,2),p(3,3),p(4,2)]];
+  case 'star':return [[p(0,2),p(1,1),p(1,3),p(2,0),p(2,2),p(2,4),p(3,1),p(3,3),p(4,2)]];
+  case 'cross_and_corners':return [unique([ROWS[2],COLS[2],[p(0,0),p(0,4),p(4,0),p(4,4)]])];
+  case 'frame_and_center':return [unique([Array.from({length:25},(_,i)=>p(Math.floor(i/5),i%5)).filter(([r,c])=>r===0||r===4||c===0||c===4),[p(2,2)]])];
+  case 'double_cross':return [unique([ROWS[2],COLS[2],D1,D2])];
   default:return ALL_LINES;
  }
 }
