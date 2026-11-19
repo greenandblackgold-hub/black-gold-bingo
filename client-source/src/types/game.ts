@@ -138,7 +138,7 @@ export interface RoundContextValue {
   /** Host only: dismiss a claim. */
   rejectClaim: (claimId: string) => Promise<void>;
   /** Player: check the card on this device, then send the claim to the host. ok = claim sent. */
-  claimBingo: (cardId: string) => Promise<{ ok: boolean }>;
+  claimBingo: (cardId: string, expectedCallCount: number) => Promise<{ ok: boolean }>;
   verifyCard: (cardId: string) => Promise<VerifyResult>;
   /** The auto-call timer runs in the host's RoundContext (host only). */
   autoCall: boolean;
