@@ -67,7 +67,7 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
     void reloadLedger();
   }, [reloadCards, reloadLedger]);
 
-  // Admin-approved deposits and prizes change the server wallet outside the player's session.
+  // Deposits and automatically credited prizes change the server wallet outside the player's session.
   // Refresh the profile and ledger at most every five seconds, and immediately when the player returns.
   // Prevent overlapping requests when a slow network response outlasts the polling interval.
   useEffect(() => {

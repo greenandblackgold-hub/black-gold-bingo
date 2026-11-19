@@ -167,11 +167,11 @@ export function createMemoryRepo() {
       if (game.phase !== 'running' || game.roundNumber !== round || game.version !== expectedVersion) return null;
       const id = ref;
       if (winPayouts.has(id)) return null;
-      const at = new Date();
-      winPayouts.set(id, { id, round, cardCode: card.code, serial: card.serial, userId: card.userId, amount: prize, status: 'pending', createdAt: at, updatedAt: at });
+      const credited = credit(card.userId, prize, 'prize', `win-payout:${id}`, { round, card: card.code });
+      if (!credited.applied) return null;
       game = {
         ...game, phase: 'ended', autoCall: false, nextCallAt: null,
-        winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: id, payoutStatus: 'pending', at: Date.now() },
+        winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: id, payoutStatus: 'paid', at: Date.now() },
         version: game.version + 1,
       };
       return clone(game);

@@ -256,12 +256,18 @@ export async function createMongoRepo({ uri, dbName }) {
         const g = await games.findOneAndUpdate(
           { _id: 'state', phase: 'running', roundNumber: round, version: expectedVersion },
           { $set: { phase: 'ended', autoCall: false, nextCallAt: null,
-            winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: ref, payoutStatus: 'pending', at: Date.now() } },
+            winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: ref, payoutStatus: 'paid', at: Date.now() } },
             $inc: { version: 1 } },
           { returnDocument: 'after', session },
         );
         if (!g) return null;
-        await winPayouts.insertOne({ _id: ref, round, cardCode: card.code, serial: card.serial, userId: card.userId, amount: prize, status: 'pending', createdAt: new Date(), updatedAt: new Date() }, { session });
+        await moveMoney(session, {
+          userId: card.userId,
+          amount: prize,
+          kind: 'prize',
+          ref: `win-payout:${ref}`,
+          meta: { round, card: card.code },
+        });
         const { _id, ...game } = g;
         return game;
       });

@@ -21,7 +21,6 @@ const AppHeader = lazy(() => import('@/components/layout/AppHeader').then((m) =>
 const BottomNav = lazy(() => import('@/components/layout/BottomNav').then((m) => ({ default: m.BottomNav })));
 const PlayView = lazy(() => import('@/components/play/PlayView').then((m) => ({ default: m.PlayView })));
 const WalletView = lazy(() => import('@/components/wallet/WalletView').then((m) => ({ default: m.WalletView })));
-const VerifyView = lazy(() => import('@/components/verify/VerifyView').then((m) => ({ default: m.VerifyView })));
 const AuthScreen = lazy(() => import('@/components/auth/AuthScreen').then((m) => ({ default: m.AuthScreen })));
 const PaymentReturnBanner = lazy(() => import('@/server/PaymentReturnBanner').then((m) => ({ default: m.PaymentReturnBanner })));
 
@@ -39,7 +38,7 @@ function useHash(): string {
   return hash;
 }
 
-/** Player app: Play, Wallet and Verify only. */
+/** Player app: Play, Wallet and Menu. */
 function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
   const [tab, setTab] = useState<TabId>(() => (window.location.hash === '#wallet' ? 'wallet' : 'play'));
   const [menuOpen, setMenuOpen] = useState(false);
@@ -54,7 +53,6 @@ function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
       <main className="mx-auto max-w-6xl px-4 pt-5 sm:pt-8">
         {tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} /></Suspense>}
         {tab === 'wallet' && <Suspense fallback={<RouteLoading />}><WalletView onGoToPlay={() => setTab('play')} /></Suspense>}
-        {tab === 'verify' && <Suspense fallback={<RouteLoading />}><VerifyView /></Suspense>}
       </main>
       {menuOpen && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Menu">
         <section className="relative flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-amber-400/35 bg-[#090909] shadow-[0_24px_90px_rgba(0,0,0,.8)] sm:rounded-3xl">
