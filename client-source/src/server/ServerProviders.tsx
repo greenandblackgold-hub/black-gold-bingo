@@ -124,6 +124,16 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   );
 
   // New round: forget old marks, fetch this round's (empty) card list and the fresh balance.
+  const clearMarks = useCallback(() => {
+    setMarks({});
+  }, []);
+
+  // Player preference: hide selected cards from this device only; never delete server records.
+  const removeCards = useCallback((ids: string[]) => {
+    const remove = new Set(ids);
+    setCards((current) => current.filter((card) => !remove.has(card.id)));
+  }, []);
+
   const clearCards = useCallback(() => {
     setMarks({});
     void reloadCards();
@@ -144,8 +154,10 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
       },
       buyCards,
       clearCards,
+      clearMarks,
+      removeCards,
     }),
-    [user, cards, markedByCard, transactions, toggleMark, buyCards, clearCards],
+    [user, cards, markedByCard, transactions, toggleMark, buyCards, clearCards, clearMarks, removeCards],
   );
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;
