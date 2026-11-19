@@ -339,7 +339,8 @@ test('cards: buying, balance checks, round gating, server-issued grids', async (
   assert.equal(bought.status, 200);
   assert.equal(bought.json.balance, 5);
   assert.equal(bought.json.cards.length, 3);
-  assert.deepEqual(bought.json.cards.map((c) => c.serial), [1, 2, 3]);
+  assert.equal(new Set(bought.json.cards.map((c) => c.serial)).size, 3);
+  for (const card of bought.json.cards) assert.match(String(card.serial), /^\d{5}$/);
   const mine = (await api('GET', '/api/cards', { token: p.token })).json;
   assert.equal(mine.length, 3);
   assert.equal((await api('GET', '/api/ledger', { token: p.token })).json.some((e) => e.kind === 'purchase' && e.amount === -30), true);
@@ -360,6 +361,38 @@ test('card purchase supports up to fifty cards per request', async () => {
   assert.equal(bought.status, 200, JSON.stringify(bought.json));
   assert.equal(bought.json.cards.length, 50);
   assert.equal(bought.json.balance, 20);
+});
+
+test('false BINGO locks only the claimed card until an admin unlocks it', async () => {
+  await freshRound();
+  const p = await newPlayer('False Bingo Player', 20);
+  const bought = await api('POST', '/api/cards/buy', { token: p.token, body: { count: 2 } });
+  assert.equal(bought.status, 200);
+  const [falseCard, activeCard] = bought.json.cards;
+  await api('POST', '/api/admin/round/start', { token: ctx.adminToken });
+
+  const falseClaim = await api('POST', '/api/claim', {
+    token: p.token, body: { cardId: falseCard.id, expectedCallCount: 0 },
+  });
+  assert.equal(falseClaim.status, 200);
+  assert.equal(falseClaim.json.reason, 'false_bingo');
+  assert.equal(falseClaim.json.cardLocked, true);
+
+  const cards = await api('GET', '/api/cards', { token: p.token });
+  assert.equal(cards.status, 200);
+  assert.equal(cards.json.find((c) => c.id === falseCard.id).locked, true);
+  assert.equal(cards.json.find((c) => c.id === activeCard.id).locked, false);
+  const replay = await api('POST', '/api/claim', {
+    token: p.token, body: { cardId: falseCard.id, expectedCallCount: 0 },
+  });
+  assert.equal(replay.json.reason, 'card_locked');
+
+  assert.equal((await api('POST', `/api/admin/cards/${encodeURIComponent(falseCard.id)}/unlock`, { token: p.token })).status, 403);
+  const unlocked = await api('POST', `/api/admin/cards/${encodeURIComponent(falseCard.id)}/unlock`, { token: ctx.adminToken });
+  assert.equal(unlocked.status, 200);
+  assert.equal(unlocked.json.unlocked, true);
+  assert.equal((await api('GET', '/api/cards', { token: p.token })).json.find((c) => c.id === falseCard.id).locked, false);
+  await api('POST', '/api/admin/round/end', { token: ctx.adminToken });
 });
 
 test('players can choose a unique five-digit card number', async () => {
