@@ -14,6 +14,7 @@ import { play } from '@/lib/audio';
 import { findWinningPattern } from '@/lib/bingo';
 import type { BingoCard, Lang, Pos, WinPattern } from '@/types/game';
 import { PlayerFeatures } from '@/components/play/PlayerFeatures';
+import { PatternGuide } from '@/components/play/PatternGuide';
 
 /* ───────────────────────────── CONTEXT WIRING ───────────────────────────── */
 
@@ -231,6 +232,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-2">
       <PlayerFeatures onGoToWallet={onGoToWallet} />
+      <PatternGuide pattern={winPattern} lang={lang} />
       <style>{`
         @keyframes bgBallPop {
           0% { transform: scale(.68) rotate(-9deg); opacity: 0; filter: brightness(1.35); }

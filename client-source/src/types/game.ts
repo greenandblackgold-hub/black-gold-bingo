@@ -9,7 +9,7 @@
 export type Lang = 'am' | 'ti' | 'en';
 export type Phase = 'waiting' | 'running' | 'ended';
 export type PayMethod = 'telebirr' | 'cbe';
-export type WinPattern = 'any_line'|'horizontal_line'|'vertical_line'|'diagonal'|'two_lines'|'two_horizontal_lines'|'four_corners'|'rectangle'|'two_rectangles'|'half_house'|'full_house'|'x'|'t'|'l'|'plus'|'diamond'|'picture_frame'|'six_pack'|'postage_stamp'|'three_lines'|'four_lines'|'top_bottom'|'left_right'|'checkerboard'|'center_cross'|'coverall';
+export type WinPattern = 'any_line'|'horizontal_line'|'vertical_line'|'diagonal'|'two_lines'|'two_horizontal_lines'|'four_corners'|'rectangle'|'two_rectangles'|'half_house'|'full_house'|'x'|'t'|'l'|'plus'|'diamond'|'picture_frame'|'six_pack'|'postage_stamp'|'three_lines'|'four_lines'|'top_bottom'|'left_right'|'checkerboard'|'center_cross'|'coverall'|'line_through_free'|'line_avoiding_free'|'two_lines_through_free'|'two_lines_avoiding_free'|'two_rectangles_touching'|'two_rectangles_separate'|'inner_frame'|'inner_square'|'four_postage_stamps'|'z'|'u'|'s'|'arrow_up'|'arrow_down'|'star'|'cross_and_corners'|'frame_and_center'|'double_cross'|'nine_pack'|'filled_diamond'|'window_pane'|'staircase'|'hourglass'|'bow_tie'|'ladder'|'railroad_tracks'|'lucky_seven'|'letter_h'|'letter_e'|'letter_c'|'letter_n'|'letter_w';
 
 /** [row, column] on a 5x5 card. */
 export type Pos = [number, number];

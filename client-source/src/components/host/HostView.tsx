@@ -10,7 +10,9 @@
  * and displays it via autoCall, callIntervalSec and nextCallAt.
  */
 import { useEffect, useState } from 'react';
-import { translations } from '@/lib/localization';
+import { translations, patternNames } from '@/lib/localization';
+import { WIN_PATTERN_OPTIONS } from '@/lib/patternCatalog';
+import { PatternGuide } from '@/components/play/PatternGuide';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRound } from '@/context/RoundContext';
 import { SERVER_MODE } from '@/lib/api';
@@ -175,33 +177,9 @@ export function HostView() {
         <select id="win-pattern" value={h.winPattern} disabled={h.phase !== 'waiting'}
           onChange={(e) => h.setWinPattern(e.target.value as WinPattern)}
           className="w-full rounded-xl bg-zinc-900 px-4 py-3 text-gold-300 ring-1 ring-gold-700/60 disabled:opacity-50">
-          <option value="any_line">አንድ መስመር (ማንኛውም አቅጣጫ)</option>
-          <option value="horizontal_line">አንድ ሆሪዞንታል መስመር</option>
-          <option value="vertical_line">አንድ ቨርቲካል መስመር</option>
-          <option value="diagonal">ዲያጎናል</option>
-          <option value="two_lines">ሁለት መስመሮች</option>
-          <option value="two_horizontal_lines">ሁለት ሆሪዞንታል መስመሮች</option>
-          <option value="four_corners">አራቱ ማዕዘኖች</option>
-          <option value="rectangle">2×2 ሬክታንግል</option>
-          <option value="two_rectangles">ሁለት ሬክታንግሎች</option>
-          <option value="postage_stamp">ፖስታጅ ስታምፕ</option>
-          <option value="three_lines">ሶስት መስመሮች</option>
-          <option value="four_lines">ኣራት መስመሮች</option>
-          <option value="top_bottom">ላይኛውና ታችኛው መስመር</option>
-          <option value="left_right">ግራና ቀኝ መስመሮች</option>
-          <option value="checkerboard">ቼከርቦርድ</option>
-          <option value="center_cross">መካከለኛ መስቀል</option>
-          <option value="coverall">ሙሉ ካርድ</option>
-          <option value="six_pack">2×3 ሬክታንግል (Six-pack)</option>
-          <option value="half_house">ግማሽ ቤት (12 ቁጥሮች)</option>
-          <option value="full_house">ፉል ሃውስ / ሙሉ ካርድ</option>
-          <option value="x">X ቅርጽ</option>
-          <option value="t">T ቅርጽ</option>
-          <option value="l">L ቅርጽ</option>
-          <option value="plus">ፕላስ (+)</option>
-          <option value="diamond">ዳይመንድ</option>
-          <option value="picture_frame">ውጫዊ ፍሬም</option>
+          {WIN_PATTERN_OPTIONS.map((pattern) => <option key={pattern} value={pattern}>{patternNames[h.lang][pattern]}</option>)}
         </select>
+        <PatternGuide pattern={h.winPattern} lang={h.lang} compact />
         <p className="mt-2 text-xs text-gold-600">{h.phase === 'waiting' ? 'ዙሩን ከመጀመርዎ በፊት ይምረጡ። ዙሩ ከጀመረ በኋላ መቀየር አይቻልም።' : 'ቅጡ የሚቀየረው ቀጣይ ዙር ከመጀመሩ በፊት ብቻ ነው።'}</p>
       </section>
 

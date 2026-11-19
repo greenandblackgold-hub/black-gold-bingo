@@ -12,7 +12,7 @@ const grid = [
 const nums = (positions) => new Set(positions.map(([r,c]) => grid[r][c]).filter(Number.isInteger));
 
 test('supports the requested pattern catalogue', () => {
-  for (const id of ['any_line','horizontal_line','vertical_line','diagonal','two_lines','two_horizontal_lines','four_corners','rectangle','two_rectangles','half_house','full_house','x','t','l','plus','diamond','picture_frame','six_pack','postage_stamp','three_lines','four_lines','top_bottom','left_right','checkerboard','center_cross','coverall']) {
+  for (const id of ['any_line','horizontal_line','vertical_line','diagonal','two_lines','two_horizontal_lines','four_corners','rectangle','two_rectangles','half_house','full_house','x','t','l','plus','diamond','picture_frame','six_pack','postage_stamp','three_lines','four_lines','top_bottom','left_right','checkerboard','center_cross','coverall','line_through_free','line_avoiding_free','two_lines_through_free','two_lines_avoiding_free','two_rectangles_touching','two_rectangles_separate','inner_frame','inner_square','four_postage_stamps','z','u','s','arrow_up','arrow_down','star','cross_and_corners','frame_and_center','double_cross','nine_pack','filled_diamond','window_pane','staircase','hourglass','bow_tie','ladder','railroad_tracks','lucky_seven','letter_h','letter_e','letter_c','letter_n','letter_w']) {
     assert.equal(isWinPattern(id), true, id);
   }
   assert.equal(isWinPattern('unknown'), false);
@@ -50,4 +50,43 @@ test('additional line, edge and coverage patterns are recognized', () => {
   assert.equal(findWinningPattern(grid, all, 'center_cross').missing, 0);
   assert.equal(findWinningPattern(grid, all, 'three_lines').missing, 0);
   assert.equal(findWinningPattern(grid, all, 'four_lines').missing, 0);
+});
+
+
+test('FREE-aware line patterns distinguish lines through and away from the center', () => {
+  const through = nums([[2,0],[2,1],[2,3],[2,4]]);
+  const away = nums([[0,0],[0,1],[0,2],[0,3],[0,4]]);
+  assert.equal(findWinningPattern(grid, through, 'line_through_free').missing, 0);
+  assert.ok(findWinningPattern(grid, through, 'line_avoiding_free').missing > 0);
+  assert.equal(findWinningPattern(grid, away, 'line_avoiding_free').missing, 0);
+  assert.ok(findWinningPattern(grid, away, 'line_through_free').missing > 0);
+});
+
+test('two rectangle variants require disjoint blocks with the requested relationship', () => {
+  const touching = nums([[0,0],[0,1],[1,0],[1,1],[0,2],[0,3],[1,2],[1,3]]);
+  const separate = nums([[0,0],[0,1],[1,0],[1,1],[3,3],[3,4],[4,3],[4,4]]);
+  assert.equal(findWinningPattern(grid, touching, 'two_rectangles_touching').missing, 0);
+  assert.ok(findWinningPattern(grid, touching, 'two_rectangles_separate').missing > 0);
+  assert.equal(findWinningPattern(grid, separate, 'two_rectangles_separate').missing, 0);
+});
+
+test('complex shape catalogue exposes non-empty masks', () => {
+  for (const id of ['inner_frame','inner_square','four_postage_stamps','z','u','s','arrow_up','arrow_down','star','cross_and_corners','frame_and_center','double_cross']) {
+    assert.ok(findWinningPattern(grid, new Set(), id).missing > 0, id);
+  }
+});
+
+
+test('additional named shapes expose valid winning masks', () => {
+  for (const id of ['nine_pack','filled_diamond','window_pane','staircase','hourglass','bow_tie','ladder','railroad_tracks','lucky_seven','letter_h','letter_e','letter_c','letter_n','letter_w']) {
+    assert.ok(findWinningPattern(grid, new Set(), id).missing > 0, id);
+  }
+  const nine = nums([[1,1],[1,2],[1,3],[2,1],[2,2],[2,3],[3,1],[3,2],[3,3]]);
+  assert.equal(findWinningPattern(grid,nine,'nine_pack').missing,0);
+});
+
+
+test('frame-and-center is distinct from the outside picture frame', () => {
+  const masks = findWinningPattern(grid, new Set(), 'frame_and_center');
+  assert.equal(masks.missing, 20);
 });
