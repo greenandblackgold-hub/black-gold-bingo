@@ -117,11 +117,6 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
             </button>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-100/60">እነዚህ የሚቻሉ የአሸናፊነት ቅርጾች ምሳሌዎች ናቸው፤ ትክክለኛው ማረጋገጫ በስርዓቱ ይከናወናል።</p>
           </div></div>}
         <div className="space-y-2 p-3 sm:p-4">
-          <nav aria-label="ዋና ምናሌ" className="rounded-xl border border-gold-500/30 bg-black/25 p-2">
-            <button type="button" onClick={() => setInlineMenuOpen((open) => !open)} aria-expanded={inlineMenuOpen} className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left font-bold text-gold-300 hover:bg-gold-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300">
-              <span>☰ ምናሌ</span><span aria-hidden="true">{inlineMenuOpen ? '−' : '+'}</span>
-            </button>
-          </nav>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             {[
               ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
