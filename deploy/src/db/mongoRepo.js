@@ -217,8 +217,12 @@ export async function createMongoRepo({ uri, dbName }) {
     },
     async lockCard({ code, userId, round, expectedVersion }) {
       return tx(async (session) => {
-        const game = await games.findOne({ _id: 'state', phase: 'running', roundNumber: round, version: expectedVersion }, { session, projection: { _id: 1 } });
-        if (!game) return false;
+        const game = await games.updateOne(
+          { _id: 'state', phase: 'running', roundNumber: round, version: expectedVersion },
+          { $inc: { version: 1 } },
+          { session },
+        );
+        if (!game.matchedCount) return false;
         const result = await cards.updateOne(
           { code, userId, round, lockedAt: { $exists: false } },
           { $set: { lockedAt: new Date(), lockReason: 'false_bingo' } },
