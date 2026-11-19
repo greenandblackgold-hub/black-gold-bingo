@@ -145,7 +145,7 @@ export function patternMasks(pattern:WinPattern='any_line'):Pos[][] {
   case 'arrow_down':return [[p(0,2),p(1,2),p(2,2),p(3,1),p(3,2),p(3,3),p(4,2)]];
   case 'star':return [[p(0,2),p(1,1),p(1,3),p(2,0),p(2,2),p(2,4),p(3,1),p(3,3),p(4,2)]];
   case 'cross_and_corners':return [unique([ROWS[2],COLS[2],[p(0,0),p(0,4),p(4,0),p(4,4)]])];
-  case 'frame_and_center':return [unique([Array.from({length:25},(_,i)=>p(Math.floor(i/5),i%5)).filter(([r,c])=>r===0||r===4||c===0||c===4),[p(2,2)]])];
+  case 'frame_and_center':return [unique([Array.from({length:25},(_,i)=>p(Math.floor(i/5),i%5)).filter(([r,c])=>r===0||r===4||c===0||c===4),[p(1,1),p(1,3),p(3,1),p(3,3),p(2,2)]])];
   case 'double_cross':return [unique([ROWS[2],COLS[2],D1,D2])];
   case 'nine_pack':return NINE;
   case 'filled_diamond':return [[p(0,2),p(1,1),p(1,2),p(1,3),p(2,0),p(2,1),p(2,2),p(2,3),p(2,4),p(3,1),p(3,2),p(3,3),p(4,2)]];
