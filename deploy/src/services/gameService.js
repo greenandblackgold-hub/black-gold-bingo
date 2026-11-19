@@ -214,7 +214,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       const cards = Array.from({ length: n }, (_, i) => {
         const code = newCardCode();
         const grid = generateGrid();
-        return { code, serial: requestedSerial !== undefined && requestedSerial !== null ? String(requestedSerial) : owned + i + 1, grid, sig: signCard(code, g.roundNumber, grid) };
+        return { code, serial: requestedSerial !== undefined && requestedSerial !== null ? String(requestedSerial) : String(10000 + randomInt(90000)), grid, sig: signCard(code, g.roundNumber, grid) };
       });
       try {
         const res = await repo.purchaseCards({
@@ -237,7 +237,7 @@ export function createGameService({ repo, config, now = Date.now }) {
     async myCards(user) {
       const g = await repo.getGame();
       const cards = await repo.listCards(user.id, g.roundNumber);
-      return cards.map((c) => ({ id: c.code, serial: c.serial, grid: c.grid }));
+      return cards.map((c) => ({ id: c.code, serial: c.serial, grid: c.grid, locked: !!c.lockedAt }));
     },
 
     /**
@@ -255,10 +255,14 @@ export function createGameService({ repo, config, now = Date.now }) {
       const card = await repo.getCard(String(cardCode ?? '').toUpperCase());
       if (!card || card.round !== g.roundNumber) throw new HttpError(404, 'card_not_found', 'Card not found in this round');
       if (card.userId !== user.id) throw new HttpError(403, 'not_your_card', 'This card belongs to another player');
+      if (card.lockedAt) return { ok: false, reason: 'card_locked' };
       if (!safeEqual(card.sig, signCard(card.code, card.round, card.grid)) || !isValidGrid(card.grid)) {
         throw new HttpError(409, 'card_invalid', 'Card failed the integrity check');
       }
-      if (findWinningPattern(card.grid, new Set(g.calledNumbers), g.winPattern ?? 'any_line').missing !== 0) return { ok: false, reason: 'pattern_incomplete' };
+      if (findWinningPattern(card.grid, new Set(g.calledNumbers), g.winPattern ?? 'any_line').missing !== 0) {
+        const locked = await repo.lockCard({ code: card.code, userId: user.id, round: g.roundNumber, expectedVersion: g.version });
+        return locked ? { ok: false, reason: 'false_bingo', cardLocked: true } : { ok: false, reason: 'claim_expired' };
+      }
 
       const prize = Math.floor((g.pot * config.prizePercent) / 100);
       const settled = await repo.settleWin({ round: g.roundNumber, expectedVersion: g.version, card, prize, ref: `win:${g.roundNumber}:${card.code}` });
@@ -268,6 +272,13 @@ export function createGameService({ repo, config, now = Date.now }) {
       broadcast(advanced);
       log('prize_pending_admin_approval', { round: g.roundNumber, card: card.code, userId: user.id, etb: prize / 100, potEtb: g.pot / 100 });
       return { ok: true, prize: prize / 100, payoutStatus: 'pending' };
+    },
+
+    async unlockCard(cardCode) {
+      const code = String(cardCode ?? '').toUpperCase();
+      if (!code) throw new HttpError(400, 'invalid_card_id', 'Card ID is required');
+      if (!(await repo.unlockCard(code))) throw new HttpError(404, 'locked_card_not_found', 'Locked card not found');
+      return { ok: true, cardId: code, unlocked: true };
     },
 
     /** Anyone logged in may verify a card ID. Only the owner or an admin gets the grid. */
