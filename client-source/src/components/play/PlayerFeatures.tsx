@@ -41,7 +41,7 @@ const RULES = [
 
 export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = false }: { onGoToWallet: () => void; settingsOnly?: boolean; menuOnly?: boolean }) {
   const { lang, setLang } = useLanguage();
-  const { balance, cards, transactions, clearMarks, removeCards } = usePlayer();
+  const { balance, cards, transactions, clearMarks, removeCards, buyCards } = usePlayer();
   const { cardPrice, audioVolume, setAudioVolume } = useAppSettings();
   const { calledNumbers, roundNumber, phase, winner, winPattern, roundPrizeEtb, roundCardCount, verifyCard } = useRound();
   const { soundEnabled, setSoundEnabled, voiceEnabled, setVoiceEnabled } = useAppSettings();
@@ -53,6 +53,10 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   });
   const [expanded, setExpanded] = useState<string | null>(settingsOnly ? 'settings' : null);
   const [inlineMenuOpen, setInlineMenuOpen] = useState(false);
+  const [showCardPurchase, setShowCardPurchase] = useState(false);
+  const [purchaseCount, setPurchaseCount] = useState(1);
+  const [purchaseBusy, setPurchaseBusy] = useState(false);
+  const [purchaseMessage, setPurchaseMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [showPatternOptions, setShowPatternOptions] = useState(false);
   const [selectedPatternOption, setSelectedPatternOption] = useState(0);
   const light = theme === 'light';
@@ -63,6 +67,29 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const muted = light ? 'text-zinc-600' : 'text-gold-600';
   const title = light ? 'text-amber-800' : 'text-gold-300';
   const toggle = (key: string) => setExpanded((v) => v === key ? null : key);
+  const submitCardPurchase = async () => {
+    if (purchaseBusy || phase !== 'waiting') return;
+    const total = purchaseCount * cardPrice;
+    if (total > balance) {
+      setPurchaseMessage({ kind: 'err', text: 'የመረጡትን ካርድ ለመግዛት ቀሪ ሂሳብዎ በቂ አይደለም።' });
+      return;
+    }
+    setPurchaseBusy(true);
+    setPurchaseMessage(null);
+    try {
+      const result = await buyCards(purchaseCount);
+      if (result.ok) {
+        setPurchaseMessage({ kind: 'ok', text: `${purchaseCount} ካርድ በተሳካ ሁኔታ ተገዝተዋል።` });
+        setPurchaseCount(1);
+      } else {
+        setPurchaseMessage({ kind: 'err', text: result.error ?? 'ግዢው አልተሳካም። ቀሪ ሂሳብዎን ወይም የዙሩን ሁኔታ ያረጋግጡ።' });
+      }
+    } catch {
+      setPurchaseMessage({ kind: 'err', text: 'ግዢው አልተሳካም። እባክዎ እንደገና ይሞክሩ።' });
+    } finally {
+      setPurchaseBusy(false);
+    }
+  };
   const setPlayerTheme = (value: 'dark' | 'light') => {
     setTheme(value);
     try { localStorage.setItem('bgb.playerTheme', value); } catch { /* ignore */ }
@@ -121,14 +148,49 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
             {[
               ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
               ['የአሁኑ ዋና ሽልማት', SERVER_MODE && roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ETB` : '—'],
-              ['አካውንት ቀሪ ሂሳብ', `${formatAmount(lang, balance)} ETB`],
+              ['ካርድ ግዛ', ''],
               ['ጠቅላላ ካርቴላ', String(cards.length)],
             ].map(([label, value]) => (
-              <div key={label} className={`rounded-lg border p-2 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
-                <p className={`text-[10px] leading-4 ${muted}`}>{label}</p><p className={`mt-0.5 text-xs font-black tabular-nums ${title}`}>{value}</p>
-              </div>
+              label === 'ካርድ ግዛ' ? (
+                <button key={label} type="button" onClick={() => { setPurchaseMessage(null); setShowCardPurchase(true); }} className={`min-w-0 rounded-lg border p-2 text-left transition hover:border-amber-400 ${light ? 'border-amber-300 bg-amber-100' : 'border-amber-400/50 bg-amber-400/10'}`}>
+                  <p className="text-[10px] leading-4 text-amber-600">ካርድ ግዛ</p>
+                  <p className="mt-0.5 text-xs font-black text-amber-400">ግዢ ለመጀመር ይጫኑ</p>
+                </button>
+              ) : (
+                <div key={label} className={`rounded-lg border p-2 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
+                  <p className={`text-[10px] leading-4 ${muted}`}>{label}</p><p className={`mt-0.5 text-xs font-black tabular-nums ${title}`}>{value}</p>
+                </div>
+              )
             ))}
           </div>
+          {showCardPurchase && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-3" role="dialog" aria-modal="true" aria-label="የካርድ ግዢ">
+              <div className="w-full max-w-md space-y-4 rounded-2xl border border-amber-400/50 bg-zinc-950 p-4 text-amber-50 shadow-2xl sm:p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div><p className="text-xs font-bold text-amber-400">BLACK GOLD BINGO</p><h3 className="text-lg font-black text-amber-200">የካርድ ግዢ</h3></div>
+                  <button type="button" onClick={() => setShowCardPurchase(false)} aria-label="ዝጋ" className="rounded-lg border border-amber-400/40 px-3 py-2">✕</button>
+                </div>
+                <div className="rounded-xl border border-amber-400/20 bg-black/40 p-3">
+                  <p className="text-xs text-amber-200/70">ያለዎት ቀሪ ሂሳብ</p>
+                  <p className="text-xl font-black tabular-nums text-amber-300">{formatAmount(lang, balance)} ETB</p>
+                </div>
+                <div className="space-y-3 rounded-xl border border-amber-400/20 p-3">
+                  <p className="text-sm font-semibold">የሚፈልጉትን የካርድ ብዛት ይምረጡ</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <button type="button" disabled={purchaseCount <= 1 || purchaseBusy} onClick={() => setPurchaseCount((n) => Math.max(1, n - 1))} className="h-10 w-10 rounded-lg border border-amber-400/40 text-lg disabled:opacity-40">−</button>
+                    <p className="text-xl font-black text-amber-300 tabular-nums">{purchaseCount} ካርድ</p>
+                    <button type="button" disabled={purchaseCount >= 10 || purchaseBusy} onClick={() => setPurchaseCount((n) => Math.min(10, n + 1))} className="h-10 w-10 rounded-lg border border-amber-400/40 text-lg disabled:opacity-40">+</button>
+                  </div>
+                  <div className="flex justify-between text-sm"><span className="text-amber-100/60">የአንድ ካርድ ዋጋ</span><strong>{formatAmount(lang, cardPrice)} ETB</strong></div>
+                  <div className="flex justify-between border-t border-amber-400/20 pt-3"><span className="font-bold">ጠቅላላ ክፍያ</span><strong className="text-lg text-amber-300">{formatAmount(lang, purchaseCount * cardPrice)} ETB</strong></div>
+                </div>
+                {phase !== 'waiting' && <p className="rounded-lg bg-red-950/60 p-2 text-sm text-red-200">ካርድ መግዛት የሚቻለው አዲስ ዙር ከመጀመሩ በፊት ብቻ ነው።</p>}
+                {purchaseMessage && <p role="status" className={`rounded-lg p-2 text-sm ${purchaseMessage.kind === 'ok' ? 'bg-emerald-950 text-emerald-200' : 'bg-red-950 text-red-200'}`}>{purchaseMessage.text}</p>}
+                <button type="button" disabled={purchaseBusy || phase !== 'waiting' || purchaseCount * cardPrice > balance} onClick={() => void submitCardPurchase()} className="w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-600 px-4 py-3 font-black text-zinc-950 disabled:cursor-not-allowed disabled:opacity-50">{purchaseBusy ? 'በመግዛት ላይ…' : 'ካርዶችን ግዛ'}</button>
+                <p className="text-center text-[11px] leading-5 text-amber-100/50">ካርዶቹ በራስ-ሰር ይመነጫሉ፤ ክፍያው ከተሳካ በኋላ በጨዋታ ገጽዎ ላይ ይታያሉ።</p>
+              </div>
+            </div>
+          )}
           <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
             <span className={muted}>የዙሩ ሁኔታ</span>
             <strong className={title}>{calledNumbers.length} / 75 ኳሶች</strong>
