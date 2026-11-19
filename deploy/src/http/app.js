@@ -135,7 +135,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   /* cards */
   route('GET', '/api/cards', 'user', 'default', ({ user }) => game.myCards(user));
   route('POST', '/api/cards/buy', 'user', 'default', async ({ user, body }) => game.buyCards(user, body.count, body.serial));
-  route('POST', '/api/claim', 'user', 'default', ({ user, body }) => game.claim(user, body.cardId));
+  route('POST', '/api/claim', 'user', 'default', ({ user, body }) => game.claim(user, body.cardId, body.expectedCallCount));
   route('POST', '/api/verify', 'user', 'default', ({ user, body }) => game.verify(user, body.cardId));
 
   /* wallet */
