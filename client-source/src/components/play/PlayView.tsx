@@ -294,19 +294,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           {phase === 'waiting' && <span className="text-sm text-gold-500">{t('waiting')}</span>}
         </div>
 
-        {cards.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gold-700/60 p-8 text-center">
-            <p className="font-semibold text-gold-300">{t('noCards')}</p>
-            <p className="mt-1 text-sm text-gold-500">{t('noCardsHint')}</p>
-            <button
-              type="button"
-              onClick={onGoToWallet}
-              className="mt-4 rounded-xl bg-gradient-to-br from-gold-300 via-gold-500 to-gold-600 px-5 py-2.5 font-bold text-darkbg active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
-            >
-              {t('goWallet')}
-            </button>
-          </div>
-        ) : (
+        {cards.length === 0 ? null : (
           <div className="grid w-full min-w-0 gap-2 sm:gap-4" style={{gridTemplateColumns: `repeat(${cardColumns}, minmax(0, 1fr))`}}>
             {[...cards].sort((a,b)=>cardOrder==='oldest'?Number(a.serial)-Number(b.serial):Number(b.serial)-Number(a.serial)).filter(card=>selectedCardIds.length===0||selectedCardIds.includes(card.id)).map((card) => (
               <CardView
