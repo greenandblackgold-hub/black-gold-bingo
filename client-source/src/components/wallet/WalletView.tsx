@@ -8,7 +8,7 @@
  * The deposit is a DEMO: nothing leaves the device. Replace `runMockPayment`
  * with your real payment API call when you integrate Telebirr / CBE.
  */
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { translations, formatAmount, formatDateTime, formatNumber } from '@/lib/localization';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -25,13 +25,12 @@ import type { Lang, PayMethod as Method } from '@/types/game';
 function useWalletData() {
   const { lang } = useLanguage();
   const { cardPrice } = useAppSettings();
-  const { balance, cards, transactions, deposit, buyCards } = usePlayer();
+  const { balance, cards, deposit, buyCards } = usePlayer();
   return {
     lang: lang as Lang,
     cardPrice: cardPrice ?? 10,
     balance,
     ownedCount: cards.length,
-    transactions: transactions ?? [],
     deposit,
     buyCards,
   };
@@ -388,13 +387,11 @@ function PurchasePanel({
 /* ───────────────────────────── MAIN VIEW ───────────────────────────── */
 
 export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
-  const { lang, cardPrice, balance, ownedCount, transactions, deposit, buyCards } = useWalletData();
+  const { lang, cardPrice, balance, ownedCount, deposit, buyCards } = useWalletData();
   const t = (k: StringKey) => (STRINGS[lang] ?? STRINGS.en)[k];
   const fmt = (n: number) => formatAmount(lang, n);
   const fmtNumber = (n: number) => formatNumber(lang, n);
   const { phase } = useRound();
-
-  const recent = useMemo(() => [...transactions].sort((a, b) => b.at - a.at).slice(0, 8), [transactions]);
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-2">
@@ -417,36 +414,6 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
       </div>
 
 
-      {/* History */}
-      <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
-        <h2 className="mb-3 text-lg font-bold text-gold-300">{t('history')}</h2>
-        {SERVER_MODE && <SimulationDepositHistory />}
-        {recent.length === 0 ? (
-          <p className="py-4 text-center text-sm text-gold-700">{t('empty')}</p>
-        ) : (
-          <ul className="divide-y divide-gold-700/30">
-            {recent.map((tx) => (
-              <li key={tx.id} className="flex items-center justify-between py-2.5">
-                <div>
-                  <p className="text-sm font-semibold text-gold-300">
-                    {tx.label ?? (tx.kind === 'deposit' ? t('depositTx') : t('purchaseTx'))}
-                  </p>
-                  <p className="text-xs text-gold-700">{formatDateTime(lang, tx.at)}</p>
-                </div>
-                <p
-                  className={[
-                    'font-bold tabular-nums',
-                    tx.amount >= 0 ? 'text-gold-400' : 'text-gold-600',
-                  ].join(' ')}
-                >
-                  {tx.amount >= 0 ? '+' : '−'}
-                  {fmt(Math.abs(tx.amount))}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
       {SERVER_MODE && <AccountPanel />}
     </div>
   );
