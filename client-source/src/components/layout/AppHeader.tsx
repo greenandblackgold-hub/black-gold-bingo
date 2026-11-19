@@ -1,8 +1,7 @@
 import { useAppSettings } from '@/context/AppSettingsContext';
-import { translations, formatAmount } from '@/lib/localization';
+import { translations } from '@/lib/localization';
 import { useBackend } from '@/context/BackendContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { usePlayer } from '@/context/PlayerContext';
 import type { Lang } from '@/types/game';
 
 const LANGS: { id: Lang; label: string }[] = [
@@ -51,7 +50,6 @@ function AudioSwitch({ label, checked, onChange }: { label: string; checked: boo
 
 export function AppHeader({ onOpenWallet, onOpenAdmin }: { onOpenWallet: () => void; onOpenAdmin: () => void }) {
   const { lang, setLang } = useLanguage();
-  const { balance } = usePlayer();
   const {
     soundEnabled, setSoundEnabled, voiceEnabled, setVoiceEnabled, audioVolume, setAudioVolume,
   } = useAppSettings();
@@ -125,15 +123,6 @@ export function AppHeader({ onOpenWallet, onOpenAdmin }: { onOpenWallet: () => v
               <p className="px-2 pt-1 text-[10px] leading-relaxed text-zinc-500">{l.voiceHelp}</p>
             </div>
           </details>
-
-          <button
-            type="button"
-            onClick={onOpenWallet}
-            aria-label={l.wallet}
-            className="whitespace-nowrap rounded-full bg-gold-500/15 px-3 py-1.5 text-sm font-bold tabular-nums text-gold-300 ring-1 ring-gold-500/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300"
-          >
-            {formatAmount(lang, balance)} <span className="text-gold-500">ETB</span>
-          </button>
         </div>
       </div>
     </header>
