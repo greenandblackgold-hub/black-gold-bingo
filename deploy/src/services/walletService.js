@@ -310,7 +310,7 @@ export function createWalletService({ repo, config, chapa }) {
 
     async rejectManualWithdrawal(id, note, adminId) {
       const w = await repo.rejectManualWithdrawalAndRefund(id, String(note ?? '').slice(0, 200), adminId);
-      if (!w) throw new HttpError(409, 'wrong_status', 'Only a pending manual withdrawal can be rejected and refunded.');
+      if (!w) throw new HttpError(409, 'wrong_status', 'Only a pending or processing manual withdrawal can be rejected and refunded.');
       log('manual_withdrawal_rejected_refunded', { id, adminId, userId: w.userId, amount: etb(w.amount) });
       return { id, status: 'rejected', refunded: true };
     },

@@ -312,7 +312,10 @@ test('manual real-wallet withdrawals require processing and a unique external pa
   assert.equal(paid.status, 200, JSON.stringify(paid.json));
   assert.equal(paid.json.status, 'paid');
   assert.equal(paid.json.externalReference, 'BANK-REF-000001');
-  assert.equal((await api('GET', '/api/manual/withdrawals', { token: p.token })).json.find((w) => w.id === request.json.id).status, 'paid');
+  const paidHistory = (await api('GET', '/api/manual/withdrawals', { token: p.token })).json.find((w) => w.id === request.json.id);
+  assert.equal(paidHistory.status, 'paid');
+  assert.equal(paidHistory.externalPayoutReference, 'BANK-REF-000001');
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 50, 'confirming paid must not debit the already-held amount again');
 
   const second = await api('POST', '/api/manual/withdrawals', {
     token: p.token, body: { amount: 50, method: 'bank', destination: '1000123456789' },
@@ -325,6 +328,47 @@ test('manual real-wallet withdrawals require processing and a unique external pa
   });
   assert.equal(duplicate.status, 409);
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
+});
+
+test('manual withdrawal rejection refunds pending and processing holds exactly once', async () => {
+  const pendingPlayer = await newPlayer('Pending Refund Player', 100);
+  const pending = await api('POST', '/api/manual/withdrawals', {
+    token: pendingPlayer.token, body: { amount: 50, method: 'telebirr', destination: '0912345678' },
+  });
+  assert.equal(pending.status, 200);
+  assert.equal(pending.json.balance, 50);
+  const pendingReject = await api('POST', `/api/admin/manual-withdrawals/${pending.json.id}/reject`, {
+    token: ctx.adminToken, body: { note: 'Pending refund test' },
+  });
+  assert.equal(pendingReject.status, 200, JSON.stringify(pendingReject.json));
+  assert.equal(pendingReject.json.refunded, true);
+  assert.equal((await api('GET', '/api/me', { token: pendingPlayer.token })).json.balance, 100);
+  assert.equal((await api('POST', `/api/admin/manual-withdrawals/${pending.json.id}/reject`, {
+    token: ctx.adminToken,
+  })).status, 409);
+  const pendingHistory = (await api('GET', '/api/manual/withdrawals', { token: pendingPlayer.token })).json.find((w) => w.id === pending.json.id);
+  assert.equal(pendingHistory.status, 'rejected');
+
+  const processingPlayer = await newPlayer('Processing Refund Player', 100);
+  const processing = await api('POST', '/api/manual/withdrawals', {
+    token: processingPlayer.token, body: { amount: 50, method: 'bank', destination: '1000123456789' },
+  });
+  assert.equal(processing.status, 200);
+  assert.equal(processing.json.balance, 50);
+  const started = await api('POST', `/api/admin/manual-withdrawals/${processing.json.id}/start`, { token: ctx.adminToken });
+  assert.equal(started.status, 200);
+  assert.equal(started.json.status, 'processing');
+  const processingReject = await api('POST', `/api/admin/manual-withdrawals/${processing.json.id}/reject`, {
+    token: ctx.adminToken, body: { note: 'Processing refund test' },
+  });
+  assert.equal(processingReject.status, 200, JSON.stringify(processingReject.json));
+  assert.equal(processingReject.json.refunded, true);
+  assert.equal((await api('GET', '/api/me', { token: processingPlayer.token })).json.balance, 100);
+  assert.equal((await api('POST', `/api/admin/manual-withdrawals/${processing.json.id}/reject`, {
+    token: ctx.adminToken,
+  })).status, 409);
+  const processingHistory = (await api('GET', '/api/manual/withdrawals', { token: processingPlayer.token })).json.find((w) => w.id === processing.json.id);
+  assert.equal(processingHistory.status, 'rejected');
 });
 
 test('cards: buying, balance checks, round gating, server-issued grids', async () => {

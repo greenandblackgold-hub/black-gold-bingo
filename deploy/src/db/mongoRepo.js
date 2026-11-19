@@ -448,7 +448,7 @@ export async function createMongoRepo({ uri, dbName }) {
     async rejectManualWithdrawalAndRefund(id, note, adminId) {
       return tx(async (session) => {
         const w = await withdrawals.findOneAndUpdate(
-          { _id: id, mode: 'manual', status: 'pending' },
+          { _id: id, mode: 'manual', status: { $in: ['pending', 'processing'] } },
           { $set: { status: 'rejected', note, reviewedBy: adminId, updatedAt: new Date() } },
           { returnDocument: 'after', session },
         );
