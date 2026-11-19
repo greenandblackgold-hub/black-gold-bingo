@@ -11,7 +11,7 @@ export function PatternGuide({ pattern, lang, compact = false }: { pattern: WinP
   const highlighted = new Set(mask.map(([r,c]) => `${r}-${c}`));
   const detailLabel = lang === 'am' ? 'ዝርዝር' : lang === 'ti' ? 'ዝርዝር' : 'Details';
   const freeLabel = lang === 'am' ? 'ነፃ' : lang === 'ti' ? 'ነጻ' : 'FREE';
-  const legend = lang === 'am' ? 'ወርቃማ ሳጥኖች የሚፈለገውን ቅርጽ ያሳያሉ። መካከለኛው FREE ሳጥን በነፃ ይቆጠራል።' : 'Gold cells show the target pattern. The center FREE space counts automatically when included in the pattern.';
+  const legend = lang === 'am' ? 'ወርቃማው ምስል አንድ ምሳሌ ነው፤ ቅርጹ በተለያዩ ቦታዎች ሊፈጠር ከቻለ ማንኛውም ተመሳሳይ ቦታ ይቀበላል። FREE በህጉ ውስጥ ከተካተተ በነፃ ይቆጠራል።' : 'The gold diagram is one example. Where a pattern can appear in multiple places, any matching placement is accepted. FREE counts automatically when included in the selected pattern.';
   return (
     <section className={`rounded-2xl border border-gold-700/45 bg-cardbg p-3 sm:p-4 ${compact ? 'mt-3' : ''}`}>
       <div className="flex items-center justify-between gap-3">
