@@ -186,6 +186,16 @@ export async function createMongoRepo({ uri, dbName }) {
     },
 
     /* cards */
+    async reserveCardSerials(round, count) {
+      const game = await games.findOneAndUpdate(
+        { _id: 'state', phase: 'waiting', roundNumber: round },
+        { $inc: { nextCardSerial: count } },
+        { returnDocument: 'after', projection: { nextCardSerial: 1 } },
+      );
+      if (!game) throw new RepoError('ROUND_NOT_OPEN');
+      const first = game.nextCardSerial - count + 1;
+      return Array.from({ length: count }, (_, i) => String(first + i).padStart(5, '0'));
+    },
     async purchaseCards({ userId, cost, cards: newCards, round, ref }) {
       return tx(async (session) => {
         const g = await games.findOneAndUpdate(
