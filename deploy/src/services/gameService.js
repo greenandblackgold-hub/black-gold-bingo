@@ -276,8 +276,8 @@ export function createGameService({ repo, config, now = Date.now }) {
       const advanced = await repo.casGame(settled.version, { nextRoundAt: (g.roundStartedAt ?? now()) + ROUND_INTERVAL_MS }) ?? await repo.getGame();
       schedule(advanced);
       broadcast(advanced);
-      log('prize_pending_admin_approval', { round: g.roundNumber, card: card.code, userId: user.id, etb: prize / 100, potEtb: g.pot / 100 });
-      return { ok: true, prize: prize / 100, payoutStatus: 'pending' };
+      log('prize_credited_to_wallet', { round: g.roundNumber, card: card.code, userId: user.id, etb: prize / 100, potEtb: g.pot / 100 });
+      return { ok: true, prize: prize / 100, payoutStatus: 'paid' };
     },
 
     async unlockCard(cardCode) {
