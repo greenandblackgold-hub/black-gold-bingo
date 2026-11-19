@@ -17,6 +17,8 @@ export type Pos = [number, number];
 export interface BingoCard {
   id: string;
   serial: string | number;
+  /** Set by the trusted server after a false BINGO claim. */
+  locked?: boolean;
   /** 5x5 grid, null = FREE center. */
   grid: (number | null)[][];
 }
