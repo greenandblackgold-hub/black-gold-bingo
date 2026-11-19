@@ -9,7 +9,7 @@
  * with your real payment API call when you integrate Telebirr / CBE.
  */
 import { useState } from 'react';
-import { translations, formatAmount, formatDateTime, formatNumber } from '@/lib/localization';
+import { translations, formatAmount, formatNumber } from '@/lib/localization';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
@@ -17,7 +17,7 @@ import { useRound } from '@/context/RoundContext';
 import { SERVER_MODE } from '@/lib/api';
 import { SimulationWithdrawalPanel } from '@/components/wallet/SimulationWithdrawalPanel';
 import { AccountPanel } from '@/components/wallet/AccountPanel';
-import { SmsDepositPanel, SimulationDepositHistory } from '@/components/wallet/SmsDepositPanel';
+import { SmsDepositPanel } from '@/components/wallet/SmsDepositPanel';
 import type { Lang, PayMethod as Method } from '@/types/game';
 
 /* ───────────────────────────── CONTEXT WIRING ───────────────────────────── */
