@@ -144,7 +144,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
             </button>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-100/60">እነዚህ የሚቻሉ የአሸናፊነት ቅርጾች ምሳሌዎች ናቸው፤ ትክክለኛው ማረጋገጫ በስርዓቱ ይከናወናል።</p>
           </div></div>}
         <div className="space-y-2 p-3 sm:p-4">
-          <div className="grid grid-cols-4 gap-1 sm:gap-2">
+          <div className="grid grid-cols-2 gap-1 sm:gap-2">
             {[
               ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
               ['የአሁኑ ዋና ሽልማት', SERVER_MODE && roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ETB` : '—'],
@@ -152,12 +152,12 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
               ['ጠቅላላ ካርቴላ', String(cards.length)],
             ].map(([label, value]) => (
               label === 'ካርድ ግዛ' ? (
-                <button key={label} type="button" onClick={() => { setPurchaseMessage(null); setShowCardPurchase(true); }} className={`min-w-0 rounded-lg border p-2 text-left transition hover:border-amber-400 ${light ? 'border-amber-300 bg-amber-100' : 'border-amber-400/50 bg-amber-400/10'}`}>
+                <button key={label} type="button" onClick={() => { setPurchaseMessage(null); setShowCardPurchase(true); }} className={`min-w-0 rounded-lg border p-1.5 text-left transition hover:border-amber-400 ${light ? 'border-amber-300 bg-amber-100' : 'border-amber-400/50 bg-amber-400/10'}`}>
                   <p className="text-[10px] leading-4 text-amber-600">ካርድ ግዛ</p>
                   <p className="mt-0.5 flex items-center gap-1 text-xs font-black text-amber-400"><span aria-hidden="true" className="text-lg font-black leading-none text-red-500">＋</span>ካርድ ይጨምሩ</p>
                 </button>
               ) : (
-                <div key={label} className={`rounded-lg border p-2 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
+                <div key={label} className={`rounded-lg border p-1.5 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
                   <p className={`text-[10px] leading-4 ${muted}`}>{label}</p><p className={`mt-0.5 text-xs font-black tabular-nums ${title}`}>{value}</p>
                 </div>
               )
