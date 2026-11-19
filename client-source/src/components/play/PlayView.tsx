@@ -20,8 +20,8 @@ import { PlayerFeatures } from '@/components/play/PlayerFeatures';
 function usePlayData() {
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark } = usePlayer();
-  const { phase, winPattern, roundNumber, calledNumbers, claimBingo, winner } = useRound();
-  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, roundNumber, calledNumbers, claimBingo, winner };
+  const { phase, winPattern, calledNumbers, claimBingo, winner } = useRound();
+  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner };
 }
 
 /* ─────────────────────────── TRANSLATIONS ─────────────────────────── */
@@ -163,11 +163,10 @@ function CardView({ card, marks, called, t, pattern, markColor, isWinner, canCla
 /* ───────────────────────────── MAIN VIEW ───────────────────────────── */
 
 export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
-  const { lang, cards, markedByCard, toggleMark, phase, winPattern, roundNumber, calledNumbers, claimBingo, winner } = usePlayData();
+  const { lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner } = usePlayData();
   const t = (k: StringKey) => (STRINGS[lang] ?? STRINGS.en)[k];
 
   const called = useMemo(() => new Set(calledNumbers), [calledNumbers]);
-  const current = calledNumbers.length ? calledNumbers[calledNumbers.length - 1] : null;
   const active = phase === 'running';
 
   const markSets = useMemo(() => {
