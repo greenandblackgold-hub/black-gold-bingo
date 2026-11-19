@@ -87,6 +87,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
     { id: 'app', label: 'መተግበሪያ', icon: '▣' },
     { id: 'history', label: 'የግብይትና የጨዋታ ታሪክ', icon: '◷' },
     { id: 'contact', label: 'ያግኙን', icon: '☎' },
+    { id: 'info', label: 'መረጃ (ⓘ)', icon: 'ⓘ' },
   ];
 
   return (
@@ -158,6 +159,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
             {expanded === row.id && (
               <div className="space-y-3 px-4 pb-4">
                 {row.id === 'messages' && <p className={`text-sm ${muted}`}>የአስተዳዳሪ መልዕክቶች የሚታዩበት ክፍል።</p>}
+                {row.id === 'info' && <p className={`text-sm leading-6 ${muted}`}>በቴሌብር (0978202822 — ኣሊክሳንደር ደጀን) ወይም በንግድ ባንክ (1000737138686 — ቤተሊሄም ፍጹም) ሙሉ ደረሰኝ በማስገባት ገቢ (Deposit) ማድረግ ትችላላችሁ። iPhone የምትጠቀሙ ደንበኞች Google Chrome ላይ www.blackgoldbingo.com በመፈለግ መጠቀም ትችላላችሁ።</p>}
                 {row.id === 'contact' && <p className={`text-sm ${muted}`}>ተጨማሪ መረጃ ከፈለጉ 0978202822 ወይም 0998974422 ይደዉሉ።</p>}
                 {row.id === 'history' && <div className="space-y-2 rounded-xl border border-amber-400/25 bg-black/25 p-3"><div className="space-y-2 px-2 py-1">{(transactions ?? []).length === 0 ? <p className="py-3 text-center text-xs text-gold-600">ገና የግብይት ታሪክ የለም።</p> : (transactions ?? []).slice().sort((a,b)=>b.at-a.at).map(tx => <div key={tx.id} className="flex items-center justify-between gap-3 border-b border-gold-700/20 py-2 text-xs"><div className="min-w-0"><p className="font-semibold text-gold-200">{tx.label ?? (tx.kind === 'deposit' ? 'ማስገባት' : 'ካርድ ግዢ')}</p><p className="text-[10px] text-gold-700">{formatDateTime(lang, tx.at)}</p></div><strong className={tx.amount >= 0 ? 'shrink-0 text-emerald-300' : 'shrink-0 text-amber-300'}>{tx.amount >= 0 ? '+' : '−'}{formatAmount(lang, Math.abs(tx.amount))} ETB</strong></div>)}</div><p className="px-3 py-3 text-xs leading-5 text-gold-600">የቀደሙ ዙሮች ዝርዝር በBackend ላይ ስላልተቀመጠ አሁን ማሳየት አይቻልም።</p><button type="button" onClick={onGoToWallet} className="w-full rounded-lg bg-amber-400/10 px-3 py-2 text-xs font-bold text-amber-200">ወደ ቦርሳ ዝርዝር ሂድ</button></div>}
                 {row.id === 'wallet' && <button type="button" onClick={onGoToWallet} className="w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-600 px-4 py-3 font-bold text-zinc-950">ወደ አካውንት ሂድ — ማስገባት / ማውጣት</button>}
