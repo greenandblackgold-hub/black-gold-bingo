@@ -81,52 +81,28 @@ type CardViewProps = {
   card: BingoCard;
   marks: Set<number>;
   called: Set<number>;
-  active: boolean;
   t: (key: StringKey) => string;
-  onToggle: (n: number) => void;
   pattern: WinPattern;
   markColor: string;
 };
 
-function CardView({ card, marks, called, active, t, onToggle, pattern, markColor }: CardViewProps) {
-  const { toGo, winningLine } = useMemo(() => analyze(card.grid, marks, called, pattern), [card.grid, marks, called, pattern]);
+function CardView({ card, marks, called, t, pattern, markColor, isWinner }: CardViewProps & { isWinner: boolean }) {
+  const { winningLine } = useMemo(() => analyze(card.grid, marks, called, pattern), [card.grid, marks, called, pattern]);
   const winSet = useMemo(() => new Set((winningLine ?? []).map(([r, c]) => `${r}-${c}`)), [winningLine]);
-  const hasWin = !!winningLine;
 
   return (
     <section
       className={[
         'relative min-w-0 w-full overflow-hidden rounded-[1.35rem] border bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.012)_38%,rgba(0,0,0,0.18))] p-1.5 shadow-xl shadow-black/25 transition-all duration-300 sm:p-4',
-        hasWin
-          ? 'border-gold-300/90 ring-2 ring-gold-400/80 shadow-[0_0_42px_-8px_rgba(255,215,0,0.58)]'
+        isWinner
+          ? 'border-red-400 ring-2 ring-yellow-300 shadow-[0_0_42px_-8px_rgba(255,80,40,0.72)]'
           : 'border-gold-700/45 ring-1 ring-gold-700/25 hover:border-gold-500/60',
       ].join(' ')}
     >
-      {hasWin && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-gold-300 to-transparent" aria-hidden="true" />
-      )}
-      <header className="mb-2 flex min-w-0 items-center justify-between gap-1 sm:mb-3 sm:gap-2">
-        <div className="min-w-0">
-          <p className="text-[9px] font-black uppercase tracking-[0.22em] text-gold-600">GOLD EDITION</p>
-          <h3 className="mt-0.5 truncate font-bold text-gold-200">
-            {t('card')} <span className="text-gold-400">#{card.serial}</span>
-          </h3>
-          <span className="select-all font-mono text-[10px] text-gold-600">{card.id}</span>
-        </div>
-        {active && (
-          <span
-            className={[
-              'shrink-0 rounded-full border px-1.5 py-1 text-[9px] font-black tabular-nums tracking-wide transition-colors sm:px-3 sm:text-[11px]',
-              hasWin
-                ? 'border-gold-200 bg-gradient-to-r from-gold-200 via-gold-400 to-gold-500 text-darkbg shadow-[0_0_20px_rgba(255,215,0,.35)]'
-                : toGo <= 2
-                  ? 'border-gold-400/60 bg-gold-400/15 text-gold-200'
-                  : 'border-gold-700/40 bg-black/20 text-gold-500',
-            ].join(' ')}
-          >
-            {hasWin ? '✦ BINGO ✦' : `${toGo} ${t('toGo')}`}
-          </span>
-        )}
+      <header className="mb-2 flex justify-center sm:mb-3">
+        <span className={isWinner ? 'bg-bingo-winner-flash rounded-lg px-4 py-1 text-lg font-black tracking-[0.24em] text-yellow-100 sm:text-2xl' : 'rounded-lg px-4 py-1 text-lg font-black tracking-[0.24em] text-gold-300 sm:text-2xl'}>
+          BINGO
+        </span>
       </header>
 
       <div className="min-w-0 rounded-xl border border-gold-700/35 bg-black/25 p-1.5 shadow-inner shadow-black/30 sm:rounded-2xl sm:p-3">
@@ -150,10 +126,9 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
                 key={`${r}-${c}`}
                 style={isMarked ? { backgroundColor: markColor } : undefined}
                 type="button"
-                disabled={isFree || !active}
+                disabled
                 aria-pressed={isMarked}
                 aria-label={isFree ? t('free') : `${LETTERS[c]} ${v}`}
-                onClick={() => v !== null && isCalled && onToggle(v)}
                 className={[
                   'relative grid aspect-square min-w-0 place-items-center overflow-hidden rounded-md border text-[10px] font-extrabold tabular-nums shadow-sm transition-all duration-200 active:scale-[0.91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-200 sm:rounded-xl sm:text-lg',
                   isMarked && !isCalled
@@ -199,7 +174,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
 
   const [claiming, setClaiming] = useState(false);
   const [cardColumns, setCardColumns] = useState(2);
-  const [autoMarkEnabled, setAutoMarkEnabled] = useState(false);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [cardOrder, setCardOrder] = useState<'oldest'|'newest'>('oldest');
   const [markColor, setMarkColor] = useState('#d4af37');
@@ -213,14 +187,14 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   useEffect(() => () => clearTimeout(messageTimer.current), []);
 
   useEffect(() => {
-    const load = () => { try { const cols=Number(localStorage.getItem('bgb.cardsPerRow')); setCardColumns([2,3,4].includes(cols)?cols:2); setAutoMarkEnabled(localStorage.getItem('bgb.autoMark')==='on'); setCardOrder(localStorage.getItem('bgb.cardOrder')==='newest'?'newest':'oldest'); setMarkColor(localStorage.getItem('bgb.markColor')||'#d4af37'); const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]'); setSelectedCardIds(Array.isArray(ids)?ids:[]); } catch { /* retain defaults */ } };
+    const load = () => { try { const cols=Number(localStorage.getItem('bgb.cardsPerRow')); setCardColumns([2,3,4].includes(cols)?cols:2);  setCardOrder(localStorage.getItem('bgb.cardOrder')==='newest'?'newest':'oldest'); setMarkColor(localStorage.getItem('bgb.markColor')||'#d4af37'); const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]'); setSelectedCardIds(Array.isArray(ids)?ids:[]); } catch { /* retain defaults */ } };
     load(); window.addEventListener('bgb-player-settings',load); return ()=>window.removeEventListener('bgb-player-settings',load);
   }, []);
 
   useEffect(() => {
-    if (!autoMarkEnabled || !active || calledNumbers.length===0) return;
+    if (!active || calledNumbers.length===0) return;
     for (const card of cards) { const marks=new Set(markedByCard[card.id]??[]); for (const n of calledNumbers) if (card.grid.some(row=>row.includes(n)) && !marks.has(n)) { toggleMark(card.id,n); marks.add(n); } }
-  }, [autoMarkEnabled,active,calledNumbers,cards,markedByCard,toggleMark]);
+  }, [active,calledNumbers,cards,markedByCard,toggleMark]);
 
   const flash = (kind: 'ok' | 'err', text: string) => {
     setMessage({ kind, text });
@@ -280,13 +254,18 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           0% { opacity: 0; transform: translateY(10px) scale(.985); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
+        @keyframes bgBingoWinnerFlash {
+          0%, 100% { color: #fff2a6; background: rgba(220,38,38,.96); text-shadow: 0 0 5px #fff, 0 0 16px #facc15; box-shadow: 0 0 10px #ef4444, 0 0 24px #facc15; }
+          50% { color: #fff; background: rgba(234,179,8,.98); text-shadow: 0 0 8px #fff, 0 0 22px #ef4444; box-shadow: 0 0 18px #facc15, 0 0 34px #ef4444; }
+        }
+        .bg-bingo-winner-flash { animation: bgBingoWinnerFlash 650ms ease-in-out infinite; }
         .bg-cell-mark { animation: bgCellMark 260ms cubic-bezier(.2,.8,.2,1) both; }
         .bg-winner-reveal { animation: bgWinnerReveal 420ms cubic-bezier(.2,.8,.2,1) both; }
         @keyframes bgConfetti { to { transform: translate3d(0,110vh,0) rotate(var(--rot)); opacity: .9 } }
         .bg-confetti { will-change: transform, opacity; backface-visibility: hidden; }
         .bg-ball-pop { animation: bgBallPop 620ms cubic-bezier(.2,.8,.2,1) both, bgBallGlow 2.8s ease-in-out 620ms 2; }
         @media (prefers-reduced-motion: reduce) {
-          .bg-anim, .bg-ball-pop, .bg-cell-mark, .bg-winner-reveal, .bg-confetti { animation: none !important; }
+          .bg-anim, .bg-ball-pop, .bg-cell-mark, .bg-winner-reveal, .bg-confetti, .bg-bingo-winner-flash { animation: none !important; }
         }
       `}</style>
 
@@ -338,11 +317,10 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 card={card}
                 marks={markSets[card.id]}
                 called={called}
-                active={active}
                 t={t}
-                onToggle={(n) => toggleMark(card.id, n)}
                 pattern={winPattern}
                 markColor={markColor}
+                isWinner={winner?.cardId === card.id}
               />
             ))}
           </div>
