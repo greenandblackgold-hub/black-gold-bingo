@@ -20,8 +20,8 @@ import { PlayerFeatures } from '@/components/play/PlayerFeatures';
 function usePlayData() {
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark } = usePlayer();
-  const { phase, winPattern, roundNumber, calledNumbers, claimBingo, winner } = useRound();
-  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, roundNumber, calledNumbers, claimBingo, winner };
+  const { phase, winPattern, calledNumbers, claimBingo, winner } = useRound();
+  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner };
 }
 
 /* ─────────────────────────── TRANSLATIONS ─────────────────────────── */
@@ -84,9 +84,12 @@ type CardViewProps = {
   t: (key: StringKey) => string;
   pattern: WinPattern;
   markColor: string;
+  canClaim: boolean;
+  claiming: boolean;
+  onClaim: () => void;
 };
 
-function CardView({ card, marks, called, t, pattern, markColor, isWinner }: CardViewProps & { isWinner: boolean }) {
+function CardView({ card, marks, called, t, pattern, markColor, isWinner, canClaim, claiming, onClaim }: CardViewProps & { isWinner: boolean }) {
   const { winningLine } = useMemo(() => analyze(card.grid, marks, called, pattern), [card.grid, marks, called, pattern]);
   const winSet = useMemo(() => new Set((winningLine ?? []).map(([r, c]) => `${r}-${c}`)), [winningLine]);
 
@@ -100,9 +103,15 @@ function CardView({ card, marks, called, t, pattern, markColor, isWinner }: Card
       ].join(' ')}
     >
       <header className="mb-2 flex justify-center sm:mb-3">
-        <span className={isWinner ? 'bg-bingo-winner-flash rounded-lg px-4 py-1 text-lg font-black tracking-[0.24em] text-yellow-100 sm:text-2xl' : 'rounded-lg px-4 py-1 text-lg font-black tracking-[0.24em] text-gold-300 sm:text-2xl'}>
-          BINGO
-        </span>
+        {canClaim ? (
+          <button type="button" onClick={onClaim} disabled={claiming} aria-label="Claim BINGO" className="bg-bingo-winner-flash cursor-pointer rounded-lg px-4 py-1 text-lg font-black tracking-[0.24em] text-yellow-100 disabled:cursor-wait sm:text-2xl">
+            BINGO
+          </button>
+        ) : (
+          <span className={isWinner ? 'bg-bingo-winner-flash rounded-lg px-4 py-1 text-lg font-black tracking-[0.24em] text-yellow-100 sm:text-2xl' : 'rounded-lg px-4 py-1 text-lg font-black tracking-[0.24em] text-gold-300 sm:text-2xl'}>
+            BINGO
+          </span>
+        )}
       </header>
 
       <div className="min-w-0 rounded-xl border border-gold-700/35 bg-black/25 p-1.5 shadow-inner shadow-black/30 sm:rounded-2xl sm:p-3">
@@ -154,11 +163,10 @@ function CardView({ card, marks, called, t, pattern, markColor, isWinner }: Card
 /* ───────────────────────────── MAIN VIEW ───────────────────────────── */
 
 export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
-  const { lang, cards, markedByCard, toggleMark, phase, winPattern, roundNumber, calledNumbers, claimBingo, winner } = usePlayData();
+  const { lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner } = usePlayData();
   const t = (k: StringKey) => (STRINGS[lang] ?? STRINGS.en)[k];
 
   const called = useMemo(() => new Set(calledNumbers), [calledNumbers]);
-  const current = calledNumbers.length ? calledNumbers[calledNumbers.length - 1] : null;
   const active = phase === 'running';
 
   const markSets = useMemo(() => {
@@ -167,24 +175,25 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
     return m;
   }, [cards, markedByCard]);
 
-  const winners = useMemo(
-    () => (active ? cards.filter((c) => analyze(c.grid, markSets[c.id], called, winPattern).winningLine) : []),
-    [active, cards, markSets, called, winPattern],
-  );
+  // The flashing claim button appears only on the exact call that first completes a card.
+  // A later call expires it, even when the card remains complete.
+  const claimableCards = useMemo(() => {
+    if (!active || calledNumbers.length === 0) return [];
+    const beforeLastCall = new Set(calledNumbers.slice(0, -1));
+    return cards.filter((card) =>
+      findWinningPattern(card.grid, called, winPattern).missing === 0 &&
+      findWinningPattern(card.grid, beforeLastCall, winPattern).missing > 0
+    );
+  }, [active, cards, calledNumbers, called, winPattern]);
 
-  const [claiming, setClaiming] = useState(false);
+  const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
   const [cardColumns, setCardColumns] = useState(2);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [cardOrder, setCardOrder] = useState<'oldest'|'newest'>('oldest');
   const [markColor, setMarkColor] = useState('#d4af37');
   const [confetti, setConfetti] = useState(false);
   const stopConfetti = useCallback(() => setConfetti(false), []);
-  const [sentRound, setSentRound] = useState<number | null>(null);
-  const claimed = sentRound === roundNumber;
-  const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
-  const messageTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => () => clearTimeout(messageTimer.current), []);
+  
 
   useEffect(() => {
     const load = () => { try { const cols=Number(localStorage.getItem('bgb.cardsPerRow')); setCardColumns([2,3,4].includes(cols)?cols:2);  setCardOrder(localStorage.getItem('bgb.cardOrder')==='newest'?'newest':'oldest'); setMarkColor(localStorage.getItem('bgb.markColor')||'#d4af37'); const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]'); setSelectedCardIds(Array.isArray(ids)?ids:[]); } catch { /* retain defaults */ } };
@@ -196,12 +205,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
     for (const card of cards) { const marks=new Set(markedByCard[card.id]??[]); for (const n of calledNumbers) if (card.grid.some(row=>row.includes(n)) && !marks.has(n)) { toggleMark(card.id,n); marks.add(n); } }
   }, [active,calledNumbers,cards,markedByCard,toggleMark]);
 
-  const flash = (kind: 'ok' | 'err', text: string) => {
-    setMessage({ kind, text });
-    clearTimeout(messageTimer.current);
-    messageTimer.current = setTimeout(() => setMessage(null), 5000);
-  };
-
   // The host decides: celebrate when the accepted winner is one of my cards.
   const celebrated = useRef<number | null>(null);
   const iWon = !!winner && cards.some((c) => c.id === winner.cardId);
@@ -209,25 +212,16 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
     if (!winner || !iWon || celebrated.current === winner.at) return;
     celebrated.current = winner.at;
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) setConfetti(true);
-    flash('ok', t('won'));
     play('win');
   }, [winner, iWon]);
 
-  const handleClaim = async () => {
-    if (!winners.length || claiming) return;
-    setClaiming(true);
+  const handleClaim = async (cardId: string) => {
+    if (claimingCardId) return;
+    setClaimingCardId(cardId);
     try {
-      const res = await claimBingo(winners[0].id);
-      if (res.ok) {
-        setSentRound(roundNumber);
-        flash('ok', t('claimSent'));
-      } else {
-        flash('err', t('invalid'));
-      }
-    } catch {
-      flash('err', t('invalid'));
+      await claimBingo(cardId, calledNumbers.length);
     } finally {
-      setClaiming(false);
+      setClaimingCardId(null);
     }
   };
 
@@ -321,41 +315,15 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 pattern={winPattern}
                 markColor={markColor}
                 isWinner={winner?.cardId === card.id}
+                canClaim={claimableCards.some((candidate) => candidate.id === card.id)}
+                claiming={claimingCardId === card.id}
+                onClaim={() => void handleClaim(card.id)}
               />
             ))}
           </div>
         )}
       </div>
 
-
-      {/* Claim bar (sits above BottomNav) */}
-      {(winners.length > 0 || message) && (
-        <div className="fixed inset-x-0 bottom-24 z-40 px-4">
-          <div className="mx-auto max-w-md space-y-2">
-            {message && (
-              <p
-                role="status"
-                className={[
-                  'rounded-xl px-4 py-2 text-center text-sm font-semibold',
-                  message.kind === 'ok' ? 'bg-gold-400 text-darkbg' : 'bg-red-900/80 text-red-100',
-                ].join(' ')}
-              >
-                {message.text}
-              </p>
-            )}
-            {winners.length > 0 && (
-              <button
-                type="button"
-                onClick={handleClaim}
-                disabled={claiming || claimed}
-                className="w-full rounded-2xl bg-gradient-to-br from-gold-300 via-gold-400 to-gold-600 py-4 text-xl font-black text-darkbg shadow-[0_10px_40px_-6px_rgba(255,215,0,0.7)] active:scale-95 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
-              >
-                {claiming ? t('claiming') : claimed ? t('claimWaiting') : t('claim')}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       {confetti && <Confetti onDone={stopConfetti} />}
     </div>

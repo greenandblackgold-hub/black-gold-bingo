@@ -206,13 +206,15 @@ export function RoundProvider({ children }: { children: ReactNode }) {
   );
 
   const claimBingo = useCallback(
-    async (cardId: string): Promise<{ ok: boolean }> => {
+    async (cardId: string, expectedCallCount: number): Promise<{ ok: boolean }> => {
       const g = gameRef.current;
-      if (g.phase !== 'running') return { ok: false };
+      if (g.phase !== 'running' || g.calledNumbers.length !== expectedCallCount) return { ok: false };
       const local = cards.find((c) => c.id === cardId);
       if (!local) return { ok: false };
       await delay(250);
-      if (!serverClaim(cardId, gameRef.current.calledNumbers, local, gameRef.current.winPattern ?? 'any_line')) {
+      const latest = gameRef.current;
+      if (latest.phase !== 'running' || latest.roundNumber !== g.roundNumber || latest.calledNumbers.length !== expectedCallCount ||
+          !serverClaim(cardId, latest.calledNumbers, local, latest.winPattern ?? 'any_line')) {
         play('error');
         return { ok: false };
       }

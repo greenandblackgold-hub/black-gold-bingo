@@ -218,9 +218,9 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
     [apply],
   );
 
-  const claimBingo = useCallback(async (cardId: string) => {
+  const claimBingo = useCallback(async (cardId: string, expectedCallCount: number) => {
     try {
-      const r = await api.post<{ ok: boolean }>('/api/claim', { cardId });
+      const r = await api.post<{ ok: boolean }>('/api/claim', { cardId, expectedCallCount });
       if (!r.ok) play('error');
       return { ok: r.ok };
     } catch {

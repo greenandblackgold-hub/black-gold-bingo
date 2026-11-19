@@ -406,19 +406,22 @@ test('a full round: winner prize stays pending until an admin approves it', asyn
   assert.equal((await api('POST', '/api/claim', { token: a.token, body: { cardId: ca[0].id } })).json.error, 'wrong_phase');
 
   await api('POST', '/api/admin/round/start', { token: ctx.adminToken });
-  assert.equal((await api('POST', '/api/claim', { token: a.token, body: { cardId: ca[0].id } })).json.reason, 'pattern_incomplete');
+  assert.equal((await api('POST', '/api/claim', { token: a.token, body: { cardId: ca[0].id, expectedCallCount: 0 } })).json.reason, 'pattern_incomplete');
   await drawAll();
   assert.equal((await api('POST', '/api/admin/draw', { token: ctx.adminToken })).json.error, 'all_drawn');
   assert.equal((await api('GET', '/api/game')).json.calledNumbers.length, 75);
 
+  // A claim tied to the previous call snapshot expires as soon as another number is called.
+  assert.equal((await api('POST', '/api/claim', { token: a.token, body: { cardId: ca[0].id, expectedCallCount: 74 } })).json.reason, 'claim_expired');
+
   // Cannot claim someone else's card or a card that does not exist.
-  assert.equal((await api('POST', '/api/claim', { token: a.token, body: { cardId: cb[0].id } })).json.error, 'not_your_card');
-  assert.equal((await api('POST', '/api/claim', { token: a.token, body: { cardId: 'BG-ZZZZZZ' } })).json.error, 'card_not_found');
+  assert.equal((await api('POST', '/api/claim', { token: a.token, body: { cardId: cb[0].id, expectedCallCount: 75 } })).json.error, 'not_your_card');
+  assert.equal((await api('POST', '/api/claim', { token: a.token, body: { cardId: 'BG-ZZZZZZ', expectedCallCount: 75 } })).json.error, 'card_not_found');
 
   // Both claim at the same instant: exactly one wins.
   const [ra, rb] = await Promise.all([
-    api('POST', '/api/claim', { token: a.token, body: { cardId: ca[0].id } }),
-    api('POST', '/api/claim', { token: b.token, body: { cardId: cb[0].id } }),
+    api('POST', '/api/claim', { token: a.token, body: { cardId: ca[0].id, expectedCallCount: 75 } }),
+    api('POST', '/api/claim', { token: b.token, body: { cardId: cb[0].id, expectedCallCount: 75 } }),
   ]);
   const wins = [ra, rb].filter((r) => r.json.ok === true);
   assert.equal(wins.length, 1, `expected one winner, got ${JSON.stringify([ra.json, rb.json])}`);
