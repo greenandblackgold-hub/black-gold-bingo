@@ -52,7 +52,7 @@ const descriptions: Record<'am' | 'en', Partial<Record<WinPattern, string>>> = {
     arrow_down:'ወደ ታች የሚያመለክተውን ቀስትና ግንዱን ሙሉ ያድርጉ።',
     star:'የኮከብ ቅርጹን የሚፈጥሩትን ሳጥኖች ሙሉ ያድርጉ።',
     cross_and_corners:'መካከለኛውን መስቀልና አራቱን የካርዱ ማዕዘኖች ሙሉ ያድርጉ።',
-    frame_and_center:'የውጫዊውን ፍሬምና መካከለኛውን FREE ሳጥን በሚያካትተው ቅርጽ የሚፈለጉትን የድንበር ሳጥኖች ሙሉ ያድርጉ።',
+    frame_and_center:'የውጫዊውን ፍሬምና በመካከለኛው FREE ዙሪያ ያሉትን አራት ውስጣዊ ጫፎች ሙሉ ያድርጉ።',
     double_cross:'መካከለኛውን መስቀልና ሁለቱን ሰያፍ መስመሮች በአንድ ጊዜ ሙሉ ያድርጉ።',
     nine_pack:'በካርዱ ላይ በማንኛውም ቦታ የሚገኝ 3×3 ዘጠኝ ሳጥኖች ካሬ ሙሉ ያድርጉ።',
     filled_diamond:'በመካከሉ የተሞላ የአልማዝ ቅርጽ ያላቸውን 13 ሳጥኖች ሙሉ ያድርጉ።',
@@ -83,7 +83,7 @@ const descriptions: Record<'am' | 'en', Partial<Record<WinPattern, string>>> = {
     x:'Complete both diagonals together to form an X.', t:'Complete the top row and center column to form a T.', l:'Complete the left column and bottom row to form an L.', plus:'Complete the middle row and middle column to form a plus sign.', diamond:'Complete the diamond-shaped cells around the center.',
     z:'Complete the top and bottom rows plus the reverse diagonal to form Z.', u:'Complete both outside columns and the bottom row to form U.', s:'Complete the three horizontal bands and alternating ends to form S.',
     arrow_up:'Complete the upward arrowhead and its center-column shaft.', arrow_down:'Complete the downward arrowhead and its center-column shaft.', star:'Complete the star-shaped cells.',
-    cross_and_corners:'Complete the center cross and all four corner cells.', frame_and_center:'Complete the outside frame; the center FREE cell is shown as the center marker.', double_cross:'Complete the center cross and both diagonals together.',
+    cross_and_corners:'Complete the center cross and all four corner cells.', frame_and_center:'Complete the outside frame and the four inner corner cells surrounding the center FREE space.', double_cross:'Complete the center cross and both diagonals together.',
   },
 };
 
