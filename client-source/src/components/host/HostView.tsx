@@ -177,9 +177,9 @@ export function HostView() {
         <select id="win-pattern" value={h.winPattern} disabled={h.phase !== 'waiting'}
           onChange={(e) => h.setWinPattern(e.target.value as WinPattern)}
           className="w-full rounded-xl bg-zinc-900 px-4 py-3 text-gold-300 ring-1 ring-gold-700/60 disabled:opacity-50">
-          {WIN_PATTERN_OPTIONS.map((pattern) => <option key={pattern} value={pattern}>{patternNames[lang][pattern]}</option>)}
+          {WIN_PATTERN_OPTIONS.map((pattern) => <option key={pattern} value={pattern}>{patternNames[h.lang][pattern]}</option>)}
         </select>
-        <PatternGuide pattern={h.winPattern} lang={lang} compact />
+        <PatternGuide pattern={h.winPattern} lang={h.lang} compact />
         <p className="mt-2 text-xs text-gold-600">{h.phase === 'waiting' ? 'ዙሩን ከመጀመርዎ በፊት ይምረጡ። ዙሩ ከጀመረ በኋላ መቀየር አይቻልም።' : 'ቅጡ የሚቀየረው ቀጣይ ዙር ከመጀመሩ በፊት ብቻ ነው።'}</p>
       </section>
 
