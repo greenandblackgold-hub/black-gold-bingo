@@ -19,6 +19,7 @@ export function createMemoryRepo() {
   const phoneChallenges = new Map();
   const pinResetChallenges = new Map();
   let game = { ...DEFAULT_GAME, calledNumbers: [] };
+  let nextCardSerial = 1;
 
   const credit = (userId, amount, kind, ref, meta = {}) => {
     const user = users.get(userId);
@@ -118,6 +119,12 @@ export function createMemoryRepo() {
     },
 
     /* cards */
+    async reserveCardSerials(round, count) {
+      if (game.phase !== 'waiting' || game.roundNumber !== round) throw new RepoError('ROUND_NOT_OPEN');
+      const first = nextCardSerial;
+      nextCardSerial += count;
+      return Array.from({ length: count }, (_, i) => String(first + i).padStart(5, '0'));
+    },
     async purchaseCards({ userId, cost, cards: newCards, round, ref }) {
       if (game.phase !== 'waiting' || game.roundNumber !== round) throw new RepoError('ROUND_NOT_OPEN');
       if (newCards.some((c) => typeof c.serial === 'string' && [...cards.values()].some((old) => old.round === round && old.serial === c.serial))) throw new RepoError('CARD_NUMBER_TAKEN');
