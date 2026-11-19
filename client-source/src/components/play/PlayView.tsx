@@ -96,7 +96,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
   return (
     <section
       className={[
-        'relative overflow-hidden rounded-[1.35rem] border bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.012)_38%,rgba(0,0,0,0.18))] p-3 shadow-xl shadow-black/25 transition-all duration-300 sm:p-4',
+        'relative min-w-0 w-full overflow-hidden rounded-[1.35rem] border bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.012)_38%,rgba(0,0,0,0.18))] p-1.5 shadow-xl shadow-black/25 transition-all duration-300 sm:p-4',
         hasWin
           ? 'border-gold-300/90 ring-2 ring-gold-400/80 shadow-[0_0_42px_-8px_rgba(255,215,0,0.58)]'
           : 'border-gold-700/45 ring-1 ring-gold-700/25 hover:border-gold-500/60',
@@ -105,7 +105,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
       {hasWin && (
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-gold-300 to-transparent" aria-hidden="true" />
       )}
-      <header className="mb-3 flex items-center justify-between gap-2">
+      <header className="mb-2 flex min-w-0 items-center justify-between gap-1 sm:mb-3 sm:gap-2">
         <div className="min-w-0">
           <p className="text-[9px] font-black uppercase tracking-[0.22em] text-gold-600">GOLD EDITION</p>
           <h3 className="mt-0.5 truncate font-bold text-gold-200">
@@ -116,7 +116,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
         {active && (
           <span
             className={[
-              'shrink-0 rounded-full border px-3 py-1 text-[11px] font-black tabular-nums tracking-wide transition-colors',
+              'shrink-0 rounded-full border px-1.5 py-1 text-[9px] font-black tabular-nums tracking-wide transition-colors sm:px-3 sm:text-[11px]',
               hasWin
                 ? 'border-gold-200 bg-gradient-to-r from-gold-200 via-gold-400 to-gold-500 text-darkbg shadow-[0_0_20px_rgba(255,215,0,.35)]'
                 : toGo <= 2
@@ -129,8 +129,8 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
         )}
       </header>
 
-      <div className="rounded-2xl border border-gold-700/35 bg-black/25 p-2.5 shadow-inner shadow-black/30 sm:p-3">
-        <div className="mb-2 grid grid-cols-5 gap-1.5 text-center">
+      <div className="min-w-0 rounded-xl border border-gold-700/35 bg-black/25 p-1.5 shadow-inner shadow-black/30 sm:rounded-2xl sm:p-3">
+        <div className="mb-1 grid grid-cols-5 gap-0.5 text-center sm:mb-2 sm:gap-1.5">
           {LETTERS.map((l) => (
             <span key={l} className="rounded-lg border border-gold-500/20 bg-gradient-to-b from-gold-400/20 to-gold-500/[0.04] py-1.5 text-xs font-black tracking-widest text-gold-300 shadow-sm sm:py-2 sm:text-sm">
               {l}
@@ -138,7 +138,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
           ))}
         </div>
 
-        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+        <div className="grid min-w-0 grid-cols-5 gap-0.5 sm:gap-2">
         {card.grid.flatMap((row, r) =>
           row.map((v, c) => {
             const isFree = v === null;
@@ -155,7 +155,7 @@ function CardView({ card, marks, called, active, t, onToggle, pattern, markColor
                 aria-label={isFree ? t('free') : `${LETTERS[c]} ${v}`}
                 onClick={() => v !== null && isCalled && onToggle(v)}
                 className={[
-                  'relative grid aspect-square min-w-0 place-items-center overflow-hidden rounded-lg border text-base font-extrabold tabular-nums shadow-sm transition-all duration-200 active:scale-[0.91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-200 sm:rounded-xl sm:text-lg',
+                  'relative grid aspect-square min-w-0 place-items-center overflow-hidden rounded-md border text-[10px] font-extrabold tabular-nums shadow-sm transition-all duration-200 active:scale-[0.91] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-200 sm:rounded-xl sm:text-lg',
                   isMarked && !isCalled
                     ? 'border-white/70 text-[#17130a] shadow-[inset_0_1px_0_rgba(255,255,255,.65),0_3px_12px_rgba(212,175,55,.22)] bg-cell-mark'
                     : 'border-white/[0.055] bg-gradient-to-br from-white/[0.065] to-white/[0.015] text-gold-200/90 hover:border-gold-500/40',
@@ -331,7 +331,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             </button>
           </div>
         ) : (
-          <div className="grid gap-4" style={{gridTemplateColumns: `repeat(${cardColumns}, minmax(0, 1fr))`}}>
+          <div className="grid w-full min-w-0 gap-2 sm:gap-4" style={{gridTemplateColumns: `repeat(${cardColumns}, minmax(0, 1fr))`}}>
             {[...cards].sort((a,b)=>cardOrder==='oldest'?Number(a.serial)-Number(b.serial):Number(b.serial)-Number(a.serial)).filter(card=>selectedCardIds.length===0||selectedCardIds.includes(card.id)).map((card) => (
               <CardView
                 key={card.id}
