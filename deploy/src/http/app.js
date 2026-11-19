@@ -293,6 +293,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   admin('POST', '/api/admin/deposits/:txRef/reject', async ({ params, body }) =>
     wallet.rejectSimulationDeposit(decodeURIComponent(params.txRef), body.note),
   );
+  admin('POST', '/api/admin/cards/:id/unlock', async ({ params }) => game.unlockCard(decodeURIComponent(params.id)));
   admin('POST', '/api/admin/round/start', async () => (await game.startRound(), game.getPublicState()));
   admin('POST', '/api/admin/round/end', async () => (await game.endRound(), game.getPublicState()));
   admin('POST', '/api/admin/round/reset', async () => (await game.resetRound(), game.getPublicState()));

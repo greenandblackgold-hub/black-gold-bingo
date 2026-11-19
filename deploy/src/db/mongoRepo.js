@@ -186,6 +186,20 @@ export async function createMongoRepo({ uri, dbName }) {
     },
 
     /* cards */
+    async reserveCardSerials(round, count, requestedSerial) {
+      const update = requestedSerial !== undefined && requestedSerial !== null
+        ? { $max: { nextCardSerial: Number(requestedSerial) + 1 } }
+        : { $inc: { nextCardSerial: count } };
+      const game = await games.findOneAndUpdate(
+        { _id: 'state', phase: 'waiting', roundNumber: round },
+        update,
+        { returnDocument: 'after', projection: { nextCardSerial: 1 } },
+      );
+      if (!game) throw new RepoError('ROUND_NOT_OPEN');
+      if (requestedSerial !== undefined && requestedSerial !== null) return [String(requestedSerial)];
+      const first = game.nextCardSerial - count + 1;
+      return Array.from({ length: count }, (_, i) => String(first + i).padStart(5, '0'));
+    },
     async purchaseCards({ userId, cost, cards: newCards, round, ref }) {
       return tx(async (session) => {
         const g = await games.findOneAndUpdate(
@@ -214,6 +228,26 @@ export async function createMongoRepo({ uri, dbName }) {
     },
     async getCard(code) {
       return toDoc(await cards.findOne({ code }));
+    },
+    async lockCard({ code, userId, round, expectedVersion }) {
+      return tx(async (session) => {
+        const game = await games.updateOne(
+          { _id: 'state', phase: 'running', roundNumber: round, version: expectedVersion },
+          { $inc: { version: 1 } },
+          { session },
+        );
+        if (!game.matchedCount) return false;
+        const result = await cards.updateOne(
+          { code, userId, round, lockedAt: { $exists: false } },
+          { $set: { lockedAt: new Date(), lockReason: 'false_bingo' } },
+          { session },
+        );
+        return result.modifiedCount === 1;
+      });
+    },
+    async unlockCard(code) {
+      const result = await cards.updateOne({ code, lockedAt: { $exists: true } }, { $unset: { lockedAt: '', lockReason: '' } });
+      return result.modifiedCount === 1;
     },
 
     /** End the round and enqueue a prize; wallet credit is deferred until admin approval. */

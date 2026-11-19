@@ -102,8 +102,11 @@ function CardView({ card, marks, called, t, pattern, markColor, isWinner, canCla
           : 'border-gold-700/45 ring-1 ring-gold-700/25 hover:border-gold-500/60',
       ].join(' ')}
     >
-      <header className="mb-2 flex justify-center sm:mb-3">
-        {canClaim ? (
+      <header className="mb-2 flex items-center justify-between gap-2 sm:mb-3">
+        <span className="rounded-md border border-gold-500/25 bg-black/30 px-2 py-1 text-xs font-black tabular-nums tracking-wider text-gold-300">#{String(card.serial).padStart(5, '0')}</span>
+        {card.locked ? (
+          <span role="status" className="rounded-lg border border-red-500/50 bg-red-950/60 px-3 py-1 text-xs font-black tracking-[0.16em] text-red-200">LOCKED</span>
+        ) : canClaim ? (
           <button type="button" onClick={onClaim} disabled={claiming} aria-label="Claim BINGO" className="bg-bingo-winner-flash cursor-pointer rounded-lg px-4 py-1 text-lg font-black tracking-[0.24em] text-yellow-100 disabled:cursor-wait sm:text-2xl">
             BINGO
           </button>
@@ -180,7 +183,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const claimableCards = useMemo(() => {
     if (!active || calledNumbers.length === 0) return [];
     const beforeLastCall = new Set(calledNumbers.slice(0, -1));
-    return cards.filter((card) =>
+    return cards.filter((card) => !card.locked &&
       findWinningPattern(card.grid, called, winPattern).missing === 0 &&
       findWinningPattern(card.grid, beforeLastCall, winPattern).missing > 0
     );
