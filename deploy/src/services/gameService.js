@@ -210,11 +210,19 @@ export function createGameService({ repo, config, now = Date.now }) {
       if (requestedSerial !== undefined && requestedSerial !== null && (n !== 1 || !/^\d{5}$/.test(String(requestedSerial)))) {
         throw new HttpError(400, 'invalid_card_number', 'Enter one unique five-digit card number and buy one card at a time');
       }
-      const owned = await repo.countCards(user.id, g.roundNumber);
+      let serials;
+      try {
+        serials = requestedSerial !== undefined && requestedSerial !== null
+          ? [String(requestedSerial)]
+          : await repo.reserveCardSerials(g.roundNumber, n);
+      } catch (e) {
+        if (e instanceof RepoError && e.code === 'ROUND_NOT_OPEN') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
+        throw e;
+      }
       const cards = Array.from({ length: n }, (_, i) => {
         const code = newCardCode();
         const grid = generateGrid();
-        return { code, serial: requestedSerial !== undefined && requestedSerial !== null ? String(requestedSerial) : String(10000 + randomInt(90000)), grid, sig: signCard(code, g.roundNumber, grid) };
+        return { code, serial: serials[i], grid, sig: signCard(code, g.roundNumber, grid) };
       });
       try {
         const res = await repo.purchaseCards({
