@@ -81,14 +81,12 @@ type CardViewProps = {
   card: BingoCard;
   marks: Set<number>;
   called: Set<number>;
-  active: boolean;
   t: (key: StringKey) => string;
-  onToggle: (n: number) => void;
   pattern: WinPattern;
   markColor: string;
 };
 
-function CardView({ card, marks, called, active, t, onToggle, pattern, markColor, isWinner }: CardViewProps & { isWinner: boolean }) {
+function CardView({ card, marks, called, t, pattern, markColor, isWinner }: CardViewProps & { isWinner: boolean }) {
   const { winningLine } = useMemo(() => analyze(card.grid, marks, called, pattern), [card.grid, marks, called, pattern]);
   const winSet = useMemo(() => new Set((winningLine ?? []).map(([r, c]) => `${r}-${c}`)), [winningLine]);
 
@@ -319,9 +317,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 card={card}
                 marks={markSets[card.id]}
                 called={called}
-                active={active}
                 t={t}
-                onToggle={(n) => toggleMark(card.id, n)}
                 pattern={winPattern}
                 markColor={markColor}
                 isWinner={winner?.cardId === card.id}
