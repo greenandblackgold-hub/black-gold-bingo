@@ -672,7 +672,7 @@ export const patternNames: Record<Lang, Record<WinPattern, string>> = {
     left_right: 'ግራና ቀኝ', checkerboard: 'ቼከርቦርድ', center_cross: 'መካከለኛ መስቀል', coverall: 'ሙሉ ካርድ',
     line_through_free: 'ፍሪ የሚነካ መስመር', line_avoiding_free: 'ፍሪ የማይነካ መስመር', two_lines_through_free: 'ፍሪ የሚነኩ ሁለት መስመሮች', two_lines_avoiding_free: 'ፍሪ የማይነኩ ሁለት መስመሮች',
     two_rectangles_touching: 'የሚገናኙ ሁለት ሬክታንግሎች', two_rectangles_separate: 'የተለያዩ ሁለት ሬክታንግሎች', inner_frame: 'ውስጣዊ ፍሬም', inner_square: 'ውስጣዊ 3×3 ካሬ', four_postage_stamps: 'አራት ፖስታ ስታምፖች',
-    z: 'Z ቅርጽ', u: 'U ቅርጽ', s: 'S ቅርጽ', arrow_up: 'ወደ ላይ ቀስት', arrow_down: 'ወደ ታች ቀስት', star: 'ኮከብ', cross_and_corners: 'መስቀልና አራቱ ማዕዘኖች', frame_and_center: 'ፍሬምና መካከለኛው', double_cross: 'ድርብ መስቀል', nine_pack: '3×3 ዘጠኝ ሳጹናት', filled_diamond: 'ምሉእ ኣልማዝ', window_pane: 'ክፍልታት መስኮት', staircase: 'ቅርጺ ደረጃ', hourglass: 'ቅርጺ ሰዓት', bow_tie: 'ቅርጺ ክራቫት', ladder: 'መሳልል', railroad_tracks: 'መንገዲ ባቡር', lucky_seven: 'ዕድለኛ ሸውዓተ', letter_h: 'ቅርጺ H', letter_e: 'ቅርጺ E', letter_c: 'ቅርጺ C', letter_n: 'ቅርጺ N', letter_w: 'ቅርጺ W', nine_pack: '3×3 ዘጠኝ ሳጥኖች', filled_diamond: 'ሙሉ አልማዝ', window_pane: 'የመስኮት ክፍሎች', staircase: 'ደረጃ ቅርጽ', hourglass: 'የሰዓት መለኪያ', bow_tie: 'የክራቫት ቅርጽ', ladder: 'መሰላል', railroad_tracks: 'የባቡር ሀዲድ', lucky_seven: 'ዕድለኛ ሰባት', letter_h: 'H ቅርጽ', letter_e: 'E ቅርጽ', letter_c: 'C ቅርጽ', letter_n: 'N ቅርጽ', letter_w: 'W ቅርጽ',
+    z: 'Z ቅርጽ', u: 'U ቅርጽ', s: 'S ቅርጽ', arrow_up: 'ወደ ላይ ቀስት', arrow_down: 'ወደ ታች ቀስት', star: 'ኮከብ', cross_and_corners: 'መስቀልና አራቱ ማዕዘኖች', frame_and_center: 'ፍሬምና መካከለኛው', double_cross: 'ድርብ መስቀል', nine_pack: '3×3 ዘጠኝ ሳጥኖች', filled_diamond: 'ሙሉ አልማዝ', window_pane: 'የመስኮት ክፍሎች', staircase: 'ደረጃ ቅርጽ', hourglass: 'የሰዓት መለኪያ', bow_tie: 'የክራቫት ቅርጽ', ladder: 'መሰላል', railroad_tracks: 'የባቡር ሀዲድ', lucky_seven: 'ዕድለኛ ሰባት', letter_h: 'H ቅርጽ', letter_e: 'E ቅርጽ', letter_c: 'C ቅርጽ', letter_n: 'N ቅርጽ', letter_w: 'W ቅርጽ',
   },
   ti: {
     any_line: 'ሓደ መስመር', horizontal_line: 'ኣግዳሚ መስመር', vertical_line: 'ቁመታዊ መስመር',
@@ -685,6 +685,7 @@ export const patternNames: Record<Lang, Record<WinPattern, string>> = {
     line_through_free: 'መስመር ብፍሪ ዝሓልፍ', line_avoiding_free: 'ብፍሪ ዘይሓልፍ መስመር', two_lines_through_free: 'ክልተ መስመራት ብፍሪ ዝሓልፋ', two_lines_avoiding_free: 'ክልተ መስመራት ብፍሪ ዘይሓልፋ',
     two_rectangles_touching: 'ዝተራኸቡ ክልተ ሬክታንግል', two_rectangles_separate: 'ዝተፈላለዩ ክልተ ሬክታንግል', inner_frame: 'ውሽጣዊ ፍሬም', inner_square: 'ውሽጣዊ 3×3 ካሬ', four_postage_stamps: 'ኣርባዕተ ማሕተማት ፖስታ',
     z: 'ቅርጺ Z', u: 'ቅርጺ U', s: 'ቅርጺ S', arrow_up: 'ልዕሊ ዝመርሕ ፍላጻ', arrow_down: 'ታሕቲ ዝመርሕ ፍላጻ', star: 'ኮኾብ', cross_and_corners: 'መስቀልን ኣርባዕተ ኩርናዓትን', frame_and_center: 'ፍሬምን ማእከልን', double_cross: 'ድርብ መስቀል',
+    nine_pack: '3×3 ዘጠኝ ሳጹናት', filled_diamond: 'ምሉእ ኣልማዝ', window_pane: 'ክፍልታት መስኮት', staircase: 'ቅርጺ ደረጃ', hourglass: 'ቅርጺ ሰዓት', bow_tie: 'ቅርጺ ክራቫት', ladder: 'መሳልል', railroad_tracks: 'መንገዲ ባቡር', lucky_seven: 'ዕድለኛ ሸውዓተ', letter_h: 'ቅርጺ H', letter_e: 'ቅርጺ E', letter_c: 'ቅርጺ C', letter_n: 'ቅርጺ N', letter_w: 'ቅርጺ W',
   },
   en: {
     any_line: 'Any line', horizontal_line: 'Horizontal line', vertical_line: 'Vertical line',
