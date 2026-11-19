@@ -100,7 +100,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       const s = stateRef.current;
       const total = count * cardPrice;
       if (requestedSerial && (count !== 1 || !/^\d{5}$/.test(requestedSerial) || s.cards.some((c) => String(c.serial) === requestedSerial))) return { ok: false, error: 'ይህ የካርድ ቁጥር ተይዟል ወይም ልክ አይደለም።' };
-      if (!Number.isInteger(count) || count < 1 || total > s.balance) return { ok: false };
+      if (!Number.isInteger(count) || count < 1 || count > 10 || total > s.balance) return { ok: false };
 
       const bought: BingoCard[] = Array.from({ length: count }, (_, i) => ({
         id: newCardId(),
