@@ -137,8 +137,8 @@ export function createMemoryRepo() {
     },
 
     /** End the round and create a pending prize request; never credit the wallet here. */
-    async settleWin({ round, card, prize, ref }) {
-      if (game.phase !== 'running' || game.roundNumber !== round) return null;
+    async settleWin({ round, expectedVersion, card, prize, ref }) {
+      if (game.phase !== 'running' || game.roundNumber !== round || game.version !== expectedVersion) return null;
       const id = ref;
       if (winPayouts.has(id)) return null;
       const at = new Date();
