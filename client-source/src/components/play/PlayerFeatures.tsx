@@ -120,7 +120,6 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             {[
               ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
-              ['የዙሩ የተሸጡ ካርዶች', SERVER_MODE && roundCardCount !== undefined ? String(roundCardCount) : '—'],
               ['የአሁኑ ዋና ሽልማት', SERVER_MODE && roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ETB` : '—'],
               ['አካውንት ቀሪ ሂሳብ', `${formatAmount(lang, balance)} ETB`],
               ['ጠቅላላ ካርቴላ', String(cards.length)],
