@@ -173,7 +173,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const [clockNow, setClockNow] = useState(() => Date.now());
   useEffect(() => {
     if (phase !== 'running' || !nextCallAt) return;
-    const timer = window.setInterval(() => setClockNow(Date.now()), 250);
+    const timer = window.setInterval(() => setClockNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [phase, nextCallAt]);
   const nextCallSeconds = nextCallAt && phase === 'running'
@@ -183,11 +183,11 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
     ? null
     : `${String(Math.floor(nextCallSeconds / 60)).padStart(2, '0')}:${String(nextCallSeconds % 60).padStart(2, '0')}`;
   const roundStatus = {
-    am: { waiting: 'በመጠባበቅ ላይ', live: 'ቀጥታ ጨዋታ', ended: 'ዙር ተጠናቋል', next: 'ቀጣዩ ቁጥር እስኪጠራ የቀረው ጊዜ', manual: 'ቀጣዩ ቁጥር በሆስቱ ሲጠራ ይታያል', round: 'ዙር', called: 'የተጠሩ ቁጥሮች' },
-    ti: { waiting: 'ይጽበ ኣሎ', live: 'ቀጥታ ጸወታ', ended: 'ዙር ተዛዚሙ', next: 'ክሳብ ዝቕጽል ቁጽሪ ዝጽዋዕ ዝተረፈ ግዜ', manual: 'ቀጻሊ ቁጽሪ ምስ ብሆስት ዝጽዋዕ ክርአ እዩ', round: 'ዙር', called: 'ዝተጸውዑ ቁጽርታት' },
-    en: { waiting: 'Waiting for the round', live: 'Live game', ended: 'Round completed', next: 'Time until the next number', manual: 'The next number appears when the host calls it', round: 'Round', called: 'Numbers called' },
+    am: { waiting: 'በመጠባበቅ ላይ', waitingHint: 'ሆስቱ ዙሩን ሲጀምር ጨዋታው ይጀምራል', live: 'ቀጥታ ጨዋታ', ended: 'ዙር ተጠናቋል', endedHint: 'ቀጣዩ ዙር እስኪዘጋጅ ይጠብቁ', next: 'ቀጣዩ ቁጥር እስኪጠራ የቀረው ጊዜ', manual: 'ቀጣዩ ቁጥር በሆስቱ ሲጠራ ይታያል', round: 'ዙር', called: 'የተጠሩ ቁጥሮች' },
+    ti: { waiting: 'ይጽበ ኣሎ', waitingHint: 'ሆስት ዙር ክጅምር እንከሎ ጸወታ ክጅምር እዩ', live: 'ቀጥታ ጸወታ', ended: 'ዙር ተዛዚሙ', endedHint: 'ቀጻሊ ዙር ክሳብ ዝዳሎ ተጸበዩ', next: 'ክሳብ ዝቕጽል ቁጽሪ ዝጽዋዕ ዝተረፈ ግዜ', manual: 'ቀጻሊ ቁጽሪ ምስ ብሆስት ዝጽዋዕ ክርአ እዩ', round: 'ዙር', called: 'ዝተጸውዑ ቁጽርታት' },
+    en: { waiting: 'Waiting for the round', waitingHint: 'The game will begin when the host starts the round', live: 'Live game', ended: 'Round completed', endedHint: 'Waiting for the next round to be prepared', next: 'Time until the next number', manual: 'The next number appears when the host calls it', round: 'Round', called: 'Numbers called' },
   }[lang] ?? {
-    waiting: 'Waiting for the round', live: 'Live game', ended: 'Round completed', next: 'Time until the next number', manual: 'The next number appears when the host calls it', round: 'Round', called: 'Numbers called',
+    waiting: 'Waiting for the round', waitingHint: 'The game will begin when the host starts the round', live: 'Live game', ended: 'Round completed', endedHint: 'Waiting for the next round to be prepared', next: 'Time until the next number', manual: 'The next number appears when the host calls it', round: 'Round', called: 'Numbers called',
   };
 
   const called = useMemo(() => new Set(calledNumbers), [calledNumbers]);
@@ -340,7 +340,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 </>
               ) : (
                 <p className="text-sm font-medium text-gold-300/90">
-                  {phase === 'waiting' ? roundStatus.waiting : phase === 'running' ? roundStatus.manual : roundStatus.ended}
+                  {phase === 'waiting' ? roundStatus.waitingHint : phase === 'running' ? roundStatus.manual : roundStatus.endedHint}
                 </p>
               )}
             </div>
