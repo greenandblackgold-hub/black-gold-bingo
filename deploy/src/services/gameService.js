@@ -244,9 +244,14 @@ export function createGameService({ repo, config, now = Date.now }) {
      * BINGO claim. The server decides from ITS OWN record of the card and the called numbers; the browser's marks
      * are irrelevant. The first valid claim wins atomically; later claims get `already_won`.
      */
-    async claim(user, cardCode) {
+    async claim(user, cardCode, expectedCallCount) {
       const g = await repo.getGame();
       if (g.phase !== 'running') throw new HttpError(409, 'wrong_phase', 'No round is running');
+      // A claim belongs to the exact called-number snapshot shown when the player clicked BINGO.
+      // Any subsequent draw expires that opportunity, even if the card still has a winning pattern.
+      if (!Number.isInteger(expectedCallCount) || expectedCallCount !== g.calledNumbers.length) {
+        return { ok: false, reason: 'claim_expired' };
+      }
       const card = await repo.getCard(String(cardCode ?? '').toUpperCase());
       if (!card || card.round !== g.roundNumber) throw new HttpError(404, 'card_not_found', 'Card not found in this round');
       if (card.userId !== user.id) throw new HttpError(403, 'not_your_card', 'This card belongs to another player');
@@ -256,7 +261,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       if (findWinningPattern(card.grid, new Set(g.calledNumbers), g.winPattern ?? 'any_line').missing !== 0) return { ok: false, reason: 'pattern_incomplete' };
 
       const prize = Math.floor((g.pot * config.prizePercent) / 100);
-      const settled = await repo.settleWin({ round: g.roundNumber, card, prize, ref: `win:${g.roundNumber}:${card.code}` });
+      const settled = await repo.settleWin({ round: g.roundNumber, expectedVersion: g.version, card, prize, ref: `win:${g.roundNumber}:${card.code}` });
       if (!settled) return { ok: false, reason: 'already_won' };
       const advanced = await repo.casGame(settled.version, { nextRoundAt: (g.roundStartedAt ?? now()) + ROUND_INTERVAL_MS }) ?? await repo.getGame();
       schedule(advanced);
