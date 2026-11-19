@@ -21,8 +21,8 @@ import { PatternGuide } from '@/components/play/PatternGuide';
 function usePlayData() {
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark } = usePlayer();
-  const { phase, winPattern, calledNumbers, claimBingo, winner } = useRound();
-  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner };
+  const { phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt } = useRound();
+  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt };
 }
 
 /* ─────────────────────────── TRANSLATIONS ─────────────────────────── */
@@ -167,8 +167,28 @@ function CardView({ card, marks, called, t, pattern, markColor, isWinner, canCla
 /* ───────────────────────────── MAIN VIEW ───────────────────────────── */
 
 export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
-  const { lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner } = usePlayData();
+  const { lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt } = usePlayData();
   const t = (k: StringKey) => (STRINGS[lang] ?? STRINGS.en)[k];
+
+  const [clockNow, setClockNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (phase !== 'running' || !nextCallAt) return;
+    const timer = window.setInterval(() => setClockNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [phase, nextCallAt]);
+  const nextCallSeconds = nextCallAt && phase === 'running'
+    ? Math.max(0, Math.ceil((nextCallAt - clockNow) / 1000))
+    : null;
+  const timerText = nextCallSeconds === null
+    ? null
+    : `${String(Math.floor(nextCallSeconds / 60)).padStart(2, '0')}:${String(nextCallSeconds % 60).padStart(2, '0')}`;
+  const roundStatus = {
+    am: { waiting: 'በመጠባበቅ ላይ', live: 'ቀጥታ ጨዋታ', ended: 'ዙር ተጠናቋል', next: 'ቀጣዩ ቁጥር እስኪጠራ የቀረው ጊዜ', manual: 'ቀጣዩ ቁጥር በሆስቱ ሲጠራ ይታያል', round: 'ዙር', called: 'የተጠሩ ቁጥሮች' },
+    ti: { waiting: 'ይጽበ ኣሎ', live: 'ቀጥታ ጸወታ', ended: 'ዙር ተዛዚሙ', next: 'ክሳብ ዝቕጽል ቁጽሪ ዝጽዋዕ ዝተረፈ ግዜ', manual: 'ቀጻሊ ቁጽሪ ምስ ብሆስት ዝጽዋዕ ክርአ እዩ', round: 'ዙር', called: 'ዝተጸውዑ ቁጽርታት' },
+    en: { waiting: 'Waiting for the round', live: 'Live game', ended: 'Round completed', next: 'Time until the next number', manual: 'The next number appears when the host calls it', round: 'Round', called: 'Numbers called' },
+  }[lang] ?? {
+    waiting: 'Waiting for the round', live: 'Live game', ended: 'Round completed', next: 'Time until the next number', manual: 'The next number appears when the host calls it', round: 'Round', called: 'Numbers called',
+  };
 
   const called = useMemo(() => new Set(calledNumbers), [calledNumbers]);
   const active = phase === 'running';
@@ -285,6 +305,48 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             )}
           </div>
         </div>
+      )}
+
+      {/* Shared round status and auto-call countdown */}
+      {loaded && (
+        <section
+          aria-label={roundStatus.round + ' ' + roundNumber}
+          className="relative isolate overflow-hidden rounded-2xl border border-gold-500/35 bg-[radial-gradient(ellipse_at_top_left,rgba(212,175,55,.16),transparent_58%),linear-gradient(135deg,rgba(24,20,12,.98),rgba(8,8,10,.98))] p-3 shadow-[0_12px_34px_-20px_rgba(212,175,55,.55)] ring-1 ring-gold-500/10 sm:p-4"
+        >
+          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-gold-300/80 to-transparent" aria-hidden="true" />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-gold-500">{roundStatus.round} #{roundNumber}</p>
+              <p className="mt-1 text-sm font-semibold text-gold-100 sm:text-base">
+                {phase === 'waiting' ? roundStatus.waiting : phase === 'running' ? roundStatus.live : roundStatus.ended}
+              </p>
+            </div>
+            <span className={[
+              'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold',
+              phase === 'waiting' ? 'border-amber-400/30 bg-amber-400/10 text-amber-200' :
+                phase === 'running' ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' :
+                  'border-white/15 bg-white/[0.06] text-gold-300',
+            ].join(' ')}>
+              <span className={phase === 'running' ? 'h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.8)]' : 'h-2 w-2 rounded-full bg-current opacity-80'} />
+              {phase === 'waiting' ? roundStatus.waiting : phase === 'running' ? roundStatus.live : roundStatus.ended}
+            </span>
+          </div>
+          <div className="mt-3 flex flex-wrap items-end justify-between gap-3 border-t border-gold-500/15 pt-3">
+            <div>
+              {timerText !== null ? (
+                <>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-500">{roundStatus.next}</p>
+                  <p className="mt-0.5 font-mono text-3xl font-black tabular-nums leading-none tracking-wider text-gold-200 drop-shadow-[0_0_14px_rgba(212,175,55,.28)] sm:text-4xl" aria-live="off">{timerText}</p>
+                </>
+              ) : (
+                <p className="text-sm font-medium text-gold-300/90">
+                  {phase === 'waiting' ? roundStatus.waiting : phase === 'running' ? roundStatus.manual : roundStatus.ended}
+                </p>
+              )}
+            </div>
+            <p className="text-xs tabular-nums text-gold-500/90">{roundStatus.called}: {calledNumbers.length}/75</p>
+          </div>
+        </section>
       )}
 
       {/* Cards */}
