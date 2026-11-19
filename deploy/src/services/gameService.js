@@ -212,9 +212,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       }
       let serials;
       try {
-        serials = requestedSerial !== undefined && requestedSerial !== null
-          ? [String(requestedSerial)]
-          : await repo.reserveCardSerials(g.roundNumber, n);
+        serials = await repo.reserveCardSerials(g.roundNumber, n, requestedSerial);
       } catch (e) {
         if (e instanceof RepoError && e.code === 'ROUND_NOT_OPEN') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
         throw e;
