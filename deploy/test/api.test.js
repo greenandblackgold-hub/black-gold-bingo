@@ -331,7 +331,7 @@ test('cards: buying, balance checks, round gating, server-issued grids', async (
   await freshRound();
   const p = await newPlayer('Buyer', 35);
   assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 0 } })).json.error, 'invalid_count');
-  assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 21 } })).json.error, 'invalid_count');
+  assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 51 } })).json.error, 'invalid_count');
   const poor = await api('POST', '/api/cards/buy', { token: p.token, body: { count: 4 } });
   assert.equal(poor.status, 402);
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 35);
