@@ -331,7 +331,7 @@ test('cards: buying, balance checks, round gating, server-issued grids', async (
   await freshRound();
   const p = await newPlayer('Buyer', 35);
   assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 0 } })).json.error, 'invalid_count');
-  assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 21 } })).json.error, 'invalid_count');
+  assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 51 } })).json.error, 'invalid_count');
   const poor = await api('POST', '/api/cards/buy', { token: p.token, body: { count: 4 } });
   assert.equal(poor.status, 402);
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 35);
@@ -350,15 +350,15 @@ test('cards: buying, balance checks, round gating, server-issued grids', async (
   assert.equal((await api('GET', '/api/cards', { token: p.token })).json.length, 0, 'cards belong to the round they were bought for');
 });
 
-test('card purchase is capped at ten cards per request', async () => {
+test('card purchase supports up to fifty cards per request', async () => {
   await freshRound();
-  const p = await newPlayer('Ten Card Buyer', 120);
-  const tooMany = await api('POST', '/api/cards/buy', { token: p.token, body: { count: 11 } });
+  const p = await newPlayer('Fifty Card Buyer', 520);
+  const tooMany = await api('POST', '/api/cards/buy', { token: p.token, body: { count: 51 } });
   assert.equal(tooMany.status, 400);
   assert.equal(tooMany.json.error, 'invalid_count');
-  const bought = await api('POST', '/api/cards/buy', { token: p.token, body: { count: 10 } });
+  const bought = await api('POST', '/api/cards/buy', { token: p.token, body: { count: 50 } });
   assert.equal(bought.status, 200, JSON.stringify(bought.json));
-  assert.equal(bought.json.cards.length, 10);
+  assert.equal(bought.json.cards.length, 50);
   assert.equal(bought.json.balance, 20);
 });
 

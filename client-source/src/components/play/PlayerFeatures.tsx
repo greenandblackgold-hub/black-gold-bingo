@@ -54,7 +54,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const [expanded, setExpanded] = useState<string | null>(settingsOnly ? 'settings' : null);
   const [inlineMenuOpen, setInlineMenuOpen] = useState(false);
   const [showCardPurchase, setShowCardPurchase] = useState(false);
-  const [purchaseCount, setPurchaseCount] = useState(1);
+  const [purchaseCount, setPurchaseCount] = useState(5);
   const [purchaseBusy, setPurchaseBusy] = useState(false);
   const [purchaseMessage, setPurchaseMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [showPatternOptions, setShowPatternOptions] = useState(false);
@@ -80,7 +80,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
       const result = await buyCards(purchaseCount);
       if (result.ok) {
         setPurchaseMessage({ kind: 'ok', text: `${purchaseCount} ካርድ በተሳካ ሁኔታ ተገዝተዋል።` });
-        setPurchaseCount(1);
+        setPurchaseCount(5);
       } else {
         setPurchaseMessage({ kind: 'err', text: result.error ?? 'ግዢው አልተሳካም። ቀሪ ሂሳብዎን ወይም የዙሩን ሁኔታ ያረጋግጡ።' });
       }
@@ -176,13 +176,15 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                 </div>
                 <div className="space-y-3 rounded-xl border border-amber-400/20 p-3">
                   <p className="text-sm font-semibold">የሚፈልጉትን የካርድ ብዛት ይምረጡ</p>
-                  <div className="flex items-center justify-between gap-3">
-                    <button type="button" disabled={purchaseCount <= 1 || purchaseBusy} onClick={() => setPurchaseCount((n) => Math.max(1, n - 1))} className="h-10 w-10 rounded-lg border border-amber-400/40 text-lg disabled:opacity-40">−</button>
-                    <p className="text-xl font-black text-amber-300 tabular-nums">{purchaseCount} ካርድ</p>
-                    <button type="button" disabled={purchaseCount >= 10 || purchaseBusy} onClick={() => setPurchaseCount((n) => Math.min(10, n + 1))} className="h-10 w-10 rounded-lg border border-amber-400/40 text-lg disabled:opacity-40">+</button>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[5, 10, 20, 30, 40, 50].map((count) => (
+                      <button key={count} type="button" disabled={purchaseBusy} onClick={() => setPurchaseCount(count)} aria-pressed={purchaseCount === count} className={`rounded-lg border px-2 py-3 text-sm font-black transition disabled:opacity-50 ${purchaseCount === count ? 'border-amber-300 bg-amber-400 text-zinc-950' : 'border-amber-400/40 bg-black/30 text-amber-200 hover:border-amber-300'}`}>
+                        {count} ካርድ
+                      </button>
+                    ))}
                   </div>
                   <div className="flex justify-between text-sm"><span className="text-amber-100/60">የአንድ ካርድ ዋጋ</span><strong>{formatAmount(lang, cardPrice)} ETB</strong></div>
-                  <div className="flex justify-between border-t border-amber-400/20 pt-3"><span className="font-bold">ጠቅላላ ክፍያ</span><strong className="text-lg text-amber-300">{formatAmount(lang, purchaseCount * cardPrice)} ETB</strong></div>
+                  <div className="flex justify-between border-t border-amber-400/20 pt-3"><span className="font-bold">የሚከፈለው</span><strong className="text-lg text-amber-300">{formatAmount(lang, purchaseCount * cardPrice)} ETB</strong></div>
                 </div>
                 {phase !== 'waiting' && <p className="rounded-lg bg-red-950/60 p-2 text-sm text-red-200">ካርድ መግዛት የሚቻለው አዲስ ዙር ከመጀመሩ በፊት ብቻ ነው።</p>}
                 {purchaseMessage && <p role="status" className={`rounded-lg p-2 text-sm ${purchaseMessage.kind === 'ok' ? 'bg-emerald-950 text-emerald-200' : 'bg-red-950 text-red-200'}`}>{purchaseMessage.text}</p>}

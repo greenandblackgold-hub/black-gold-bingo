@@ -202,8 +202,8 @@ export function createGameService({ repo, config, now = Date.now }) {
 
     async buyCards(user, count, requestedSerial) {
       const n = Number(count);
-      if (!Number.isInteger(n) || n < 1 || n > Math.min(config.maxCardsPerPurchase, 10)) {
-        throw new HttpError(400, 'invalid_count', `Buy 1 to ${Math.min(config.maxCardsPerPurchase, 10)} cards`);
+      if (!Number.isInteger(n) || n < 1 || n > Math.min(config.maxCardsPerPurchase, 50)) {
+        throw new HttpError(400, 'invalid_count', `Buy 1 to ${Math.min(config.maxCardsPerPurchase, 50)} cards`);
       }
       const g = await repo.getGame();
       if (g.phase !== 'waiting') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');

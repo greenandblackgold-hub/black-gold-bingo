@@ -36,7 +36,7 @@ export function loadConfig(env = process.env) {
     roomId: env.ROOM_ID ?? 'BINGO-99',
     cardPrice: santim(num(env.CARD_PRICE_ETB, 10)),
     prizePercent: num(env.PRIZE_PERCENT, 80),
-    maxCardsPerPurchase: num(env.MAX_CARDS_PER_PURCHASE, 20),
+    maxCardsPerPurchase: num(env.MAX_CARDS_PER_PURCHASE, 50),
     minDeposit: santim(num(env.MIN_DEPOSIT_ETB, 10)),
     maxDeposit: santim(num(env.MAX_DEPOSIT_ETB, 10000)),
     minWithdraw: santim(num(env.MIN_WITHDRAW_ETB, 50)),
