@@ -89,6 +89,8 @@ const combinations=(items:Pos[][],n:number):Pos[][][]=>{
 const BLOCKS:Pos[][]=[];
 for(let r=0;r<4;r++)for(let c=0;c<4;c++)BLOCKS.push([p(r,c),p(r,c+1),p(r+1,c),p(r+1,c+1)]);
 const SIX:Pos[][]=[];
+const NINE:Pos[][]=[];
+for(let r=0;r<3;r++)for(let c=0;c<3;c++)NINE.push(Array.from({length:3},(_,dr)=>Array.from({length:3},(_,dc)=>p(r+dr,c+dc))).flat());
 for(let r=0;r<4;r++)for(let c=0;c<3;c++)SIX.push(Array.from({length:2},(_,dr)=>Array.from({length:3},(_,dc)=>p(r+dr,c+dc))).flat());
 for(let r=0;r<3;r++)for(let c=0;c<4;c++)SIX.push(Array.from({length:3},(_,dr)=>Array.from({length:2},(_,dc)=>p(r+dr,c+dc))).flat());
 const NON_FREE=Array.from({length:25},(_,i)=>p(Math.floor(i/5),i%5)).filter(([r,c])=>r!==2||c!==2);
@@ -145,6 +147,20 @@ export function patternMasks(pattern:WinPattern='any_line'):Pos[][] {
   case 'cross_and_corners':return [unique([ROWS[2],COLS[2],[p(0,0),p(0,4),p(4,0),p(4,4)]])];
   case 'frame_and_center':return [unique([Array.from({length:25},(_,i)=>p(Math.floor(i/5),i%5)).filter(([r,c])=>r===0||r===4||c===0||c===4),[p(2,2)]])];
   case 'double_cross':return [unique([ROWS[2],COLS[2],D1,D2])];
+  case 'nine_pack':return NINE;
+  case 'filled_diamond':return [[p(0,2),p(1,1),p(1,2),p(1,3),p(2,0),p(2,1),p(2,2),p(2,3),p(2,4),p(3,1),p(3,2),p(3,3),p(4,2)]];
+  case 'window_pane':return [unique([Array.from({length:25},(_,i)=>p(Math.floor(i/5),i%5)).filter(([r,c])=>r===0||r===4||c===0||c===4),ROWS[2],COLS[2]])];
+  case 'staircase':return [[p(0,0),p(1,0),p(1,1),p(2,1),p(2,2),p(3,2),p(3,3),p(4,3),p(4,4)]];
+  case 'hourglass':return [unique([ROWS[0],ROWS[4],D1,D2])];
+  case 'bow_tie':return [[p(0,0),p(0,4),p(1,1),p(1,3),...ROWS[2],p(3,1),p(3,3),p(4,0),p(4,4)]];
+  case 'ladder':return [unique([COLS[0],COLS[4],ROWS[1],ROWS[3]])];
+  case 'railroad_tracks':return [unique([COLS[1],COLS[3],ROWS[0],ROWS[2],ROWS[4]])];
+  case 'lucky_seven':return [unique([ROWS[0],D2])];
+  case 'letter_h':return [unique([COLS[0],COLS[4],ROWS[2]])];
+  case 'letter_e':return [unique([COLS[0],ROWS[0],ROWS[2],ROWS[4]])];
+  case 'letter_c':return [unique([COLS[0],ROWS[0],ROWS[4]])];
+  case 'letter_n':return [unique([COLS[0],COLS[4],D1])];
+  case 'letter_w':return [unique([COLS[0],COLS[4],[p(3,1),p(4,2),p(3,3)]])];
   default:return ALL_LINES;
  }
 }
