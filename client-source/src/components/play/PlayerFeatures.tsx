@@ -117,7 +117,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
             </button>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-100/60">እነዚህ የሚቻሉ የአሸናፊነት ቅርጾች ምሳሌዎች ናቸው፤ ትክክለኛው ማረጋገጫ በስርዓቱ ይከናወናል።</p>
           </div></div>}
         <div className="space-y-2 p-3 sm:p-4">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-4 gap-1 sm:gap-2">
             {[
               ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
               ['የአሁኑ ዋና ሽልማት', SERVER_MODE && roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ETB` : '—'],
