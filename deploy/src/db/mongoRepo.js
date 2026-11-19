@@ -215,6 +215,22 @@ export async function createMongoRepo({ uri, dbName }) {
     async getCard(code) {
       return toDoc(await cards.findOne({ code }));
     },
+    async lockCard({ code, userId, round, expectedVersion }) {
+      return tx(async (session) => {
+        const game = await games.findOne({ _id: 'state', phase: 'running', roundNumber: round, version: expectedVersion }, { session, projection: { _id: 1 } });
+        if (!game) return false;
+        const result = await cards.updateOne(
+          { code, userId, round, lockedAt: { $exists: false } },
+          { $set: { lockedAt: new Date(), lockReason: 'false_bingo' } },
+          { session },
+        );
+        return result.modifiedCount === 1;
+      });
+    },
+    async unlockCard(code) {
+      const result = await cards.updateOne({ code, lockedAt: { $exists: true } }, { $unset: { lockedAt: '', lockReason: '' } });
+      return result.modifiedCount === 1;
+    },
 
     /** End the round and enqueue a prize; wallet credit is deferred until admin approval. */
     async settleWin({ round, expectedVersion, card, prize, ref }) {
