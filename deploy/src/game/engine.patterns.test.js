@@ -84,3 +84,9 @@ test('additional named shapes expose valid winning masks', () => {
   const nine = nums([[1,1],[1,2],[1,3],[2,1],[2,2],[2,3],[3,1],[3,2],[3,3]]);
   assert.equal(findWinningPattern(grid,nine,'nine_pack').missing,0);
 });
+
+
+test('frame-and-center is distinct from the outside picture frame', () => {
+  const masks = findWinningPattern(grid, new Set(), 'frame_and_center');
+  assert.equal(masks.missing, 20);
+});
