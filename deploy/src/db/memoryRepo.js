@@ -119,8 +119,13 @@ export function createMemoryRepo() {
     },
 
     /* cards */
-    async reserveCardSerials(round, count) {
+    async reserveCardSerials(round, count, requestedSerial) {
       if (game.phase !== 'waiting' || game.roundNumber !== round) throw new RepoError('ROUND_NOT_OPEN');
+      if (requestedSerial !== undefined && requestedSerial !== null) {
+        const serial = String(requestedSerial);
+        nextCardSerial = Math.max(nextCardSerial, Number(serial) + 1);
+        return [serial];
+      }
       const first = nextCardSerial;
       nextCardSerial += count;
       return Array.from({ length: count }, (_, i) => String(first + i).padStart(5, '0'));
