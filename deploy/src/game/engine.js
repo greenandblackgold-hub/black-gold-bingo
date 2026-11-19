@@ -87,7 +87,6 @@ const touchingRectanglePairs = rectanglePairs.filter(([a,b])=>edgeAdjacent(a,b))
 const separateRectanglePairs = rectanglePairs.filter(([a,b])=>!edgeAdjacent(a,b));
 const innerFrame = Array.from({length:9},(_,i)=>pos(Math.floor(i/3)+1,i%3+1)).filter(([r,c])=>r===1||r===3||c===1||c===3);
 const innerSquare = Array.from({length:9},(_,i)=>pos(Math.floor(i/3)+1,i%3+1));
-const allCells = Array.from({length:25},(_,i)=>pos(Math.floor(i/5),i%5));
 
 export function patternMasks(pattern='any_line') {
   switch(pattern) {
@@ -131,7 +130,7 @@ export function patternMasks(pattern='any_line') {
     case 'arrow_down': return [[pos(0,2),pos(1,2),pos(2,2),pos(3,1),pos(3,2),pos(3,3),pos(4,2)]];
     case 'star': return [[pos(0,2),pos(1,1),pos(1,3),pos(2,0),pos(2,2),pos(2,4),pos(3,1),pos(3,3),pos(4,2)]];
     case 'cross_and_corners': return [combine(rows[2],cols[2],corners)];
-    case 'frame_and_center': return [combine(frame,[pos(2,2)])];
+    case 'frame_and_center': return [combine(frame,[pos(1,1),pos(1,3),pos(3,1),pos(3,3),pos(2,2)])];
     case 'double_cross': return [combine(rows[2],cols[2],d1,d2)];
     case 'nine_pack': return ninePacks;
     case 'filled_diamond': return [[pos(0,2),pos(1,1),pos(1,2),pos(1,3),pos(2,0),pos(2,1),pos(2,2),pos(2,3),pos(2,4),pos(3,1),pos(3,2),pos(3,3),pos(4,2)]];
