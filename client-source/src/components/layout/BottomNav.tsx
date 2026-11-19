@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 
-export type TabId = 'play' | 'wallet' | 'verify' | 'menu';
+export type TabId = 'play' | 'wallet' | 'menu';
 
 const LABELS = translations.navigation;
 
@@ -28,18 +28,12 @@ const ICONS: Record<TabId, ReactNode> = {
       <circle cx="16" cy="14.5" r="1" />
     </Icon>
   ),
-  verify: (
-    <Icon>
-      <path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z" />
-      <path d="m9 12 2 2 4-4" />
-    </Icon>
-  ),
   menu: (
     <Icon><path d="M4 6h16M4 12h16M4 18h16" /></Icon>
   ),
 };
 
-const ORDER: TabId[] = ['play', 'wallet', 'verify', 'menu'];
+const ORDER: TabId[] = ['play', 'wallet', 'menu'];
 
 export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab: TabId) => void }) {
   const { lang } = useLanguage();
@@ -48,7 +42,7 @@ export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab:
       aria-label={LABELS[lang].main}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-gold-500/20 bg-darkbg/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.25)] backdrop-blur-xl"
     >
-      <ul className="mx-auto grid max-w-xl grid-cols-4 px-2">
+      <ul className="mx-auto grid max-w-xl grid-cols-3 px-2">
         {ORDER.map((id) => {
           const on = id === active;
           return (

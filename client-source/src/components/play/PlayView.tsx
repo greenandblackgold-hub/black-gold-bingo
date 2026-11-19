@@ -278,7 +278,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             </p>
             {iWon && (
               <p className="mx-auto mt-2 max-w-xl rounded-xl border border-gold-500/20 bg-black/20 px-3 py-2 text-xs leading-relaxed text-gold-300 sm:text-sm">
-                {t('pendingPrize')}
+                {t('prizeCredited')}
               </p>
             )}
           </div>
