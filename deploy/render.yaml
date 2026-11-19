@@ -22,6 +22,7 @@ services:
       - { key: ADMIN_NAME, value: Owner }
       - { key: ROOM_ID, value: BINGO-99 }
       - { key: CARD_PRICE_ETB, value: "10" }
+      - { key: MAX_CARDS_PER_PURCHASE, value: "50" }
       - { key: PRIZE_PERCENT, value: "80" }
       - { key: AUTO_PAYOUT, value: "false" }
       - { key: REGISTRATION_ENABLED, value: "true" }
