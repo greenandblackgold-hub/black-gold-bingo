@@ -154,6 +154,12 @@ export function HostView() {
   return (
     <div className="space-y-5">
       <style>{`
+        @keyframes latestCalledFlash {
+          0%, 100% { background-color: #f97316; color: #fff; box-shadow: 0 0 8px rgba(249,115,22,.95), 0 0 18px rgba(249,115,22,.65); }
+          50% { background-color: #dc2626; color: #fff; box-shadow: 0 0 10px rgba(220,38,38,1), 0 0 22px rgba(220,38,38,.75); }
+        }
+        .latest-called-flash { animation: latestCalledFlash 700ms ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .latest-called-flash { animation: none !important; background-color: #dc2626 !important; color: #fff !important; } }
         @keyframes hostPop { 0% { transform: scale(.3) rotate(-18deg); opacity: 0 } 100% { transform: scale(1) rotate(0); opacity: 1 } }
         @media (prefers-reduced-motion: reduce) { .host-anim { animation: none !important } }
       `}</style>
@@ -369,7 +375,7 @@ export function HostView() {
                       className={[
                         'grid place-items-center rounded-md py-1 text-xs font-bold tabular-nums transition-colors sm:text-sm',
                         latest
-                          ? 'bg-gold-300 text-darkbg ring-2 ring-white'
+                          ? 'latest-called-flash ring-2 ring-white'
                           : on
                             ? 'bg-gradient-to-br from-gold-400 to-gold-600 text-darkbg'
                             : 'bg-white/[0.03] text-gold-700',
