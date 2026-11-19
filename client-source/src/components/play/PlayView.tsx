@@ -355,42 +355,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         </section>
       )}
 
-      {/* Shared 1–75 call tracker */}
-      <section className="rounded-2xl bg-cardbg p-3 ring-1 ring-gold-700/50 sm:p-5">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-lg font-bold text-gold-300">{roundStatus.called}</h2>
-          <span className="text-xs tabular-nums text-gold-500">{calledNumbers.length}/75</span>
-        </div>
-        <div className="grid grid-cols-5 gap-1.5 sm:gap-3">
-          {LETTERS.map((letter, col) => (
-            <div key={letter} className="space-y-1.5">
-              <div className="text-center text-lg font-black text-gold-500">{letter}</div>
-              <div className="grid grid-cols-1 gap-1 sm:grid-cols-3">
-                {Array.from({ length: 15 }, (_, i) => col * 15 + i + 1).map((n) => {
-                  const isCalled = called.has(n);
-                  const isLatest = n === calledNumbers[calledNumbers.length - 1];
-                  return (
-                    <span
-                      key={n}
-                      aria-label={`${letter}-${n}${isCalled ? ' ✓' : ''}`}
-                      aria-current={isLatest ? 'true' : undefined}
-                      className={[
-                        'grid place-items-center rounded-md py-1 text-xs font-bold tabular-nums transition-colors sm:text-sm',
-                        isLatest ? 'latest-called-flash ring-2 ring-white'
-                          : isCalled ? 'bg-gradient-to-br from-gold-400 to-gold-600 text-darkbg'
-                          : 'bg-white/[0.03] text-gold-700',
-                      ].join(' ')}
-                    >
-                      {n}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Cards */}
       <div>
         <div className="mb-3 flex items-center justify-between">
