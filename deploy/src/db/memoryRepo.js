@@ -319,7 +319,7 @@ export function createMemoryRepo() {
     },
     async rejectManualWithdrawalAndRefund(id, note, adminId) {
       const w = withdrawals.get(id);
-      if (!w || w.mode !== 'manual' || w.status !== 'pending') return null;
+      if (!w || w.mode !== 'manual' || !['pending', 'processing'].includes(w.status)) return null;
       credit(w.userId, w.amount, 'manual_withdraw_refund', `manual-wd-refund:${id}`, { id });
       Object.assign(w, { status: 'rejected', note, reviewedBy: adminId, updatedAt: new Date() });
       return clone(w);
