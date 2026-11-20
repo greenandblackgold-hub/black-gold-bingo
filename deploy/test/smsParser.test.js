@@ -49,7 +49,7 @@ test('parses incoming CBE and Lion Bank notifications', () => {
 test('rejects unknown sender, outgoing transfer, and malformed SMS', () => {
   assert.throws(() => parseBankSms({ sender: 'Unknown', text: 'You received ETB 50. Transaction ID: ABC123456' }), /unsupported_sms_sender/);
   assert.throws(() => parseBankSms({ sender: 'CBE', text: 'You sent ETB 50. Transaction ID: ABC123456' }), /not_an_incoming_credit/);
-  assert.throws(() => parseBankSms({ sender: 'CBE', text: 'short' }), /invalid_sms_text/);
+  assert.throws(() => parseBankSms({ sender: 'CBE', text: 'short' }), /sms_not_confirmed_incoming/);
 });
 
 test('rejects missing transaction reference and oversized messages', () => {
