@@ -20,8 +20,8 @@ import { PlayerFeatures } from '@/components/play/PlayerFeatures';
 function usePlayData() {
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark } = usePlayer();
-  const { phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt, roundPrizeEtb } = useRound();
-  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt, roundPrizeEtb };
+  const { phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt, nextRoundAt, announcement, roundPrizeEtb } = useRound();
+  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt, nextRoundAt, announcement, roundPrizeEtb };
 }
 
 /* ─────────────────────────── TRANSLATIONS ─────────────────────────── */
@@ -168,18 +168,20 @@ function CardView({ card, marks, called, t, pattern, markColor, isWinner, canCla
 /* ───────────────────────────── MAIN VIEW ───────────────────────────── */
 
 export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
-  const { lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt, roundPrizeEtb } = usePlayData();
+  const { lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt, nextRoundAt, announcement, roundPrizeEtb } = usePlayData();
   const { balance } = usePlayer();
   const t = (k: StringKey) => (STRINGS[lang] ?? STRINGS.en)[k];
 
   const [clockNow, setClockNow] = useState(() => Date.now());
+  const countdownAt = phase === 'running' ? nextCallAt : phase === 'waiting' ? nextRoundAt : null;
   useEffect(() => {
-    if (phase !== 'running' || !nextCallAt) return;
+    if (!countdownAt) return;
+    setClockNow(Date.now());
     const timer = window.setInterval(() => setClockNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
-  }, [phase, nextCallAt]);
-  const nextCallSeconds = nextCallAt && phase === 'running'
-    ? Math.max(0, Math.ceil((nextCallAt - clockNow) / 1000))
+  }, [countdownAt]);
+  const nextCallSeconds = countdownAt
+    ? Math.max(0, Math.ceil((countdownAt - clockNow) / 1000))
     : null;
   const timerText = nextCallSeconds === null
     ? null
@@ -255,8 +257,8 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
     <div className="mx-auto w-full max-w-6xl space-y-4 pb-28">
       <section className="relative overflow-hidden rounded-2xl border border-gold-400/40 bg-[radial-gradient(ellipse_at_top,rgba(255,215,0,.17),transparent_58%),linear-gradient(135deg,#17130a,#080808_65%)] p-3 shadow-[0_12px_38px_rgba(0,0,0,.45)] sm:p-4">
         <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.28em] text-gold-400">BLACK & GOLD BINGO</p><p className="mt-1 text-sm font-bold text-gold-100">ዙር #{roundNumber} · {phase === 'running' ? 'ቀጥታ ጨዋታ' : phase === 'waiting' ? 'በመጠባበቅ ላይ' : 'ዙር ተጠናቋል'}</p></div><div className="text-right"><p className="text-[10px] font-bold text-gold-500">የዙሩ ሽልማት</p><p className="text-lg font-black tabular-nums text-yellow-300">{roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) + ' ብር' : '—'}</p></div></div>
-        <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2"><div className="rounded-xl border border-gold-500/30 bg-black/45 p-2 text-center"><p className="text-[9px] font-bold text-gold-500">የዙሩ ሁኔታ</p><p className="mt-1 text-xs font-bold text-gold-100">{phase === 'waiting' ? 'ሆስቱን ይጠብቁ' : phase === 'running' ? 'በመጫወት ላይ' : 'ተጠናቋል'}</p></div><div className="min-w-[6.5rem] rounded-2xl border border-yellow-300/70 bg-gradient-to-br from-yellow-200 via-yellow-500 to-amber-700 px-4 py-2 text-center text-black shadow-[0_0_24px_rgba(250,204,21,.24)]"><p className="text-[9px] font-black">የቅርብ ጥሪ</p>{calledNumbers.length ? <><p className="text-sm font-black">{letterFor(calledNumbers[calledNumbers.length-1])}</p><p className="text-3xl font-black leading-none">{calledNumbers[calledNumbers.length-1]}</p></> : <p className="py-1 text-lg font-black">—</p>}</div><div className="rounded-xl border border-gold-500/30 bg-black/45 p-2 text-center"><p className="text-[9px] font-bold text-gold-500">ቀጣይ ጥሪ</p><p className="mt-1 font-mono text-lg font-black tabular-nums text-yellow-200">{timerText ?? (phase === 'waiting' ? 'ይጠብቁ' : '—')}</p></div></div>
-        <div className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-950/35 px-3 py-2 text-xs font-semibold text-emerald-100"><span aria-hidden="true">📢</span><span>{phase === 'waiting' ? 'ዙሩ እስኪጀምር ይጠብቁ፤ ካርዶችዎን ያዘጋጁ።' : phase === 'running' ? 'አዲስ ቁጥር ሲጠራ በካርድዎ ላይ ይከታተሉ።' : 'ይህ ዙር ተጠናቋል፤ የውጤቱን ማሳወቂያ ይመልከቱ።'}</span></div>
+        <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2"><div className="rounded-xl border border-gold-500/30 bg-black/45 p-2 text-center"><p className="text-[9px] font-bold text-gold-500">የዙሩ ሁኔታ</p><p className="mt-1 text-xs font-bold text-gold-100">{phase === 'waiting' ? 'ሆስቱን ይጠብቁ' : phase === 'running' ? 'በመጫወት ላይ' : 'ተጠናቋል'}</p></div><div className="min-w-[6.5rem] rounded-2xl border border-yellow-300/70 bg-gradient-to-br from-yellow-200 via-yellow-500 to-amber-700 px-4 py-2 text-center text-black shadow-[0_0_24px_rgba(250,204,21,.24)]"><p className="text-[9px] font-black">የቅርብ ጥሪ</p>{calledNumbers.length ? <><p className="text-sm font-black">{letterFor(calledNumbers[calledNumbers.length-1])}</p><p className="text-3xl font-black leading-none">{calledNumbers[calledNumbers.length-1]}</p></> : <p className="py-1 text-lg font-black">—</p>}</div><div className="rounded-xl border border-gold-500/30 bg-black/45 p-2 text-center"><p className="text-[9px] font-bold text-gold-500">{phase === 'waiting' ? 'ቀጣይ ዙር' : 'ቀጣይ ጥሪ'}</p><p className="mt-1 font-mono text-lg font-black tabular-nums text-yellow-200">{timerText ?? (phase === 'waiting' ? 'በመጠባበቅ ላይ' : '—')}</p></div></div>
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-950/35 px-3 py-2 text-xs font-semibold text-emerald-100" role="status"><span aria-hidden="true">📢</span><span>{announcement?.message || (phase === 'waiting' ? 'ዙሩ እስኪጀምር ይጠብቁ፤ ካርዶችዎን ያዘጋጁ።' : phase === 'running' ? 'አዲስ ቁጥር ሲጠራ በካርድዎ ላይ ይከታተሉ።' : 'ይህ ዙር ተጠናቋል፤ የውጤቱን ማሳወቂያ ይመልከቱ።')}</span></div>
       </section>
       {calledNumbers.length > 0 && <section className="rounded-2xl border border-gold-700/35 bg-black/45 p-3"><div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-black text-gold-200">የቅርብ ጊዜ የተጠሩ ቁጥሮች</h2><span className="text-[10px] text-gold-500">{calledNumbers.length}/75</span></div><div className="flex flex-wrap gap-2">{calledNumbers.slice(-5).reverse().map((n,index)=><div key={n} className={`grid h-11 w-11 place-items-center rounded-full border font-black shadow-lg ${index===0?'border-yellow-200 bg-gradient-to-br from-yellow-200 to-amber-600 text-black ring-2 ring-yellow-100/50':'border-gold-500/40 bg-zinc-900 text-gold-200'}`}><span className="text-[8px]">{letterFor(n)}</span><span className="text-sm leading-none">{n}</span></div>)}</div></section>}
       <PlayerFeatures onGoToWallet={onGoToWallet} />

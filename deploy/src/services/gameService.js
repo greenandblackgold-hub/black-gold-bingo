@@ -24,6 +24,8 @@ export function createGameService({ repo, config, now = Date.now }) {
     autoCall: g.autoCall,
     callIntervalSec: g.callIntervalSec,
     nextCallAt: g.nextCallAt,
+    nextRoundAt: g.nextRoundAt ?? null,
+    announcement: g.announcement ?? null,
     winner: g.winner ? { cardId: g.winner.cardCode, serial: g.winner.serial, at: g.winner.at } : null,
     roomId: config.roomId,
     cardPrice: config.cardPrice / 100,
@@ -153,6 +155,11 @@ export function createGameService({ repo, config, now = Date.now }) {
 
     endRound: () => mutate('running', () => ({ phase: 'ended', autoCall: false, nextCallAt: null })),
 
+    setAnnouncement(message) {
+      const clean = String(message ?? '').trim().slice(0, 240);
+      return mutate(null, () => ({ announcement: clean ? { message: clean, at: now() } : null }));
+    },
+
     setWinPattern(pattern) {
       if (!isWinPattern(pattern)) throw new HttpError(400, 'invalid_pattern', 'Choose a supported bingo pattern');
       return mutate('waiting', () => ({ winPattern: pattern }));
@@ -176,6 +183,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         winner: null,
         autoCall: false,
         nextCallAt: null,
+        nextRoundAt: now() + ROUND_INTERVAL_MS,
         pot: 0,
       }));
     },

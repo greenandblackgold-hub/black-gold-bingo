@@ -90,6 +90,8 @@ export interface ServerGameState {
   autoCall: boolean;
   callIntervalSec: number;
   nextCallAt: number | null;
+  nextRoundAt: number | null;
+  announcement: { message: string; at: number } | null;
   winner: { cardId: string; serial: string | number; at: number } | null;
   roomId: string;
   /** ETB */
