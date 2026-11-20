@@ -28,7 +28,7 @@ export function parseBankSms({ sender, provider: providerHint, text, eventId, ex
 
   const recipientAccount = String(expectedRecipientAccount ?? '').replace(/\D/g, '');
   const transferToConfiguredCbe = provider === 'telebirr' && recipientAccount.length >= 8 &&
-    new RegExp('(?:Commercial\s+Bank\s+of\s+Ethiopia|CBE)[^0-9]{0,100}(?:account|አካውንት)\s*(?:number|no\.?|ቁጥር)?\s*' + recipientAccount + '\\b', 'i').test(message) &&
+    new RegExp('(?:Commercial\\s+Bank\\s+of\\s+Ethiopia|CBE)[^0-9]{0,100}(?:account|አካውንት)\\s*(?:number|no\\.?|ቁጥር)?\\s*' + recipientAccount + '\\b', 'i').test(message) &&
     /(?:አስተላልፈዋል|አስተላልፏል|transferred\s+successfully|successfully\s+transferred)/i.test(message);
 
   if (transferToConfiguredCbe) {
