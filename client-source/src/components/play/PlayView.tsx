@@ -288,11 +288,29 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             </button>
             {patternOpen && (
               <div id="winning-pattern-options" className="absolute left-0 top-full z-40 mt-1 max-h-64 w-56 max-w-[75vw] overflow-y-auto rounded-xl border border-yellow-400 bg-black p-2 text-left shadow-[0_0_18px_rgba(250,204,21,.35)]">
-                {WIN_PATTERN_OPTIONS.map(option => (
-                  <div key={option.value} className={`rounded-md px-2 py-1.5 text-xs font-bold ${option.value === winPattern ? 'bg-yellow-400/20 text-yellow-300' : 'text-white'}`}>
-                    {option.label}{option.value === winPattern ? ' ✓' : ''}
-                  </div>
-                ))}
+                <div className="grid grid-cols-2 gap-2">
+                  {WIN_PATTERN_OPTIONS.map(option => {
+                    const cells = getPatternCells(option.value);
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        aria-label={option.label}
+                        aria-pressed={option.value === winPattern}
+                        onClick={() => setPatternOpen(false)}
+                        className={`flex flex-col items-center gap-1 rounded-lg border p-2 transition ${option.value === winPattern ? 'border-yellow-300 bg-yellow-400/15 shadow-[0_0_10px_rgba(250,204,21,.25)]' : 'border-zinc-700 bg-zinc-950 hover:border-yellow-500/60'}`}
+                      >
+                        <span className="grid aspect-square w-14 grid-cols-5 gap-[2px] rounded bg-zinc-800 p-1">
+                          {Array.from({ length: 25 }, (_, index) => (
+                            <span key={index} className={`rounded-[1px] ${cells.includes(index) ? 'bg-yellow-300 shadow-[0_0_3px_rgba(250,204,21,.7)]' : 'bg-zinc-700'}`} />
+                          ))}
+                        </span>
+                        <span className="text-center text-[10px] font-bold leading-tight text-yellow-100">{option.label}</span>
+                        {option.value === winPattern && <span className="text-[9px] font-black text-yellow-300">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
