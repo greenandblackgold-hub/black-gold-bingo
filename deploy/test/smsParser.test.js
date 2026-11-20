@@ -7,6 +7,7 @@ test('parses the exact Telebirr-to-configured-CBE receipt format', () => {
   const parsed = parseBankSms({ sender: 'Telebirr', text: message, expectedRecipientAccount: '1000737138686' });
   assert.equal(parsed.amount, 50);
   assert.equal(parsed.reference, 'FT26325ZWP2R');
+  assert.equal(parsed.eventId, 'FT26325ZWP2R');
   assert.equal(parsed.provider, 'telebirr');
   assert.throws(() => parseBankSms({ sender: 'Telebirr', text: message, expectedRecipientAccount: '1000000000000' }), /not_an_incoming_credit/);
 });
