@@ -20,8 +20,8 @@ import { PlayerFeatures } from '@/components/play/PlayerFeatures';
 function usePlayData() {
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark } = usePlayer();
-  const { phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt } = useRound();
-  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt };
+  const { phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt, roundPrizeEtb } = useRound();
+  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt, roundPrizeEtb };
 }
 
 /* ─────────────────────────── TRANSLATIONS ─────────────────────────── */
@@ -139,7 +139,7 @@ function CardView({ card, marks, called, t, pattern, markColor, isWinner, canCla
                 key={`${r}-${c}`}
                 style={isMarked ? { backgroundColor: markColor } : undefined}
                 type="button"
-                disabled={isFree || !called.has(v)}
+                disabled={v === null || !called.has(v)}
                 onClick={() => { if (v !== null && called.has(v)) onToggleMark(v); }}
                 aria-pressed={isMarked}
                 aria-label={isFree ? t('free') : `${LETTERS[c]} ${v}`}
@@ -154,7 +154,7 @@ function CardView({ card, marks, called, t, pattern, markColor, isWinner, canCla
                   inWin ? 'z-[1] outline outline-2 outline-white shadow-[0_0_18px_rgba(255,245,190,.75)]' : '',
                 ].join(' ')}
               >
-                {isFree ? <span className="text-xs font-black">★</span> : v}
+                {isFree ? <span className="text-[9px] font-black tracking-wide sm:text-xs">FREE ★</span> : v}
               </button>
             );
           }),
@@ -373,7 +373,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         </div>
 
         {cards.length === 0 ? null : (
-          <div className="grid w-full min-w-0 gap-2 sm:gap-4" style={{gridTemplateColumns: `repeat(${cardColumns}, minmax(0, 1fr))`}}>
+          <div className="grid w-full min-w-0 gap-2 sm:gap-4" style={{gridTemplateColumns: `repeat(${cards.length === 1 ? 1 : 2}, minmax(0, 1fr))`}}>
             {[...cards].sort((a,b)=>cardOrder==='oldest'?Number(a.serial)-Number(b.serial):Number(b.serial)-Number(a.serial)).filter(card=>selectedCardIds.length===0||selectedCardIds.includes(card.id)).map((card) => (
               <CardView
                 key={card.id}
