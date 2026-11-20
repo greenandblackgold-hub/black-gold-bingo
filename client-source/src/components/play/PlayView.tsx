@@ -173,7 +173,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const [autoMark, setAutoMark] = useState(true);
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
   const [patternOpen, setPatternOpen] = useState(false);
-  const endedAtRef = useRef<number | null>(null);
+  const endedAtRef = useRef<number | null>(phase === 'ended' ? (winner?.at ?? Date.now()) : null);
   const previousPhaseRef = useRef(phase);
 
   useEffect(() => {
@@ -238,7 +238,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   }, [claimingCardId, claimBingo, calledNumbers.length]);
 
   const lastCalls = calledNumbers.slice(-5).reverse();
-  const lastNumber = calledNumbers[calledNumbers.length - 1];
   const patternCells = useMemo(() => getPatternCells(winPattern), [winPattern]);
   const callTimer = active && nextCallAt
     ? (() => {
