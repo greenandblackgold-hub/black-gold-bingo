@@ -18,6 +18,7 @@ import { purgeRegistry, serverClaim, serverVerify } from '@/lib/mockServer';
 import type { Claim, HostClaim, RoundContextValue, SharedGame, VerifyResult } from '@/types/game';
 
 const SEEN_ROUND_KEY = 'bgb.seenRound';
+const NEXT_ROUND_BREAK_MS = 5 * 60 * 1000;
 export const RoundContext = createContext<RoundContextValue | null>(null);
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -106,13 +107,14 @@ export function RoundProvider({ children }: { children: ReactNode }) {
   const startRound = useCallback(() => {
     const g = gameRef.current;
     if (!canHost || g.phase !== 'waiting') return;
-    commit({ ...g, phase: 'running', calledNumbers: [], winner: null, autoCall: false, nextCallAt: null });
+    commit({ ...g, phase: 'running', calledNumbers: [], winner: null, autoCall: false, nextCallAt: null, startedAt: Date.now(), endedAt: null, nextRoundAt: null });
   }, [canHost, commit]);
 
   const endRound = useCallback(() => {
     const g = gameRef.current;
     if (!canHost || g.phase !== 'running') return;
-    commit({ ...g, phase: 'ended', autoCall: false, nextCallAt: null });
+    const endedAt = Date.now();
+    commit({ ...g, phase: 'ended', autoCall: false, nextCallAt: null, endedAt, nextRoundAt: endedAt + NEXT_ROUND_BREAK_MS });
   }, [canHost, commit]);
 
   const resetRound = useCallback(() => {
@@ -191,6 +193,8 @@ export function RoundProvider({ children }: { children: ReactNode }) {
         phase: 'ended',
         autoCall: false,
         nextCallAt: null,
+        endedAt: Date.now(),
+        nextRoundAt: Date.now() + NEXT_ROUND_BREAK_MS,
         winner: { cardId: claim.cardId, serial: claim.serial, at: Date.now() },
       });
       return true;
@@ -273,7 +277,8 @@ export function RoundProvider({ children }: { children: ReactNode }) {
       callIntervalSec: game.callIntervalSec,
       setCallIntervalSec,
       nextCallAt: game.nextCallAt,
-      nextRoundAt: null,
+      startedAt: game.startedAt,
+      nextRoundAt: game.nextRoundAt,
       announcement: null,
       setAnnouncement: () => undefined,
     }),
