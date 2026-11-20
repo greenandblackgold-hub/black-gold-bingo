@@ -292,13 +292,10 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                   {WIN_PATTERN_OPTIONS.map(option => {
                     const cells = getPatternCells(option.value);
                     return (
-                      <button
+                      <div
                         key={option.value}
-                        type="button"
                         aria-label={option.label}
-                        aria-pressed={option.value === winPattern}
-                        onClick={() => setPatternOpen(false)}
-                        className={`flex flex-col items-center gap-1 rounded-lg border p-2 transition ${option.value === winPattern ? 'border-yellow-300 bg-yellow-400/15 shadow-[0_0_10px_rgba(250,204,21,.25)]' : 'border-zinc-700 bg-zinc-950 hover:border-yellow-500/60'}`}
+                        className={`flex flex-col items-center gap-1 rounded-lg border p-2 ${option.value === winPattern ? 'border-yellow-300 bg-yellow-400/15 shadow-[0_0_10px_rgba(250,204,21,.25)]' : 'border-zinc-700 bg-zinc-950'}`}
                       >
                         <span className="grid aspect-square w-14 grid-cols-5 gap-[2px] rounded bg-zinc-800 p-1">
                           {Array.from({ length: 25 }, (_, index) => (
@@ -307,7 +304,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                         </span>
                         <span className="text-center text-[10px] font-bold leading-tight text-yellow-100">{option.label}</span>
                         {option.value === winPattern && <span className="text-[9px] font-black text-yellow-300">✓</span>}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
