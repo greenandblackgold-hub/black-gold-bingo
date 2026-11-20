@@ -129,6 +129,8 @@ function BigBall({ n, empty }: { n: number | null; empty: string }) {
 export function HostView() {
   const h = useHostData();
   const t = (k: StringKey) => (STRINGS[h.lang] ?? STRINGS.en)[k];
+  const [announcementDraft, setAnnouncementDraft] = useState('');
+  useEffect(() => setAnnouncementDraft(h.announcement?.message ?? ''), [h.announcement?.message]);
 
   const called = h.calledNumbers;
   const calledSet = new Set(called);
@@ -170,6 +172,28 @@ export function HostView() {
           {phaseLabel} · {called.length}/75
         </span>
       </div>
+
+      {/* Host announcement is persisted on the shared round state and streamed to every player. */}
+      <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
+        <label htmlFor="player-announcement" className="mb-2 block text-sm font-semibold text-gold-300">ለተጫዋቾች ቀጥታ ማስታወቂያ</label>
+        <textarea
+          id="player-announcement"
+          value={announcementDraft}
+          maxLength={240}
+          rows={2}
+          onChange={(e) => setAnnouncementDraft(e.target.value)}
+          placeholder="ማስታወቂያዎን እዚህ ይጻፉ…"
+          className="w-full resize-y rounded-xl bg-zinc-900 px-4 py-3 text-sm text-gold-100 ring-1 ring-gold-700/60 placeholder:text-gold-700 focus:outline-none focus:ring-gold-400"
+        />
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <span className="text-xs text-gold-600">{announcementDraft.length}/240</span>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => { setAnnouncementDraft(''); h.setAnnouncement(''); }} className={ghostBtn}>ማጥፋት</button>
+            <button type="button" onClick={() => h.setAnnouncement(announcementDraft)} disabled={!announcementDraft.trim()} className={primaryBtn}>ማስታወቂያ ላክ</button>
+          </div>
+        </div>
+        {h.announcement?.message && <p className="mt-3 rounded-lg border border-emerald-500/25 bg-emerald-950/35 px-3 py-2 text-xs text-emerald-100">በPlayer ገጽ ላይ የሚታየው፦ {h.announcement.message}</p>}
+      </section>
 
       {/* Winning pattern is selected before a round starts and enforced by the server. */}
       <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
