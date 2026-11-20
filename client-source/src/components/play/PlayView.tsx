@@ -6,7 +6,7 @@
  * Reads from usePlayer() and useRound(); shared types live in '@/types/game'.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { translations } from '@/lib/localization';
+import { formatAmount, translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
@@ -14,15 +14,14 @@ import { play } from '@/lib/audio';
 import { findWinningPattern } from '@/lib/bingo';
 import type { BingoCard, Lang, Pos, WinPattern } from '@/types/game';
 import { PlayerFeatures } from '@/components/play/PlayerFeatures';
-import { PatternGuide } from '@/components/play/PatternGuide';
 
 /* ───────────────────────────── CONTEXT WIRING ───────────────────────────── */
 
 function usePlayData() {
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark } = usePlayer();
-  const { phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt } = useRound();
-  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt };
+  const { phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt, roundPrizeEtb } = useRound();
+  return { lang: lang as Lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt, roundPrizeEtb };
 }
 
 /* ─────────────────────────── TRANSLATIONS ─────────────────────────── */
@@ -88,10 +87,11 @@ type CardViewProps = {
   canClaim: boolean;
   claiming: boolean;
   onClaim: () => void;
+  onToggleMark: (number: number) => void;
 };
 
-function CardView({ card, marks, called, t, pattern, markColor, isWinner, canClaim, claiming, onClaim }: CardViewProps & { isWinner: boolean }) {
-  const { winningLine } = useMemo(() => analyze(card.grid, marks, called, pattern), [card.grid, marks, called, pattern]);
+function CardView({ card, marks, called, t, pattern, markColor, isWinner, canClaim, claiming, onClaim, onToggleMark }: CardViewProps & { isWinner: boolean }) {
+  const { toGo, winningLine } = useMemo(() => analyze(card.grid, marks, called, pattern), [card.grid, marks, called, pattern]);
   const winSet = useMemo(() => new Set((winningLine ?? []).map(([r, c]) => `${r}-${c}`)), [winningLine]);
 
   return (
@@ -104,7 +104,7 @@ function CardView({ card, marks, called, t, pattern, markColor, isWinner, canCla
       ].join(' ')}
     >
       <header className="mb-2 flex items-center justify-between gap-2 sm:mb-3">
-        <span className="rounded-md border border-gold-500/25 bg-black/30 px-2 py-1 text-xs font-black tabular-nums tracking-wider text-gold-300">#{String(card.serial).padStart(5, '0')}</span>
+        <div className="flex min-w-0 items-center gap-2"><span className="rounded-md border border-gold-500/25 bg-black/30 px-2 py-1 text-xs font-black tabular-nums tracking-wider text-gold-300">CARD #{String(card.serial).padStart(5, '0')}</span>{!card.locked && toGo > 0 && toGo <= 2 && <span className="rounded-full border border-amber-300/60 bg-amber-400/15 px-2 py-1 text-[10px] font-black text-amber-200">{toGo} TO GO</span>}</div>
         {card.locked ? (
           <span role="status" className="rounded-lg border border-red-500/50 bg-red-950/60 px-3 py-1 text-xs font-black tracking-[0.16em] text-red-200">LOCKED</span>
         ) : canClaim ? (
@@ -139,7 +139,8 @@ function CardView({ card, marks, called, t, pattern, markColor, isWinner, canCla
                 key={`${r}-${c}`}
                 style={isMarked ? { backgroundColor: markColor } : undefined}
                 type="button"
-                disabled
+                disabled={v === null || !called.has(v)}
+                onClick={() => { if (v !== null && called.has(v)) onToggleMark(v); }}
                 aria-pressed={isMarked}
                 aria-label={isFree ? t('free') : `${LETTERS[c]} ${v}`}
                 className={[
@@ -153,7 +154,7 @@ function CardView({ card, marks, called, t, pattern, markColor, isWinner, canCla
                   inWin ? 'z-[1] outline outline-2 outline-white shadow-[0_0_18px_rgba(255,245,190,.75)]' : '',
                 ].join(' ')}
               >
-                {isFree ? <span className="text-xs font-black">★</span> : v}
+                {isFree ? <span className="text-[9px] font-black tracking-wide sm:text-xs">FREE ★</span> : v}
               </button>
             );
           }),
@@ -167,7 +168,8 @@ function CardView({ card, marks, called, t, pattern, markColor, isWinner, canCla
 /* ───────────────────────────── MAIN VIEW ───────────────────────────── */
 
 export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
-  const { lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt } = usePlayData();
+  const { lang, cards, markedByCard, toggleMark, phase, winPattern, calledNumbers, claimBingo, winner, loaded, roundNumber, nextCallAt, roundPrizeEtb } = usePlayData();
+  const { balance } = usePlayer();
   const t = (k: StringKey) => (STRINGS[lang] ?? STRINGS.en)[k];
 
   const [clockNow, setClockNow] = useState(() => Date.now());
@@ -211,23 +213,23 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   }, [active, cards, calledNumbers, called, winPattern]);
 
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
-  const [cardColumns, setCardColumns] = useState(2);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [cardOrder, setCardOrder] = useState<'oldest'|'newest'>('oldest');
   const [markColor, setMarkColor] = useState('#d4af37');
+  const [autoMark, setAutoMark] = useState(true);
   const [confetti, setConfetti] = useState(false);
   const stopConfetti = useCallback(() => setConfetti(false), []);
   
 
   useEffect(() => {
-    const load = () => { try { const cols=Number(localStorage.getItem('bgb.cardsPerRow')); setCardColumns([2,3,4].includes(cols)?cols:2);  setCardOrder(localStorage.getItem('bgb.cardOrder')==='newest'?'newest':'oldest'); setMarkColor(localStorage.getItem('bgb.markColor')||'#d4af37'); const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]'); setSelectedCardIds(Array.isArray(ids)?ids:[]); } catch { /* retain defaults */ } };
+    const load = () => { try { setCardOrder(localStorage.getItem('bgb.cardOrder')==='newest'?'newest':'oldest'); setMarkColor(localStorage.getItem('bgb.markColor')||'#d4af37'); setAutoMark(localStorage.getItem('bgb.autoMark')!=='off'); const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]'); setSelectedCardIds(Array.isArray(ids)?ids:[]); } catch { /* retain defaults */ } };
     load(); window.addEventListener('bgb-player-settings',load); return ()=>window.removeEventListener('bgb-player-settings',load);
   }, []);
 
   useEffect(() => {
-    if (!active || calledNumbers.length===0) return;
+    if (!active || !autoMark || calledNumbers.length===0) return;
     for (const card of cards) { const marks=new Set(markedByCard[card.id]??[]); for (const n of calledNumbers) if (card.grid.some(row=>row.includes(n)) && !marks.has(n)) { toggleMark(card.id,n); marks.add(n); } }
-  }, [active,calledNumbers,cards,markedByCard,toggleMark]);
+  }, [active,autoMark,calledNumbers,cards,markedByCard,toggleMark]);
 
   // The host decides: celebrate when the accepted winner is one of my cards.
   const celebrated = useRef<number | null>(null);
@@ -250,9 +252,14 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 pb-2">
+    <div className="mx-auto w-full max-w-6xl space-y-4 pb-28">
+      <section className="relative overflow-hidden rounded-2xl border border-gold-400/40 bg-[radial-gradient(ellipse_at_top,rgba(255,215,0,.17),transparent_58%),linear-gradient(135deg,#17130a,#080808_65%)] p-3 shadow-[0_12px_38px_rgba(0,0,0,.45)] sm:p-4">
+        <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.28em] text-gold-400">BLACK & GOLD BINGO</p><p className="mt-1 text-sm font-bold text-gold-100">ዙር #{roundNumber} · {phase === 'running' ? 'ቀጥታ ጨዋታ' : phase === 'waiting' ? 'በመጠባበቅ ላይ' : 'ዙር ተጠናቋል'}</p></div><div className="text-right"><p className="text-[10px] font-bold text-gold-500">የዙሩ ሽልማት</p><p className="text-lg font-black tabular-nums text-yellow-300">{roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) + ' ብር' : '—'}</p></div></div>
+        <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2"><div className="rounded-xl border border-gold-500/30 bg-black/45 p-2 text-center"><p className="text-[9px] font-bold text-gold-500">የዙሩ ሁኔታ</p><p className="mt-1 text-xs font-bold text-gold-100">{phase === 'waiting' ? 'ሆስቱን ይጠብቁ' : phase === 'running' ? 'በመጫወት ላይ' : 'ተጠናቋል'}</p></div><div className="min-w-[6.5rem] rounded-2xl border border-yellow-300/70 bg-gradient-to-br from-yellow-200 via-yellow-500 to-amber-700 px-4 py-2 text-center text-black shadow-[0_0_24px_rgba(250,204,21,.24)]"><p className="text-[9px] font-black">የቅርብ ጥሪ</p>{calledNumbers.length ? <><p className="text-sm font-black">{letterFor(calledNumbers[calledNumbers.length-1])}</p><p className="text-3xl font-black leading-none">{calledNumbers[calledNumbers.length-1]}</p></> : <p className="py-1 text-lg font-black">—</p>}</div><div className="rounded-xl border border-gold-500/30 bg-black/45 p-2 text-center"><p className="text-[9px] font-bold text-gold-500">ቀጣይ ጥሪ</p><p className="mt-1 font-mono text-lg font-black tabular-nums text-yellow-200">{timerText ?? (phase === 'waiting' ? 'ይጠብቁ' : '—')}</p></div></div>
+        <div className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-500/25 bg-emerald-950/35 px-3 py-2 text-xs font-semibold text-emerald-100"><span aria-hidden="true">📢</span><span>{phase === 'waiting' ? 'ዙሩ እስኪጀምር ይጠብቁ፤ ካርዶችዎን ያዘጋጁ።' : phase === 'running' ? 'አዲስ ቁጥር ሲጠራ በካርድዎ ላይ ይከታተሉ።' : 'ይህ ዙር ተጠናቋል፤ የውጤቱን ማሳወቂያ ይመልከቱ።'}</span></div>
+      </section>
+      {calledNumbers.length > 0 && <section className="rounded-2xl border border-gold-700/35 bg-black/45 p-3"><div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-black text-gold-200">የቅርብ ጊዜ የተጠሩ ቁጥሮች</h2><span className="text-[10px] text-gold-500">{calledNumbers.length}/75</span></div><div className="flex flex-wrap gap-2">{calledNumbers.slice(-5).reverse().map((n,index)=><div key={n} className={`grid h-11 w-11 place-items-center rounded-full border font-black shadow-lg ${index===0?'border-yellow-200 bg-gradient-to-br from-yellow-200 to-amber-600 text-black ring-2 ring-yellow-100/50':'border-gold-500/40 bg-zinc-900 text-gold-200'}`}><span className="text-[8px]">{letterFor(n)}</span><span className="text-sm leading-none">{n}</span></div>)}</div></section>}
       <PlayerFeatures onGoToWallet={onGoToWallet} />
-      <PatternGuide pattern={winPattern} lang={lang} />
       <style>{`
         @keyframes latestCalledFlash {
           0%, 100% { background-color: #f97316; color: #fff; box-shadow: 0 0 8px rgba(249,115,22,.95), 0 0 18px rgba(249,115,22,.65); }
@@ -365,7 +372,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         </div>
 
         {cards.length === 0 ? null : (
-          <div className="grid w-full min-w-0 gap-2 sm:gap-4" style={{gridTemplateColumns: `repeat(${cardColumns}, minmax(0, 1fr))`}}>
+          <div className="grid w-full min-w-0 gap-2 sm:gap-4" style={{gridTemplateColumns: `repeat(${cards.length === 1 ? 1 : 2}, minmax(0, 1fr))`}}>
             {[...cards].sort((a,b)=>cardOrder==='oldest'?Number(a.serial)-Number(b.serial):Number(b.serial)-Number(a.serial)).filter(card=>selectedCardIds.length===0||selectedCardIds.includes(card.id)).map((card) => (
               <CardView
                 key={card.id}
@@ -379,6 +386,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 canClaim={claimableCards.some((candidate) => candidate.id === card.id)}
                 claiming={claimingCardId === card.id}
                 onClaim={() => void handleClaim(card.id)}
+                onToggleMark={(number) => toggleMark(card.id, number)}
               />
             ))}
           </div>
@@ -386,6 +394,11 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
       </div>
 
 
+      <div className="fixed inset-x-0 bottom-[calc(4.6rem+env(safe-area-inset-bottom))] z-30 px-3 sm:px-4"><div className="mx-auto flex max-w-4xl items-center gap-2 rounded-2xl border border-gold-400/50 bg-[#080808]/95 p-2 shadow-[0_12px_36px_rgba(0,0,0,.7)] backdrop-blur-xl">
+        <button type="button" role="switch" aria-checked={autoMark} onClick={() => { const next=!autoMark; setAutoMark(next); try { localStorage.setItem('bgb.autoMark', next?'on':'off'); } catch { /* ignore */ } }} className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-2 text-left"><span className={`relative h-5 w-9 shrink-0 rounded-full ${autoMark?'bg-emerald-500':'bg-zinc-600'}`}><span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${autoMark?'translate-x-4':'translate-x-0.5'}`}/></span><span className="text-[10px] font-black leading-tight text-gold-100 sm:text-xs">AUTO-MARK<br/><span className="font-medium text-gold-500">{autoMark?'ON':'OFF'}</span></span></button>
+        <div className="hidden min-w-0 border-l border-gold-700/40 pl-3 sm:block"><p className="text-[9px] text-gold-500">ቀሪ ሂሳብ</p><p className="text-sm font-black tabular-nums text-yellow-300">{formatAmount(lang,balance)} ብር</p></div>
+        <button type="button" disabled={claimableCards.length===0 || !!claimingCardId} onClick={() => void handleClaim(claimableCards[0]?.id)} className="min-w-[42%] rounded-xl border border-yellow-200/80 bg-gradient-to-r from-yellow-200 via-yellow-400 to-amber-600 px-4 py-3 text-base font-black tracking-wider text-black shadow-[0_0_22px_rgba(250,204,21,.25)] disabled:cursor-not-allowed disabled:opacity-40 sm:min-w-[34%] sm:text-lg">{claimingCardId?'በመላክ ላይ…':claimableCards.length?'👑 BINGO!':'BINGO'}</button>
+      </div></div>
       {confetti && <Confetti onDone={stopConfetti} />}
     </div>
   );
