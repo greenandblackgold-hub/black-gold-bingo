@@ -17,13 +17,14 @@ const firstCapture = (text, patterns) => {
   return null;
 };
 
+const normalizeDigits = (value) => String(value).replace(/[፩-፱]/g, (digit) =>
+  String('፩፪፫፬፭፮፯፰፱'.indexOf(digit) + 1));
+
 /**
- * Convert a forwarded Ethiopian bank/mobile-money notification to a normalized
- * simulation-wallet event. The HTTP layer must authenticate the forwarding
- * device with HMAC before calling this parser.
- *
- * SMS templates differ by account, language and provider release. Unknown or
- * ambiguous messages are rejected instead of guessing a transaction or amount.
+ * Parse a complete Ethiopian bank/mobile-money credit notification.
+ * This only creates a pending request; it does not prove settlement or credit
+ * a wallet. The HTTP gateway must authenticate forwarded SMS events separately.
+ * Unknown/ambiguous messages are rejected rather than guessing an amount/reference.
  */
 export function parseBankSms({ sender, provider: providerHint, text, eventId } = {}) {
   const hinted = normalizeSender(providerHint);
@@ -31,72 +32,50 @@ export function parseBankSms({ sender, provider: providerHint, text, eventId } =
     (hinted === 'TELEBIRR' ? 'telebirr' : hinted === 'CBE' ? 'cbe' : ['LIONBANK', 'LIONINTERNATIONALBANK'].includes(hinted) ? 'lion-bank' : null);
   if (!provider) throw new Error('unsupported_sms_sender');
 
-  const message = String(text ?? '').replace(/\s+/g, ' ').trim();
+  const message = normalizeDigits(String(text ?? ''))
+    .replace(/[\u00a0\u2007\u202f]/g, ' ')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   if (!message || message.length > 4000) throw new Error('invalid_sms_text');
 
-  // Never treat outgoing transfers, purchases, withdrawals or debits as deposits.
-  if (/\b(debit(?:ed)?|withdraw(?:n|al)?|sent|paid|purchase|payment\s+to|you\s+sent)\b/i.test(message)) {
+  // Reject clear debit/outgoing wording before checking for incoming wording.
+  if (/\b(debit(?:ed)?|withdraw(?:n|al)?|sent|paid|purchase|payment\s+to|you\s+sent|transferred\s+to)\b/i.test(message) ||
+      /(?:ወጪ|ተቀንሷል|ከሂሳብዎ\s*ወጥቷል)/.test(message)) {
     throw new Error('not_an_incoming_credit');
   }
-  if (!/\b(credit(?:ed)?|received|deposit(?:ed)?|you\s+got|ተቀብለዋል|ገቢ)\b/i.test(message)) {
+  if (!/\b(credit(?:ed)?|received|deposit(?:ed)?|you\s+got|money\s+in|funds\s+received)\b/i.test(message) &&
+      !/(?:ተቀብለዋል|ገቢ\s*(?:ሆኗል|ተደርጓል)?)/.test(message)) {
     throw new Error('sms_not_confirmed_incoming');
   }
 
+  // Accept common provider labels: Transaction ID/Ref/No, Txn, Reference,
+  // Receipt No and RRN. Keep the reference bounded and never derive it from
+  // an arbitrary long number such as an account or phone number.
   const reference = firstCapture(message, [
-    /\b(?:transaction\s*(?:id|no\.?|number)|txn\s*(?:id|no\.?|ref)|trans(?:action)?\s*ref(?:erence)?|reference\s*(?:id|no\.?|number)?|ref\s*no\.?)\s*[:#=\-]?\s*([A-Z0-9][A-Z0-9_-]{5,39})\b/i,
-    /\b(?:ID|Ref)\s*[:#=]\s*([A-Z0-9][A-Z0-9_-]{5,39})\b/i,
+    /\b(?:transaction\s*(?:id|ref(?:erence)?|no\.?|number)|txn\s*(?:id|ref|no\.?|number)|trans\.?\s*(?:id|ref)|reference\s*(?:id|no\.?|number)?|ref\s*(?:no\.?|id)?|receipt\s*(?:no\.?|number)|rrn)\s*[:#=\-]?\s*([A-Z0-9][A-Z0-9_-]{4,39})\b/i,
+    /\b(?:ID|Ref)\s*[:#=]\s*([A-Z0-9][A-Z0-9_-]{4,39})\b/i,
+    /\b(?:የደረሰኝ\s*ቁጥር|የግብይት\s*መለያ)\s*[:#=]?\s*([A-Z0-9][A-Z0-9_-]{4,39})\b/i,
   ]);
   if (!reference) throw new Error('sms_transaction_reference_missing');
 
-  const amountCandidates = [];
-  // Prefer the amount grammatically attached to the incoming-credit phrase;
-  // notification texts often also include a separate "available balance".
-  const creditAmountPatterns = [
-    /(?:credited|received|deposit(?:ed)?|you\s+got)[^0-9]{0,45}(?:ETB|Birr)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
-    /(?:credited|received|deposit(?:ed)?|you\s+got)[^0-9]{0,45}([0-9][0-9,]*(?:\.\d{1,2})?)\s*(?:ETB|Birr)/i,
-    /(?:ETB|Birr)\s*([0-9][0-9,]*(?:\.\d{1,2})?)[^.!?]{0,25}(?:credited|received)/i,
-  ];
-  for (const pattern of creditAmountPatterns) {
-    const match = message.match(pattern);
-    if (match?.[1]) {
-      const amount = Number(match[1].replace(/,/g, ''));
-      if (Number.isFinite(amount) && amount > 0) amountCandidates.push(amount);
-    }
+  // Find currency-tagged amounts in either order. Ignore an explicitly
+  // labelled available/current/remaining balance; multiple transaction
+  // amounts remain ambiguous and are rejected.
+  const amountPattern = /(?:\b(?:ETB|Birr)\s*([0-9][0-9,]*(?:\.\d{1,2})?)\b|\b([0-9][0-9,]*(?:\.\d{1,2})?)\s*(?:ETB|Birr)\b|([0-9][0-9,]*(?:\.\d{1,2})?)\s*ብር|ብር\s*([0-9][0-9,]*(?:\.\d{1,2})?))/gi;
+  const amounts = [];
+  for (const match of message.matchAll(amountPattern)) {
+    const raw = match.slice(1).find(Boolean);
+    if (!raw) continue;
+    const amount = Number(raw.replace(/,/g, ''));
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+    const before = message.slice(Math.max(0, match.index - 55), match.index);
+    if (/(?:available|current|remaining|closing|new)\s+balance\s*(?:is|:|=)?\s*$/i.test(before) ||
+        /(?:ቀሪ\s*ሂሳብ|ያለው\s*ሂሳብ)\s*[:=]?\s*$/.test(before)) continue;
+    amounts.push(amount);
   }
-  // If the provider template has no credit-action adjacency, accept only one ETB amount.
-  if (amountCandidates.length === 0) {
-    const amountPatterns = [
-      /\b(?:ETB|Birr)\s*([0-9][0-9,]*(?:\.\d{1,2})?)\b/gi,
-      /\b([0-9][0-9,]*(?:\.\d{1,2})?)\s*(?:ETB|Birr)\b/gi,
-    ];
-    for (const pattern of amountPatterns) {
-      for (const match of message.matchAll(pattern)) {
-        const amount = Number(match[1].replace(/,/g, ''));
-        if (Number.isFinite(amount) && amount > 0) amountCandidates.push(amount);
-      }
-    }
-  }
-  const allEtbAmounts = [];
-  const allAmountPatterns = [
-    /\b(?:ETB|Birr)\s*([0-9][0-9,]*(?:\.\d{1,2})?)\b/gi,
-    /\b([0-9][0-9,]*(?:\.\d{1,2})?)\s*(?:ETB|Birr)\b/gi,
-  ];
-  for (const pattern of allAmountPatterns) {
-    for (const match of message.matchAll(pattern)) {
-      const amount = Number(match[1].replace(/,/g, ''));
-      if (Number.isFinite(amount) && amount > 0) {
-        const prefix = message.slice(Math.max(0, match.index - 35), match.index);
-        if (!/balance\s*(?:is|:)?\s*$/i.test(prefix)) allEtbAmounts.push(amount);
-      }
-    }
-  }
-  const uniqueAmounts = [...new Set(amountCandidates)];
-  const uniqueTransactionAmounts = [...new Set(allEtbAmounts)];
-  if (uniqueTransactionAmounts.length > 1) throw new Error('sms_amount_missing_or_ambiguous');
+  const uniqueAmounts = [...new Set(amounts)];
   if (uniqueAmounts.length !== 1) throw new Error('sms_amount_missing_or_ambiguous');
-  if (uniqueTransactionAmounts.length === 1 && uniqueTransactionAmounts[0] !== uniqueAmounts[0]) {
-    throw new Error('sms_amount_missing_or_ambiguous');
-  }
 
   return {
     eventId: String(eventId ?? reference).slice(0, 120),
