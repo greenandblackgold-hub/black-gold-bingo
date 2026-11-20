@@ -6,7 +6,6 @@ import { useRound } from '@/context/RoundContext';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { play } from '@/lib/audio';
 import { findWinningPattern, patternMasks } from '@/lib/bingo';
-import { WIN_PATTERN_OPTIONS } from '@/lib/patternCatalog';
 import type { BingoCard, WinPattern } from '@/types/game';
 
 const LETTERS = ['B', 'I', 'N', 'G', 'O'] as const;
@@ -17,14 +16,6 @@ const CARD_ACCENTS = [
   { border: 'border-fuchsia-500', glow: 'shadow-[0_0_18px_rgba(217,70,239,.5)]', head: 'from-purple-700 via-fuchsia-600 to-purple-700' },
   { border: 'border-orange-500', glow: 'shadow-[0_0_18px_rgba(249,115,22,.5)]', head: 'from-orange-700 via-orange-500 to-orange-700' },
 ];
-const PATTERN_LABELS: Partial<Record<WinPattern, string>> = {
-  any_line: 'አንድ መስመር', horizontal_line: 'አግድም መስመር',
-  vertical_line: 'ቁመት መስመር', diagonal: 'ዲያጎናል',
-  two_lines: 'ሁለት መስመሮች', four_corners: 'አራቱ ማዕዘኖች',
-  full_house: 'ሙሉ ካርድ', x: 'X ቅርጽ', t: 'T ቅርጽ',
-  plus: 'ፕላስ (+)', diamond: 'ዳይመንድ', coverall: 'ሙሉ ካርድ',
-};
-const patternLabel = (pattern: WinPattern) => PATTERN_LABELS[pattern] ?? pattern.replace(/_/g, ' ');
 const getPatternCells = (pattern: WinPattern) => {
   const masks = patternMasks(pattern);
   return (masks[0] ?? []).map(([r, c]) => r * 5 + c);
@@ -103,17 +94,11 @@ function CalledBall({ number, latest = false }: { number: number; latest?: boole
     letter === 'B' ? 'from-red-500 to-red-800' :
     letter === 'I' ? 'from-blue-400 to-blue-700' : 'from-orange-400 to-orange-700';
   return (
-    <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 border-white/80 bg-gradient-to-br ${color} text-white shadow-[0_0_12px_rgba(255,255,255,.18)] ${latest ? 'ring-2 ring-yellow-200' : ''}`}>
-      <span className="text-[9px] font-black leading-none">{letter}</span>
-      <strong className="text-xl leading-none">{number}</strong>
+    <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border border-white/80 bg-gradient-to-br ${color} text-white shadow-[0_0_12px_rgba(255,255,255,.18)] sm:h-12 sm:w-12 sm:border-2 ${latest ? 'ring-2 ring-yellow-200' : ''}`}>
+      <span className="text-[7px] font-black leading-none sm:text-[9px]">{letter}</span>
+      <strong className="text-sm leading-none sm:text-xl">{number}</strong>
     </div>
   );
-}
-
-function formatCountdown(target: number | null, now: number) {
-  if (!target) return '--:--';
-  const seconds = Math.max(0, Math.ceil((target - now) / 1000));
-  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
 export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
@@ -121,12 +106,11 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const { cards, markedByCard, toggleMark, balance } = usePlayer();
   const {
     phase, winPattern, calledNumbers, claimBingo, winner,
-    roundNumber, nextCallAt, nextRoundAt, announcement, roundPrizeEtb,
+    nextCallAt, roundPrizeEtb,
   } = useRound();
   const { soundEnabled, setSoundEnabled } = useAppSettings();
   const [now, setNow] = useState(() => Date.now());
   const [autoMark, setAutoMark] = useState(true);
-  const [showPatterns, setShowPatterns] = useState(false);
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -187,78 +171,65 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const lastCalls = calledNumbers.slice(-5).reverse();
   const lastNumber = calledNumbers[calledNumbers.length - 1];
   const patternCells = useMemo(() => getPatternCells(winPattern), [winPattern]);
-  const nextRoundTimer = formatCountdown(nextRoundAt, now);
-  const nextCallTimer = formatCountdown(nextCallAt, now);
+  const callTimer = nextCallAt
+    ? (() => {
+        const seconds = Math.max(0, Math.ceil((nextCallAt - now) / 1000));
+        return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+      })()
+    : '0:00';
 
   return (
     <main className="relative mx-auto min-h-full w-full max-w-[1100px] overflow-hidden rounded-[2rem] border-2 border-zinc-500/80 bg-[#030303] px-2 pb-32 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
       <div className="pointer-events-none absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_50%_12%,rgba(255,196,0,.17),transparent_36%),radial-gradient(ellipse_at_50%_100%,rgba(255,196,0,.13),transparent_38%)]" />
       <div className="relative z-10 space-y-2 sm:space-y-3">
-        <header className="relative rounded-2xl border border-yellow-500/80 bg-black/95 px-3 py-2 shadow-[0_0_18px_rgba(250,204,21,.24)]">
+        <header className="rounded-2xl border border-yellow-400/90 bg-black px-3 py-2 shadow-[0_0_24px_rgba(250,204,21,.4)]">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-yellow-400 text-2xl text-yellow-300">‹</span>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1 text-[10px] font-bold text-yellow-200 sm:text-xs">ዙር <strong className="text-sm text-yellow-300">#{roundNumber}</strong></div>
-              </div>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-yellow-300 text-3xl font-black text-white">‹</span>
+              <span className="whitespace-nowrap text-sm font-black text-white sm:text-base">ውጣ</span>
             </div>
-            <div className="flex min-w-0 flex-1 flex-col items-center leading-none">
-              <div className="text-2xl text-yellow-400">♛</div>
-              <div className="text-center text-xs font-black tracking-wide text-yellow-100 sm:text-xl">Black &amp; Gold</div>
-              <div className="text-center text-sm font-black tracking-widest text-yellow-300 sm:text-xl">BINGO</div>
+            <div className="flex min-w-0 flex-1 items-center justify-center gap-2 border-x border-yellow-500/70 px-2 text-yellow-300">
+              <span className="text-4xl leading-none drop-shadow-[0_0_12px_rgba(255,215,0,1)] sm:text-5xl">🏆</span>
+              <strong className="whitespace-nowrap text-lg font-black tracking-tight text-yellow-300 drop-shadow-[0_0_12px_rgba(255,215,0,.9)] sm:text-3xl">
+                {roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} ብር
+              </strong>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <button type="button" onClick={() => setSoundEnabled(!soundEnabled)} aria-label={soundEnabled ? 'Mute sound' : 'Enable sound'} aria-pressed={soundEnabled} className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/30 text-xl text-yellow-100">{soundEnabled ? '◖))' : '◖̸'}</button>
-              <span className="grid h-9 w-7 place-items-center text-2xl text-yellow-100">⋮</span>
+              <button type="button" onClick={() => setSoundEnabled(!soundEnabled)} aria-label={soundEnabled ? 'Mute sound' : 'Enable sound'} aria-pressed={soundEnabled} className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/50 text-2xl text-white">{soundEnabled ? '◖))' : '◖̸'}</button>
+              <span className="grid h-10 w-7 place-items-center text-3xl text-white">⋮</span>
             </div>
-          </div>
-          <div className="mt-1 flex items-center justify-center gap-2 border-t border-yellow-500/20 pt-1 text-sm font-black text-yellow-300 sm:text-lg">
-            <span>🏆</span><span>{roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} ብር</span>
           </div>
         </header>
 
-        <section className="grid grid-cols-[1fr_1.1fr_1fr] items-center gap-1.5">
-          <div className="rounded-2xl border border-yellow-400 bg-black px-1.5 py-2 text-center shadow-[0_0_13px_rgba(250,204,21,.2)]">
-            <p className="text-[9px] font-bold text-yellow-200 sm:text-xs">የቀጣይ ዙር ቆጠራ</p>
-            <p className="font-mono text-lg font-black tabular-nums text-yellow-300 sm:text-2xl">{nextRoundAt ? nextRoundTimer : phase === 'waiting' ? '--:--' : '00:00'}</p>
+        <section className="grid grid-cols-[0.9fr_0.65fr_1.8fr] items-start gap-2 rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_18px_rgba(250,204,21,.28)]">
+          <div className="flex min-h-[3.4rem] items-center justify-center rounded-xl border border-yellow-400 bg-black px-1.5 text-center text-xs font-black leading-tight text-yellow-300 sm:text-base">
+            አሸናፊ ቅርጽ
           </div>
-          <div className="rounded-2xl border-2 border-yellow-300 bg-black px-1 py-2 text-center shadow-[0_0_24px_rgba(250,204,21,.55)]">
-            <p className="text-[9px] font-black text-yellow-200 sm:text-xs">የመጨረሻ ጥሪ</p>
-            <p className="text-3xl font-black leading-none text-yellow-300 sm:text-5xl">{lastNumber ? `${letterFor(lastNumber)}-${lastNumber}` : '—'}</p>
+          <div className="flex items-center justify-center pt-1">
+            <div className="grid w-full max-w-[6.5rem] grid-cols-5 gap-[2px] rounded-md border border-yellow-300/70 bg-white p-1 shadow-[0_0_12px_rgba(250,204,21,.35)]">
+              {Array.from({ length: 25 }, (_, i) => <span key={i} className={`aspect-square rounded-[2px] ${patternCells.includes(i) ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,.9)]' : 'bg-zinc-200'}`} />)}
+            </div>
           </div>
-          <div className="rounded-2xl border border-yellow-400 bg-black px-1.5 py-2 text-center shadow-[0_0_13px_rgba(250,204,21,.2)]">
-            <p className="text-[9px] font-bold text-yellow-200 sm:text-xs">ቀጣይ ቁጥር</p>
-            <p className="font-mono text-lg font-black tabular-nums text-yellow-300 sm:text-2xl">{nextCallAt ? nextCallTimer : '--:--'}</p>
+          <div className="min-w-0">
+            <div className="flex min-h-[3.4rem] items-center justify-around gap-0.5 rounded-xl border border-yellow-400 bg-black px-1 py-1">
+              {lastCalls.length ? lastCalls.map((number, index) => <CalledBall key={number} number={number} latest={index === 0} />) : <span className="text-xs text-yellow-100/60">—</span>}
+            </div>
+            <div className="ml-auto mt-1 w-fit rounded-lg border border-red-500 bg-red-950 px-4 py-0.5 text-lg font-black leading-none text-red-500 shadow-[0_0_12px_rgba(239,68,68,.5)]">
+              {callTimer}
+            </div>
           </div>
         </section>
 
-        <div role="status" className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-yellow-400/80 bg-black px-3 py-2 text-center text-xs font-bold text-yellow-100 shadow-[0_0_12px_rgba(250,204,21,.18)]">
-          <span className="text-lg text-yellow-400">📢</span>
-          <span>{announcement?.message || (phase === 'waiting' ? 'ዙሩ እስኪጀምር ይጠብቁ።' : phase === 'running' ? 'የተጠሩትን ቁጥሮች በካርድዎ ላይ ይከታተሉ።' : 'ይህ ዙር ተጠናቋል።')}</span>
-        </div>
-
-        <section className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl border border-yellow-500/50 bg-black/90 p-2">
-          <div className="rounded-xl bg-gradient-to-b from-yellow-300 to-amber-500 px-2 py-2 text-center text-[10px] font-black leading-tight text-black sm:text-xs">የዙሩ<br/>የአሸናፊነት ቅርጽ</div>
-          <div className="flex min-w-0 items-center gap-2">
-            <div className="grid w-24 shrink-0 grid-cols-5 gap-0.5 rounded-md bg-white p-1">
-              {Array.from({ length: 25 }, (_, i) => <span key={i} className={`aspect-square rounded-[2px] ${patternCells.includes(i) ? 'bg-green-500' : 'bg-zinc-200'}`} />)}
-            </div>
-            <span className="min-w-0 text-[10px] font-bold leading-tight text-white sm:text-xs">{patternLabel(winPattern)}<br/><span className="text-yellow-200">(Current pattern)</span></span>
+        <section className="rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_15px_rgba(250,204,21,.2)]">
+          <h2 className="mb-1 text-xs font-black text-yellow-100 sm:text-sm">1–75 ቁጥሮች</h2>
+          <div className="grid grid-cols-[repeat(15,minmax(0,1fr))] gap-[2px]">
+            {Array.from({ length: 60 }, (_, i) => i + 16).map(number => {
+              const isCalled = called.has(number);
+              const latest = number === lastNumber;
+              return <span key={number} className={`grid aspect-square min-w-0 place-items-center rounded-[3px] text-[8px] font-bold tabular-nums sm:text-xs ${latest ? 'bg-orange-500 text-white ring-1 ring-yellow-200' : isCalled ? 'bg-blue-600 text-white' : 'bg-zinc-900 text-zinc-300'}`}>{number}</span>;
+            })}
           </div>
-          <button type="button" onClick={() => setShowPatterns(v => !v)} aria-expanded={showPatterns} className="rounded-xl border-2 border-yellow-400 px-2 py-3 text-[10px] font-black text-yellow-100 sm:text-xs">ዝርዝር⌄</button>
         </section>
-        {showPatterns && (
-          <section className="max-h-52 overflow-y-auto rounded-xl border border-yellow-500/60 bg-zinc-950 p-2">
-            <div className="grid grid-cols-2 gap-2">
-              {WIN_PATTERN_OPTIONS.map(pattern => (
-                <div key={pattern} className={`flex items-center gap-2 rounded-lg border p-2 ${pattern === winPattern ? 'border-yellow-300 bg-yellow-500/10' : 'border-zinc-700'}`}>
-                  <div className="grid h-9 w-9 shrink-0 grid-cols-5 gap-px bg-zinc-800 p-0.5">{getPatternCells(pattern).map((cell, i) => <span key={i} className="rounded-[1px] bg-green-500" style={{ gridColumn: (cell % 5) + 1, gridRow: Math.floor(cell / 5) + 1 }} />)}</div>
-                  <span className="text-[10px] font-bold text-yellow-100">{patternLabel(pattern)}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
 
         <section className="grid grid-cols-5 gap-2">
           <div className="col-span-2 rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_15px_rgba(250,204,21,.2)]">
