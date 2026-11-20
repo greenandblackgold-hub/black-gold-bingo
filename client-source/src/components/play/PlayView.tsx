@@ -51,14 +51,14 @@ function BingoCardView({ card, index, marks, called, pattern, claimable, claimin
   const winningCells = useMemo(() => new Set((winning ?? []).map(([r, c]) => r + '-' + c)), [winning]);
 
   return (
-    <section className={\`relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 \${accent.border} bg-black p-1 shadow-xl \${accent.glow}\`}>
-      <div className={\`flex items-center justify-center bg-gradient-to-r \${accent.head} px-2 py-1 text-base font-black text-white sm:text-xl\`}>
+    <section className={`relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-1 shadow-xl ${accent.glow}`}>
+      <div className={`flex items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-1 text-base font-black text-white sm:text-xl`}>
         Card #{index + 1}
       </div>
       {card.locked && <span className="absolute right-1 top-1 z-10 rounded bg-red-700 px-2 py-0.5 text-[9px] font-black text-white">LOCKED</span>}
       <div className="grid grid-cols-5 gap-px overflow-hidden rounded-b-lg bg-zinc-400">
         {LETTERS.map((letter, col) => (
-          <div key={letter} className={\`py-1 text-center text-base font-black text-white sm:text-2xl \${['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'][col]}\`}>{letter}</div>
+          <div key={letter} className={`py-1 text-center text-base font-black text-white sm:text-2xl ${['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'][col]}`}>{letter}</div>
         ))}
         {card.grid.flatMap((row, r) => row.map((value, c) => {
           const free = value === null;
@@ -72,7 +72,7 @@ function BingoCardView({ card, index, marks, called, pattern, claimable, claimin
               disabled={free || !wasCalled || !!card.locked}
               onClick={() => { if (value !== null && wasCalled) onToggle(value); }}
               aria-pressed={marked}
-              aria-label={free ? 'FREE' : \`\${LETTERS[c]} \${value}\`}
+              aria-label={free ? 'FREE' : `${LETTERS[c]} ${value}`}
               className={[
                 'relative grid aspect-square min-w-0 place-items-center rounded-[3px] text-[clamp(10px,2.1vw,22px)] font-black leading-none text-black transition',
                 free ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
@@ -103,7 +103,7 @@ function CalledBall({ number, latest = false }: { number: number; latest?: boole
     letter === 'B' ? 'from-red-500 to-red-800' :
     letter === 'I' ? 'from-blue-400 to-blue-700' : 'from-orange-400 to-orange-700';
   return (
-    <div className={\`grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 border-white/80 bg-gradient-to-br \${color} text-white shadow-[0_0_12px_rgba(255,255,255,.18)] \${latest ? 'ring-2 ring-yellow-200' : ''}\`}>
+    <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 border-white/80 bg-gradient-to-br ${color} text-white shadow-[0_0_12px_rgba(255,255,255,.18)] ${latest ? 'ring-2 ring-yellow-200' : ''}`}>
       <span className="text-[9px] font-black leading-none">{letter}</span>
       <strong className="text-xl leading-none">{number}</strong>
     </div>
@@ -113,7 +113,7 @@ function CalledBall({ number, latest = false }: { number: number; latest?: boole
 function formatCountdown(target: number | null, now: number) {
   if (!target) return '--:--';
   const seconds = Math.max(0, Math.ceil((target - now) / 1000));
-  return \`\${String(Math.floor(seconds / 60)).padStart(2, '0')}:\${String(seconds % 60).padStart(2, '0')}\`;
+  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
 export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
@@ -224,7 +224,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           </div>
           <div className="rounded-2xl border-2 border-yellow-300 bg-black px-1 py-2 text-center shadow-[0_0_24px_rgba(250,204,21,.55)]">
             <p className="text-[9px] font-black text-yellow-200 sm:text-xs">የመጨረሻ ጥሪ</p>
-            <p className="text-3xl font-black leading-none text-yellow-300 sm:text-5xl">{lastNumber ? \`\${letterFor(lastNumber)}-\${lastNumber}\` : '—'}</p>
+            <p className="text-3xl font-black leading-none text-yellow-300 sm:text-5xl">{lastNumber ? `${letterFor(lastNumber)}-${lastNumber}` : '—'}</p>
           </div>
           <div className="rounded-2xl border border-yellow-400 bg-black px-1.5 py-2 text-center shadow-[0_0_13px_rgba(250,204,21,.2)]">
             <p className="text-[9px] font-bold text-yellow-200 sm:text-xs">ቀጣይ ቁጥር</p>
@@ -241,7 +241,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           <div className="rounded-xl bg-gradient-to-b from-yellow-300 to-amber-500 px-2 py-2 text-center text-[10px] font-black leading-tight text-black sm:text-xs">የዙሩ<br/>የአሸናፊነት ቅርጽ</div>
           <div className="flex min-w-0 items-center gap-2">
             <div className="grid w-24 shrink-0 grid-cols-5 gap-0.5 rounded-md bg-white p-1">
-              {Array.from({ length: 25 }, (_, i) => <span key={i} className={\`aspect-square rounded-[2px] \${patternCells.includes(i) ? 'bg-green-500' : 'bg-zinc-200'}\`} />)}
+              {Array.from({ length: 25 }, (_, i) => <span key={i} className={`aspect-square rounded-[2px] ${patternCells.includes(i) ? 'bg-green-500' : 'bg-zinc-200'}`} />)}
             </div>
             <span className="min-w-0 text-[10px] font-bold leading-tight text-white sm:text-xs">{patternLabel(winPattern)}<br/><span className="text-yellow-200">(Current pattern)</span></span>
           </div>
@@ -251,7 +251,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           <section className="max-h-52 overflow-y-auto rounded-xl border border-yellow-500/60 bg-zinc-950 p-2">
             <div className="grid grid-cols-2 gap-2">
               {WIN_PATTERN_OPTIONS.map(pattern => (
-                <div key={pattern} className={\`flex items-center gap-2 rounded-lg border p-2 \${pattern === winPattern ? 'border-yellow-300 bg-yellow-500/10' : 'border-zinc-700'}\`}>
+                <div key={pattern} className={`flex items-center gap-2 rounded-lg border p-2 ${pattern === winPattern ? 'border-yellow-300 bg-yellow-500/10' : 'border-zinc-700'}`}>
                   <div className="grid h-9 w-9 shrink-0 grid-cols-5 gap-px bg-zinc-800 p-0.5">{getPatternCells(pattern).map((cell, i) => <span key={i} className="rounded-[1px] bg-green-500" style={{ gridColumn: (cell % 5) + 1, gridRow: Math.floor(cell / 5) + 1 }} />)}</div>
                   <span className="text-[10px] font-bold text-yellow-100">{patternLabel(pattern)}</span>
                 </div>
@@ -271,7 +271,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
               {Array.from({ length: 75 }, (_, i) => i + 1).map(number => {
                 const isCalled = called.has(number);
                 const latest = number === lastNumber;
-                return <span key={number} className={\`grid aspect-square min-w-0 place-items-center rounded-[3px] text-[8px] font-bold tabular-nums sm:text-xs \${latest ? 'bg-orange-500 text-white ring-1 ring-yellow-200' : isCalled ? 'bg-blue-600 text-white' : 'bg-zinc-900 text-zinc-300'}\`}>{number}</span>;
+                return <span key={number} className={`grid aspect-square min-w-0 place-items-center rounded-[3px] text-[8px] font-bold tabular-nums sm:text-xs ${latest ? 'bg-orange-500 text-white ring-1 ring-yellow-200' : isCalled ? 'bg-blue-600 text-white' : 'bg-zinc-900 text-zinc-300'}`}>{number}</span>;
               })}
             </div>
           </div>
@@ -304,7 +304,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
               try { localStorage.setItem('bgb.autoMark', next ? 'on' : 'off'); } catch { /* ignore */ }
             }} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
               <span className="text-[10px] font-black text-white sm:text-xs">Auto-Mark</span>
-              <span className={\`relative h-6 w-10 shrink-0 rounded-full \${autoMark ? 'bg-green-500' : 'bg-zinc-600'}\`}><span className={\`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform \${autoMark ? 'translate-x-5' : 'translate-x-1'}\`} /></span>
+              <span className={`relative h-6 w-10 shrink-0 rounded-full ${autoMark ? 'bg-green-500' : 'bg-zinc-600'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${autoMark ? 'translate-x-5' : 'translate-x-1'}`} /></span>
             </button>
             <button type="button" onClick={onGoToWallet} className="min-w-0 shrink-0 border-l border-yellow-500/50 px-2 text-left">
               <span className="flex items-center gap-1 text-lg leading-none text-yellow-400">▣ <span className="text-[9px] font-bold text-white sm:text-xs">ቀሪ ሂሳብ</span></span>
