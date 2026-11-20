@@ -50,6 +50,9 @@ export const DEFAULT_GAME: SharedGame = {
   autoCall: false,
   callIntervalSec: 5,
   nextCallAt: null,
+  startedAt: null,
+  endedAt: null,
+  nextRoundAt: null,
   winner: null,
 };
 
@@ -65,6 +68,9 @@ function parseGame(raw: unknown): SharedGame | null {
     autoCall: r.autoCall === true,
     callIntervalSec: typeof r.callIntervalSec === 'number' ? r.callIntervalSec : 5,
     nextCallAt: typeof r.nextCallAt === 'number' ? r.nextCallAt : null,
+    startedAt: typeof r.startedAt === 'number' ? r.startedAt : null,
+    endedAt: typeof r.endedAt === 'number' ? r.endedAt : null,
+    nextRoundAt: typeof r.nextRoundAt === 'number' ? r.nextRoundAt : null,
     winner:
       w && typeof w.cardId === 'string' && (typeof w.serial === 'string' || typeof w.serial === 'number')
         ? { cardId: w.cardId, serial: w.serial, at: typeof w.at === 'number' ? w.at : 0 }
