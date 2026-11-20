@@ -213,7 +213,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   }, [active, cards, calledNumbers, called, winPattern]);
 
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
-  const [cardColumns, setCardColumns] = useState(2);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [cardOrder, setCardOrder] = useState<'oldest'|'newest'>('oldest');
   const [markColor, setMarkColor] = useState('#d4af37');
@@ -223,7 +222,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   
 
   useEffect(() => {
-    const load = () => { try { const cols=Number(localStorage.getItem('bgb.cardsPerRow')); setCardColumns([2,3,4].includes(cols)?cols:2);  setCardOrder(localStorage.getItem('bgb.cardOrder')==='newest'?'newest':'oldest'); setMarkColor(localStorage.getItem('bgb.markColor')||'#d4af37'); setAutoMark(localStorage.getItem('bgb.autoMark')!=='off'); const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]'); setSelectedCardIds(Array.isArray(ids)?ids:[]); } catch { /* retain defaults */ } };
+    const load = () => { try { setCardOrder(localStorage.getItem('bgb.cardOrder')==='newest'?'newest':'oldest'); setMarkColor(localStorage.getItem('bgb.markColor')||'#d4af37'); setAutoMark(localStorage.getItem('bgb.autoMark')!=='off'); const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]'); setSelectedCardIds(Array.isArray(ids)?ids:[]); } catch { /* retain defaults */ } };
     load(); window.addEventListener('bgb-player-settings',load); return ()=>window.removeEventListener('bgb-player-settings',load);
   }, []);
 
