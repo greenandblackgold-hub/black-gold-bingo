@@ -6,7 +6,6 @@ import { useRound } from '@/context/RoundContext';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { play } from '@/lib/audio';
 import { findWinningPattern, patternMasks } from '@/lib/bingo';
-import { WIN_PATTERN_OPTIONS } from '@/lib/patternCatalog';
 import type { BingoCard, WinPattern } from '@/types/game';
 
 const LETTERS = ['B', 'I', 'N', 'G', 'O'] as const;
@@ -17,14 +16,6 @@ const CARD_ACCENTS = [
   { border: 'border-fuchsia-500', glow: 'shadow-[0_0_18px_rgba(217,70,239,.5)]', head: 'from-purple-700 via-fuchsia-600 to-purple-700' },
   { border: 'border-orange-500', glow: 'shadow-[0_0_18px_rgba(249,115,22,.5)]', head: 'from-orange-700 via-orange-500 to-orange-700' },
 ];
-const PATTERN_LABELS: Partial<Record<WinPattern, string>> = {
-  any_line: 'አንድ መስመር', horizontal_line: 'አግድም መስመር',
-  vertical_line: 'ቁመት መስመር', diagonal: 'ዲያጎናል',
-  two_lines: 'ሁለት መስመሮች', four_corners: 'አራቱ ማዕዘኖች',
-  full_house: 'ሙሉ ካርድ', x: 'X ቅርጽ', t: 'T ቅርጽ',
-  plus: 'ፕላስ (+)', diamond: 'ዳይመንድ', coverall: 'ሙሉ ካርድ',
-};
-const patternLabel = (pattern: WinPattern) => PATTERN_LABELS[pattern] ?? pattern.replace(/_/g, ' ');
 const getPatternCells = (pattern: WinPattern) => {
   const masks = patternMasks(pattern);
   return (masks[0] ?? []).map(([r, c]) => r * 5 + c);
