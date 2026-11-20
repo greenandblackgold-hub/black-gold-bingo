@@ -150,4 +150,8 @@ export interface RoundContextValue {
   setCallIntervalSec: (sec: number) => void;
   /** epoch ms of the next scheduled call, or null */
   nextCallAt: number | null;
+  /** epoch ms when the next automatic round starts */
+  nextRoundAt: number | null;
+  announcement: { message: string; at: number } | null;
+  setAnnouncement: (message: string) => void;
 }
