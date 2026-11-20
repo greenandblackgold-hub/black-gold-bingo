@@ -273,6 +273,9 @@ export function RoundProvider({ children }: { children: ReactNode }) {
       callIntervalSec: game.callIntervalSec,
       setCallIntervalSec,
       nextCallAt: game.nextCallAt,
+      nextRoundAt: null,
+      announcement: null,
+      setAnnouncement: () => undefined,
     }),
     [
       roomId, loaded, canHost, game, claims, startRound, endRound, resetRound, drawNext, acceptClaim,
