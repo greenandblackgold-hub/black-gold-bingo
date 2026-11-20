@@ -110,12 +110,6 @@ function CalledBall({ number, latest = false }: { number: number; latest?: boole
   );
 }
 
-function formatCountdown(target: number | null, now: number) {
-  if (!target) return '--:--';
-  const seconds = Math.max(0, Math.ceil((target - now) / 1000));
-  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
-}
-
 export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark, balance } = usePlayer();
