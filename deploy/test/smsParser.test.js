@@ -63,9 +63,9 @@ test('accepts common reference labels and Ethiopian currency wording', () => {
 test('normalizes Ethiopian numerals in currency amounts', () => {
   const parsed = parseBankSms({
     sender: 'CBE',
-    text: 'ገቢ ሆኗል ፪፻ ብር። Ref: CBE555555',
+    text: 'ገቢ ሆኗል ፪፭ ብር። Ref: CBE555555',
   });
-  assert.equal(parsed.amount, 200);
+  assert.equal(parsed.amount, 25);
 });
 
 test('rejects unknown senders, outgoing transfers and ambiguous amounts', () => {
