@@ -300,6 +300,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
   admin('POST', '/api/admin/draw', async () => (await game.draw(), game.getPublicState()));
   admin('POST', '/api/admin/auto', async ({ body }) => (await game.setAuto(body.on === true, body.intervalSec), game.getPublicState()));
   admin('POST', '/api/admin/pattern', async ({ body }) => (await game.setWinPattern(body.pattern), game.getPublicState()));
+  admin('POST', '/api/admin/announcement', async ({ body }) => (await game.setAnnouncement(body.message), game.getPublicState()));
   admin('GET', '/api/admin/withdrawals', async ({ query }) =>
     (await wallet.listWithdrawals({ status: query.get('status') || undefined })).map((w) => ({
       id: w.id, userId: w.userId, amount: w.amount / 100, status: w.status, accountName: w.accountName,
