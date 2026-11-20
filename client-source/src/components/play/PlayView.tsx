@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { formatAmount, translations } from '@/lib/localization';
+import { formatAmount } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
@@ -7,7 +7,7 @@ import { useAppSettings } from '@/context/AppSettingsContext';
 import { play } from '@/lib/audio';
 import { findWinningPattern, patternMasks } from '@/lib/bingo';
 import { WIN_PATTERN_OPTIONS } from '@/lib/patternCatalog';
-import type { BingoCard, Lang, Pos, WinPattern } from '@/types/game';
+import type { BingoCard, WinPattern } from '@/types/game';
 
 const LETTERS = ['B', 'I', 'N', 'G', 'O'] as const;
 const letterFor = (n: number) => LETTERS[Math.min(4, Math.floor((n - 1) / 15))];
@@ -120,13 +120,10 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark, balance } = usePlayer();
   const {
-    phase, winPattern, calledNumbers, claimBingo, winner, loaded,
+    phase, winPattern, calledNumbers, claimBingo, winner,
     roundNumber, nextCallAt, nextRoundAt, announcement, roundPrizeEtb,
   } = useRound();
   const { soundEnabled, setSoundEnabled } = useAppSettings();
-  const t = (key: keyof (typeof translations.play)['en']) =>
-    (translations.play[lang as Lang] ?? translations.play.en)[key];
-
   const [now, setNow] = useState(() => Date.now());
   const [autoMark, setAutoMark] = useState(true);
   const [showPatterns, setShowPatterns] = useState(false);
@@ -319,8 +316,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           </div>
         </footer>
       </div>
-      {!loaded && <span className="sr-only">{t('loading')}</span>}
-      {winner && iWon && <div role="status" className="sr-only">{t('won')}</div>}
+      {winner && iWon && <div role="status" className="sr-only">BINGO! አሸንፈዋል።</div>}
     </main>
   );
 }
