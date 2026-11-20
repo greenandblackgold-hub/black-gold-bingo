@@ -319,22 +319,22 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
               <button type="button" aria-pressed={numberBoardMode === 'called'} onClick={() => setNumberBoardMode('called')} className={`rounded-md px-3 py-1.5 text-xs font-black transition sm:text-sm ${numberBoardMode === 'called' ? 'bg-yellow-400 text-black shadow' : 'text-yellow-200 hover:bg-yellow-400/10'}`}>የተጠሩ</button>
             </div>
           </div>
-          <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
-            {LETTERS.map((letter, col) => (
-              <div key={letter} className="rounded-md bg-zinc-950 p-1">
-                <div className={`mb-1 rounded-md py-1 text-center text-sm font-black text-black shadow-inner sm:text-base ${['bg-blue-400','bg-red-400','bg-emerald-400','bg-amber-300','bg-orange-400'][col]}`}>{letter}</div>
-                <div className="flex flex-col gap-1">
-                  {Array.from({ length: 15 }, (_, row) => {
-                    const number = col * 15 + row + 1;
-                    const isCalled = called.has(number);
-                    const visible = numberBoardMode === 'all' || isCalled;
-                    return (
-                      <div key={number} aria-label={visible ? `${letter} ${number}${isCalled ? ', called' : ''}` : undefined} className={`grid aspect-square min-h-0 place-items-center rounded-[4px] border text-[10px] font-black tabular-nums transition sm:text-sm ${!visible ? 'border-transparent bg-transparent text-transparent' : isCalled ? 'border-yellow-200 bg-blue-600 text-white shadow-[0_0_8px_rgba(59,130,246,.65)]' : 'border-yellow-500/20 bg-zinc-900 text-yellow-100/75'}`}>
-                        {visible ? number : ''}
-                      </div>
-                    );
-                  })}
+          <div className="space-y-1.5">
+            {LETTERS.map((letter, row) => (
+              <div key={letter} className="grid grid-cols-[1.5rem_repeat(15,minmax(0,1fr))] items-stretch gap-1 sm:grid-cols-[2.25rem_repeat(15,minmax(0,1fr))] sm:gap-1.5">
+                <div className={`grid place-items-center rounded-md text-sm font-black text-black shadow-inner sm:text-lg ${['bg-blue-400','bg-red-400','bg-emerald-400','bg-amber-300','bg-orange-400'][row]}`}>
+                  {letter}
                 </div>
+                {Array.from({ length: 15 }, (_, col) => {
+                  const number = row * 15 + col + 1;
+                  const isCalled = called.has(number);
+                  const visible = numberBoardMode === 'all' || isCalled;
+                  return (
+                    <div key={number} aria-label={visible ? `${letter} ${number}${isCalled ? ', called' : ''}` : undefined} className={`grid aspect-square min-w-0 place-items-center rounded-[4px] border text-[9px] font-black tabular-nums transition sm:text-sm ${!visible ? 'border-transparent bg-transparent text-transparent' : isCalled ? 'border-yellow-200 bg-blue-600 text-white shadow-[0_0_8px_rgba(59,130,246,.65)]' : 'border-yellow-500/20 bg-zinc-900 text-yellow-100/75'}`}>
+                      {visible ? number : ''}
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>
