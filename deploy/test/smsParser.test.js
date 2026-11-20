@@ -43,6 +43,31 @@ test('selects the incoming transfer amount when SMS also reports available balan
   assert.equal(parsed.reference, 'CBE98765432');
 });
 
+test('accepts common reference labels and Ethiopian currency wording', () => {
+  const parsed = parseBankSms({
+    sender: 'CBE',
+    text: 'ከአቶ አበበ 250 ብር ተቀብለዋል። የግብይት መለያ: CBE123456',
+  });
+  assert.equal(parsed.amount, 250);
+  assert.equal(parsed.reference, 'CBE123456');
+  assert.equal(parsed.provider, 'cbe');
+
+  const alternate = parseBankSms({
+    sender: 'Telebirr',
+    text: 'You received ብር 75.00. Receipt No: TB998877',
+  });
+  assert.equal(alternate.amount, 75);
+  assert.equal(alternate.reference, 'TB998877');
+});
+
+test('normalizes Ethiopian numerals in currency amounts', () => {
+  const parsed = parseBankSms({
+    sender: 'CBE',
+    text: 'ገቢ ሆኗል ፪፻ ብር። Ref: CBE555555',
+  });
+  assert.equal(parsed.amount, 200);
+});
+
 test('rejects unknown senders, outgoing transfers and ambiguous amounts', () => {
   assert.throws(() => parseBankSms({
     sender: 'Unknown',
@@ -53,7 +78,15 @@ test('rejects unknown senders, outgoing transfers and ambiguous amounts', () => 
     text: 'You sent ETB 50. Transaction ID: ABC123456',
   }), /not_an_incoming_credit/);
   assert.throws(() => parseBankSms({
+    sender: 'CBE',
+    text: 'ወጪ 50 ብር። Ref: ABC123456',
+  }), /not_an_incoming_credit/);
+  assert.throws(() => parseBankSms({
     sender: 'Telebirr',
     text: 'You received ETB 50 and ETB 60. Transaction ID: ABC123456',
   }), /sms_amount_missing_or_ambiguous/);
+  assert.throws(() => parseBankSms({
+    sender: 'CBE',
+    text: 'You received ETB 50. Ref: ABC123456',
+  }), /sms_transaction_reference_missing/);
 });
