@@ -30,7 +30,7 @@ export function createWalletService({ repo, config, chapa }) {
       }
       let parsed;
       try {
-        parsed = parseBankSms({ sender: provider, text: message });
+        parsed = parseBankSms({ sender: provider, text: message, expectedRecipientAccount: config.cbeDepositAccount });
       } catch (error) {
         throw new HttpError(400, 'invalid_sms_message', 'The message is not a recognizable incoming Telebirr or CBE transfer SMS.');
       }
