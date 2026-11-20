@@ -68,6 +68,12 @@ export interface SharedGame {
   callIntervalSec: number;
   /** epoch ms of the next scheduled auto-call, or null */
   nextCallAt: number | null;
+  /** epoch ms when this round started, or null before it starts */
+  startedAt: number | null;
+  /** epoch ms when this round ended, or null while it is running */
+  endedAt: number | null;
+  /** epoch ms when the next round countdown reaches zero, or null */
+  nextRoundAt: number | null;
   /** Set by the host when a claim is accepted. */
   winner: { cardId: string; serial: string | number; at: number } | null;
 }
@@ -150,7 +156,9 @@ export interface RoundContextValue {
   setCallIntervalSec: (sec: number) => void;
   /** epoch ms of the next scheduled call, or null */
   nextCallAt: number | null;
-  /** epoch ms when the next automatic round starts */
+  /** epoch ms when the current round started, or null */
+  startedAt: number | null;
+  /** epoch ms when the next round countdown reaches zero, or null */
   nextRoundAt: number | null;
   announcement: { message: string; at: number } | null;
   setAnnouncement: (message: string) => void;
