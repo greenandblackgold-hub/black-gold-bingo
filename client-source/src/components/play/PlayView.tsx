@@ -16,6 +16,66 @@ const CARD_ACCENTS = [
   { border: 'border-fuchsia-500', glow: 'shadow-[0_0_18px_rgba(217,70,239,.5)]', head: 'from-purple-700 via-fuchsia-600 to-purple-700' },
   { border: 'border-orange-500', glow: 'shadow-[0_0_18px_rgba(249,115,22,.5)]', head: 'from-orange-700 via-orange-500 to-orange-700' },
 ];
+const WIN_PATTERN_OPTIONS: { value: WinPattern; label: string }[] = [
+  { value: 'any_line', label: 'Any Line' },
+  { value: 'horizontal_line', label: 'Horizontal Line' },
+  { value: 'vertical_line', label: 'Vertical Line' },
+  { value: 'diagonal', label: 'Diagonal' },
+  { value: 'two_lines', label: 'Two Lines' },
+  { value: 'two_horizontal_lines', label: 'Two Horizontal Lines' },
+  { value: 'four_corners', label: 'Four Corners' },
+  { value: 'rectangle', label: 'Rectangle' },
+  { value: 'two_rectangles', label: 'Two Rectangles' },
+  { value: 'half_house', label: 'Half House' },
+  { value: 'full_house', label: 'Full House' },
+  { value: 'x', label: 'X Pattern' },
+  { value: 't', label: 'T Pattern' },
+  { value: 'l', label: 'L Pattern' },
+  { value: 'plus', label: 'Plus' },
+  { value: 'diamond', label: 'Diamond' },
+  { value: 'picture_frame', label: 'Picture Frame' },
+  { value: 'six_pack', label: 'Six Pack' },
+  { value: 'postage_stamp', label: 'Postage Stamp' },
+  { value: 'three_lines', label: 'Three Lines' },
+  { value: 'four_lines', label: 'Four Lines' },
+  { value: 'top_bottom', label: 'Top & Bottom' },
+  { value: 'left_right', label: 'Left & Right' },
+  { value: 'checkerboard', label: 'Checkerboard' },
+  { value: 'center_cross', label: 'Center Cross' },
+  { value: 'coverall', label: 'Coverall' },
+  { value: 'line_through_free', label: 'Line Through FREE' },
+  { value: 'line_avoiding_free', label: 'Line Avoiding FREE' },
+  { value: 'two_lines_through_free', label: 'Two Lines Through FREE' },
+  { value: 'two_lines_avoiding_free', label: 'Two Lines Avoiding FREE' },
+  { value: 'two_rectangles_touching', label: 'Touching Rectangles' },
+  { value: 'two_rectangles_separate', label: 'Separate Rectangles' },
+  { value: 'inner_frame', label: 'Inner Frame' },
+  { value: 'inner_square', label: 'Inner Square' },
+  { value: 'four_postage_stamps', label: 'Four Postage Stamps' },
+  { value: 'z', label: 'Z Pattern' },
+  { value: 'u', label: 'U Pattern' },
+  { value: 's', label: 'S Pattern' },
+  { value: 'arrow_up', label: 'Arrow Up' },
+  { value: 'arrow_down', label: 'Arrow Down' },
+  { value: 'star', label: 'Star' },
+  { value: 'cross_and_corners', label: 'Cross & Corners' },
+  { value: 'frame_and_center', label: 'Frame & Center' },
+  { value: 'double_cross', label: 'Double Cross' },
+  { value: 'nine_pack', label: 'Nine Pack' },
+  { value: 'filled_diamond', label: 'Filled Diamond' },
+  { value: 'window_pane', label: 'Window Pane' },
+  { value: 'staircase', label: 'Staircase' },
+  { value: 'hourglass', label: 'Hourglass' },
+  { value: 'bow_tie', label: 'Bow Tie' },
+  { value: 'ladder', label: 'Ladder' },
+  { value: 'railroad_tracks', label: 'Railroad Tracks' },
+  { value: 'lucky_seven', label: 'Lucky Seven' },
+  { value: 'letter_h', label: 'Letter H' },
+  { value: 'letter_e', label: 'Letter E' },
+  { value: 'letter_c', label: 'Letter C' },
+  { value: 'letter_n', label: 'Letter N' },
+  { value: 'letter_w', label: 'Letter W' },
+];
 const getPatternCells = (pattern: WinPattern) => {
   const masks = patternMasks(pattern);
   return (masks[0] ?? []).map(([r, c]) => r * 5 + c);
@@ -112,11 +172,20 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const [now, setNow] = useState(() => Date.now());
   const [autoMark, setAutoMark] = useState(true);
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
+  const [patternOpen, setPatternOpen] = useState(false);
+  const endedAtRef = useRef<number | null>(null);
+  const previousPhaseRef = useRef(phase);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (phase === 'ended' && previousPhaseRef.current !== 'ended') endedAtRef.current = Date.now();
+    if (phase === 'running') endedAtRef.current = null;
+    previousPhaseRef.current = phase;
+  }, [phase]);
 
   useEffect(() => {
     try { setAutoMark(localStorage.getItem('bgb.autoMark') !== 'off'); } catch { /* use default */ }
@@ -171,12 +240,17 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const lastCalls = calledNumbers.slice(-5).reverse();
   const lastNumber = calledNumbers[calledNumbers.length - 1];
   const patternCells = useMemo(() => getPatternCells(winPattern), [winPattern]);
-  const callTimer = nextCallAt
+  const callTimer = active && nextCallAt
     ? (() => {
         const seconds = Math.max(0, Math.ceil((nextCallAt - now) / 1000));
         return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
       })()
-    : '0:00';
+    : endedAtRef.current !== null
+      ? (() => {
+          const seconds = Math.max(0, Math.floor((now - endedAtRef.current) / 1000));
+          return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+        })()
+      : '0:00';
 
   return (
     <main className="relative mx-auto min-h-full w-full max-w-[1100px] overflow-hidden rounded-[2rem] border-2 border-zinc-500/80 bg-[#030303] px-2 pb-32 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
@@ -202,8 +276,25 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         </header>
 
         <section className="grid grid-cols-[0.9fr_0.65fr_1.8fr] items-start gap-2 rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_18px_rgba(250,204,21,.28)]">
-          <div className="flex min-h-[3.4rem] items-center justify-center rounded-xl border border-yellow-400 bg-black px-1.5 text-center text-xs font-black leading-tight text-yellow-300 sm:text-base">
-            አሸናፊ ቅርጽ
+          <div className="relative">
+            <button
+              type="button"
+              aria-expanded={patternOpen}
+              aria-controls="winning-pattern-options"
+              onClick={() => setPatternOpen(open => !open)}
+              className="flex min-h-[3.4rem] w-full items-center justify-center gap-1 rounded-xl border border-yellow-400 bg-black px-1.5 text-center text-xs font-black leading-tight text-yellow-300 sm:text-base"
+            >
+              አሸናፊ ቅርጽ <span aria-hidden="true">{patternOpen ? '▴' : '▾'}</span>
+            </button>
+            {patternOpen && (
+              <div id="winning-pattern-options" className="absolute left-0 top-full z-40 mt-1 max-h-64 w-56 max-w-[75vw] overflow-y-auto rounded-xl border border-yellow-400 bg-black p-2 text-left shadow-[0_0_18px_rgba(250,204,21,.35)]">
+                {WIN_PATTERN_OPTIONS.map(option => (
+                  <div key={option.value} className={`rounded-md px-2 py-1.5 text-xs font-bold ${option.value === winPattern ? 'bg-yellow-400/20 text-yellow-300' : 'text-white'}`}>
+                    {option.label}{option.value === winPattern ? ' ✓' : ''}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center justify-center pt-1">
             <div className="grid w-full max-w-[6.5rem] grid-cols-5 gap-[2px] rounded-md border border-yellow-300/70 bg-white p-1 shadow-[0_0_12px_rgba(250,204,21,.35)]">
@@ -216,34 +307,6 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             </div>
             <div className="ml-auto mt-1 w-fit rounded-lg border border-red-500 bg-red-950 px-4 py-0.5 text-lg font-black leading-none text-red-500 shadow-[0_0_12px_rgba(239,68,68,.5)]">
               {callTimer}
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_15px_rgba(250,204,21,.2)]">
-          <h2 className="mb-1 text-xs font-black text-yellow-100 sm:text-sm">1–75 ቁጥሮች</h2>
-          <div className="grid grid-cols-[repeat(15,minmax(0,1fr))] gap-[2px]">
-            {Array.from({ length: 60 }, (_, i) => i + 16).map(number => {
-              const isCalled = called.has(number);
-              const latest = number === lastNumber;
-              return <span key={number} className={`grid aspect-square min-w-0 place-items-center rounded-[3px] text-[8px] font-bold tabular-nums sm:text-xs ${latest ? 'bg-orange-500 text-white ring-1 ring-yellow-200' : isCalled ? 'bg-blue-600 text-white' : 'bg-zinc-900 text-zinc-300'}`}>{number}</span>;
-            })}
-          </div>
-        </section>
-
-        <section className="grid grid-cols-5 gap-2">
-          <div className="col-span-2 rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_15px_rgba(250,204,21,.2)]">
-            <h2 className="mb-2 text-xs font-black text-yellow-100 sm:text-sm">የተጠሩ ቁጥሮች</h2>
-            <div className="flex flex-wrap gap-1.5">{lastCalls.length ? lastCalls.map((number, index) => <CalledBall key={number} number={number} latest={index === 0} />) : <span className="text-xs text-yellow-100/60">—</span>}</div>
-          </div>
-          <div className="col-span-3 rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_15px_rgba(250,204,21,.2)]">
-            <h2 className="mb-1 text-xs font-black text-yellow-100 sm:text-sm">1–75 ቁጥሮች</h2>
-            <div className="grid grid-cols-[repeat(15,minmax(0,1fr))] gap-[2px]">
-              {Array.from({ length: 75 }, (_, i) => i + 1).map(number => {
-                const isCalled = called.has(number);
-                const latest = number === lastNumber;
-                return <span key={number} className={`grid aspect-square min-w-0 place-items-center rounded-[3px] text-[8px] font-bold tabular-nums sm:text-xs ${latest ? 'bg-orange-500 text-white ring-1 ring-yellow-200' : isCalled ? 'bg-blue-600 text-white' : 'bg-zinc-900 text-zinc-300'}`}>{number}</span>;
-              })}
             </div>
           </div>
         </section>
