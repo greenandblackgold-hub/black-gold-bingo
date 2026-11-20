@@ -166,7 +166,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const { cards, markedByCard, toggleMark, balance } = usePlayer();
   const {
     phase, winPattern, calledNumbers, claimBingo, winner,
-    nextCallAt, roundPrizeEtb,
+    nextCallAt, roundPrizeEtb, startedAt, nextRoundAt,
   } = useRound();
   const { soundEnabled, setSoundEnabled } = useAppSettings();
   const [now, setNow] = useState(() => Date.now());
@@ -174,19 +174,11 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
   const [patternOpen, setPatternOpen] = useState(false);
   const [numberBoardMode, setNumberBoardMode] = useState<'all' | 'called'>('all');
-  const endedAtRef = useRef<number | null>(phase === 'ended' ? (winner?.at ?? Date.now()) : null);
-  const previousPhaseRef = useRef(phase);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    if (phase === 'ended' && previousPhaseRef.current !== 'ended') endedAtRef.current = Date.now();
-    if (phase === 'running') endedAtRef.current = null;
-    previousPhaseRef.current = phase;
-  }, [phase]);
 
   useEffect(() => {
     try { setAutoMark(localStorage.getItem('bgb.autoMark') !== 'off'); } catch { /* use default */ }
@@ -240,16 +232,14 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
 
   const lastCalls = calledNumbers.slice(-5).reverse();
   const patternCells = useMemo(() => getPatternCells(winPattern), [winPattern]);
-  const callTimer = active && nextCallAt
-    ? (() => {
-        const seconds = Math.max(0, Math.ceil((nextCallAt - now) / 1000));
-        return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-      })()
-    : endedAtRef.current !== null
-      ? (() => {
-          const seconds = Math.max(0, Math.floor((now - endedAtRef.current) / 1000));
-          return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-        })()
+  const formatClock = (milliseconds: number) => {
+    const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  };
+  const callTimer = active && startedAt !== null
+    ? formatClock(now - startedAt)
+    : nextRoundAt !== null
+      ? formatClock(nextRoundAt - now)
       : '0:00';
 
   return (
@@ -343,9 +333,10 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 {Array.from({ length: 15 }, (_, col) => {
                   const number = row * 15 + col + 1;
                   const isCalled = called.has(number);
+                  const isLatestCall = calledNumbers[calledNumbers.length - 1] === number;
                   const visible = numberBoardMode === 'all' || isCalled;
                   return (
-                    <div key={number} aria-label={visible ? `${letter} ${number}${isCalled ? ', called' : ''}` : undefined} className={`grid aspect-square min-w-0 place-items-center rounded-[4px] border text-[9px] font-black tabular-nums transition sm:text-sm ${!visible ? 'border-transparent bg-transparent text-transparent' : isCalled ? 'border-yellow-200 bg-blue-600 text-white shadow-[0_0_8px_rgba(59,130,246,.65)]' : 'border-yellow-500/20 bg-zinc-900 text-yellow-100/75'}`}>
+                    <div key={number} aria-label={visible ? `${letter} ${number}${isLatestCall ? ', latest called number' : isCalled ? ', called' : ''}` : undefined} className={`grid aspect-square min-w-0 place-items-center rounded-[4px] border text-[9px] font-black tabular-nums transition sm:text-sm ${!visible ? 'border-transparent bg-transparent text-transparent' : isLatestCall ? 'animate-pulse border-white bg-amber-300 text-black shadow-[0_0_14px_rgba(250,204,21,.95)] ring-2 ring-yellow-200' : isCalled ? 'border-yellow-200 bg-blue-600 text-white shadow-[0_0_8px_rgba(59,130,246,.65)]' : 'border-yellow-500/20 bg-zinc-900 text-yellow-100/75'}`}>
                       {visible ? number : ''}
                     </div>
                   );
