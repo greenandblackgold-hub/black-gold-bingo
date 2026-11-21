@@ -10,7 +10,16 @@ export function createGameService({ repo, config, now = Date.now }) {
   const cardSecret = hmacHex(config.jwtSecret, 'card-signing');
   const signCard = (code, round, grid) => hmacHex(cardSecret, `${code}|${round}|${JSON.stringify(grid)}`);
   let timer = null;
-  const ROUND_INTERVAL_MS = 10 * 60 * 1000;
+  const roundIntervalMs = (g) => ([4, 5, 10].includes(Number(g.roundIntervalMinutes)) ? Number(g.roundIntervalMinutes) : 10) * 60 * 1000;
+  const calculatePrize = (g) => {
+    const gross = Math.max(0, Math.floor(Number(g.pot) || 0));
+    const mode = g.prizeMode === 'per_player' ? 'per_player' : 'revenue_percent';
+    const configured = mode === 'per_player'
+      ? Math.floor(Math.max(0, Number(g.prizePerPlayer) || 0) * Math.max(0, Number(g.roundPlayerIds?.length) || 0))
+      : Math.floor(gross * (Math.min(100, Math.max(0, Number(g.prizePercent ?? config.prizePercent) || 0))) / 100);
+    const cap = Number(g.maxPrizeCap) > 0 ? Math.floor(Number(g.maxPrizeCap)) : gross;
+    return Math.min(gross, cap, configured);
+  };
   const ROUND_DURATION_MS = 8 * 60 * 1000;
   const AUTO_CALL_SECONDS = 8;
   const randomPattern = () => { const ids = Object.keys(WIN_PATTERNS); return ids[randomInt(ids.length)]; };
@@ -29,8 +38,14 @@ export function createGameService({ repo, config, now = Date.now }) {
     winner: g.winner ? { cardId: g.winner.cardCode, serial: g.winner.serial, at: g.winner.at } : null,
     roomId: config.roomId,
     cardPrice: config.cardPrice / 100,
-    roundPrizeEtb: Math.floor(((g.pot ?? 0) * config.prizePercent) / 100) / 100,
+    roundPrizeEtb: calculatePrize(g) / 100,
     roundCardCount: config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0,
+    roundPlayerCount: g.roundPlayerIds?.length ?? 0,
+    prizeMode: g.prizeMode ?? 'revenue_percent',
+    prizePercent: g.prizePercent ?? config.prizePercent,
+    prizePerPlayer: (g.prizePerPlayer ?? 0) / 100,
+    maxPrizeCap: (g.maxPrizeCap ?? 0) / 100,
+    roundIntervalMinutes: g.roundIntervalMinutes ?? 10,
     serverTime: now(),
   });
 
@@ -61,9 +76,9 @@ export function createGameService({ repo, config, now = Date.now }) {
     if (timer) clearTimeout(timer);
     timer = null;
     let due = null;
-    if (g.phase === 'waiting') due = g.nextRoundAt ?? (now() + ROUND_INTERVAL_MS);
+    if (g.phase === 'waiting') due = g.nextRoundAt ?? (now() + roundIntervalMs(g));
     else if (g.phase === 'running') due = g.autoCall
-      ? Math.min(g.nextCallAt ?? (now() + g.callIntervalSec * 1000), g.roundEndsAt ?? (now() + ROUND_INTERVAL_MS))
+      ? Math.min(g.nextCallAt ?? (now() + g.callIntervalSec * 1000), g.roundEndsAt ?? (now() + roundIntervalMs(g)))
       : (g.roundEndsAt ?? (now() + ROUND_INTERVAL_MS));
     else if (g.phase === 'ended') due = g.nextRoundAt ?? (now() + ROUND_INTERVAL_MS);
     if (due === null) return;
@@ -76,7 +91,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       const g = await repo.getGame();
       if (g.phase === 'waiting') {
         if (!g.nextRoundAt) {
-          await mutate('waiting', () => ({ nextRoundAt: now() + ROUND_INTERVAL_MS }));
+          await mutate('waiting', () => ({ nextRoundAt: now() + roundIntervalMs(g) }));
         } else if (g.nextRoundAt <= now()) {
           await mutate('waiting', () => ({
             phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
@@ -96,7 +111,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         await mutate('ended', (current) => ({
           phase: 'waiting', roundNumber: current.roundNumber + 1, calledNumbers: [], winner: null,
           autoCall: false, nextCallAt: null, roundStartedAt: null, roundEndsAt: null,
-          nextRoundAt: (current.roundStartedAt ?? now()) + ROUND_INTERVAL_MS, pot: 0,
+          nextRoundAt: (current.roundStartedAt ?? now()) + roundIntervalMs(current), pot: 0, roundPlayerIds: [],
         }));
         return;
       }
@@ -165,6 +180,19 @@ export function createGameService({ repo, config, now = Date.now }) {
       return mutate('waiting', () => ({ winPattern: pattern }));
     },
 
+    setPrizeScheduleSettings(input = {}) {
+      const mode = input.prizeMode === 'per_player' ? 'per_player' : input.prizeMode === 'revenue_percent' ? 'revenue_percent' : null;
+      if (!mode) throw new HttpError(400, 'invalid_prize_mode', 'Choose a supported prize mode');
+      const prizePercent = Number(input.prizePercent);
+      const prizePerPlayer = Math.round(Number(input.prizePerPlayer) * 100);
+      const maxPrizeCap = Math.round(Number(input.maxPrizeCap) * 100);
+      const interval = Number(input.roundIntervalMinutes);
+      if (!Number.isFinite(prizePercent) || prizePercent < 0 || prizePercent > 100) throw new HttpError(400, 'invalid_prize_percent', 'Prize percentage must be between 0 and 100');
+      if (!Number.isSafeInteger(prizePerPlayer) || prizePerPlayer < 0 || !Number.isSafeInteger(maxPrizeCap) || maxPrizeCap < 0) throw new HttpError(400, 'invalid_prize_amount', 'Prize amounts must be non-negative ETB values with at most two decimals');
+      if (![4, 5, 10].includes(interval)) throw new HttpError(400, 'invalid_round_interval', 'Round interval must be 4, 5, or 10 minutes');
+      return mutate(null, () => ({ prizeMode: mode, prizePercent, prizePerPlayer, maxPrizeCap, roundIntervalMinutes: interval }));
+    },
+
     async resetRound() {
       const before = await repo.getGame();
       if (before.phase !== 'ended') throw new HttpError(409, 'wrong_phase', `Round is ${before.phase}`);
@@ -184,7 +212,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         autoCall: false,
         nextCallAt: null,
         nextRoundAt: now() + ROUND_INTERVAL_MS,
-        pot: 0,
+        pot: 0, roundPlayerIds: [],
       }));
     },
 
@@ -278,7 +306,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         return locked ? { ok: false, reason: 'false_bingo', cardLocked: true } : { ok: false, reason: 'claim_expired' };
       }
 
-      const prize = Math.floor((g.pot * config.prizePercent) / 100);
+      const prize = calculatePrize(g);
       const settled = await repo.settleWin({ round: g.roundNumber, expectedVersion: g.version, card, prize, ref: `win:${g.roundNumber}:${card.code}` });
       if (!settled) return { ok: false, reason: 'already_won' };
       const advanced = await repo.casGame(settled.version, { nextRoundAt: (g.roundStartedAt ?? now()) + ROUND_INTERVAL_MS }) ?? await repo.getGame();
