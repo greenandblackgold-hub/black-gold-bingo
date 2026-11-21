@@ -220,6 +220,20 @@ export async function createMongoRepo({ uri, dbName }) {
         return { balance: user.balance, game };
       });
     },
+    async listPlayerIds() {
+      return (await users.find({ role: 'player', phoneVerified: true }, { projection: { _id: 1 } }).toArray()).map((u) => u._id);
+    },
+    async insertFreeCards({ userId, round, cards: newCards }) {
+      const game = await games.findOne({ _id: 'state', phase: 'waiting', roundNumber: round }, { projection: { _id: 1 } });
+      if (!game) throw new RepoError('ROUND_NOT_OPEN');
+      if (!newCards.length) return;
+      try {
+        await cards.insertMany(newCards.map((c) => ({ ...c, userId, round, createdAt: new Date(), bonusFree: true })), { ordered: true });
+      } catch (e) {
+        if (isDuplicate(e)) throw new RepoError('CARD_NUMBER_TAKEN');
+        throw e;
+      }
+    },
     async listCards(userId, round) {
       return (await cards.find({ userId, round }).sort({ serial: 1 }).toArray()).map(toDoc);
     },
