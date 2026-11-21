@@ -313,6 +313,7 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
       roundCardCount: g?.roundCardCount ?? 0,
       roundPlayerCount: g?.roundPlayerCount ?? 0,
       prizeMode: g?.prizeMode ?? 'revenue_percent',
+      fixedPrizeEtb: g?.fixedPrizeEtb ?? 0,
       prizePercent: g?.prizePercent ?? 80,
       prizePerPlayer: g?.prizePerPlayer ?? 0,
       maxPrizeCap: g?.maxPrizeCap ?? 0,
