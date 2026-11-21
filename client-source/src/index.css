@@ -499,8 +499,18 @@ body { min-height: 100vh; min-height: 100dvh; }
   box-shadow: 0 0 10px rgba(239,68,68,.75), 0 0 20px rgba(220,38,38,.4), inset 0 1px rgba(255,255,255,.3);
   animation: player-quick-buy-pulse 1.15s ease-in-out infinite;
 }
-.player-quick-buy-footer-cta > span:first-child { font-size: 1.35rem; font-weight: 1000; }
+.player-quick-buy-footer-cta > span:first-child {
+  display: inline-block;
+  font-size: 1.35rem;
+  font-weight: 1000;
+  transform-origin: center;
+  animation: player-quick-buy-plus-flash .72s ease-in-out infinite;
+}
+@keyframes player-quick-buy-plus-flash {
+  0%, 100% { opacity: .72; transform: scale(.92) rotate(-4deg); text-shadow: 0 0 3px #fff, 0 0 7px #fecaca; }
+  50% { opacity: 1; transform: scale(1.28) rotate(4deg); text-shadow: 0 0 7px #fff, 0 0 15px #fff, 0 0 24px #fca5a5; }
+}
 .player-quick-buy-footer-cta:disabled { animation: none; filter: saturate(.55); opacity: .45; }
 @media (prefers-reduced-motion: reduce) {
-  .player-quick-buy-footer-cta { animation: none; }
+  .player-quick-buy-footer-cta, .player-quick-buy-footer-cta > span:first-child { animation: none; }
 }
