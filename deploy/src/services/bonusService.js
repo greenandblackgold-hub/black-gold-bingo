@@ -29,6 +29,7 @@ export function createBonusService({ repo, game, config }) {
       regularRoundsSinceBonus: count,
       lastCountedRegularRound: completedRound,
       bonusDue: !isBonus && count >= BONUS_EVERY,
+      ...(!isBonus && count >= BONUS_EVERY ? { nextRoundAt: Date.now() } : {}),
     });
     if (!next) return false;
     if (!isBonus && count === BONUS_EVERY - 2) {
@@ -64,7 +65,6 @@ export function createBonusService({ repo, game, config }) {
     if (!prepared) return;
     await grantFreeCards(prepared);
     await game.startRound();
-    await game.setAnnouncement('🎉 ነፃ የቦነስ ጨዋታ ተጀምሯል! የሽልማቱ መጠን 10,000 ብር ነው። ለእያንዳንዱ ተጫዋች እስከ 3 ነፃ ካርቴላ ተሰጥቷል።');
   }
 
   async function grantFreeCards(g) {
