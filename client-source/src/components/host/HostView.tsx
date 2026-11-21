@@ -131,18 +131,20 @@ export function HostView() {
   const t = (k: StringKey) => (STRINGS[h.lang] ?? STRINGS.en)[k];
   const [announcementDraft, setAnnouncementDraft] = useState('');
   useEffect(() => setAnnouncementDraft(h.announcement?.message ?? ''), [h.announcement?.message]);
-  const [prizeModeDraft, setPrizeModeDraft] = useState<'revenue_percent' | 'per_player'>(h.prizeMode ?? 'revenue_percent');
+  const [prizeModeDraft, setPrizeModeDraft] = useState<'revenue_percent' | 'per_player' | 'fixed'>(h.prizeMode ?? 'revenue_percent');
   const [prizePercentDraft, setPrizePercentDraft] = useState(String(h.prizePercent ?? 80));
   const [prizePerPlayerDraft, setPrizePerPlayerDraft] = useState(String(h.prizePerPlayer ?? 0));
+  const [fixedPrizeDraft, setFixedPrizeDraft] = useState(String(h.fixedPrizeEtb ?? 0));
   const [maxPrizeCapDraft, setMaxPrizeCapDraft] = useState(String(h.maxPrizeCap ?? 0));
   const [roundIntervalDraft, setRoundIntervalDraft] = useState(String(h.roundIntervalMinutes ?? 10));
   useEffect(() => {
     setPrizeModeDraft(h.prizeMode ?? 'revenue_percent');
     setPrizePercentDraft(String(h.prizePercent ?? 80));
     setPrizePerPlayerDraft(String(h.prizePerPlayer ?? 0));
+    setFixedPrizeDraft(String(h.fixedPrizeEtb ?? 0));
     setMaxPrizeCapDraft(String(h.maxPrizeCap ?? 0));
     setRoundIntervalDraft(String(h.roundIntervalMinutes ?? 10));
-  }, [h.prizeMode, h.prizePercent, h.prizePerPlayer, h.maxPrizeCap, h.roundIntervalMinutes]);
+  }, [h.prizeMode, h.prizePercent, h.prizePerPlayer, h.fixedPrizeEtb, h.maxPrizeCap, h.roundIntervalMinutes]);
 
   const called = h.calledNumbers;
   const calledSet = new Set(called);
@@ -224,9 +226,10 @@ export function HostView() {
         <h2 className="mb-3 text-lg font-bold text-gold-300">የሽልማት እና የቀጣይ ዙር ቅንብር</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm text-gold-300">የሽልማት ስሌት
-            <select value={prizeModeDraft} onChange={(e) => setPrizeModeDraft(e.target.value as 'revenue_percent' | 'per_player')} className="rounded-xl bg-zinc-900 px-3 py-2 text-gold-100 ring-1 ring-gold-700/60">
+            <select value={prizeModeDraft} onChange={(e) => setPrizeModeDraft(e.target.value as 'revenue_percent' | 'per_player' | 'fixed')} className="rounded-xl bg-zinc-900 px-3 py-2 text-gold-100 ring-1 ring-gold-700/60">
               <option value="revenue_percent">Gross Revenue Percentage</option>
               <option value="per_player">Per Player</option>
+              <option value="fixed">Fixed Prize (ETB)</option>
             </select>
           </label>
           <label className="grid gap-1 text-sm text-gold-300">የዙር መጠበቂያ ጊዜ
@@ -238,9 +241,13 @@ export function HostView() {
             <label className="grid gap-1 text-sm text-gold-300">Gross Revenue መቶኛ (%)
               <input type="number" min="0" max="100" step="0.01" value={prizePercentDraft} onChange={(e) => setPrizePercentDraft(e.target.value)} className="rounded-xl bg-zinc-900 px-3 py-2 text-gold-100 ring-1 ring-gold-700/60" />
             </label>
-          ) : (
+          ) : prizeModeDraft === 'per_player' ? (
             <label className="grid gap-1 text-sm text-gold-300">ለእያንዳንዱ ልዩ ተጫዋች (ብር)
               <input type="number" min="0" step="0.01" value={prizePerPlayerDraft} onChange={(e) => setPrizePerPlayerDraft(e.target.value)} className="rounded-xl bg-zinc-900 px-3 py-2 text-gold-100 ring-1 ring-gold-700/60" />
+            </label>
+          ) : (
+            <label className="grid gap-1 text-sm text-gold-300">ቋሚ የሽልማት መጠን (ብር)
+              <input type="number" min="0" step="0.01" value={fixedPrizeDraft} onChange={(e) => setFixedPrizeDraft(e.target.value)} className="rounded-xl bg-zinc-900 px-3 py-2 text-gold-100 ring-1 ring-gold-700/60" />
             </label>
           )}
           <label className="grid gap-1 text-sm text-gold-300">ከፍተኛ የሽልማት ገደብ (ብር፤ 0 = Gross Revenue)
@@ -249,7 +256,7 @@ export function HostView() {
         </div>
         <p className="mt-3 text-xs text-gold-500">Unique Players: {h.roundPlayerCount ?? 0} · የአሁኑ የተሰላ ሽልማት: {Number(h.roundPrizeEtb ?? 0).toFixed(2)} ብር</p>
         <button type="button" onClick={() => h.setPrizeScheduleSettings?.({
-          prizeMode: prizeModeDraft, prizePercent: Number(prizePercentDraft), prizePerPlayer: Number(prizePerPlayerDraft),
+          prizeMode: prizeModeDraft, prizePercent: Number(prizePercentDraft), prizePerPlayer: Number(prizePerPlayerDraft), fixedPrize: Number(fixedPrizeDraft),
           maxPrizeCap: Number(maxPrizeCapDraft), roundIntervalMinutes: Number(roundIntervalDraft) as 4 | 5 | 10,
         })} className={primaryBtn}>ቅንብሩን አስቀምጥ</button>
       </section>
