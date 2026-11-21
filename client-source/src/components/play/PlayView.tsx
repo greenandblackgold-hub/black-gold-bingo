@@ -227,7 +227,7 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
   const { cards, markedByCard, toggleMark, balance, buyCards } = usePlayer();
   const {
     phase, winPattern, calledNumbers, claimBingo, winner,
-    nextCallAt, roundPrizeEtb, startedAt, nextRoundAt,
+    nextCallAt, roundPrizeEtb, nextRoundAt, firstCallAt, endedAt,
   } = useRound();
   const { cardPrice } = useAppSettings();
   const [now, setNow] = useState(() => Date.now());
@@ -327,11 +327,13 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
       setQuickBuyBusy(false);
     }
   };
-  const callTimer = active && startedAt !== null
-    ? formatClock(now - startedAt)
-    : nextRoundAt !== null
-      ? formatClock(nextRoundAt - now)
-      : '0:00';
+  const callTimer = phase === 'waiting' && nextRoundAt !== null
+    ? formatClock(nextRoundAt - now)
+    : phase === 'running' && calledNumbers.length === 0 && nextCallAt !== null
+      ? formatClock(nextCallAt - now)
+      : calledNumbers.length > 0 && firstCallAt !== null
+        ? formatClock((phase === 'ended' && endedAt !== null ? endedAt : now) - firstCallAt)
+        : '0:00';
 
   return (
     <main className="player-play-view relative mx-auto min-h-full w-full max-w-[1100px] overflow-hidden rounded-[2rem] border-2 border-zinc-500/80 bg-[#030303] px-2 pb-32 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
