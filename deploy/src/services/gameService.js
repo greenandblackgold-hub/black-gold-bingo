@@ -193,7 +193,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       if (!mode) throw new HttpError(400, 'invalid_prize_mode', 'Choose a supported prize mode');
       const prizePercent = Number(input.prizePercent);
       const prizePerPlayer = Math.round(Number(input.prizePerPlayer) * 100);
-      const fixedPrize = Math.round(Number(input.fixedPrize) * 100);
+      const fixedPrize = Math.round(Number(input.fixedPrize ?? 0) * 100);
       const maxPrizeCap = Math.round(Number(input.maxPrizeCap) * 100);
       const interval = Number(input.roundIntervalMinutes);
       if (!Number.isFinite(prizePercent) || prizePercent < 0 || prizePercent > 100) throw new HttpError(400, 'invalid_prize_percent', 'Prize percentage must be between 0 and 100');
