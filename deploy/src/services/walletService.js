@@ -30,7 +30,7 @@ export function createWalletService({ repo, config, chapa }) {
       }
       let parsed;
       try {
-        parsed = parseBankSms({ sender: provider, text: message, expectedRecipientAccount: config.cbeDepositAccount });
+        parsed = parseBankSms({ sender: provider, text: message, expectedRecipientAccount: config.cbeDepositAccount, timezoneOffsetMinutes: config.smsTimezoneOffsetMinutes });
       } catch (error) {
         throw new HttpError(400, 'invalid_sms_message', 'The message is not a recognizable incoming Telebirr or CBE transfer SMS.');
       }
@@ -44,6 +44,11 @@ export function createWalletService({ repo, config, chapa }) {
       const configuredRecipient = String(config.cbeDepositAccount ?? '').replace(/\D/g, '');
       if (parsed.provider !== 'telebirr' || !configuredRecipient || parsed.recipientAccount !== configuredRecipient) {
         throw new HttpError(400, 'unverified_recipient', 'Only a Telebirr transfer receipt addressed to the configured CBE deposit account can be auto-approved.');
+      }
+      const smsAgeMs = Date.now() - parsed.transactionAt;
+      const maxSmsAgeMs = Number(config.smsMaxAgeMinutes ?? 1440) * 60_000;
+      if (!Number.isFinite(parsed.transactionAt) || smsAgeMs > maxSmsAgeMs || smsAgeMs < -5 * 60_000) {
+        throw new HttpError(400, 'stale_sms', 'This transfer SMS is too old or has a future timestamp. Submit a recent, complete receipt.');
       }
       try {
         await repo.createPayment({

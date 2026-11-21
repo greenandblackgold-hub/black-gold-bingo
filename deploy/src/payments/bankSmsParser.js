@@ -15,7 +15,7 @@ const normalizeDigits = (value) => String(value).replace(/[፩-፱]/g, (digit) =
   String('፩፪፫፬፭፮፯፰፱'.indexOf(digit) + 1));
 
 /** Parse incoming notices and configured Telebirr-to-CBE transfer receipts. */
-export function parseBankSms({ sender, provider: providerHint, text, eventId, expectedRecipientAccount } = {}) {
+export function parseBankSms({ sender, provider: providerHint, text, eventId, expectedRecipientAccount, timezoneOffsetMinutes = 180 } = {}) {
   const hinted = normalizeSender(providerHint);
   const provider = BANK_SENDERS.get(normalizeSender(sender)) ?? BANK_SENDERS.get(hinted) ??
     (hinted === 'TELEBIRR' ? 'telebirr' : hinted === 'CBE' ? 'cbe' : ['LIONBANK', 'LIONINTERNATIONALBANK'].includes(hinted) ? 'lion-bank' : null);
@@ -34,12 +34,19 @@ export function parseBankSms({ sender, provider: providerHint, text, eventId, ex
   if (transferToConfiguredCbe) {
     const amountMatch = message.match(new RegExp(recipientAccount + '\\s+([0-9][0-9,]*(?:\\.\\d{1,2})?)\\s*ብር'));
     const amount = amountMatch ? Number(amountMatch[1].replace(/,/g, '')) : NaN;
+    const timestampMatch = message.match(/(?:በቀን\s*)?(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})/);
+    if (!timestampMatch) throw new Error('sms_transfer_timestamp_missing');
+    const [, dayText, monthText, yearText, hourText, minuteText, secondText] = timestampMatch;
+    const [day, month, year, hour, minute, second] = [dayText, monthText, yearText, hourText, minuteText, secondText].map(Number);
+    const calendarCheck = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+    if (calendarCheck.getUTCFullYear() !== year || calendarCheck.getUTCMonth() !== month - 1 || calendarCheck.getUTCDate() !== day || hour > 23 || minute > 59 || second > 59) throw new Error('sms_transfer_timestamp_invalid');
+    const transactionAt = Date.UTC(year, month - 1, day, hour, minute, second) - Number(timezoneOffsetMinutes) * 60_000;
     const bankReference = firstCapture(message, [
       /የባንክ\s*ሂሳብ\s*እንቅስቃሴ\s*ቁጥርዎ?\s*[:：]?\s*([A-Z0-9][A-Z0-9_-]{4,39})/i,
       /\b(?:bank\s+)?(?:transaction\s*(?:id|ref|no\.?))\s*[:#=]?\s*([A-Z0-9][A-Z0-9_-]{4,39})/i,
     ]);
     if (!Number.isFinite(amount) || amount <= 0 || !bankReference) throw new Error('sms_transfer_details_missing');
-    return { eventId: String(eventId ?? bankReference).slice(0, 120), reference: bankReference, amount, currency: 'ETB', status: 'success', provider: 'telebirr', recipientAccount };
+    return { eventId: String(eventId ?? bankReference).slice(0, 120), reference: bankReference, amount, currency: 'ETB', status: 'success', provider: 'telebirr', recipientAccount, transactionAt };
   }
 
   // An outgoing receipt for any other destination is not a deposit notification.

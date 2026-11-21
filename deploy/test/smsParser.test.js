@@ -3,14 +3,23 @@ import assert from 'node:assert/strict';
 import { parseBankSms } from '../src/payments/bankSmsParser.js';
 
 test('parses the exact Telebirr-to-configured-CBE receipt format', () => {
-  const message = 'ውድ Customer ከቴሌ ብር አካውንትዎ 251900000000 ለ Commercial Bank of Ethiopia አካውንት ቁጥር 1000737138686 50.00 ብር በቀን 20/11/2026 21:51:38 በተሳካ ሁኔታ አስተላልፈዋል። የቴሌብር ሂሳብ እንቅስቃሴ ቁጥርዎ DKK7G8RIQH እና የባንክ ሂሳብ እንቅስቃሴ ቁጥርዎ FT26325ZWP2R ነው። የአገልግሎት ክፍያው 0.87 ብር፤ የአገልግሎት ክፍያው 15% VAT 0.13 ብር ነው። ያለዎት ቀሪ ሂሳብ 754.73 ብር ነው።';
+  const now = new Date(Date.now() + 3 * 60 * 60_000);
+  const pad = (n) => String(n).padStart(2, '0');
+  const stamp = `${pad(now.getUTCDate())}/${pad(now.getUTCMonth() + 1)}/${now.getUTCFullYear()} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
+  const message = `ውድ Customer ከቴሌ ብር አካውንትዎ 251900000000 ለ Commercial Bank of Ethiopia አካውንት ቁጥር 1000737138686 50.00 ብር በቀን ${stamp} በተሳካ ሁኔታ አስተላልፈዋል። የቴሌብር ሂሳብ እንቅስቃሴ ቁጥርዎ DKK7G8RIQH እና የባንክ ሂሳብ እንቅስቃሴ ቁጥርዎ FT26325ZWP2R ነው። የአገልግሎት ክፍያው 0.87 ብር፤ የአገልግሎት ክፍያው 15% VAT 0.13 ብር ነው። ያለዎት ቀሪ ሂሳብ 754.73 ብር ነው።`;
   const parsed = parseBankSms({ sender: 'Telebirr', text: message, expectedRecipientAccount: '1000737138686' });
   assert.equal(parsed.amount, 50);
   assert.equal(parsed.reference, 'FT26325ZWP2R');
   assert.equal(parsed.eventId, 'FT26325ZWP2R');
   assert.equal(parsed.provider, 'telebirr');
   assert.equal(parsed.recipientAccount, '1000737138686');
+  assert.ok(Math.abs(parsed.transactionAt - Date.now()) < 2000);
   assert.throws(() => parseBankSms({ sender: 'Telebirr', text: message, expectedRecipientAccount: '1000000000000' }), /not_an_incoming_credit/);
+});
+
+test('rejects configured-CBE transfer receipts when the date/time is missing', () => {
+  const message = 'ለ Commercial Bank of Ethiopia አካውንት ቁጥር 1000737138686 50.00 ብር በተሳካ ሁኔታ አስተላልፈዋል። የባንክ ሂሳብ እንቅስቃሴ ቁጥርዎ FT26325ZWP2R';
+  assert.throws(() => parseBankSms({ sender: 'Telebirr', text: message, expectedRecipientAccount: '1000737138686' }), /sms_transfer_timestamp_missing/);
 });
 
 test('does not accept Telebirr transfer receipts without the configured beneficiary account', () => {
