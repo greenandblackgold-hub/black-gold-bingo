@@ -569,15 +569,15 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
           <p className="mt-2 text-[10px] text-yellow-100/70">የሚፈልጉትን የካርድ ብዛት በፍጥነት ይምረጡ</p>
         </section>
         {quickBuyOpen && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center" role="presentation" onClick={() => !quickBuyBusy && setQuickBuyOpen(false)}>
-            <section role="dialog" aria-modal="true" aria-labelledby="quick-buy-title" className="w-full max-w-md rounded-2xl border-2 border-yellow-400 bg-zinc-950 p-4 shadow-[0_0_30px_rgba(250,204,21,.3)]" onClick={event => event.stopPropagation()}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:pb-3" role="presentation" onClick={() => !quickBuyBusy && setQuickBuyOpen(false)}>
+            <section role="dialog" aria-modal="true" aria-labelledby="quick-buy-title" className="max-h-[calc(100dvh-7.5rem-env(safe-area-inset-bottom))] w-full max-w-md overflow-y-auto rounded-2xl border-2 border-yellow-400 bg-zinc-950 p-4 shadow-[0_0_30px_rgba(250,204,21,.3)] sm:max-h-[calc(100dvh-2rem)]" onClick={event => event.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 id="quick-buy-title" className="text-lg font-black text-yellow-300">የካርድ ፓኬጅ ይምረጡ</h2>
                 <button type="button" disabled={quickBuyBusy} onClick={() => setQuickBuyOpen(false)} aria-label="ዝጋ" className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/50 text-xl text-white disabled:opacity-40">×</button>
               </div>
               <p className="mb-3 text-xs text-yellow-100/80">የአንድ ካርድ ዋጋ፦ {formatAmount(lang, cardPrice)} ብር</p>
               <div className="grid grid-cols-4 gap-2">
-                {[1, 2, 5, 10, 15, 20].map(count => (
+                {[1, 2, 5, 10, 15, 20, 30, 40].map(count => (
                   <button key={count} type="button" aria-pressed={quickBuyCount === count} onClick={() => setQuickBuyCount(count)} className={`rounded-xl border px-2 py-3 text-sm font-black transition ${quickBuyCount === count ? 'border-yellow-200 bg-yellow-400 text-black' : 'border-yellow-500/40 bg-black text-yellow-100 hover:bg-yellow-950'}`}>
                     {count} {count === 1 ? 'ካርድ' : 'ካርዶች'}
                   </button>
@@ -593,7 +593,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
               {!quickBuyAllowed && <p role="status" className="mb-3 rounded-lg bg-amber-950/60 p-2 text-xs text-amber-200">አዲስ ካርድ መግዛት የሚቻለው ጨዋታው በመጠባበቅ ላይ ሲሆን ብቻ ነው። ዙሩ እስኪያበቃ ይጠብቁ።</p>}
               {quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">በቂ ቀሪ ሂሳብ የለዎትም። እባክዎ ቀሪ ሂሳብዎን ይሙሉ።</p>}
               {quickBuyMessage && <p role="status" className="mb-3 text-xs font-bold text-yellow-300">{quickBuyMessage}</p>}
-              <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="w-full rounded-xl bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black disabled:opacity-40">
+              <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="sticky bottom-0 z-10 mt-2 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
                 {quickBuyBusy ? 'በመግዛት ላይ…' : 'ካርዶቹን ግዛ'}
               </button>
             </section>
