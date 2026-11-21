@@ -548,8 +548,8 @@ body { min-height: 100vh; min-height: 100dvh; }
     color: #090909;
   }
   50% {
-    background-color: #22c55e;
-    box-shadow: 0 0 12px rgba(34, 197, 94, 1), 0 0 26px rgba(34, 197, 94, .75);
+    background-color: #f97316;
+    box-shadow: 0 0 12px rgba(249, 115, 22, 1), 0 0 26px rgba(249, 115, 22, .75);
     color: #090909;
   }
 }
@@ -558,4 +558,4 @@ body { min-height: 100vh; min-height: 100dvh; }
   animation: bingo-latest-call-glow 900ms ease-in-out infinite !important;
 }
 
-/* Keep the requested yellow-green flash active despite the global reduced-motion rule. */
+/* Keep the requested yellow-orange flash active despite the global reduced-motion rule. */
