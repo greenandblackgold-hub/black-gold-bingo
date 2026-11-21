@@ -38,6 +38,8 @@ export function loadConfig(env = process.env) {
     prizePercent: num(env.PRIZE_PERCENT, 80),
     maxCardsPerPurchase: num(env.MAX_CARDS_PER_PURCHASE, 50),
     cbeDepositAccount: String(env.CBE_DEPOSIT_ACCOUNT ?? '1000737138686').replace(/\D/g, ''),
+    smsMaxAgeMinutes: num(env.SMS_MAX_AGE_MINUTES, 1440),
+    smsTimezoneOffsetMinutes: num(env.SMS_TIMEZONE_OFFSET_MINUTES, 180),
     minDeposit: santim(num(env.MIN_DEPOSIT_ETB, 10)),
     maxDeposit: santim(num(env.MAX_DEPOSIT_ETB, 10000)),
     minWithdraw: santim(num(env.MIN_WITHDRAW_ETB, 50)),
@@ -62,6 +64,8 @@ export function loadConfig(env = process.env) {
   };
 
   const problems = [];
+  if (cfg.smsMaxAgeMinutes < 1 || cfg.smsMaxAgeMinutes > 10080) problems.push('SMS_MAX_AGE_MINUTES must be between 1 and 10080');
+  if (!Number.isInteger(cfg.smsTimezoneOffsetMinutes) || Math.abs(cfg.smsTimezoneOffsetMinutes) > 840) problems.push('SMS_TIMEZONE_OFFSET_MINUTES must be a whole number between -840 and 840');
   if (cfg.jwtSecret.length < 32) problems.push('JWT_SECRET must be at least 32 characters');
   if (cfg.prizePercent <= 0 || cfg.prizePercent > 100) problems.push('PRIZE_PERCENT must be between 1 and 100');
   if (cfg.cardPrice <= 0) problems.push('CARD_PRICE_ETB must be positive');

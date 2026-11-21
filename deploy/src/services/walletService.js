@@ -30,13 +30,25 @@ export function createWalletService({ repo, config, chapa }) {
       }
       let parsed;
       try {
-        parsed = parseBankSms({ sender: provider, text: message, expectedRecipientAccount: config.cbeDepositAccount });
+        parsed = parseBankSms({ sender: provider, text: message, expectedRecipientAccount: config.cbeDepositAccount, timezoneOffsetMinutes: config.smsTimezoneOffsetMinutes });
       } catch (error) {
         throw new HttpError(400, 'invalid_sms_message', 'The message is not a recognizable incoming Telebirr or CBE transfer SMS.');
       }
       const amount = toSantim(parsed.amount);
       if (!Number.isSafeInteger(amount) || amount < config.minDeposit || amount > config.maxDeposit) {
         throw new HttpError(400, 'invalid_amount', `Deposit between ${etb(config.minDeposit)} and ${etb(config.maxDeposit)} ETB`);
+      }
+      // Auto-approval is deliberately limited to the exact Telebirr -> configured CBE
+      // receipt format. Incoming SMS text is still user-supplied and can be forged;
+      // this fast path is an explicit operator risk choice, not proof of settlement.
+      const configuredRecipient = String(config.cbeDepositAccount ?? '').replace(/\D/g, '');
+      if (parsed.provider !== 'telebirr' || !configuredRecipient || parsed.recipientAccount !== configuredRecipient) {
+        throw new HttpError(400, 'unverified_recipient', 'Only a Telebirr transfer receipt addressed to the configured CBE deposit account can be auto-approved.');
+      }
+      const smsAgeMs = Date.now() - parsed.transactionAt;
+      const maxSmsAgeMs = Number(config.smsMaxAgeMinutes ?? 1440) * 60_000;
+      if (!Number.isFinite(parsed.transactionAt) || smsAgeMs > maxSmsAgeMs || smsAgeMs < -5 * 60_000) {
+        throw new HttpError(400, 'stale_sms', 'This transfer SMS is too old or has a future timestamp. Submit a recent, complete receipt.');
       }
       try {
         await repo.createPayment({
@@ -49,7 +61,27 @@ export function createWalletService({ repo, config, chapa }) {
         }
         throw error;
       }
-      return { reference: parsed.reference, amount: etb(amount), provider: parsed.provider, status: 'pending', currency: 'ETB' };
+
+      // The repository's atomic, idempotent confirmation updates payment status,
+      // wallet balance and the unique ledger row together. Do not credit directly.
+      const confirmation = await repo.confirmDeposit({
+        txRef: parsed.reference,
+        chapaRef: `sms-auto-approve:${parsed.reference}`,
+      });
+      const saved = await repo.getPayment(parsed.reference);
+      if (saved?.status !== 'success') {
+        throw new HttpError(409, 'auto_approval_failed', 'The deposit could not be safely confirmed. Contact support before retrying.');
+      }
+      return {
+        reference: parsed.reference,
+        amount: etb(amount),
+        provider: parsed.provider,
+        status: 'success',
+        approved: true,
+        credited: confirmation.credited === true,
+        balance: Number.isFinite(confirmation.balance) ? etb(confirmation.balance) : undefined,
+        currency: 'ETB',
+      };
     },
 
     async simulationDepositStatus(user, txRef) {
