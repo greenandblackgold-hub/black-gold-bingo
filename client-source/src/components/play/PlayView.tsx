@@ -168,7 +168,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const { cards, markedByCard, toggleMark, balance } = usePlayer();
   const {
     phase, winPattern, calledNumbers, claimBingo, winner,
-    nextCallAt, roundPrizeEtb, startedAt, nextRoundAt, announcement,
+    nextCallAt, roundPrizeEtb, startedAt, nextRoundAt,
   } = useRound();
   const { soundEnabled, setSoundEnabled } = useAppSettings();
   const [now, setNow] = useState(() => Date.now());
