@@ -26,6 +26,7 @@ export function createGameService({ repo, config, now = Date.now }) {
     if (Number.isSafeInteger(g.roundPrize)) {
       return Math.max(0, Math.floor(g.roundPrize));
     }
+    if (g.bonusRound === true) return Math.min(configured, cap);
     return Math.min(gross, cap, configured);
   };
   const ROUND_DURATION_MS = 8 * 60 * 1000;
@@ -35,6 +36,8 @@ export function createGameService({ repo, config, now = Date.now }) {
   /** What every connected browser may see. Never includes anyone's card grid or user id. */
   const publicState = (g) => ({
     phase: g.phase,
+    bonusRound: g.bonusRound === true,
+    regularRoundsUntilBonus: Math.max(0, 10 - Math.max(0, Number(g.regularRoundsSinceBonus) || 0)),
     winPattern: g.winPattern ?? 'any_line',
     roundNumber: g.roundNumber,
     calledNumbers: g.calledNumbers,
