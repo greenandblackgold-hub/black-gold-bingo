@@ -13,12 +13,17 @@ export function createGameService({ repo, config, now = Date.now }) {
   const roundIntervalMs = (g) => ([4, 5, 10].includes(Number(g.roundIntervalMinutes)) ? Number(g.roundIntervalMinutes) : 10) * 60 * 1000;
   const calculatePrize = (g) => {
     const gross = Math.max(0, Math.floor(Number(g.pot) || 0));
-    const mode = g.prizeMode === 'per_player' ? 'per_player' : 'revenue_percent';
-    const configured = mode === 'per_player'
-      ? Math.floor(Math.max(0, Number(g.prizePerPlayer) || 0) * Math.max(0, Number(g.roundPlayerIds?.length) || 0))
-      : Math.floor(gross * (Math.min(100, Math.max(0, Number(g.prizePercent ?? config.prizePercent) || 0))) / 100);
+    const mode = ['per_player', 'fixed'].includes(g.prizeMode) ? g.prizeMode : 'revenue_percent';
+    const configured = mode === 'fixed'
+      ? Math.max(0, Math.floor(Number(g.fixedPrize) || 0))
+      : mode === 'per_player'
+        ? Math.floor(Math.max(0, Number(g.prizePerPlayer) || 0) * Math.max(0, Number(g.roundPlayerIds?.length) || 0))
+        : Math.floor(gross * (Math.min(100, Math.max(0, Number(g.prizePercent ?? config.prizePercent) || 0))) / 100);
     const cap = Number(g.maxPrizeCap) > 0 ? Math.floor(Number(g.maxPrizeCap)) : gross;
-    return Math.min(gross, cap, configured);
+    const amount = mode === 'fixed' && Number.isSafeInteger(g.roundPrize)
+      ? Math.max(0, Math.floor(g.roundPrize))
+      : configured;
+    return Math.min(gross, cap, amount);
   };
   const ROUND_DURATION_MS = 8 * 60 * 1000;
   const AUTO_CALL_SECONDS = 8;
@@ -42,6 +47,7 @@ export function createGameService({ repo, config, now = Date.now }) {
     roundCardCount: config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0,
     roundPlayerCount: g.roundPlayerIds?.length ?? 0,
     prizeMode: g.prizeMode ?? 'revenue_percent',
+    fixedPrizeEtb: (g.fixedPrize ?? 0) / 100,
     prizePercent: g.prizePercent ?? config.prizePercent,
     prizePerPlayer: (g.prizePerPlayer ?? 0) / 100,
     maxPrizeCap: (g.maxPrizeCap ?? 0) / 100,
@@ -95,6 +101,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         } else if (g.nextRoundAt <= now()) {
           await mutate('waiting', () => ({
             phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
+            roundPrize: g.prizeMode === 'fixed' ? calculatePrize({ ...g, roundPrize: null }) : null,
             autoCall: true, callIntervalSec: AUTO_CALL_SECONDS,
             nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
             roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, nextRoundAt: null,
@@ -111,7 +118,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         await mutate('ended', (current) => ({
           phase: 'waiting', roundNumber: current.roundNumber + 1, calledNumbers: [], winner: null,
           autoCall: false, nextCallAt: null, roundStartedAt: null, roundEndsAt: null,
-          nextRoundAt: current.nextRoundAt ?? (now() + roundIntervalMs(current)), pot: 0, roundPlayerIds: [],
+          nextRoundAt: current.nextRoundAt ?? (now() + roundIntervalMs(current)), pot: 0, roundPlayerIds: [], roundPrize: null,
         }));
         return;
       }
@@ -162,8 +169,9 @@ export function createGameService({ repo, config, now = Date.now }) {
     /* ───────────── host / admin ───────────── */
 
     startRound: () =>
-      mutate('waiting', () => ({
+      mutate('waiting', (g) => ({
         phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
+        roundPrize: g.prizeMode === 'fixed' ? calculatePrize({ ...g, roundPrize: null }) : null,
         autoCall: true, callIntervalSec: AUTO_CALL_SECONDS, nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
         roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, nextRoundAt: null,
       })),
@@ -181,16 +189,17 @@ export function createGameService({ repo, config, now = Date.now }) {
     },
 
     setPrizeScheduleSettings(input = {}) {
-      const mode = input.prizeMode === 'per_player' ? 'per_player' : input.prizeMode === 'revenue_percent' ? 'revenue_percent' : null;
+      const mode = ['revenue_percent', 'per_player', 'fixed'].includes(input.prizeMode) ? input.prizeMode : null;
       if (!mode) throw new HttpError(400, 'invalid_prize_mode', 'Choose a supported prize mode');
       const prizePercent = Number(input.prizePercent);
       const prizePerPlayer = Math.round(Number(input.prizePerPlayer) * 100);
+      const fixedPrize = Math.round(Number(input.fixedPrize ?? 0) * 100);
       const maxPrizeCap = Math.round(Number(input.maxPrizeCap) * 100);
       const interval = Number(input.roundIntervalMinutes);
       if (!Number.isFinite(prizePercent) || prizePercent < 0 || prizePercent > 100) throw new HttpError(400, 'invalid_prize_percent', 'Prize percentage must be between 0 and 100');
-      if (!Number.isSafeInteger(prizePerPlayer) || prizePerPlayer < 0 || !Number.isSafeInteger(maxPrizeCap) || maxPrizeCap < 0) throw new HttpError(400, 'invalid_prize_amount', 'Prize amounts must be non-negative ETB values with at most two decimals');
+      if (!Number.isSafeInteger(prizePerPlayer) || prizePerPlayer < 0 || !Number.isSafeInteger(fixedPrize) || fixedPrize < 0 || !Number.isSafeInteger(maxPrizeCap) || maxPrizeCap < 0) throw new HttpError(400, 'invalid_prize_amount', 'Prize amounts must be non-negative ETB values with at most two decimals');
       if (![4, 5, 10].includes(interval)) throw new HttpError(400, 'invalid_round_interval', 'Round interval must be 4, 5, or 10 minutes');
-      return mutate(null, () => ({ prizeMode: mode, prizePercent, prizePerPlayer, maxPrizeCap, roundIntervalMinutes: interval }));
+      return mutate('waiting', () => ({ prizeMode: mode, prizePercent, prizePerPlayer, fixedPrize, maxPrizeCap, roundIntervalMinutes: interval }));
     },
 
     async resetRound() {
@@ -212,7 +221,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         autoCall: false,
         nextCallAt: null,
         nextRoundAt: now() + roundIntervalMs(g),
-        pot: 0, roundPlayerIds: [],
+        pot: 0, roundPlayerIds: [], roundPrize: null,
       }));
     },
 

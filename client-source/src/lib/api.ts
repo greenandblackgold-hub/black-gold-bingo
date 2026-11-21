@@ -100,7 +100,8 @@ export interface ServerGameState {
   roundPrizeEtb: number;
   roundCardCount: number;
   roundPlayerCount: number;
-  prizeMode: 'revenue_percent' | 'per_player';
+  prizeMode: 'revenue_percent' | 'per_player' | 'fixed';
+  fixedPrizeEtb: number;
   prizePercent: number;
   prizePerPlayer: number;
   maxPrizeCap: number;
