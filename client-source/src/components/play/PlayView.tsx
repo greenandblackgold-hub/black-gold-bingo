@@ -282,30 +282,34 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             role="status"
             aria-live="polite"
             aria-atomic="true"
-            className="rounded-2xl border border-yellow-400/80 bg-yellow-950/70 px-4 py-4 text-center shadow-[0_0_20px_rgba(250,204,21,.2)]"
+            className="rounded-2xl border border-yellow-400/80 bg-yellow-950/70 px-3 py-3 text-center shadow-[0_0_20px_rgba(250,204,21,.2)]"
           >
-            <span className="mb-1 block text-xs font-black tracking-wide text-yellow-300">📢 የቀጣይ ጨዋታ ማስታወቂያ</span>
-            <h2 className="text-lg font-black text-yellow-100">
-              የጨዋታው ዓይነት፦ {patternNames[lang][winPattern]}
-            </h2>
-            <p className="mt-2 text-sm font-semibold leading-relaxed text-yellow-50">
-              {getPatternDescription(lang, winPattern)}
-            </p>
-            <p className="mt-2 text-xs text-yellow-300/90">
-              {lang === 'am' ? 'የሚያሸንፉት ከላይ የተገለጸውን ቅርጽ በካርድዎ ላይ በማሟላት ነው። ጨዋታው ከመጀመሩ በፊት ቅርጹን ይመልከቱ።' : lang === 'ti' ? 'ንምዕዋት እቲ ኣብ ላዕሊ ዝተገልጸ ቅርጺ ኣብ ካርድኩም ምሉእ ግበሩ። ቅድሚ ጸወታ ምጅማሩ እቲ ቅርጺ ርኣዩ።' : 'To win, complete the pattern shown above on your card. Review it before the round starts.'}
-            </p>
+            <span className="mb-2 block text-[11px] font-bold tracking-wide text-yellow-300">📢 የገቢ ማድረጊያ አካውንቶች</span>
+            <div className="space-y-1 text-[11px] font-semibold leading-relaxed text-yellow-50">
+              <p>Telebirr: 0978202822 — ኣሊክሳንደር ደጀን</p>
+              <p>CBE: 1000737138686 — ቤተሊሄም ፍጹም</p>
+              <p>Anbessa Bank: 00311390826 — ኣሊክሳንደር ደጀን</p>
+            </div>
           </section>
         )}
 
-        {announcement?.message && (
+        {phase !== 'waiting' && (
           <section
             role="status"
             aria-live="polite"
             aria-atomic="true"
-            className="rounded-2xl border border-emerald-400/80 bg-emerald-950/80 px-4 py-3 text-center text-sm font-bold leading-relaxed text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,.22)] sm:text-base"
+            className="rounded-2xl border border-yellow-400/80 bg-yellow-950/70 px-3 py-3 text-center shadow-[0_0_20px_rgba(250,204,21,.2)]"
           >
-            <span className="mb-1 block text-xs font-black tracking-wide text-emerald-300">📢 ማስታወቂያ</span>
-            <p className="whitespace-pre-wrap break-words">{announcement.message}</p>
+            <span className="mb-1 block text-[11px] font-bold tracking-wide text-yellow-300">📢 የዚህ ዙር የጨዋታ ማብራሪያ</span>
+            <h2 className="text-xs font-bold text-yellow-100">
+              የጨዋታው ዓይነት፦ {patternNames[lang][winPattern]}
+            </h2>
+            <p className="mt-1 text-[11px] font-medium leading-relaxed text-yellow-50">
+              {getPatternDescription(lang, winPattern)}
+            </p>
+            <p className="mt-1 text-[10px] leading-relaxed text-yellow-300/90">
+              {lang === 'am' ? 'ለማሸነፍ ከላይ የተገለጸውን ቅርጽ በካርድዎ ላይ ያሟሉ።' : lang === 'ti' ? 'ንምዕዋት እቲ ኣብ ላዕሊ ዝተገልጸ ቅርጺ ኣብ ካርድኩም ምሉእ ግበሩ።' : 'To win, complete the pattern shown above on your card.'}
+            </p>
           </section>
         )}
 
