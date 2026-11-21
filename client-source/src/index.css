@@ -514,3 +514,19 @@ body { min-height: 100vh; min-height: 100dvh; }
 @media (prefers-reduced-motion: reduce) {
   .player-quick-buy-footer-cta, .player-quick-buy-footer-cta > span:first-child { animation: none; }
 }
+
+/* Mobile-only exception: keep the Quick Buy pulse visible even when the device requests reduced motion. */
+@media (max-width: 640px) and (prefers-reduced-motion: reduce) {
+  .premium-ui .player-quick-buy-footer-cta:not(:disabled) {
+    animation-name: player-quick-buy-pulse !important;
+    animation-duration: 1.15s !important;
+    animation-timing-function: ease-in-out !important;
+    animation-iteration-count: infinite !important;
+  }
+  .premium-ui .player-quick-buy-footer-cta:not(:disabled) > span:first-child {
+    animation-name: player-quick-buy-plus-flash !important;
+    animation-duration: .72s !important;
+    animation-timing-function: ease-in-out !important;
+    animation-iteration-count: infinite !important;
+  }
+}
