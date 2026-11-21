@@ -138,6 +138,16 @@ export function createMemoryRepo() {
       game = { ...game, roundPlayerIds: [...new Set([...(game.roundPlayerIds ?? []), userId])], pot: game.pot + cost, version: game.version + 1 };
       return { balance: r.balance, game: clone(game) };
     },
+    async listPlayerIds() {
+      return [...users.values()].filter((u) => u.role === 'player' && u.phoneVerified).map((u) => u.id);
+    },
+    async insertFreeCards({ userId, round, cards: newCards }) {
+      if (game.phase !== 'waiting' || game.roundNumber !== round) throw new RepoError('ROUND_NOT_OPEN');
+      for (const c of newCards) {
+        if (cards.has(c.code) || [...cards.values()].some((old) => old.round === round && old.serial === c.serial)) throw new RepoError('CARD_NUMBER_TAKEN');
+      }
+      for (const c of newCards) cards.set(c.code, { ...clone(c), userId, round, createdAt: new Date(), bonusFree: true });
+    },
     async listCards(userId, round) {
       return [...cards.values()].filter((c) => c.userId === userId && c.round === round).sort((a, b) => Number(a.serial) - Number(b.serial)).map(clone);
     },
