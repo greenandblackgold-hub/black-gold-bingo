@@ -29,10 +29,11 @@ export function SimulationWithdrawalPanel() {
       setError(e instanceof ApiError ? e.message : t.err);
     } finally { setBusy(false); }
   };
-  return <section className="rounded-2xl border border-gold-600/30 bg-gradient-to-b from-white/[0.045] to-transparent p-4 shadow-[0_18px_50px_rgba(0,0,0,0.22)] sm:p-6">
-    <h2 className="mb-2 text-lg font-bold text-gold-300">{t.title}</h2>
+  return <section className="group relative overflow-hidden rounded-[1.5rem] border border-gold-500/25 bg-[#0b0b0b] p-4 shadow-[0_18px_55px_rgba(0,0,0,.28)] ring-1 ring-white/[0.035] sm:p-5">
+    <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-gold-400/[0.05] blur-3xl" />
+    <h2 className="relative mb-2 flex items-center gap-2 text-base font-extrabold tracking-wide text-gold-200 sm:text-lg"><span className="grid h-8 w-8 place-items-center rounded-xl border border-gold-400/20 bg-gold-400/10 text-sm text-gold-300">↗</span>{t.title}</h2>
     <p className="mb-3 text-xs text-gold-500">{t.note}</p>
-    <div className="space-y-3">
+    <div className="relative space-y-3">
       <label className="block text-sm text-gold-500">{t.amount}
         <input aria-label={t.amount} inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} className="mt-1 w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-200 ring-1 ring-gold-700/50 transition placeholder:text-gold-700 focus:outline-none focus:ring-2 focus:ring-gold-400 disabled:opacity-50" />
       </label>
@@ -47,7 +48,7 @@ export function SimulationWithdrawalPanel() {
       {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
       {message && <p role="status" className="text-sm text-gold-300">{message}</p>}
       <button type="button" disabled={busy || !Number.isFinite(Number(amount)) || Number(amount) <= 0} onClick={() => void submit()} className="w-full rounded-xl bg-gradient-to-r from-gold-300 via-gold-500 to-gold-600 py-3.5 font-bold text-darkbg shadow-lg shadow-gold-900/20 transition duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:ring-offset-2 focus-visible:ring-offset-darkbg disabled:cursor-not-allowed disabled:opacity-50">{busy ? t.busy : t.send}</button>
-      {rows.length > 0 && <div className="rounded-xl border border-gold-700/35 bg-white/[0.025] p-3 sm:p-4"><h3 className="mb-2 text-sm font-semibold text-gold-300">{lang === 'am' ? 'የመውጫ ጥያቄ ታሪክ' : lang === 'ti' ? 'ታሪኽ ሕቶታት ምውጻእ' : 'Withdrawal request history'}</h3><ul className="space-y-2">{rows.map(row => <li key={row.id} className="flex items-center justify-between gap-2 text-xs"><span className="text-gold-500">{formatAmount(lang, row.amount)} ETB · {row.method || '—'}</span><span className="font-semibold text-gold-300">{row.status}</span></li>)}</ul></div>}
+      {rows.length > 0 && <div className="rounded-xl border border-gold-700/30 bg-black/35 p-3.5 sm:p-4"><h3 className="mb-2 text-sm font-semibold text-gold-300">{lang === 'am' ? 'የመውጫ ጥያቄ ታሪክ' : lang === 'ti' ? 'ታሪኽ ሕቶታት ምውጻእ' : 'Withdrawal request history'}</h3><ul className="space-y-2">{rows.map(row => <li key={row.id} className="flex items-center justify-between gap-2 text-xs"><span className="text-gold-500">{formatAmount(lang, row.amount)} ETB · {row.method || '—'}</span><span className="font-semibold text-gold-300">{row.status}</span></li>)}</ul></div>}
     </div>
   </section>;
 }
