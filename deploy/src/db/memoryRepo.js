@@ -182,6 +182,7 @@ export function createMemoryRepo() {
       game = {
         ...game, phase: 'ended', autoCall: false, nextCallAt: null,
         winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: id, payoutStatus: 'paid', at: Date.now() },
+        lastCompletedRoundNumber: round, lastCompletedWasBonus: game.bonusRound === true,
         version: game.version + 1,
       };
       return clone(game);
