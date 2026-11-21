@@ -777,6 +777,9 @@ test('fixed prize is announced, frozen at round start, capped by gross revenue, 
   assert.equal(won.status, 200, JSON.stringify(won.json));
   assert.equal(won.json.ok, true);
   assert.equal(won.json.prize, 15);
+  state = (await api('GET', '/api/game')).json;
+  assert.equal(state.phase, 'ended');
+  assert.equal(state.roundPrizeEtb, 15, 'the frozen prize remains visible after a winner ends the round');
   const balance = await api('GET', '/api/me', { token: player.token });
   assert.equal(balance.json.balance, 100 - 30 + 15);
 });
