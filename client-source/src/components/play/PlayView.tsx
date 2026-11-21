@@ -285,10 +285,31 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             className="rounded-2xl border border-yellow-400/80 bg-yellow-950/70 px-3 py-3 text-center shadow-[0_0_20px_rgba(250,204,21,.2)]"
           >
             <span className="mb-2 block text-[11px] font-bold tracking-wide text-yellow-300">📢 የገቢ ማድረጊያ አካውንቶች</span>
-            <div className="space-y-1 text-[11px] font-semibold leading-relaxed text-yellow-50">
-              <p>Telebirr: 0978202822 — ኣሊክሳንደር ደጀን</p>
-              <p>CBE: 1000737138686 — ቤተሊሄም ፍጹም</p>
-              <p>Anbessa Bank: 00311390826 — ኣሊክሳንደር ደጀን</p>
+            <div className="mx-auto grid max-w-md gap-2 text-left">
+              <div className="rounded-xl border border-yellow-400/40 bg-black/50 px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-yellow-300">CBE · ባንክ</span>
+                  <span className="text-[10px] text-yellow-100/70">የባንክ አካውንት</span>
+                </div>
+                <p className="mt-1 text-base font-black tracking-wider text-white tabular-nums">1000737138686</p>
+                <p className="mt-0.5 text-[11px] font-medium text-yellow-100">የአካውንት ባለቤት፦ ቤተሊሄም</p>
+              </div>
+              <div className="rounded-xl border border-yellow-400/40 bg-black/50 px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-yellow-300">Anbessa Bank · አንበሳ ባንክ</span>
+                  <span className="text-[10px] text-yellow-100/70">የባንክ አካውንት</span>
+                </div>
+                <p className="mt-1 text-base font-black tracking-wider text-white tabular-nums">00311390826</p>
+                <p className="mt-0.5 text-[11px] font-medium text-yellow-100">የአካውንት ባለቤት፦ ኣሊክሳንደር</p>
+              </div>
+              <div className="rounded-xl border border-emerald-400/40 bg-black/50 px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-300">Telebirr · ቴሌብር</span>
+                  <span className="text-[10px] text-yellow-100/70">የስልክ አካውንት</span>
+                </div>
+                <p className="mt-1 text-base font-black tracking-wider text-white tabular-nums">0978202822</p>
+                <p className="mt-0.5 text-[11px] font-medium text-yellow-100">የአካውንት ባለቤት፦ ኣሊክሳንደር</p>
+              </div>
             </div>
           </section>
         )}
