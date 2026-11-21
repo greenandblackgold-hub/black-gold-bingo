@@ -29,6 +29,7 @@ export function createBonusService({ repo, game, config }) {
       regularRoundsSinceBonus: count,
       lastCountedRegularRound: completedRound,
       bonusDue: !isBonus && count >= BONUS_EVERY,
+      ...(!isBonus && count >= BONUS_EVERY ? { nextRoundAt: Date.now() } : {}),
     });
     if (!next) return false;
     if (!isBonus && count === BONUS_EVERY - 2) {
