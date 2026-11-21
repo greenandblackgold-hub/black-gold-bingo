@@ -111,7 +111,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         await mutate('ended', (current) => ({
           phase: 'waiting', roundNumber: current.roundNumber + 1, calledNumbers: [], winner: null,
           autoCall: false, nextCallAt: null, roundStartedAt: null, roundEndsAt: null,
-          nextRoundAt: (current.roundStartedAt ?? now()) + roundIntervalMs(current), pot: 0, roundPlayerIds: [],
+          nextRoundAt: current.nextRoundAt ?? (now() + roundIntervalMs(current)), pot: 0, roundPlayerIds: [],
         }));
         return;
       }
@@ -168,7 +168,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, nextRoundAt: null,
       })),
 
-    endRound: () => mutate('running', () => ({ phase: 'ended', autoCall: false, nextCallAt: null })),
+    endRound: () => mutate('running', (g) => ({ phase: 'ended', autoCall: false, nextCallAt: null, nextRoundAt: now() + roundIntervalMs(g) })),
 
     setAnnouncement(message) {
       const clean = String(message ?? '').trim().slice(0, 240);
@@ -309,7 +309,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       const prize = calculatePrize(g);
       const settled = await repo.settleWin({ round: g.roundNumber, expectedVersion: g.version, card, prize, ref: `win:${g.roundNumber}:${card.code}` });
       if (!settled) return { ok: false, reason: 'already_won' };
-      const advanced = await repo.casGame(settled.version, { nextRoundAt: (g.roundStartedAt ?? now()) + roundIntervalMs(g) }) ?? await repo.getGame();
+      const advanced = await repo.casGame(settled.version, { nextRoundAt: now() + roundIntervalMs(g) }) ?? await repo.getGame();
       schedule(advanced);
       broadcast(advanced);
       log('prize_credited_to_wallet', { round: g.roundNumber, card: card.code, userId: user.id, etb: prize / 100, potEtb: g.pot / 100 });
