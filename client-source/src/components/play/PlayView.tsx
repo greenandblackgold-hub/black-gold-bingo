@@ -132,10 +132,15 @@ const RELATED_PATTERN_OPTIONS: Partial<Record<WinPattern, WinPattern[]>> = {
   three_lines: ['three_lines'],
   four_lines: ['four_lines'],
 };
-const getPatternCells = (pattern: WinPattern) => {
+const DIRECTIONAL_PATTERN_OPTIONS = new Set<WinPattern>([
+  't', 'l', 'z', 'u', 's', 'arrow_up', 'arrow_down',
+  'letter_h', 'letter_e', 'letter_c', 'letter_n', 'letter_w', 'lucky_seven',
+]);
+const getPatternCells = (pattern: WinPattern, variantIndex = 0) => {
   const masks = patternMasks(pattern);
-  return (masks[0] ?? []).map(([r, c]) => r * 5 + c);
+  return (masks[variantIndex] ?? masks[0] ?? []).map(([r, c]) => r * 5 + c);
 };
+const orientationLabel = (index: number) => ['↑', '→', '↓', '←', '↗', '↘', '↙', '↖'][index] ?? '';
 
 type CardProps = {
   card: BingoCard;
@@ -476,24 +481,35 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
             {patternOpen && (
               <div id="winning-pattern-options" className="absolute left-0 top-full z-40 mt-1 max-h-64 w-56 max-w-[75vw] overflow-y-auto rounded-xl border border-yellow-400 bg-black p-2 text-left shadow-[0_0_18px_rgba(250,204,21,.35)]">
                 <div className="grid grid-cols-2 gap-2">
-                  {WIN_PATTERN_OPTIONS.filter(option => (RELATED_PATTERN_OPTIONS[winPattern] ?? [winPattern]).includes(option.value)).map(option => {
-                    const cells = getPatternCells(option.value);
-                    return (
-                      <div
-                        key={option.value}
-                        aria-label={option.label}
-                        className={`flex flex-col items-center gap-1 rounded-lg border p-2 ${option.value === winPattern ? 'border-yellow-300 bg-yellow-400/15 shadow-[0_0_10px_rgba(250,204,21,.25)]' : 'border-zinc-700 bg-zinc-950'}`}
-                      >
-                        <span className="grid aspect-square w-14 grid-cols-5 gap-[2px] rounded bg-zinc-800 p-1">
-                          {Array.from({ length: 25 }, (_, index) => (
-                            <span key={index} className={`rounded-[1px] ${cells.includes(index) ? 'bg-yellow-300 shadow-[0_0_3px_rgba(250,204,21,.7)]' : 'bg-zinc-700'}`} />
-                          ))}
-                        </span>
-                        <span className="text-center text-[10px] font-bold leading-tight text-yellow-100">{patternNames[lang][option.value] ?? option.label}</span>
-                        {option.value === winPattern && <span className="text-[9px] font-black text-yellow-300">✓</span>}
-                      </div>
-                    );
-                  })}
+                  {(DIRECTIONAL_PATTERN_OPTIONS.has(winPattern)
+                    ? patternMasks(winPattern).map((_, index) => ({
+                        key: `${winPattern}-orientation-${index}`,
+                        value: winPattern,
+                        label: `${patternNames[lang][winPattern] ?? winPattern} ${orientationLabel(index)}`,
+                        cells: getPatternCells(winPattern, index),
+                      }))
+                    : WIN_PATTERN_OPTIONS
+                        .filter(option => (RELATED_PATTERN_OPTIONS[winPattern] ?? [winPattern]).includes(option.value))
+                        .map(option => ({
+                          key: option.value,
+                          value: option.value,
+                          label: patternNames[lang][option.value] ?? option.label,
+                          cells: getPatternCells(option.value),
+                        }))
+                  ).map(option => (
+                    <div
+                      key={option.key}
+                      aria-label={option.label}
+                      className="flex flex-col items-center gap-1 rounded-lg border border-yellow-300/70 bg-yellow-400/10 p-2"
+                    >
+                      <span className="grid aspect-square w-14 grid-cols-5 gap-[2px] rounded bg-zinc-800 p-1">
+                        {Array.from({ length: 25 }, (_, index) => (
+                          <span key={index} className={`rounded-[1px] ${option.cells.includes(index) ? 'bg-yellow-300 shadow-[0_0_3px_rgba(250,204,21,.7)]' : 'bg-zinc-700'}`} />
+                        ))}
+                      </span>
+                      <span className="text-center text-[10px] font-bold leading-tight text-yellow-100">{option.label}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
