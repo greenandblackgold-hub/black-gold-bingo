@@ -526,8 +526,8 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
             <div className="flex items-center gap-2">
               {numberBoardExpanded && (
                 <div className="flex items-center gap-1 rounded-lg border border-yellow-500/60 bg-zinc-950 p-1">
-                  <button type="button" aria-pressed={numberBoardMode === 'all'} onClick={() => setNumberBoardMode('all')} className={`rounded-md px-3 py-1.5 text-xs font-black transition sm:text-sm ${numberBoardMode === 'all' ? 'bg-yellow-400 text-black shadow' : 'text-yellow-200 hover:bg-yellow-400/10'}`}>1–75</button>
-                  <button type="button" aria-pressed={numberBoardMode === 'called'} onClick={() => setNumberBoardMode('called')} className={`rounded-md px-3 py-1.5 text-xs font-black transition sm:text-sm ${numberBoardMode === 'called' ? 'bg-yellow-400 text-black shadow' : 'text-yellow-200 hover:bg-yellow-400/10'}`}>የተጠሩ</button>
+                  <span aria-label="የተጠሩ ቁጥሮች ብዛት" className="rounded-md bg-yellow-400 px-3 py-1.5 text-xs font-black text-black shadow sm:text-sm tabular-nums">{calledNumbers.length}/75</span>
+                  <button type="button" aria-pressed={numberBoardMode === 'called'} onClick={() => setNumberBoardMode(mode => mode === 'all' ? 'called' : 'all')} className={`rounded-md px-3 py-1.5 text-xs font-black transition sm:text-sm ${numberBoardMode === 'called' ? 'bg-yellow-400 text-black shadow' : 'text-yellow-200 hover:bg-yellow-400/10'}`}>{numberBoardMode === 'called' ? 'ሙሉ ሰሌዳ' : 'የተጠሩ'}</button>
                 </div>
               )}
               <button type="button" aria-expanded={numberBoardExpanded} aria-controls="bingo-number-board-grid" onClick={() => setNumberBoardExpanded(expanded => !expanded)} className="rounded-lg border border-yellow-400/70 bg-yellow-400/10 px-3 py-2 text-xs font-black text-yellow-200 hover:bg-yellow-400/20">
