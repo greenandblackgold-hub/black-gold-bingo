@@ -207,6 +207,32 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
     previousAnnouncementAt.current = announcementAt;
   }, [announcementAt, game?.announcement?.message]);
 
+  // Announce each newly prepared round while it is still waiting to start.
+  const previousRoundNumber = useRef<number | null>(null);
+  const roundNumber = game?.roundNumber ?? null;
+  useEffect(() => {
+    if (roundNumber === null) return;
+    const isNewWaitingRound =
+      previousRoundNumber.current !== null &&
+      roundNumber !== previousRoundNumber.current &&
+      game?.phase === 'waiting';
+    if (isNewWaitingRound) {
+      play('notification');
+      if (document.visibilityState !== 'visible' && 'Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification('BLACK GOLD BINGO', {
+            body: `Round ${roundNumber} is ready. Open the game to review the winning pattern before it starts.`,
+            tag: `black-gold-bingo-round-${roundNumber}`,
+            icon: '/favicon.svg',
+          });
+        } catch {
+          /* Browser notifications may be unavailable in restricted contexts. */
+        }
+      }
+    }
+    previousRoundNumber.current = roundNumber;
+  }, [roundNumber, game?.phase]);
+
   // Bell on every device for each new number (not for the first snapshot).
   const prevLen = useRef<number | null>(null);
   const len = game?.calledNumbers.length ?? null;
