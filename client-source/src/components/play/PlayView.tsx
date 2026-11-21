@@ -126,6 +126,12 @@ const WIN_PATTERN_OPTIONS: { value: WinPattern; label: string }[] = [
   { value: 'letter_n', label: 'Letter N' },
   { value: 'letter_w', label: 'Letter W' },
 ];
+const RELATED_PATTERN_OPTIONS: Partial<Record<WinPattern, WinPattern[]>> = {
+  any_line: ['horizontal_line', 'vertical_line', 'diagonal', 'line_through_free', 'line_avoiding_free'],
+  two_lines: ['two_horizontal_lines', 'two_lines_through_free', 'two_lines_avoiding_free'],
+  three_lines: ['three_lines'],
+  four_lines: ['four_lines'],
+};
 const getPatternCells = (pattern: WinPattern) => {
   const masks = patternMasks(pattern);
   return (masks[0] ?? []).map(([r, c]) => r * 5 + c);
@@ -211,7 +217,7 @@ function CalledBall({ number, latest = false }: { number: number; latest?: boole
   );
 }
 
-export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
+export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet: () => void; onOpenMenu: () => void; onLogout: () => void }) {
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark, balance, buyCards } = usePlayer();
   const {
@@ -338,8 +344,10 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         <header className="rounded-2xl border border-yellow-400/90 bg-black px-3 py-2 shadow-[0_0_24px_rgba(250,204,21,.4)]">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-yellow-300 text-3xl font-black text-white">‹</span>
-              <span className="whitespace-nowrap text-sm font-black text-white sm:text-base">ውጣ</span>
+              <button type="button" onClick={onLogout} aria-label="ውጣ" title="ውጣ" className="flex min-h-10 items-center gap-2 rounded-full border border-yellow-300/70 px-3 text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">
+                <span className="text-3xl font-black leading-none">‹</span>
+                <span className="whitespace-nowrap text-sm font-black sm:text-base">ውጣ</span>
+              </button>
             </div>
             <div className="flex min-w-0 flex-1 items-center justify-center gap-2 border-x border-yellow-500/70 px-2 text-yellow-300">
               <span className="text-4xl leading-none drop-shadow-[0_0_12px_rgba(255,215,0,1)] sm:text-5xl">🏆</span>
@@ -350,7 +358,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             <div className="flex shrink-0 items-center gap-2">
               <button type="button" onClick={() => setSoundEnabled(!soundEnabled)} aria-label={soundEnabled ? 'Mute sound' : 'Enable sound'} aria-pressed={soundEnabled} className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/50 text-2xl text-white">{soundEnabled ? '◖))' : '◖̸'}</button>
               <button type="button" onClick={() => void enableNotifications()} disabled={notificationPermission === 'granted' || !('Notification' in window)} aria-label="Enable player notifications" title={notificationPermission === 'granted' ? 'Notifications enabled' : 'Enable browser notifications'} className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/50 text-xl text-white disabled:opacity-50">{notificationPermission === 'granted' ? '🔔' : '♧'}</button>
-              <span className="grid h-10 w-7 place-items-center text-3xl text-white">⋮</span>
+              <button type="button" onClick={onOpenMenu} aria-label="የጨዋታ ሴቲንጎችን ክፈት" title="የጨዋታ ሴቲንጎች" className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/60 text-3xl leading-none text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">⋮</button>
             </div>
           </div>
         </header>
@@ -468,7 +476,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             {patternOpen && (
               <div id="winning-pattern-options" className="absolute left-0 top-full z-40 mt-1 max-h-64 w-56 max-w-[75vw] overflow-y-auto rounded-xl border border-yellow-400 bg-black p-2 text-left shadow-[0_0_18px_rgba(250,204,21,.35)]">
                 <div className="grid grid-cols-2 gap-2">
-                  {WIN_PATTERN_OPTIONS.map(option => {
+                  {WIN_PATTERN_OPTIONS.filter(option => (RELATED_PATTERN_OPTIONS[winPattern] ?? [winPattern]).includes(option.value)).map(option => {
                     const cells = getPatternCells(option.value);
                     return (
                       <div
@@ -481,7 +489,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                             <span key={index} className={`rounded-[1px] ${cells.includes(index) ? 'bg-yellow-300 shadow-[0_0_3px_rgba(250,204,21,.7)]' : 'bg-zinc-700'}`} />
                           ))}
                         </span>
-                        <span className="text-center text-[10px] font-bold leading-tight text-yellow-100">{option.label}</span>
+                        <span className="text-center text-[10px] font-bold leading-tight text-yellow-100">{patternNames[lang][option.value] ?? option.label}</span>
                         {option.value === winPattern && <span className="text-[9px] font-black text-yellow-300">✓</span>}
                       </div>
                     );
