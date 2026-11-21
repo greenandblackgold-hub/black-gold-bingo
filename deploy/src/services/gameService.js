@@ -41,6 +41,8 @@ export function createGameService({ repo, config, now = Date.now }) {
     autoCall: g.autoCall,
     callIntervalSec: g.callIntervalSec,
     nextCallAt: g.nextCallAt,
+    firstCallAt: g.firstCallAt ?? null,
+    endedAt: g.endedAt ?? (g.winner?.at ?? null),
     nextRoundAt: g.nextRoundAt ?? null,
     announcement: g.announcement ?? null,
     winner: g.winner ? { cardId: g.winner.cardCode, serial: g.winner.serial, at: g.winner.at } : null,
@@ -114,20 +116,20 @@ export function createGameService({ repo, config, now = Date.now }) {
             roundPrize: calculatePrize({ ...g, roundPrize: null }),
             autoCall: true, callIntervalSec: AUTO_CALL_SECONDS,
             nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
-            roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, nextRoundAt: null,
+            roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, firstCallAt: null, endedAt: null, nextRoundAt: null,
           }));
         } else schedule(g);
         return;
       }
       if (g.phase === 'ended' || (g.phase === 'running' && g.roundEndsAt && g.roundEndsAt <= now())) {
-        const ending = g.phase === 'running' ? await mutate('running', () => ({ phase: 'ended', autoCall: false, nextCallAt: null })) : g;
+        const ending = g.phase === 'running' ? await mutate('running', () => ({ phase: 'ended', autoCall: false, nextCallAt: null, endedAt: now() })) : g;
         await repo.archiveRound({
           round: ending.roundNumber, calledNumbers: ending.calledNumbers, winner: ending.winner,
           winPattern: ending.winPattern ?? 'any_line', pot: ending.pot, endedAt: new Date(now()),
         });
         await mutate('ended', (current) => ({
           phase: 'waiting', roundNumber: current.roundNumber + 1, calledNumbers: [], winner: null,
-          autoCall: false, nextCallAt: null, roundStartedAt: null, roundEndsAt: null,
+          autoCall: false, nextCallAt: null, roundStartedAt: null, roundEndsAt: null, firstCallAt: null, endedAt: null,
           nextRoundAt: current.nextRoundAt ?? (now() + roundIntervalMs(current)), pot: 0, roundPlayerIds: [], roundPrize: null,
         }));
         return;
@@ -183,7 +185,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
         roundPrize: calculatePrize({ ...g, roundPrize: null }),
         autoCall: true, callIntervalSec: AUTO_CALL_SECONDS, nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
-        roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, nextRoundAt: null,
+        roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, firstCallAt: null, endedAt: null, nextRoundAt: null,
       })),
 
     endRound: () => mutate('running', (g) => ({ phase: 'ended', autoCall: false, nextCallAt: null, nextRoundAt: now() + roundIntervalMs(g) })),
@@ -242,6 +244,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         const n = remaining[randomInt(remaining.length)];
         return {
           calledNumbers: [...g.calledNumbers, n],
+          firstCallAt: g.firstCallAt ?? now(),
           nextCallAt: g.autoCall ? now() + g.callIntervalSec * 1000 : null,
         };
       }),
