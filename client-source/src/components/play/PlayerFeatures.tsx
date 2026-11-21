@@ -134,7 +134,6 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
 
   return (
     <section className="mt-6 space-y-4" aria-label="Player information and settings">
-      {settingsOnly && <h2 className="text-lg font-black text-gold-300">⚙ ሴቲንግ</h2>}
       {!settingsOnly && !menuOnly && <div className={`overflow-hidden rounded-2xl border ${panel} shadow-xl`}>
         <div className="relative overflow-hidden bg-gradient-to-r from-zinc-950 via-zinc-900 to-amber-950 px-4 py-5 sm:px-6">
           <div className="pointer-events-none absolute -right-8 -top-12 h-40 w-40 rounded-full border-[18px] border-amber-300/10" />
@@ -227,10 +226,10 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
       {(menuOnly || settingsOnly || inlineMenuOpen) && <div className={`overflow-hidden rounded-2xl border ${panel}`}>
         {rows.filter(row => settingsOnly ? row.id === 'settings' : menuOnly ? ['messages','rules','app','history','contact','info'].includes(row.id) : true).map((row) => (
           <div key={row.id} className="border-b border-current/10 last:border-0">
-            <button type="button" onClick={() => toggle(row.id)} aria-expanded={expanded === row.id} className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left">
+            {!settingsOnly && <button type="button" onClick={() => toggle(row.id)} aria-expanded={expanded === row.id} className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left">
               <span className="flex items-center gap-3 font-semibold"><span className={`grid h-9 w-9 place-items-center rounded-xl ${light ? 'bg-amber-100 text-amber-800' : 'bg-gold-500/10 text-gold-300'}`}>{row.icon}</span>{row.label}</span>
               <span className={muted}>{expanded === row.id ? '−' : '+'}</span>
-            </button>
+            </button>}
             {expanded === row.id && (
               <div className="space-y-3 px-4 pb-4">
                 {row.id === 'messages' && <p className={`text-sm ${muted}`}>የአስተዳዳሪ መልዕክቶች የሚታዩበት ክፍል።</p>}
