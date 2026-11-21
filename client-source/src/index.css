@@ -338,8 +338,27 @@ body { min-height: 100vh; min-height: 100dvh; }
   .player-play-view > .relative.z-10 > footer button:last-child { min-height: 2.8rem; padding-inline: .5rem; font-size: clamp(.72rem, 2.8vw, .9rem); }
 }
 @media (max-width: 390px) {
-  .player-play-view > .relative.z-10 > section.grid.grid-cols-2 { grid-template-columns: minmax(0, 1fr); }
-  .player-play-view > .relative.z-10 > section.grid.grid-cols-2 > section { width: 100%; }
+  /* Keep the same two-card layout on every supported phone width. */
+  .player-play-view > .relative.z-10 > section.grid.grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .35rem;
+  }
+  .player-play-view > .relative.z-10 > section.grid.grid-cols-2 > section {
+    width: 100%;
+    min-width: 0;
+    padding: 2px;
+    border-radius: .75rem;
+  }
+  .player-play-view > .relative.z-10 > section.grid.grid-cols-2 > section > div:first-child {
+    padding-inline: .15rem;
+    font-size: clamp(.65rem, 2.8vw, .8rem);
+  }
+  .player-play-view > .relative.z-10 > section.grid.grid-cols-2 > section > div.grid.grid-cols-5 {
+    gap: 1px;
+  }
+  .player-play-view > .relative.z-10 > section.grid.grid-cols-2 > section > div.grid.grid-cols-5 > button {
+    font-size: clamp(10px, 3vw, 12px);
+  }
   .player-play-view > .relative.z-10 > header:first-child > div > div:first-child button {
     width: 2.25rem;
     padding-inline: .25rem;
