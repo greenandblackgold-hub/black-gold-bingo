@@ -746,3 +746,35 @@ test('admin prize modes are capped by gross revenue and count each unique player
     token: ctx.adminToken, body: { prizeMode: 'per_player', prizePercent: 50, prizePerPlayer: 4, maxPrizeCap: 7.5, roundIntervalMinutes: 6 },
   })).status, 400);
 });
+
+
+test('fixed prize is announced, frozen at round start, capped by gross revenue, and paid exactly once', async () => {
+  await freshRound();
+  const player = await newPlayer('Fixed Prize Player', 100);
+  const configured = await api('POST', '/api/admin/prize-schedule', {
+    token: ctx.adminToken,
+    body: { prizeMode: 'fixed', fixedPrize: 15, prizePercent: 80, prizePerPlayer: 4, maxPrizeCap: 0, roundIntervalMinutes: 4 },
+  });
+  assert.equal(configured.status, 200, JSON.stringify(configured.json));
+  assert.equal(configured.json.prizeMode, 'fixed');
+  assert.equal(configured.json.fixedPrizeEtb, 15);
+  const bought = await api('POST', '/api/cards/buy', { token: player.token, body: { count: 3 } });
+  assert.equal(bought.status, 200, JSON.stringify(bought.json));
+  let state = (await api('GET', '/api/game')).json;
+  assert.equal(state.roundPrizeEtb, 15, 'the configured fixed prize is shown before the round starts');
+  assert.equal((await api('POST', '/api/admin/round/start', { token: ctx.adminToken })).status, 200);
+  state = (await api('GET', '/api/game')).json;
+  assert.equal(state.roundPrizeEtb, 15, 'the prize remains fixed after the round starts');
+  const changedDuringRound = await api('POST', '/api/admin/prize-schedule', {
+    token: ctx.adminToken,
+    body: { prizeMode: 'fixed', fixedPrize: 20, prizePercent: 80, prizePerPlayer: 4, maxPrizeCap: 0, roundIntervalMinutes: 4 },
+  });
+  assert.equal(changedDuringRound.status, 409, 'active-round prize settings cannot be changed');
+  await drawAll();
+  const won = await api('POST', '/api/claim', { token: player.token, body: { cardId: bought.json.cards[0].id, expectedCallCount: 75 } });
+  assert.equal(won.status, 200, JSON.stringify(won.json));
+  assert.equal(won.json.ok, true);
+  assert.equal(won.json.prize, 15);
+  const balance = await api('GET', '/api/me', { token: player.token });
+  assert.equal(balance.json.balance, 100 - 30 + 15);
+});
