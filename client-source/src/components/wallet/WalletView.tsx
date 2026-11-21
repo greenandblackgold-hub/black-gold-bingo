@@ -118,8 +118,9 @@ function DepositPanel({
   const methodLabel = method === 'telebirr' ? t('telebirr') : t('cbe');
 
   return (
-    <section className="rounded-2xl border border-gold-700/25 bg-cardbg p-4 shadow-lg shadow-black/10 ring-1 ring-gold-700/40 sm:p-5">
-      <h2 className="mb-4 text-lg font-bold text-gold-300">{t('deposit')}</h2>
+    <section className="group relative overflow-hidden rounded-[1.5rem] border border-gold-500/25 bg-[#0b0b0b] p-4 shadow-[0_18px_55px_rgba(0,0,0,.28)] ring-1 ring-white/[0.035] sm:p-5">
+      <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-gold-400/[0.055] blur-3xl" />
+      <h2 className="relative mb-4 flex items-center gap-2 text-base font-extrabold tracking-wide text-gold-200 sm:text-lg"><span className="grid h-8 w-8 place-items-center rounded-xl border border-gold-400/20 bg-gold-400/10 text-sm text-gold-300">＋</span>{t('deposit')}</h2>
 
       {stage === 'form' && (
         <div className="space-y-4">
@@ -300,8 +301,9 @@ function PurchasePanel({
   };
 
   return (
-    <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
-      <h2 className="mb-4 text-lg font-bold text-gold-300">{t('buy')}</h2>
+    <section className="group relative overflow-hidden rounded-[1.5rem] border border-gold-500/25 bg-[#0b0b0b] p-4 shadow-[0_18px_55px_rgba(0,0,0,.28)] ring-1 ring-white/[0.035] sm:p-5">
+      <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-gold-400/[0.045] blur-3xl" />
+      <h2 className="relative mb-4 flex items-center gap-2 text-base font-extrabold tracking-wide text-gold-200 sm:text-lg"><span className="grid h-8 w-8 place-items-center rounded-xl border border-gold-400/20 bg-gold-400/10 text-sm text-gold-300">▦</span>{t('buy')}</h2>
 
       <div className="mb-4 flex items-center justify-between text-sm">
         <span className="text-gold-500">{t('price')}</span>
@@ -394,20 +396,30 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
   const { phase } = useRound();
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 pb-2">
-      {/* Balance */}
-      <section className="relative overflow-hidden rounded-3xl border border-gold-400/25 bg-gradient-to-br from-gold-700/40 via-cardbg to-cardbg p-5 shadow-xl shadow-black/20 ring-1 ring-gold-500/50 sm:p-7">
-        <p className="text-sm text-gold-300">{t('balance')}</p>
-        <p className="mt-2 text-4xl font-black tracking-tight tabular-nums text-gold-300 sm:text-6xl" aria-live="polite">
-          {fmt(balance)}
-          <span className="ml-2 text-xl font-bold text-gold-500">{t('etb')}</span>
-        </p>
-        <p className="mt-3 text-sm text-gold-500">
-          {t('owned')}: <span className="font-bold tabular-nums text-gold-300">{formatNumber(lang, ownedCount)}</span>
-        </p>
+    <div className="mx-auto w-full max-w-5xl space-y-5 pb-3 sm:space-y-6">
+      {/* Wallet balance overview */}
+      <section className="relative isolate overflow-hidden rounded-[1.75rem] border border-gold-400/25 bg-[#090909] p-5 shadow-[0_24px_70px_rgba(0,0,0,.42)] ring-1 ring-gold-500/15 sm:p-7">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(246,215,122,.16),transparent_48%),linear-gradient(125deg,rgba(246,215,122,.055),transparent_55%)]" />
+        <div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-24 h-64 w-64 rounded-full border border-gold-300/10" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="mb-3 text-[10px] font-black uppercase tracking-[.28em] text-gold-500">BLACK GOLD BINGO · WALLET</p>
+            <p className="text-sm font-semibold text-gold-300/90">{t('balance')}</p>
+            <p className="mt-2 break-words text-4xl font-black tracking-tight tabular-nums text-gold-200 sm:text-5xl" aria-live="polite">
+              {fmt(balance)} <span className="text-lg font-bold text-gold-500 sm:text-xl">{t('etb')}</span>
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-gold-400/15 bg-black/35 px-4 py-3 shadow-inner shadow-black/30 sm:min-w-40">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-gold-400/10 text-lg text-gold-300">▦</span>
+            <div>
+              <p className="text-xs font-medium text-gold-600">{t('owned')}</p>
+              <p className="mt-0.5 text-xl font-black tabular-nums text-gold-200">{fmtNumber(ownedCount)}</p>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <div className="grid items-start gap-5 lg:grid-cols-2">
+      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-5">
         {SERVER_MODE ? <SmsDepositPanel /> : <DepositPanel t={t} formatAmount={fmt} onDeposit={deposit} />}
         <PurchasePanel t={t} formatAmount={fmt} formatNumber={fmtNumber} price={cardPrice} balance={balance} onBuy={buyCards} onGoToPlay={onGoToPlay} locked={phase !== 'waiting'} />
         {SERVER_MODE && <SimulationWithdrawalPanel />}
