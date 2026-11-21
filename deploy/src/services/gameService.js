@@ -188,7 +188,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, firstCallAt: null, endedAt: null, nextRoundAt: null,
       })),
 
-    endRound: () => mutate('running', (g) => ({ phase: 'ended', autoCall: false, nextCallAt: null, nextRoundAt: now() + roundIntervalMs(g) })),
+    endRound: () => mutate('running', (g) => ({ phase: 'ended', autoCall: false, nextCallAt: null, endedAt: now(), nextRoundAt: now() + roundIntervalMs(g) })),
 
     setAnnouncement(message) {
       const clean = String(message ?? '').trim().slice(0, 240);
