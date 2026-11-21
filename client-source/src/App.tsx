@@ -39,7 +39,7 @@ function useHash(): string {
 }
 
 /** Player app: Play, Wallet and Menu. */
-function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
+function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLogout: () => void }) {
   const [tab, setTab] = useState<TabId>(() => (window.location.hash === '#wallet' ? 'wallet' : 'play'));
   const [menuOpen, setMenuOpen] = useState(false);
   const handleNavChange = (next: TabId) => {
@@ -51,7 +51,7 @@ function PlayerShell({ onOpenAdmin }: { onOpenAdmin: () => void }) {
     <div className="premium-ui min-h-screen pb-28">
       <Suspense fallback={<RouteLoading />}><AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} /></Suspense>
       <main className="mx-auto max-w-6xl px-4 pt-5 sm:pt-8">
-        {tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} /></Suspense>}
+        {tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} onOpenMenu={() => setMenuOpen(true)} onLogout={onLogout} /></Suspense>}
         {tab === 'wallet' && <Suspense fallback={<RouteLoading />}><WalletView onGoToPlay={() => setTab('play')} /></Suspense>}
       </main>
       {menuOpen && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Menu">
@@ -73,13 +73,13 @@ function DemoRouter() {
   const hash = useHash();
   const openAdmin = () => { window.location.hash = ADMIN_HASH; };
   const closeAdmin = () => { window.location.hash = 'play'; };
-  return hash === ADMIN_HASH ? <Suspense fallback={<RouteLoading />}><AdminApp onExit={closeAdmin} /></Suspense> : <PlayerShell onOpenAdmin={openAdmin} />;
+  return hash === ADMIN_HASH ? <Suspense fallback={<RouteLoading />}><AdminApp onExit={closeAdmin} /></Suspense> : <PlayerShell onOpenAdmin={openAdmin} onLogout={() => { window.location.hash = ''; }} />;
 }
 
 /** Production host route is guarded by the authenticated database role, not by the URL hash. */
 function ServerRouter() {
   const hash = useHash();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { lang } = useLanguage();
   const accessText = translations.serverAccess[lang];
   const closeAdmin = () => { window.location.hash = 'play'; };
@@ -97,7 +97,7 @@ function ServerRouter() {
       </main>
     );
   }
-  return hash === ADMIN_HASH ? <AdminApp onExit={closeAdmin} /> : <PlayerShell onOpenAdmin={openAdmin} />;
+  return hash === ADMIN_HASH ? <AdminApp onExit={closeAdmin} /> : <PlayerShell onOpenAdmin={openAdmin} onLogout={logout} />;
 }
 
 /** Demo tree: browser-only data, no real accounts or money. */
