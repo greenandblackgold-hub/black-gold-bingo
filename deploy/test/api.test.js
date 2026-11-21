@@ -705,3 +705,44 @@ test('production safety gates block registration and all real-money routes until
     ctx.app.resetLimits();
   }
 });
+
+
+// Prize settings use collected gross revenue and unique players, never card count.
+test('admin prize modes are capped by gross revenue and count each unique player once', async () => {
+  let initial = (await api('GET', '/api/game')).json;
+  if (initial.phase === 'waiting') await api('POST', '/api/admin/round/start', { token: ctx.adminToken });
+  initial = (await api('GET', '/api/game')).json;
+  if (initial.phase === 'running') await api('POST', '/api/admin/round/end', { token: ctx.adminToken });
+  await api('POST', '/api/admin/round/reset', { token: ctx.adminToken });
+  const a = await newPlayer('Prize Player A', 100);
+  const b = await newPlayer('Prize Player B', 100);
+  const configured = await api('POST', '/api/admin/prize-schedule', {
+    token: ctx.adminToken,
+    body: { prizeMode: 'revenue_percent', prizePercent: 50, prizePerPlayer: 4, maxPrizeCap: 12, roundIntervalMinutes: 4 },
+  });
+  assert.equal(configured.status, 200, JSON.stringify(configured.json));
+  assert.equal((await api('POST', '/api/cards/buy', { token: a.token, body: { count: 2 } })).status, 200);
+  assert.equal((await api('POST', '/api/cards/buy', { token: a.token, body: { count: 1 } })).status, 200);
+  assert.equal((await api('POST', '/api/cards/buy', { token: b.token, body: { count: 1 } })).status, 200);
+  let state = (await api('GET', '/api/game')).json;
+  assert.equal(state.roundPlayerCount, 2, 'multiple purchases by one player count once');
+  assert.equal(state.roundPrizeEtb, 12, '50% of 40 ETB gross is 20 ETB, capped at 12 ETB');
+  assert.equal(Object.hasOwn(state, 'roundPlayerIds'), false, 'private participant IDs are never public');
+  assert.equal(state.roundIntervalMinutes, 4);
+
+  const perPlayer = await api('POST', '/api/admin/prize-schedule', {
+    token: ctx.adminToken,
+    body: { prizeMode: 'per_player', prizePercent: 50, prizePerPlayer: 4, maxPrizeCap: 7.5, roundIntervalMinutes: 5 },
+  });
+  assert.equal(perPlayer.status, 200, JSON.stringify(perPlayer.json));
+  state = (await api('GET', '/api/game')).json;
+  assert.equal(state.roundPrizeEtb, 7.5, 'per-player amount multiplies two unique players then respects cap');
+  assert.equal(state.roundPlayerCount, 2);
+
+  assert.equal((await api('POST', '/api/admin/prize-schedule', {
+    token: a.token, body: { prizeMode: 'per_player', prizePercent: 50, prizePerPlayer: 4, maxPrizeCap: 7.5, roundIntervalMinutes: 5 },
+  })).status, 403);
+  assert.equal((await api('POST', '/api/admin/prize-schedule', {
+    token: ctx.adminToken, body: { prizeMode: 'per_player', prizePercent: 50, prizePerPlayer: 4, maxPrizeCap: 7.5, roundIntervalMinutes: 6 },
+  })).status, 400);
+});

@@ -204,7 +204,7 @@ export async function createMongoRepo({ uri, dbName }) {
       return tx(async (session) => {
         const g = await games.findOneAndUpdate(
           { _id: 'state', phase: 'waiting', roundNumber: round },
-          { $inc: { pot: cost, version: 1 } },
+          { $inc: { pot: cost, version: 1 }, $addToSet: { roundPlayerIds: userId } },
           { returnDocument: 'after', session },
         );
         if (!g) throw new RepoError('ROUND_NOT_OPEN');

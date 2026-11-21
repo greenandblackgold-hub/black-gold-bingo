@@ -8,5 +8,11 @@ export const DEFAULT_GAME = {
   nextCallAt: null,
   winner: null, // { cardCode, serial, userId, at }
   pot: 0, // santim collected from card sales this round
+  roundPlayerIds: [], // private unique participant IDs; never included in public state
+  prizeMode: 'revenue_percent',
+  prizePercent: 80,
+  prizePerPlayer: 0,
+  maxPrizeCap: 0, // zero means capped by gross revenue only
+  roundIntervalMinutes: 10,
   version: 0,
 };

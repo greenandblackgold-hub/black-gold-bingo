@@ -135,7 +135,7 @@ export function createMemoryRepo() {
       if (newCards.some((c) => typeof c.serial === 'string' && [...cards.values()].some((old) => old.round === round && old.serial === c.serial))) throw new RepoError('CARD_NUMBER_TAKEN');
       const r = credit(userId, -cost, 'card_purchase', ref, { round, count: newCards.length });
       for (const c of newCards) cards.set(c.code, { ...clone(c), userId, round, createdAt: new Date() });
-      game = { ...game, pot: game.pot + cost, version: game.version + 1 };
+      game = { ...game, roundPlayerIds: [...new Set([...(game.roundPlayerIds ?? []), userId])], pot: game.pot + cost, version: game.version + 1 };
       return { balance: r.balance, game: clone(game) };
     },
     async listCards(userId, round) {

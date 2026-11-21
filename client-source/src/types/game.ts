@@ -131,6 +131,13 @@ export interface RoundContextValue {
   winner: SharedGame['winner'];
   roundPrizeEtb?: number;
   roundCardCount?: number;
+  roundPlayerCount?: number;
+  prizeMode?: 'revenue_percent' | 'per_player';
+  prizePercent?: number;
+  prizePerPlayer?: number;
+  maxPrizeCap?: number;
+  roundIntervalMinutes?: 4 | 5 | 10;
+  setPrizeScheduleSettings?: (settings: { prizeMode: 'revenue_percent' | 'per_player'; prizePercent: number; prizePerPlayer: number; maxPrizeCap: number; roundIntervalMinutes: 4 | 5 | 10 }) => void;
   /** Host only: open claims for the current round (empty for players). */
   claims: HostClaim[];
   /** waiting -> running (host only) */
