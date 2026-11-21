@@ -488,3 +488,19 @@ body { min-height: 100vh; min-height: 100dvh; }
   .player-quick-buy-cta { min-height: 3rem; gap: .45rem; font-size: .9rem; }
   .player-quick-buy-amh { font-size: .66em; }
 }
+
+
+/* Keep Quick Buy in its original fixed-footer position with the requested red pulse. */
+.player-quick-buy-footer-cta {
+  border: 1.5px solid #fecaca;
+  background: linear-gradient(110deg, #7f1d1d, #ef4444 52%, #991b1b);
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,.8);
+  box-shadow: 0 0 10px rgba(239,68,68,.75), 0 0 20px rgba(220,38,38,.4), inset 0 1px rgba(255,255,255,.3);
+  animation: player-quick-buy-pulse 1.15s ease-in-out infinite;
+}
+.player-quick-buy-footer-cta > span:first-child { font-size: 1.35rem; font-weight: 1000; }
+.player-quick-buy-footer-cta:disabled { animation: none; filter: saturate(.55); opacity: .45; }
+@media (prefers-reduced-motion: reduce) {
+  .player-quick-buy-footer-cta { animation: none; }
+}
