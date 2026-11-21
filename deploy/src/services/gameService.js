@@ -1,7 +1,7 @@
 import { randomToken, randomInt, hmacHex, safeEqual } from '../util/crypto.js';
 import { HttpError, RepoError } from '../util/errors.js';
 import { log } from '../util/log.js';
-import { ALL_NUMBERS, WIN_PATTERNS, findWinningPattern, generateGrid, isValidGrid, isWinPattern, newCardCode } from '../game/engine.js';
+import { ALL_NUMBERS, findWinningPattern, generateGrid, isValidGrid, isWinPattern, newCardCode } from '../game/engine.js';
 
 const clampSec = (n) => Math.min(60, Math.max(1, Math.round(Number(n) || 5)));
 
