@@ -530,3 +530,8 @@ body { min-height: 100vh; min-height: 100dvh; }
     animation-iteration-count: infinite !important;
   }
 }
+
+/* Stop the plus-symbol animation too when Quick Buy is disabled after the round starts. */
+.player-quick-buy-footer-cta:disabled > span:first-child {
+  animation: none;
+}
