@@ -4,6 +4,7 @@ import http from 'node:http';
 import { createHmac } from 'node:crypto';
 import { loadConfig } from '../src/config.js';
 import { build } from '../src/index.js';
+import { findWinningPattern, patternMasks } from '../src/game/engine.js';
 
 let ctx, server, base;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -71,6 +72,23 @@ async function freshRound() {
   if ((await api('GET', '/api/game')).json.phase === 'ended') await api('POST', '/api/admin/round/reset', { token: ctx.adminToken });
 }
 const drawAll = async () => { for (let i = 0; i < 75; i++) await ctx.game.draw(); };
+
+
+test('directional winning patterns accept all rotated and mirrored orientations', () => {
+  const grid = Array.from({ length: 5 }, (_, r) =>
+    Array.from({ length: 5 }, (_, col) => r === 2 && col === 2 ? null : r * 5 + col + 1),
+  );
+  for (const pattern of ['t', 'l', 'z', 'u', 's', 'arrow_up', 'arrow_down', 'letter_h', 'letter_e', 'letter_c', 'letter_n', 'letter_w', 'lucky_seven']) {
+    const masks = patternMasks(pattern);
+    assert.ok(masks.length > 1, `${pattern} should expose multiple orientations`);
+    for (const mask of masks) {
+      const called = new Set(mask.map(([r, col]) => grid[r][col]).filter((value) => value !== null));
+      assert.equal(findWinningPattern(grid, called, pattern).missing, 0, `${pattern} orientation should be accepted`);
+    }
+  }
+  assert.equal(patternMasks('t').length, 4, 'T has four distinct rotations');
+  assert.equal(patternMasks('l').length, 8, 'L has four rotations and four mirrored orientations');
+});
 
 test('register, login, wrong PIN, lockout after 5 failures', async () => {
   const phone = newPhone();
