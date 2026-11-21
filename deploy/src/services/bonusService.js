@@ -9,27 +9,36 @@ export function createBonusService({ repo, game, config }) {
   const cardSecret = hmacHex(config.jwtSecret, 'card-signing');
   const signCard = (code, round, grid) => hmacHex(cardSecret, `${code}|${round}|${JSON.stringify(grid)}`);
   let stopped = false;
+  let retryTimer = null;
   let queue = Promise.resolve();
   const enqueue = () => {
     queue = queue.then(processState).catch((error) => {
       console.error('automatic bonus cycle failed', error);
+      if (!stopped && !retryTimer) retryTimer = setTimeout(() => { retryTimer = null; void enqueue(); }, 2000);
+      retryTimer?.unref?.();
     });
     return queue;
   };
 
-  async function countRegularRound(g) {
-    if (g.bonusRound || g.lastCountedRegularRound === g.roundNumber) return false;
-    const count = Math.min(BONUS_EVERY, Math.max(0, Number(g.regularRoundsSinceBonus) || 0) + 1);
+  async function processCompletedRound(g) {
+    const completedRound = Number(g.lastCompletedRoundNumber) || 0;
+    if (!completedRound || completedRound <= (Number(g.lastCountedRegularRound) || 0)) return false;
+    const isBonus = g.lastCompletedWasBonus === true;
+    const count = isBonus ? Math.max(0, Number(g.regularRoundsSinceBonus) || 0) : Math.min(BONUS_EVERY, Math.max(0, Number(g.regularRoundsSinceBonus) || 0) + 1);
     const next = await repo.casGame(g.version, {
       regularRoundsSinceBonus: count,
-      lastCountedRegularRound: g.roundNumber,
-      bonusDue: count >= BONUS_EVERY,
+      lastCountedRegularRound: completedRound,
+      bonusDue: !isBonus && count >= BONUS_EVERY,
+      ...( !isBonus && count >= BONUS_EVERY ? { nextRoundAt: Date.now() } : {}),
     });
     if (!next) return false;
-    if (count === BONUS_EVERY - 2) {
+    if (!isBonus && count === BONUS_EVERY - 2) {
       await game.setAnnouncement('🎁 ለነፃው 10,000 ብር የቦነስ ጨዋታ 2 መደበኛ ዙሮች ቀርተዋል። እንዳያመልጥዎ!');
-    } else if (count === BONUS_EVERY - 1) {
+    } else if (!isBonus && count === BONUS_EVERY - 1) {
       await game.setAnnouncement('🎁 አንድ መደበኛ ዙር ብቻ ቀርቷል! ከዚያ በኋላ 10,000 ብር የሚያሸልመው ነፃ የቦነስ ጨዋታ ይጀምራል። እስከ 3 ነፃ ካርቴላ ያግኙ!');
+    }
+    } else if (!isBonus && count === BONUS_EVERY) {
+      await game.setAnnouncement('🎉 10 መደበኛ ዙሮች ተጠናቀዋል! የ10,000 ብር ነፃ የቦነስ ጨዋታ አሁን ይጀምራል።');
     }
     return true;
   }
@@ -114,10 +123,7 @@ export function createBonusService({ repo, game, config }) {
   async function processState() {
     if (stopped) return;
     let g = await repo.getGame();
-    if (g.phase === 'ended') {
-      if (g.bonusRound) return;
-      if (await countRegularRound(g)) g = await repo.getGame();
-    }
+    if (await processCompletedRound(g)) g = await repo.getGame();
     if (g.phase === 'waiting' && g.bonusRound && !g.bonusRoundPrepared) {
       await finishBonus(g);
       return;
@@ -140,6 +146,6 @@ export function createBonusService({ repo, game, config }) {
 
   return {
     async resume() { await enqueue(); },
-    stop() { stopped = true; unsubscribe(); },
+    stop() { stopped = true; unsubscribe(); if (retryTimer) clearTimeout(retryTimer); retryTimer = null; },
   };
 }
