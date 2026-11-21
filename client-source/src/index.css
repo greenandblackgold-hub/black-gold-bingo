@@ -353,11 +353,11 @@ body { min-height: 100vh; min-height: 100dvh; }
   .player-play-view > .relative.z-10 > section.grid.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 520px) {
-  .player-play-view > .relative.z-10 > section.grid.grid-cols-\\[0\\.9fr_0\\.65fr_1\\.8fr\\] {
+  .player-play-view > .relative.z-10 > section[class*="grid-cols-[0.9fr_0.65fr_1.8fr]"] {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: center;
   }
-  .player-play-view > .relative.z-10 > section.grid.grid-cols-\\[0\\.9fr_0\\.65fr_1\\.8fr\\] > :last-child {
+  .player-play-view > .relative.z-10 > section[class*="grid-cols-[0.9fr_0.65fr_1.8fr]"] > :last-child {
     grid-column: 1 / -1;
     width: 100%;
   }
