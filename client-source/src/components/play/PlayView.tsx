@@ -176,6 +176,15 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
   const [patternOpen, setPatternOpen] = useState(false);
   const [numberBoardMode, setNumberBoardMode] = useState<'all' | 'called'>('all');
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() =>
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied',
+  );
+
+  const enableNotifications = useCallback(async () => {
+    if (!('Notification' in window)) return;
+    const permission = await Notification.requestPermission();
+    setNotificationPermission(permission);
+  }, []);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -262,6 +271,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <button type="button" onClick={() => setSoundEnabled(!soundEnabled)} aria-label={soundEnabled ? 'Mute sound' : 'Enable sound'} aria-pressed={soundEnabled} className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/50 text-2xl text-white">{soundEnabled ? '◖))' : '◖̸'}</button>
+              <button type="button" onClick={() => void enableNotifications()} disabled={notificationPermission === 'granted' || !('Notification' in window)} aria-label="Enable player notifications" title={notificationPermission === 'granted' ? 'Notifications enabled' : 'Enable browser notifications'} className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/50 text-xl text-white disabled:opacity-50">{notificationPermission === 'granted' ? '🔔' : '♧'}</button>
               <span className="grid h-10 w-7 place-items-center text-3xl text-white">⋮</span>
             </div>
           </div>
