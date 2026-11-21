@@ -43,7 +43,14 @@ export function createGameService({ repo, config, now = Date.now }) {
     winner: g.winner ? { cardId: g.winner.cardCode, serial: g.winner.serial, at: g.winner.at } : null,
     roomId: config.roomId,
     cardPrice: config.cardPrice / 100,
-    roundPrizeEtb: calculatePrize(g) / 100,
+    // Before sales begin, show the configured fixed prize to players. Once the round
+    // starts, calculatePrize uses the frozen snapshot and applies the gross-revenue cap.
+    roundPrizeEtb: g.phase === 'waiting' && g.prizeMode === 'fixed' && !Number.isSafeInteger(g.roundPrize)
+      ? Math.min(
+          Math.max(0, Math.floor(Number(g.fixedPrize) || 0)),
+          Number(g.maxPrizeCap) > 0 ? Math.floor(Number(g.maxPrizeCap)) : Number.MAX_SAFE_INTEGER,
+        ) / 100
+      : calculatePrize(g) / 100,
     roundCardCount: config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0,
     roundPlayerCount: g.roundPlayerIds?.length ?? 0,
     prizeMode: g.prizeMode ?? 'revenue_percent',
