@@ -169,7 +169,7 @@ export function createGameService({ repo, config, now = Date.now }) {
     /* ───────────── host / admin ───────────── */
 
     startRound: () =>
-      mutate('waiting', () => ({
+      mutate('waiting', (g) => ({
         phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
         roundPrize: g.prizeMode === 'fixed' ? calculatePrize({ ...g, roundPrize: null }) : null,
         autoCall: true, callIntervalSec: AUTO_CALL_SECONDS, nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
