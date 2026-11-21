@@ -225,7 +225,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
         </div>
       </div>}
       {(menuOnly || settingsOnly || inlineMenuOpen) && <div className={`overflow-hidden rounded-2xl border ${panel}`}>
-        {rows.filter(row => settingsOnly ? row.id === 'settings' : menuOnly ? ['messages','settings','rules','app','history','contact','info'].includes(row.id) : true).map((row) => (
+        {rows.filter(row => settingsOnly ? row.id === 'settings' : menuOnly ? ['messages','rules','app','history','contact','info'].includes(row.id) : true).map((row) => (
           <div key={row.id} className="border-b border-current/10 last:border-0">
             <button type="button" onClick={() => toggle(row.id)} aria-expanded={expanded === row.id} className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left">
               <span className="flex items-center gap-3 font-semibold"><span className={`grid h-9 w-9 place-items-center rounded-xl ${light ? 'bg-amber-100 text-amber-800' : 'bg-gold-500/10 text-gold-300'}`}>{row.icon}</span>{row.label}</span>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatAmount } from '@/lib/localization';
+import { PlayerFeatures } from '@/components/play/PlayerFeatures';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
@@ -234,6 +235,7 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
   const [autoMark, setAutoMark] = useState(true);
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
   const [patternOpen, setPatternOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [numberBoardMode, setNumberBoardMode] = useState<'all' | 'called'>('all');
   const [numberBoardExpanded, setNumberBoardExpanded] = useState(true);
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
@@ -354,10 +356,25 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
               </strong>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <button type="button" onClick={onOpenMenu} aria-label="የጨዋታ ሴቲንጎችን ክፈት" title="የጨዋታ ሴቲንጎች" className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/60 text-3xl leading-none text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">⋮</button>
+              <button type="button" onClick={onOpenMenu} aria-label="ሜኑ ክፈት" title="ሜኑ" className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/60 text-3xl leading-none text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">⋮</button>
+              <button type="button" onClick={() => setSettingsOpen(true)} aria-label="ሴቲንግ ክፈት" title="ሴቲንግ" className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/60 text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+              </button>
             </div>
           </div>
         </header>
+
+        {settingsOpen && (
+          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-label="ሴቲንግ">
+            <section className="relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-amber-400/40 bg-[#090909] p-4 shadow-2xl sm:p-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="text-lg font-black text-amber-200">⚙ ሴቲንግ</h2>
+                <button type="button" onClick={() => setSettingsOpen(false)} aria-label="ዝጋ" className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold text-amber-100">ዝጋ ✕</button>
+              </div>
+              <PlayerFeatures onGoToWallet={onGoToWallet} settingsOnly />
+            </section>
+          </div>
+        )}
 
         {phase === 'waiting' && (
           <section
