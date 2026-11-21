@@ -393,3 +393,55 @@ body { min-height: 100vh; min-height: 100dvh; }
 @media (prefers-reduced-motion: reduce) {
   .player-play-view *, .player-play-view *::before, .player-play-view *::after { scroll-behavior: auto !important; }
 }
+
+
+/* Scoped mobile Player controls: preserve existing card and number-board visuals. */
+@media (max-width: 640px) {
+  .player-play-view {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+    border-radius: 1rem;
+  }
+  .player-play-view > .relative.z-10 > footer > div {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) auto auto minmax(0, 1.2fr);
+    align-items: center;
+    gap: .3rem;
+    padding: .4rem;
+  }
+  .player-play-view > .relative.z-10 > footer button[role="switch"] {
+    min-width: 0;
+    justify-content: center;
+  }
+  .player-play-view > .relative.z-10 > footer button[role="switch"] > span:first-child {
+    font-size: clamp(.55rem, 2.2vw, .72rem);
+  }
+  .player-play-view > .relative.z-10 > footer button:nth-child(2) {
+    min-height: 2.55rem;
+    padding-inline: .45rem;
+    border: 1px solid rgba(234,179,8,.5);
+    border-radius: .75rem;
+  }
+  .player-play-view > .relative.z-10 > footer button:nth-child(3) {
+    padding-inline: .45rem;
+  }
+  .player-play-view > .relative.z-10 > footer button:last-child {
+    min-width: 0;
+    width: 100%;
+    min-height: 2.65rem;
+    padding: .5rem .35rem;
+    font-size: clamp(.7rem, 2.8vw, .9rem);
+  }
+}
+@media (max-width: 360px) {
+  .player-play-view > .relative.z-10 > footer > div {
+    grid-template-columns: minmax(0, .75fr) auto auto minmax(0, 1fr);
+    gap: .2rem;
+    padding: .3rem;
+  }
+  .player-play-view > .relative.z-10 > footer button:nth-child(2),
+  .player-play-view > .relative.z-10 > footer button:nth-child(3) {
+    padding-inline: .3rem;
+  }
+}
