@@ -385,10 +385,15 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
                 <button
                   type="button"
                   onClick={() => {
-                    void navigator.clipboard.writeText(selectedDepositAccount.number).then(
-                      () => setCopyStatus('የአካውንት ቁጥሩ ተቀድቷል።'),
-                      () => setCopyStatus('መቅዳት አልተቻለም፤ ከላይ ያለውን ቁጥር በእጅ ይቅዱ።'),
-                    );
+                    void (async () => {
+                      try {
+                        if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+                        await navigator.clipboard.writeText(selectedDepositAccount.number);
+                        setCopyStatus('የአካውንት ቁጥሩ ተቀድቷል።');
+                      } catch {
+                        setCopyStatus('መቅዳት አልተቻለም፤ ከላይ ያለውን ቁጥር በእጅ ይቅዱ።');
+                      }
+                    })();
                   }}
                   className="rounded-xl border border-yellow-400/60 bg-black px-4 py-3 text-center text-sm font-bold text-yellow-200 hover:bg-yellow-950/60"
                 >
