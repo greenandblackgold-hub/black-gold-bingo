@@ -76,17 +76,18 @@ export function SmsDepositPanel() {
     : t.unknown;
 
   return (
-    <section className="rounded-xl border border-gold-600/30 bg-gradient-to-b from-white/[0.045] to-transparent p-3 shadow-[0_10px_28px_rgba(0,0,0,0.18)] sm:p-4" aria-labelledby="simulation-wallet-title">
-      <h2 id="simulation-wallet-title" className="mb-3 text-base font-bold text-gold-300">{t.title}</h2>
+    <section className="group relative overflow-hidden rounded-[1.5rem] border border-gold-500/25 bg-[#0b0b0b] p-4 shadow-[0_18px_55px_rgba(0,0,0,.28)] ring-1 ring-white/[0.035] sm:p-5" aria-labelledby="simulation-wallet-title">
+      <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-gold-400/[0.05] blur-3xl" />
+      <h2 id="simulation-wallet-title" className="relative mb-4 flex items-center gap-2 text-base font-extrabold tracking-wide text-gold-200 sm:text-lg"><span className="grid h-8 w-8 place-items-center rounded-xl border border-gold-400/20 bg-gold-400/10 text-sm text-gold-300">＋</span>{t.title}</h2>
       {!request ? (
-        <div className="space-y-3">
+        <div className="relative space-y-3">
           <div>
             <label htmlFor="simulation-deposit-provider" className="mb-1 block text-xs text-gold-500">{t.provider}</label>
             <select id="simulation-deposit-provider" className={inputClass} value={provider} onChange={(event) => setProvider(event.target.value as 'Telebirr' | 'CBE')} disabled={busy}>
               <option value="Telebirr">Telebirr</option><option value="CBE">Commercial Bank of Ethiopia</option>
             </select>
           </div>
-          <div className="rounded-lg border border-gold-700/40 bg-black/25 p-3 text-xs">
+          <div className="rounded-xl border border-gold-700/30 bg-black/35 p-3.5 text-xs sm:p-4">
             <p className="mb-2 font-semibold text-gold-300">{t.sendTo}</p>
             {provider === 'Telebirr' ? (
               <dl className="space-y-1">
