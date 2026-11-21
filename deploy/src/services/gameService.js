@@ -97,11 +97,11 @@ export function createGameService({ repo, config, now = Date.now }) {
     if (timer) clearTimeout(timer);
     timer = null;
     let due = null;
-    if (g.phase === 'waiting') due = g.nextRoundAt ?? (now() + roundIntervalMs(g));
+    if (g.phase === 'waiting') due = g.bonusDue ? null : (g.nextRoundAt ?? (now() + roundIntervalMs(g)));
     else if (g.phase === 'running') due = g.autoCall
       ? Math.min(g.nextCallAt ?? (now() + g.callIntervalSec * 1000), g.roundEndsAt ?? (now() + roundIntervalMs(g)))
       : (g.roundEndsAt ?? (now() + roundIntervalMs(g)));
-    else if (g.phase === 'ended') due = g.nextRoundAt ?? (now() + roundIntervalMs(g));
+    else if (g.phase === 'ended') due = g.bonusDue ? now() : (g.nextRoundAt ?? (now() + roundIntervalMs(g)));
     if (due === null) return;
     timer = setTimeout(tick, Math.max(0, due - now()));
     timer.unref?.();
@@ -111,6 +111,7 @@ export function createGameService({ repo, config, now = Date.now }) {
     try {
       const g = await repo.getGame();
       if (g.phase === 'waiting') {
+        if (g.bonusDue) { schedule(g); return; }
         if (!g.nextRoundAt) {
           await mutate('waiting', () => ({ nextRoundAt: now() + roundIntervalMs(g) }));
         } else if (g.nextRoundAt <= now()) {
