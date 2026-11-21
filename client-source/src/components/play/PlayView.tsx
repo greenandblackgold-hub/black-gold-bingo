@@ -166,7 +166,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const { cards, markedByCard, toggleMark, balance } = usePlayer();
   const {
     phase, winPattern, calledNumbers, claimBingo, winner,
-    nextCallAt, roundPrizeEtb, startedAt, nextRoundAt,
+    nextCallAt, roundPrizeEtb, startedAt, nextRoundAt, announcement,
   } = useRound();
   const { soundEnabled, setSoundEnabled } = useAppSettings();
   const [now, setNow] = useState(() => Date.now());
@@ -264,6 +264,18 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             </div>
           </div>
         </header>
+
+        {announcement?.message && (
+          <section
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="rounded-2xl border border-emerald-400/80 bg-emerald-950/80 px-4 py-3 text-center text-sm font-bold leading-relaxed text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,.22)] sm:text-base"
+          >
+            <span className="mb-1 block text-xs font-black tracking-wide text-emerald-300">📢 ማስታወቂያ</span>
+            <p className="whitespace-pre-wrap break-words">{announcement.message}</p>
+          </section>
+        )}
 
         <section className="grid grid-cols-[0.9fr_0.65fr_1.8fr] items-start gap-2 rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_18px_rgba(250,204,21,.28)]">
           <div className="relative">
