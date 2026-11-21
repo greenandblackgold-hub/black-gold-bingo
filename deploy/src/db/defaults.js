@@ -17,5 +17,12 @@ export const DEFAULT_GAME = {
   prizePerPlayer: 0,
   maxPrizeCap: 0, // zero means capped by gross revenue only
   roundIntervalMinutes: 10,
+  // Sponsored bonus cycle; bonus rounds are excluded from the regular-round counter.
+  regularRoundsSinceBonus: 0,
+  lastCountedRegularRound: 0,
+  bonusDue: false,
+  bonusRound: false,
+  bonusRoundPrepared: false,
+  bonusSavedPrizeSettings: null,
   version: 0,
 };
