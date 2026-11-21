@@ -557,6 +557,20 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
           )}
         </section>
 
+        <div className="player-quick-buy-slot">
+          <button
+            type="button"
+            onClick={() => { setQuickBuyMessage(''); setQuickBuyOpen(true); }}
+            disabled={!quickBuyAllowed}
+            className="player-quick-buy-cta"
+            aria-label="Quick Buy — ፈጣን ካርድ ግዢ"
+          >
+            <span aria-hidden="true">＋</span>
+            <span>Quick Buy</span>
+            <span className="player-quick-buy-amh">ፈጣን ካርድ ግዢ</span>
+          </button>
+        </div>
+
         {cards.length > 0 && (
           <section className="grid grid-cols-2 gap-2 sm:gap-4">
             {cards.map((card, index) => (
@@ -616,10 +630,6 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
             }} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
               <span className="text-[10px] font-black text-white sm:text-xs">Auto-Mark</span>
               <span className={`relative h-6 w-10 shrink-0 rounded-full ${autoMark ? 'bg-green-500' : 'bg-zinc-600'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${autoMark ? 'translate-x-5' : 'translate-x-1'}`} /></span>
-            </button>
-            <button type="button" onClick={() => { setQuickBuyMessage(''); setQuickBuyOpen(true); }} disabled={!quickBuyAllowed} aria-label="ፈጣን ካርድ ግዢ" className="min-w-0 shrink-0 rounded-xl border border-yellow-500/50 px-2 py-2 text-center text-yellow-200 disabled:opacity-40">
-              <span className="block text-base leading-none" aria-hidden="true">＋</span>
-              <span className="text-[9px] font-black sm:text-xs">Quick Buy</span>
             </button>
             <button type="button" onClick={onGoToWallet} className="min-w-0 shrink-0 border-l border-yellow-500/50 px-2 text-left">
               <span className="flex items-center gap-1 text-lg leading-none text-yellow-400">▣ <span className="text-[9px] font-bold text-white sm:text-xs">ቀሪ ሂሳብ</span></span>
