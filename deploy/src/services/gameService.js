@@ -1,7 +1,7 @@
 import { randomToken, randomInt, hmacHex, safeEqual } from '../util/crypto.js';
 import { HttpError, RepoError } from '../util/errors.js';
 import { log } from '../util/log.js';
-import { ALL_NUMBERS, WIN_PATTERNS, findWinningPattern, generateGrid, isValidGrid, isWinPattern, newCardCode } from '../game/engine.js';
+import { ALL_NUMBERS, findWinningPattern, generateGrid, isValidGrid, isWinPattern, newCardCode } from '../game/engine.js';
 
 const clampSec = (n) => Math.min(60, Math.max(1, Math.round(Number(n) || 5)));
 
@@ -31,7 +31,6 @@ export function createGameService({ repo, config, now = Date.now }) {
   };
   const ROUND_DURATION_MS = 8 * 60 * 1000;
   const AUTO_CALL_SECONDS = 8;
-  const randomPattern = () => { const ids = Object.keys(WIN_PATTERNS); return ids[randomInt(ids.length)]; };
 
   /** What every connected browser may see. Never includes anyone's card grid or user id. */
   const publicState = (g) => ({
@@ -116,7 +115,7 @@ export function createGameService({ repo, config, now = Date.now }) {
           await mutate('waiting', () => ({ nextRoundAt: now() + roundIntervalMs(g) }));
         } else if (g.nextRoundAt <= now()) {
           await mutate('waiting', () => ({
-            phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
+            phase: 'running', calledNumbers: [], winner: null,
             roundPrize: calculatePrize({ ...g, roundPrize: null }),
             autoCall: true, callIntervalSec: AUTO_CALL_SECONDS,
             nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
@@ -186,7 +185,7 @@ export function createGameService({ repo, config, now = Date.now }) {
 
     startRound: () =>
       mutate('waiting', (g) => ({
-        phase: 'running', bonusRoundPrepared: g.bonusRound === true ? false : g.bonusRoundPrepared, winPattern: randomPattern(), calledNumbers: [], winner: null,
+        phase: 'running', bonusRoundPrepared: g.bonusRound === true ? false : g.bonusRoundPrepared, calledNumbers: [], winner: null,
         roundPrize: calculatePrize({ ...g, roundPrize: null }),
         autoCall: true, callIntervalSec: AUTO_CALL_SECONDS, nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
         roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, firstCallAt: null, endedAt: null, nextRoundAt: null,

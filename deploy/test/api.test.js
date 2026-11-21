@@ -504,6 +504,8 @@ test('only the host can select a winning pattern, and only before a round starts
   assert.equal((await api('POST', '/api/admin/pattern', { token: ctx.adminToken, body: { pattern: 'not-a-pattern' } })).status, 400);
 
   await api('POST', '/api/admin/round/start', { token: ctx.adminToken });
+  assert.equal((await api('GET', '/api/game')).json.winPattern, 'two_horizontal_lines',
+    'the host-selected upcoming pattern must remain active when the round starts');
   assert.equal((await api('POST', '/api/admin/pattern', { token: ctx.adminToken, body: { pattern: 'diagonal' } })).status, 409);
   await api('POST', '/api/admin/round/end', { token: ctx.adminToken });
   await api('POST', '/api/admin/round/reset', { token: ctx.adminToken });
