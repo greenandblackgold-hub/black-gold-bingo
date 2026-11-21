@@ -48,7 +48,7 @@ function AudioSwitch({ label, checked, onChange }: { label: string; checked: boo
   );
 }
 
-export function AppHeader({ onOpenWallet, onOpenAdmin }: { onOpenWallet: () => void; onOpenAdmin: () => void }) {
+export function AppHeader({ onOpenWallet, onOpenAdmin, hideControls = false }: { onOpenWallet: () => void; onOpenAdmin: () => void; hideControls?: boolean }) {
   const { lang, setLang } = useLanguage();
   const {
     soundEnabled, setSoundEnabled, voiceEnabled, setVoiceEnabled, audioVolume, setAudioVolume,
@@ -79,6 +79,7 @@ export function AppHeader({ onOpenWallet, onOpenAdmin }: { onOpenWallet: () => v
           )}
         </div>
 
+        {!hideControls && (
         <div className="flex shrink-0 items-center gap-1.5">
           <div role="group" aria-label={l.languageLabel} className="flex overflow-hidden rounded-full ring-1 ring-gold-700/60">
             {LANGS.map((o) => (
@@ -124,6 +125,7 @@ export function AppHeader({ onOpenWallet, onOpenAdmin }: { onOpenWallet: () => v
             </div>
           </details>
         </div>
+        )}
       </div>
     </header>
   );
