@@ -267,10 +267,15 @@ export async function createMongoRepo({ uri, dbName }) {
     /** End the round and enqueue a prize; wallet credit is deferred until admin approval. */
     async settleWin({ round, expectedVersion, card, prize, ref }) {
       return tx(async (session) => {
+        const before = await games.findOne(
+          { _id: 'state', phase: 'running', roundNumber: round, version: expectedVersion },
+          { session, projection: { bonusRound: 1 } },
+        );
+        if (!before) return null;
         const g = await games.findOneAndUpdate(
           { _id: 'state', phase: 'running', roundNumber: round, version: expectedVersion },
           { $set: { phase: 'ended', autoCall: false, nextCallAt: null,
-            winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: ref, payoutStatus: 'paid', at: Date.now() }, lastCompletedRoundNumber: round, lastCompletedWasBonus: g.bonusRound === true },
+            winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: ref, payoutStatus: 'paid', at: Date.now() }, lastCompletedRoundNumber: round, lastCompletedWasBonus: before.bonusRound === true },
             $inc: { version: 1 } },
           { returnDocument: 'after', session },
         );
