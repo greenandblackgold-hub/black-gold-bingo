@@ -212,13 +212,13 @@ export function HostView() {
       {/* Winning pattern is selected before a round starts and enforced by the server. */}
       <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
         <label htmlFor="win-pattern" className="mb-2 block text-sm font-semibold text-gold-300">የዙሩ የBingo አሸናፊነት ቅጥ</label>
-        <select id="win-pattern" value={h.winPattern} disabled={h.phase !== 'waiting'}
+        <select id="win-pattern" value={h.winPattern} disabled={h.phase === 'running'}
           onChange={(e) => h.setWinPattern(e.target.value as WinPattern)}
           className="w-full rounded-xl bg-zinc-900 px-4 py-3 text-gold-300 ring-1 ring-gold-700/60 disabled:opacity-50">
           {WIN_PATTERN_OPTIONS.map((pattern) => <option key={pattern} value={pattern}>{patternNames[h.lang][pattern]}</option>)}
         </select>
         <PatternGuide pattern={h.winPattern} lang={h.lang} compact />
-        <p className="mt-2 text-xs text-gold-600">{h.phase === 'waiting' ? 'ዙሩን ከመጀመርዎ በፊት ይምረጡ። ዙሩ ከጀመረ በኋላ መቀየር አይቻልም።' : 'ቅጡ የሚቀየረው ቀጣይ ዙር ከመጀመሩ በፊት ብቻ ነው።'}</p>
+        <p className="mt-2 text-xs text-gold-600">{h.phase === 'running' ? 'የአሁኑ ዙር እየተካሄደ ሳለ ቅጡን መቀየር አይቻልም። ዙሩ ሲያበቃ ለቀጣዩ ዙር ይምረጡ።' : 'ቀጣዩን ዙር የሚጀምርበትን ቅጽ እዚህ ይምረጡ።'}</p>
       </section>
 
       {/* Prize calculation and automatic next-round interval are server controlled. */}
