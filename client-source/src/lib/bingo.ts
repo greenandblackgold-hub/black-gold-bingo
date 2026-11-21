@@ -103,7 +103,7 @@ const TOUCHING_RECTANGLES=RECTANGLE_PAIRS.filter(([a,b])=>edgeAdjacent(a,b));
 const SEPARATE_RECTANGLES=RECTANGLE_PAIRS.filter(([a,b])=>!edgeAdjacent(a,b));
 const INNER_FRAME=Array.from({length:9},(_,i)=>p(Math.floor(i/3)+1,i%3+1)).filter(([r,c])=>r===1||r===3||c===1||c===3);
 const INNER_SQUARE=Array.from({length:9},(_,i)=>p(Math.floor(i/3)+1,i%3+1));
-export function patternMasks(pattern:WinPattern='any_line'):Pos[][] {
+function basePatternMasks(pattern:WinPattern='any_line'):Pos[][] {
  switch(pattern){
   case 'horizontal_line':return ROWS;
   case 'vertical_line':return COLS;
@@ -188,4 +188,40 @@ export function isValidGrid(grid: unknown): grid is (number | null)[][] {
     }
   }
   return true;
+}
+
+
+/**
+ * Directional letter/arrow patterns accept every board orientation.
+ * This keeps the preview, local win hints, and shared validation aligned.
+ */
+const ROTATABLE_PATTERNS = new Set<WinPattern>([
+  't', 'l', 'z', 'u', 's', 'arrow_up', 'arrow_down',
+  'letter_h', 'letter_e', 'letter_c', 'letter_n', 'letter_w', 'lucky_seven',
+]);
+const transformMask = (mask: Pos[], rotation: number, mirror: boolean): Pos[] => {
+  return mask.map(([row, col]) => {
+    let r = row - 2;
+    let c = col - 2;
+    if (mirror) c = -c;
+    for (let i = 0; i < rotation; i++) [r, c] = [c, -r];
+    return [r + 2, c + 2] as Pos;
+  });
+};
+const maskKey = (mask: Pos[]) => mask.map(([r, c]) => r * 5 + c).sort((a, b) => a - b).join(',');
+
+export function patternMasks(pattern: WinPattern = 'any_line'): Pos[][] {
+  const base = basePatternMasks(pattern);
+  if (!ROTATABLE_PATTERNS.has(pattern)) return base;
+  const variants = new Map<string, Pos[]>();
+  for (const mirror of [false, true]) {
+    for (let rotation = 0; rotation < 4; rotation++) {
+      for (const mask of base) {
+        const transformed = transformMask(mask, rotation, mirror);
+        const key = maskKey(transformed);
+        if (!variants.has(key)) variants.set(key, transformed);
+      }
+    }
+  }
+  return [...variants.values()];
 }
