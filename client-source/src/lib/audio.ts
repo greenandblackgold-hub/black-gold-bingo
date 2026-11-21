@@ -127,10 +127,24 @@ export function play(sfx: Sfx): void {
       note(c, out, 1319, t + 0.09, 0.3, { type: 'square', gain: 0.12 });
       break;
     case 'notification': {
-      // A short, warm three-note chime distinct from the Bingo call bell.
-      note(c, out, 784, t, 0.24, { type: 'sine', gain: 0.28 });
-      note(c, out, 988, t + 0.12, 0.28, { type: 'sine', gain: 0.25 });
-      note(c, out, 1175, t + 0.25, 0.42, { type: 'sine', gain: 0.22 });
+      // A loud, unmistakable two-tone emergency-style siren: alternating rising
+      // and falling sweeps with a strong sawtooth fundamental and triangle body.
+      // Keep it below clipping while making it clearly louder than the old chime.
+      [0, 0.48, 0.96, 1.44].forEach((offset, index) => {
+        const rising = index % 2 === 0;
+        const startFreq = rising ? 640 : 1180;
+        const endFreq = rising ? 1180 : 640;
+        note(c, out, startFreq, t + offset, 0.46, {
+          type: 'sawtooth',
+          gain: 0.48,
+          glideTo: endFreq,
+        });
+        note(c, out, startFreq * 2, t + offset, 0.43, {
+          type: 'triangle',
+          gain: 0.16,
+          glideTo: endFreq * 2,
+        });
+      });
       break;
     }
   }
