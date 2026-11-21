@@ -213,17 +213,22 @@ function CalledBall({ number, latest = false }: { number: number; latest?: boole
 
 export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const { lang } = useLanguage();
-  const { cards, markedByCard, toggleMark, balance } = usePlayer();
+  const { cards, markedByCard, toggleMark, balance, buyCards } = usePlayer();
   const {
     phase, winPattern, calledNumbers, claimBingo, winner,
     nextCallAt, roundPrizeEtb, startedAt, nextRoundAt,
   } = useRound();
-  const { soundEnabled, setSoundEnabled } = useAppSettings();
+  const { soundEnabled, setSoundEnabled, cardPrice } = useAppSettings();
   const [now, setNow] = useState(() => Date.now());
   const [autoMark, setAutoMark] = useState(true);
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
   const [patternOpen, setPatternOpen] = useState(false);
   const [numberBoardMode, setNumberBoardMode] = useState<'all' | 'called'>('all');
+  const [numberBoardExpanded, setNumberBoardExpanded] = useState(true);
+  const [quickBuyOpen, setQuickBuyOpen] = useState(false);
+  const [quickBuyCount, setQuickBuyCount] = useState(1);
+  const [quickBuyBusy, setQuickBuyBusy] = useState(false);
+  const [quickBuyMessage, setQuickBuyMessage] = useState('');
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() =>
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied',
   );
@@ -297,6 +302,28 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const formatClock = (milliseconds: number) => {
     const seconds = Math.max(0, Math.floor(milliseconds / 1000));
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  };
+  const quickBuyTotal = quickBuyCount * cardPrice;
+  const quickBuyAllowed = phase === 'waiting';
+  const quickBuyInsufficient = quickBuyTotal > balance;
+  const submitQuickBuy = async () => {
+    if (!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy) return;
+    setQuickBuyBusy(true);
+    setQuickBuyMessage('');
+    try {
+      const result = await buyCards(quickBuyCount);
+      if (result.ok) {
+        setQuickBuyMessage('ካርዶቹ በተሳካ ሁኔታ ተጨምረዋል።');
+        setQuickBuyOpen(false);
+        setQuickBuyCount(1);
+      } else {
+        setQuickBuyMessage(result.error ?? 'ግዢው አልተሳካም። ቀሪ ሂሳብዎን ያረጋግጡ።');
+      }
+    } catch {
+      setQuickBuyMessage('ግዢው አልተሳካም። እባክዎ እንደገና ይሞክሩ።');
+    } finally {
+      setQuickBuyBusy(false);
+    }
   };
   const callTimer = active && startedAt !== null
     ? formatClock(now - startedAt)
@@ -480,31 +507,40 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
         <section aria-label="BINGO number board" className="rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_18px_rgba(250,204,21,.22)] sm:p-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-black tracking-wide text-yellow-300 sm:text-base">BINGO ቁጥሮች</h2>
-            <div className="flex items-center gap-1 rounded-lg border border-yellow-500/60 bg-zinc-950 p-1">
-              <button type="button" aria-pressed={numberBoardMode === 'all'} onClick={() => setNumberBoardMode('all')} className={`rounded-md px-3 py-1.5 text-xs font-black transition sm:text-sm ${numberBoardMode === 'all' ? 'bg-yellow-400 text-black shadow' : 'text-yellow-200 hover:bg-yellow-400/10'}`}>1–75</button>
-              <button type="button" aria-pressed={numberBoardMode === 'called'} onClick={() => setNumberBoardMode('called')} className={`rounded-md px-3 py-1.5 text-xs font-black transition sm:text-sm ${numberBoardMode === 'called' ? 'bg-yellow-400 text-black shadow' : 'text-yellow-200 hover:bg-yellow-400/10'}`}>የተጠሩ</button>
+            <div className="flex items-center gap-2">
+              {numberBoardExpanded && (
+                <div className="flex items-center gap-1 rounded-lg border border-yellow-500/60 bg-zinc-950 p-1">
+                  <button type="button" aria-pressed={numberBoardMode === 'all'} onClick={() => setNumberBoardMode('all')} className={`rounded-md px-3 py-1.5 text-xs font-black transition sm:text-sm ${numberBoardMode === 'all' ? 'bg-yellow-400 text-black shadow' : 'text-yellow-200 hover:bg-yellow-400/10'}`}>1–75</button>
+                  <button type="button" aria-pressed={numberBoardMode === 'called'} onClick={() => setNumberBoardMode('called')} className={`rounded-md px-3 py-1.5 text-xs font-black transition sm:text-sm ${numberBoardMode === 'called' ? 'bg-yellow-400 text-black shadow' : 'text-yellow-200 hover:bg-yellow-400/10'}`}>የተጠሩ</button>
+                </div>
+              )}
+              <button type="button" aria-expanded={numberBoardExpanded} aria-controls="bingo-number-board-grid" onClick={() => setNumberBoardExpanded(expanded => !expanded)} className="rounded-lg border border-yellow-400/70 bg-yellow-400/10 px-3 py-2 text-xs font-black text-yellow-200 hover:bg-yellow-400/20">
+                {numberBoardExpanded ? 'ሰብስብ ▴' : 'ዘርጋ ▾'}
+              </button>
             </div>
           </div>
-          <div className="space-y-1.5">
-            {LETTERS.map((letter, row) => (
-              <div key={letter} className="grid grid-cols-[1.5rem_repeat(15,minmax(0,1fr))] items-stretch gap-1 sm:grid-cols-[2.25rem_repeat(15,minmax(0,1fr))] sm:gap-1.5">
-                <div className={`grid place-items-center rounded-md text-sm font-black text-black shadow-inner sm:text-lg ${['bg-blue-400','bg-red-400','bg-emerald-400','bg-amber-300','bg-orange-400'][row]}`}>
-                  {letter}
+          {numberBoardExpanded && (
+            <div id="bingo-number-board-grid" className="space-y-1.5">
+              {LETTERS.map((letter, row) => (
+                <div key={letter} className="grid grid-cols-[1.5rem_repeat(15,minmax(0,1fr))] items-stretch gap-1 sm:grid-cols-[2.25rem_repeat(15,minmax(0,1fr))] sm:gap-1.5">
+                  <div className={`grid place-items-center rounded-md text-sm font-black text-black shadow-inner sm:text-lg ${['bg-blue-400','bg-red-400','bg-emerald-400','bg-amber-300','bg-orange-400'][row]}`}>
+                    {letter}
+                  </div>
+                  {Array.from({ length: 15 }, (_, col) => {
+                    const number = row * 15 + col + 1;
+                    const isCalled = called.has(number);
+                    const isLatestCall = calledNumbers[calledNumbers.length - 1] === number;
+                    const visible = numberBoardMode === 'all' || isCalled;
+                    return (
+                      <div key={number} aria-label={visible ? `${letter} ${number}${isLatestCall ? ', latest called number' : isCalled ? ', called' : ''}` : undefined} className={`grid aspect-square min-w-0 place-items-center rounded-[4px] border text-[clamp(12px,2vw,18px)] font-black tabular-nums transition sm:text-base ${!visible ? 'border-transparent bg-transparent text-transparent' : isLatestCall ? 'animate-pulse border-white bg-amber-300 text-black shadow-[0_0_14px_rgba(250,204,21,.95)] ring-2 ring-yellow-200' : isCalled ? 'border-yellow-200 bg-blue-600 text-white shadow-[0_0_8px_rgba(59,130,246,.65)]' : 'border-yellow-500/20 bg-zinc-900 text-yellow-100/90'}`}>
+                        {visible ? number : ''}
+                      </div>
+                    );
+                  })}
                 </div>
-                {Array.from({ length: 15 }, (_, col) => {
-                  const number = row * 15 + col + 1;
-                  const isCalled = called.has(number);
-                  const isLatestCall = calledNumbers[calledNumbers.length - 1] === number;
-                  const visible = numberBoardMode === 'all' || isCalled;
-                  return (
-                    <div key={number} aria-label={visible ? `${letter} ${number}${isLatestCall ? ', latest called number' : isCalled ? ', called' : ''}` : undefined} className={`grid aspect-square min-w-0 place-items-center rounded-[4px] border text-[9px] font-black tabular-nums transition sm:text-sm ${!visible ? 'border-transparent bg-transparent text-transparent' : isLatestCall ? 'animate-pulse border-white bg-amber-300 text-black shadow-[0_0_14px_rgba(250,204,21,.95)] ring-2 ring-yellow-200' : isCalled ? 'border-yellow-200 bg-blue-600 text-white shadow-[0_0_8px_rgba(59,130,246,.65)]' : 'border-yellow-500/20 bg-zinc-900 text-yellow-100/75'}`}>
-                      {visible ? number : ''}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {cards.length > 0 && (
@@ -524,6 +560,44 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
               />
             ))}
           </section>
+        )}
+        <section className="rounded-2xl border border-dashed border-yellow-500/70 bg-yellow-950/20 p-3 text-center">
+          <button type="button" onClick={() => { setQuickBuyMessage(''); setQuickBuyOpen(true); }} className="mx-auto flex min-h-12 items-center justify-center gap-2 rounded-full border-2 border-yellow-300 bg-gradient-to-b from-yellow-200 to-amber-500 px-6 py-2 text-sm font-black text-black shadow-[0_0_16px_rgba(250,204,21,.3)] transition hover:brightness-110">
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-black text-xl leading-none text-yellow-300">+</span>
+            ተጨማሪ ካርድ ጨምር
+          </button>
+          <p className="mt-2 text-[10px] text-yellow-100/70">የሚፈልጉትን የካርድ ብዛት በፍጥነት ይምረጡ</p>
+        </section>
+        {quickBuyOpen && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center" role="presentation" onClick={() => !quickBuyBusy && setQuickBuyOpen(false)}>
+            <section role="dialog" aria-modal="true" aria-labelledby="quick-buy-title" className="w-full max-w-md rounded-2xl border-2 border-yellow-400 bg-zinc-950 p-4 shadow-[0_0_30px_rgba(250,204,21,.3)]" onClick={event => event.stopPropagation()}>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 id="quick-buy-title" className="text-lg font-black text-yellow-300">የካርድ ፓኬጅ ይምረጡ</h2>
+                <button type="button" disabled={quickBuyBusy} onClick={() => setQuickBuyOpen(false)} aria-label="ዝጋ" className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/50 text-xl text-white disabled:opacity-40">×</button>
+              </div>
+              <p className="mb-3 text-xs text-yellow-100/80">የአንድ ካርድ ዋጋ፦ {formatAmount(lang, cardPrice)} ብር</p>
+              <div className="grid grid-cols-4 gap-2">
+                {[1, 2, 5, 10, 15, 20].map(count => (
+                  <button key={count} type="button" aria-pressed={quickBuyCount === count} onClick={() => setQuickBuyCount(count)} className={`rounded-xl border px-2 py-3 text-sm font-black transition ${quickBuyCount === count ? 'border-yellow-200 bg-yellow-400 text-black' : 'border-yellow-500/40 bg-black text-yellow-100 hover:bg-yellow-950'}`}>
+                    {count} {count === 1 ? 'ካርድ' : 'ካርዶች'}
+                  </button>
+                ))}
+              </div>
+              <div className="my-4 flex items-center justify-between border-t border-yellow-500/30 pt-3 text-sm">
+                <span className="text-yellow-100/80">ጠቅላላ ዋጋ</span>
+                <strong className="text-xl font-black text-yellow-300">{formatAmount(lang, quickBuyTotal)} ብር</strong>
+              </div>
+              <div className="mb-3 flex items-center justify-between text-xs text-yellow-100/70">
+                <span>ቀሪ ሂሳብ</span><strong className="text-yellow-200">{formatAmount(lang, balance)} ብር</strong>
+              </div>
+              {!quickBuyAllowed && <p role="status" className="mb-3 rounded-lg bg-amber-950/60 p-2 text-xs text-amber-200">አዲስ ካርድ መግዛት የሚቻለው ጨዋታው በመጠባበቅ ላይ ሲሆን ብቻ ነው። ዙሩ እስኪያበቃ ይጠብቁ።</p>}
+              {quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">በቂ ቀሪ ሂሳብ የለዎትም። እባክዎ ቀሪ ሂሳብዎን ይሙሉ።</p>}
+              {quickBuyMessage && <p role="status" className="mb-3 text-xs font-bold text-yellow-300">{quickBuyMessage}</p>}
+              <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="w-full rounded-xl bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black disabled:opacity-40">
+                {quickBuyBusy ? 'በመግዛት ላይ…' : 'ካርዶቹን ግዛ'}
+              </button>
+            </section>
+          </div>
         )}
 
         <footer className="fixed inset-x-0 bottom-[calc(4.6rem+env(safe-area-inset-bottom))] z-30 px-2 sm:px-4">
