@@ -10,6 +10,54 @@ import { getPatternDescription } from '@/lib/patternCatalog';
 import { patternNames } from '@/lib/localization';
 import type { BingoCard, WinPattern } from '@/types/game';
 
+type DepositAccount = {
+  id: 'cbe' | 'anbesa' | 'telebirr';
+  name: string;
+  kind: string;
+  number: string;
+  owner: string;
+  ussd: string;
+  ussdHref: string;
+  appLabel: string;
+  appUrl: string;
+};
+
+const DEPOSIT_ACCOUNTS: DepositAccount[] = [
+  {
+    id: 'cbe',
+    name: 'CBE · ባንክ',
+    kind: 'የባንክ አካውንት',
+    number: '1000737138686',
+    owner: 'ቤተሊሄም',
+    ussd: '*889#',
+    ussdHref: 'tel:*889%23',
+    appLabel: 'CBE Mobile Banking',
+    appUrl: 'https://play.google.com/store/apps/details?id=com.combanketh.mobilebanking',
+  },
+  {
+    id: 'anbesa',
+    name: 'Anbesa Bank · አንበሳ ባንክ',
+    kind: 'የባንክ አካውንት',
+    number: '00311390826',
+    owner: 'ኣሊክሳንደር',
+    ussd: '*803#',
+    ussdHref: 'tel:*803%23',
+    appLabel: 'Anbesa Plus',
+    appUrl: 'https://play.google.com/store/apps/details?id=com.anbesabank.anbesa_plus',
+  },
+  {
+    id: 'telebirr',
+    name: 'Telebirr · ቴሌብር',
+    kind: 'የስልክ አካውንት',
+    number: '0978202822',
+    owner: 'ኣሊክሳንደር',
+    ussd: '*127#',
+    ussdHref: 'tel:*127%23',
+    appLabel: 'telebirr App',
+    appUrl: 'https://play.google.com/store/apps/details?id=cn.tydic.ethiopay',
+  },
+];
+
 const LETTERS = ['B', 'I', 'N', 'G', 'O'] as const;
 const letterFor = (n: number) => LETTERS[Math.min(4, Math.floor((n - 1) / 15))];
 const CARD_ACCENTS = [
@@ -179,6 +227,9 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() =>
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied',
   );
+  const [selectedDepositAccount, setSelectedDepositAccount] = useState<DepositAccount | null>(null);
+  const [copyStatus, setCopyStatus] = useState('');
+
 
   const enableNotifications = useCallback(async () => {
     if (!('Notification' in window)) return;
@@ -279,39 +330,75 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
 
         {phase === 'waiting' && (
           <section
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
+            role="region"
+            aria-label="የገቢ ማድረጊያ አካውንቶች"
             className="rounded-2xl border border-yellow-400/80 bg-yellow-950/70 px-3 py-3 text-center shadow-[0_0_20px_rgba(250,204,21,.2)]"
           >
             <span className="mb-2 block text-[11px] font-bold tracking-wide text-yellow-300">📢 የገቢ ማድረጊያ አካውንቶች</span>
+            <p className="mb-2 text-[10px] text-yellow-100/80">አካውንቱን ይንኩና የመክፈያ መንገድ ይምረጡ</p>
             <div className="mx-auto grid max-w-md gap-2 text-left">
-              <div className="rounded-xl border border-yellow-400/40 bg-black/50 px-3 py-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-yellow-300">CBE · ባንክ</span>
-                  <span className="text-[10px] text-yellow-100/70">የባንክ አካውንት</span>
-                </div>
-                <p className="mt-1 text-base font-black tracking-wider text-white tabular-nums">1000737138686</p>
-                <p className="mt-0.5 text-[11px] font-medium text-yellow-100">የአካውንት ባለቤት፦ ቤተሊሄም</p>
-              </div>
-              <div className="rounded-xl border border-yellow-400/40 bg-black/50 px-3 py-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-yellow-300">Anbessa Bank · አንበሳ ባንክ</span>
-                  <span className="text-[10px] text-yellow-100/70">የባንክ አካውንት</span>
-                </div>
-                <p className="mt-1 text-base font-black tracking-wider text-white tabular-nums">00311390826</p>
-                <p className="mt-0.5 text-[11px] font-medium text-yellow-100">የአካውንት ባለቤት፦ ኣሊክሳንደር</p>
-              </div>
-              <div className="rounded-xl border border-emerald-400/40 bg-black/50 px-3 py-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-300">Telebirr · ቴሌብር</span>
-                  <span className="text-[10px] text-yellow-100/70">የስልክ አካውንት</span>
-                </div>
-                <p className="mt-1 text-base font-black tracking-wider text-white tabular-nums">0978202822</p>
-                <p className="mt-0.5 text-[11px] font-medium text-yellow-100">የአካውንት ባለቤት፦ ኣሊክሳንደር</p>
-              </div>
+              {DEPOSIT_ACCOUNTS.map(account => (
+                <button
+                  key={account.id}
+                  type="button"
+                  onClick={() => { setSelectedDepositAccount(account); setCopyStatus(''); }}
+                  aria-label={account.name + ' ' + account.number + ' የክፍያ አማራጮችን ክፈት'}
+                  className="w-full rounded-xl border border-yellow-400/50 bg-black/60 px-3 py-2 text-left transition hover:border-yellow-200 hover:bg-yellow-950/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-yellow-300">{account.name}</span>
+                    <span className="text-[10px] text-yellow-100/70">{account.kind}</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <span className="text-base font-black tracking-wider text-white tabular-nums">{account.number}</span>
+                    <span className="text-[10px] font-bold text-yellow-300">ክፈት ›</span>
+                  </div>
+                  <p className="mt-0.5 text-[11px] font-medium text-yellow-100">የአካውንት ባለቤት፦ {account.owner}</p>
+                </button>
+              ))}
             </div>
           </section>
+        )}
+
+        {selectedDepositAccount && phase === 'waiting' && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-2 backdrop-blur-sm sm:items-center" role="presentation" onClick={() => setSelectedDepositAccount(null)}>
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="deposit-dialog-title"
+              className="w-full max-w-md rounded-2xl border-2 border-yellow-400 bg-zinc-950 p-4 text-left shadow-[0_0_35px_rgba(250,204,21,.3)]"
+              onClick={event => event.stopPropagation()}
+            >
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 id="deposit-dialog-title" className="text-base font-black text-yellow-300">{selectedDepositAccount.name} · የክፍያ አማራጮች</h2>
+                <button type="button" onClick={() => setSelectedDepositAccount(null)} aria-label="ዝጋ" className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/50 text-xl text-white">×</button>
+              </div>
+              <p className="text-xs text-yellow-100/80">የአካውንት ቁጥር</p>
+              <p className="mb-3 break-all text-xl font-black tracking-wider text-white tabular-nums">{selectedDepositAccount.number}</p>
+              <div className="grid gap-2">
+                <a href={selectedDepositAccount.appUrl} target="_blank" rel="noreferrer" className="rounded-xl bg-yellow-400 px-4 py-3 text-center text-sm font-black text-black hover:bg-yellow-300">
+                  📱 {selectedDepositAccount.appLabel} ክፈት / አውርድ
+                </a>
+                <a href={selectedDepositAccount.ussdHref} className="rounded-xl border border-emerald-400 bg-emerald-950/50 px-4 py-3 text-center text-sm font-black text-emerald-200 hover:bg-emerald-900">
+                  ☎ USSD {selectedDepositAccount.ussd} ደውል
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(selectedDepositAccount.number).then(
+                      () => setCopyStatus('የአካውንት ቁጥሩ ተቀድቷል።'),
+                      () => setCopyStatus('መቅዳት አልተቻለም፤ ከላይ ያለውን ቁጥር በእጅ ይቅዱ።'),
+                    );
+                  }}
+                  className="rounded-xl border border-yellow-400/60 bg-black px-4 py-3 text-center text-sm font-bold text-yellow-200 hover:bg-yellow-950/60"
+                >
+                  ▣ የአካውንት ቁጥር ቅዳ
+                </button>
+              </div>
+              <p role="status" aria-live="polite" className="mt-3 min-h-5 text-center text-xs font-bold text-yellow-300">{copyStatus}</p>
+              <p className="mt-1 text-center text-[10px] leading-relaxed text-zinc-400">USSD በሞባይል ስልክ ላይ ብቻ ይሰራል። ክፍያውን ከማረጋገጥዎ በፊት የተቀባዩን ስምና ቁጥር ያረጋግጡ።</p>
+            </section>
+          </div>
         )}
 
         {phase !== 'waiting' && (
