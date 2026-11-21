@@ -11,9 +11,11 @@
     "dev": "node --env-file-if-exists=.env scripts/dev.js",
     "simulate:sms": "node --env-file-if-exists=.env scripts/send-test-sms.js",
     "test": "node --test",
-    "create-admin": "node scripts/create-admin.js"
+    "create-admin": "node scripts/create-admin.js",
+    "push:keys": "node scripts/generate-vapid-keys.js"
   },
   "dependencies": {
-    "mongodb": "^6.10.0"
+    "mongodb": "^6.10.0",
+    "web-push": "^3.6.7"
   }
 }

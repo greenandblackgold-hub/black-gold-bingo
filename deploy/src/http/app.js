@@ -24,7 +24,7 @@ const PAGE_CSP = [
   "base-uri 'self'", "form-action 'self'",
 ].join('; ');
 
-export function createApp({ config, auth, game, wallet, chapa, repo }) {
+export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
   /* ───────────── rate limiting (per IP, in memory: fine for a single instance) ───────────── */
   const hits = new Map();
   const sweep = setInterval(() => {
@@ -131,6 +131,19 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
 
   /* game (public state; the SSE stream is handled separately below) */
   route('GET', '/api/game', 'public', 'default', () => game.getPublicState());
+
+  /* opt-in Web Push subscriptions */
+  route('GET', '/api/push/public-key', 'public', 'default', () => ({ enabled: push.isEnabled(), publicKey: push.getPublicKey() }));
+  route('POST', '/api/push/subscribe', 'user', 'default', async ({ user, body }) => {
+    if (user.role !== 'player' || user.phoneVerified !== true) throw new HttpError(403, 'player_only', 'Verified player accounts only');
+    if (!push.isEnabled()) throw new HttpError(503, 'push_not_configured', 'Push notifications are not configured yet');
+    await push.saveSubscription(user.id, body.subscription);
+    return { ok: true };
+  });
+  route('POST', '/api/push/unsubscribe', 'user', 'default', async ({ user, body }) => {
+    await push.removeSubscription(user.id, body.endpoint);
+    return { ok: true };
+  });
 
   /* cards */
   route('GET', '/api/cards', 'user', 'default', ({ user }) => game.myCards(user));
@@ -376,7 +389,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo }) {
     const headers = {
       'Content-Type': MIME[ext] ?? 'application/octet-stream',
       'Content-Length': stat.size,
-      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400',
+      'Cache-Control': ext === '.html' || pathname === '/sw.js' ? 'no-cache' : 'public, max-age=86400',
       'X-Content-Type-Options': 'nosniff',
     };
     if (ext === '.html') {

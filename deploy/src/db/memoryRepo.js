@@ -18,6 +18,7 @@ export function createMemoryRepo() {
   const rounds = new Map();
   const phoneChallenges = new Map();
   const pinResetChallenges = new Map();
+  const pushSubscriptions = new Map();
   let game = { ...DEFAULT_GAME, calledNumbers: [] };
   let nextCardSerial = 1;
 
@@ -36,6 +37,15 @@ export function createMemoryRepo() {
     async init() {},
     async close() {},
 
+    /* Web Push subscriptions: isolated from wallet and game state. */
+    async savePushSubscription(userId, subscription) {
+      pushSubscriptions.set(subscription.endpoint, { userId, endpoint: subscription.endpoint, subscription: clone(subscription), updatedAt: new Date() });
+    },
+    async removePushSubscription(userId, endpoint) {
+      const saved = pushSubscriptions.get(endpoint);
+      if (saved?.userId === userId) pushSubscriptions.delete(endpoint);
+    },
+    async listPushSubscriptions() { return [...pushSubscriptions.values()].map(clone); },
     /* users */
     async createUser({ phone, name, pinHash, role = 'player', phoneVerified = true }) {
       for (const u of users.values()) if (u.phone === phone) throw new RepoError('PHONE_TAKEN');

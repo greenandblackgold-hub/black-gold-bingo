@@ -6,6 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AudioCallAnnouncer } from '@/components/audio/AudioCallAnnouncer';
+import { PushNotificationPrompt } from '@/components/notifications/PushNotificationPrompt';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { useAuth } from '@/context/AuthContext';
 import { BackendContext } from '@/context/BackendContext';
@@ -377,6 +378,7 @@ export function ServerProviders({ children }: { children: ReactNode }) {
       <ServerPlayerProvider>
         <ServerRoundProvider>
           <AudioCallAnnouncer />
+          <PushNotificationPrompt />
           {children}
         </ServerRoundProvider>
       </ServerPlayerProvider>

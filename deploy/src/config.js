@@ -53,6 +53,9 @@ export function loadConfig(env = process.env) {
     // Requests per minute per IP. Many mobile users can share one carrier IP, so keep these generous.
     rateLimits: { auth: num(env.RATE_LIMIT_AUTH, 20), money: num(env.RATE_LIMIT_MONEY, 40), default: num(env.RATE_LIMIT_DEFAULT, 240) },
     smsWebhookSecret: env.SMS_WEBHOOK_SECRET ?? '',
+    pushVapidPublicKey: env.PUSH_VAPID_PUBLIC_KEY ?? '',
+    pushVapidPrivateKey: env.PUSH_VAPID_PRIVATE_KEY ?? '',
+    pushVapidSubject: env.PUSH_VAPID_SUBJECT ?? `mailto:admin@${new URL(selfUrl).hostname}`,
     chapa: {
       secretKey: env.CHAPA_SECRET_KEY ?? '',
       webhookSecret: env.CHAPA_WEBHOOK_SECRET ?? '',

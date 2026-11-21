@@ -7,6 +7,7 @@ import { createMongoRepo } from './db/mongoRepo.js';
 import { createAuthService } from './services/authService.js';
 import { createGameService } from './services/gameService.js';
 import { createBonusService } from './services/bonusService.js';
+import { createPushService } from './services/pushService.js';
 import { createWalletService } from './services/walletService.js';
 import { createChapa } from './payments/chapa.js';
 import { createApp } from './http/app.js';
@@ -28,7 +29,8 @@ export async function build(config = loadConfig()) {
     await repo.init();
     const auth = createAuthService({ repo, config });
     const game = createGameService({ repo, config });
-    const bonus = createBonusService({ repo, game, config });
+    const push = createPushService({ repo, config });
+    const bonus = createBonusService({ repo, game, config, push });
     const chapa = createChapa({ ...config.chapa, publicApiUrl: config.publicApiUrl });
     const wallet = createWalletService({ repo, config, chapa });
 
@@ -43,8 +45,8 @@ export async function build(config = loadConfig()) {
 
     await game.resume();
     await bonus.resume();
-    const app = createApp({ config, auth, game, wallet, chapa, repo });
-    return { config, repo, auth, game, bonus, wallet, chapa, app };
+    const app = createApp({ config, auth, game, wallet, chapa, repo, push });
+    return { config, repo, auth, game, bonus, push, wallet, chapa, app };
   } catch (error) {
     gameStopIfCreated();
     await repo.close().catch(() => undefined);

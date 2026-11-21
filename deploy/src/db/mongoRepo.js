@@ -27,6 +27,7 @@ export async function createMongoRepo({ uri, dbName }) {
   const rounds = db.collection('rounds');
   const phoneChallenges = db.collection('phoneVerificationChallenges');
   const pinResetChallenges = db.collection('pinResetChallenges');
+  const pushSubscriptions = db.collection('pushSubscriptions');
 
   async function tx(fn) {
     const session = client.startSession();
@@ -73,6 +74,8 @@ export async function createMongoRepo({ uri, dbName }) {
         rounds.createIndex({ round: 1 }, { unique: true }),
         phoneChallenges.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
         pinResetChallenges.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+        pushSubscriptions.createIndex({ endpoint: 1 }, { unique: true }),
+        pushSubscriptions.createIndex({ userId: 1 }),
       ]);
       await games.updateOne({ _id: 'state' }, { $setOnInsert: { ...DEFAULT_GAME } }, { upsert: true });
     },
@@ -84,6 +87,16 @@ export async function createMongoRepo({ uri, dbName }) {
       await db.dropDatabase();
     },
 
+    /* Web Push: device subscriptions are isolated from wallet and game records. */
+    async savePushSubscription(userId, subscription) {
+      await pushSubscriptions.updateOne({ endpoint: subscription.endpoint }, { $set: { userId, endpoint: subscription.endpoint, subscription, updatedAt: new Date() } }, { upsert: true });
+    },
+    async removePushSubscription(userId, endpoint) {
+      await pushSubscriptions.deleteOne({ userId, endpoint });
+    },
+    async listPushSubscriptions() {
+      return pushSubscriptions.find({}, { projection: { _id: 0, userId: 1, endpoint: 1, subscription: 1 } }).toArray();
+    },
     /* users */
     async createUser({ phone, name, pinHash, role = 'player', phoneVerified = true }) {
       const doc = { _id: randomToken(12), phone, name, pinHash, role, phoneVerified, balance: 0, failedLogins: 0, lockedUntil: 0, createdAt: new Date() };

@@ -21,7 +21,8 @@ test('ten completed regular rounds trigger one free ETB 10,000 bonus round with 
     }));
   }
   const game = createGameService({ repo, config });
-  const bonus = createBonusService({ repo, game, config });
+  const pushed = [];
+  const bonus = createBonusService({ repo, game, config, push: { isEnabled: () => true, notifyPlayers: async (notification) => { pushed.push(notification.body); } } });
   try {
     await bonus.resume();
     for (let round = 1; round <= 10; round++) {
@@ -45,6 +46,10 @@ test('ten completed regular rounds trigger one free ETB 10,000 bonus round with 
       assert.ok(cards.every((card) => card.sig));
     }
     assert.equal(state.roundPlayerIds.length, 2);
+    assert.ok(pushed.some((message) => message.includes('2 መደበኛ ዙሮች')));
+    assert.ok(pushed.some((message) => message.includes('አንድ መደበኛ ዙር')));
+    assert.ok(pushed.some((message) => message.includes('10 መደበኛ ዙሮች')));
+    assert.ok(pushed.some((message) => message.includes('ተጀምሯል')));
 
     await game.endRound();
     await game.resetRound();
