@@ -5,7 +5,7 @@
 
 import type { Lang } from '@/types/game';
 
-export type Sfx = 'call' | 'mark' | 'unmark' | 'win' | 'error' | 'coin';
+export type Sfx = 'call' | 'mark' | 'unmark' | 'win' | 'error' | 'coin' | 'notification';
 
 type WebkitWindow = Window & { webkitAudioContext?: typeof AudioContext };
 
@@ -126,6 +126,13 @@ export function play(sfx: Sfx): void {
       note(c, out, 988, t, 0.09, { type: 'square', gain: 0.12 });
       note(c, out, 1319, t + 0.09, 0.3, { type: 'square', gain: 0.12 });
       break;
+    case 'notification': {
+      // A short, warm three-note chime distinct from the Bingo call bell.
+      note(c, out, 784, t, 0.24, { type: 'sine', gain: 0.28 });
+      note(c, out, 988, t + 0.12, 0.28, { type: 'sine', gain: 0.25 });
+      note(c, out, 1175, t + 0.25, 0.42, { type: 'sine', gain: 0.22 });
+      break;
+    }
   }
 }
 
