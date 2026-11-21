@@ -450,7 +450,7 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             <p className="mt-1 text-[10px] leading-relaxed text-yellow-300/90">
               {lang === 'am' ? 'ለማሸነፍ ከላይ የተገለጸውን ቅርጽ በካርድዎ ላይ ያሟሉ።' : lang === 'ti' ? 'ንምዕዋት እቲ ኣብ ላዕሊ ዝተገልጸ ቅርጺ ኣብ ካርድኩም ምሉእ ግበሩ።' : 'To win, complete the pattern shown above on your card.'}
             </p>
-            <p className="mt-2 text-lg font-black text-yellow-300">🏆 የዚህ ዙር ሽልማት፦ {Number(roundPrizeEtb ?? 0).toFixed(2)} ብር</p>
+            <p className="mt-2 text-lg font-black text-yellow-300">{phase === 'waiting' ? '🏆 ቀጣይ ዙር የሚያሸንፉት ሽልማት፦' : '🏆 የዚህ ዙር ሽልማት፦'} {Number(roundPrizeEtb ?? 0).toFixed(2)} ብር</p>
           </section>
         )}
 
