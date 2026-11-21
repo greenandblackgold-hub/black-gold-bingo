@@ -59,6 +59,8 @@ export interface PlayerContextValue {
 /** Game state shared by everyone. Only the host may write it. */
 export interface SharedGame {
   phase: Phase;
+  /** True while the server is running the free-card bonus round. */
+  bonusRound?: boolean;
   winPattern: WinPattern;
   roundNumber: number;
   /** In call order, values 1..75. */
