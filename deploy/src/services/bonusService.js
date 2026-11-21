@@ -5,7 +5,11 @@ const BONUS_EVERY = 10;
 const BONUS_CARDS_PER_PLAYER = 3;
 const BONUS_PRIZE_SANTIM = 1_000_000;
 
-export function createBonusService({ repo, game, config }) {
+export function createBonusService({ repo, game, config, push }) {
+  async function announce(message) {
+    await game.setAnnouncement(message);
+    if (push?.isEnabled()) await push.notifyPlayers({ title: 'BLACK GOLD BINGO', body: message, tag: `bgb-bonus-${Date.now()}` }).catch((error) => console.error('bonus push delivery failed', error));
+  }
   const cardSecret = hmacHex(config.jwtSecret, 'card-signing');
   const signCard = (code, round, grid) => hmacHex(cardSecret, `${code}|${round}|${JSON.stringify(grid)}`);
   let stopped = false;
@@ -33,11 +37,11 @@ export function createBonusService({ repo, game, config }) {
     });
     if (!next) return false;
     if (!isBonus && count === BONUS_EVERY - 2) {
-      await game.setAnnouncement('🎁 ለነፃው 10,000 ብር የቦነስ ጨዋታ 2 መደበኛ ዙሮች ቀርተዋል። እንዳያመልጥዎ!');
+      await announce('🎁 ለነፃው 10,000 ብር የቦነስ ጨዋታ 2 መደበኛ ዙሮች ቀርተዋል። እንዳያመልጥዎ!');
     } else if (!isBonus && count === BONUS_EVERY - 1) {
-      await game.setAnnouncement('🎁 አንድ መደበኛ ዙር ብቻ ቀርቷል! ከዚያ በኋላ 10,000 ብር የሚያሸልመው ነፃ የቦነስ ጨዋታ ይጀምራል። እስከ 3 ነፃ ካርቴላ ያግኙ!');
+      await announce('🎁 አንድ መደበኛ ዙር ብቻ ቀርቷል! ከዚያ በኋላ 10,000 ብር የሚያሸልመው ነፃ የቦነስ ጨዋታ ይጀምራል። እስከ 3 ነፃ ካርቴላ ያግኙ!');
     } else if (!isBonus && count === BONUS_EVERY) {
-      await game.setAnnouncement('🎉 10 መደበኛ ዙሮች ተጠናቀዋል! የ10,000 ብር ነፃ የቦነስ ጨዋታ አሁን ይጀምራል።');
+      await announce('🎉 10 መደበኛ ዙሮች ተጠናቀዋል! የ10,000 ብር ነፃ የቦነስ ጨዋታ አሁን ይጀምራል።');
     }
     return true;
   }
@@ -65,7 +69,7 @@ export function createBonusService({ repo, game, config }) {
     if (!prepared) return;
     await grantFreeCards(prepared);
     await game.startRound();
-    await game.setAnnouncement('🎉 ነፃ የቦነስ ጨዋታ ተጀምሯል! የሽልማቱ መጠን 10,000 ብር ነው። ለእያንዳንዱ ተጫዋች እስከ 3 ነፃ ካርቴላ ተሰጥቷል።');
+    await announce('🎉 ነፃ የቦነስ ጨዋታ ተጀምሯል! የሽልማቱ መጠን 10,000 ብር ነው። ለእያንዳንዱ ተጫዋች እስከ 3 ነፃ ካርቴላ ተሰጥቷል။');
   }
 
   async function grantFreeCards(g) {
