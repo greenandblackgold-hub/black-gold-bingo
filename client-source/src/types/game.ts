@@ -122,6 +122,8 @@ export interface GameBackend {
 
 export interface RoundContextValue {
   roomId: string;
+  /** True while the server is running the free-card bonus round. */
+  bonusRound?: boolean;
   /** True once the first game state has arrived. */
   loaded: boolean;
   /** True only for the host. Every host action below is a no-op for players. */
