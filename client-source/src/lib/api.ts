@@ -84,6 +84,7 @@ export interface AuthUser {
 
 export interface ServerGameState {
   phase: 'waiting' | 'running' | 'ended';
+  bonusRound: boolean;
   winPattern: import('@/types/game').WinPattern;
   roundNumber: number;
   calledNumbers: number[];

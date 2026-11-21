@@ -325,6 +325,7 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
       loaded: g !== null,
       canHost,
       phase: g?.phase ?? 'waiting',
+      bonusRound: g?.bonusRound ?? false,
       winPattern: g?.winPattern ?? 'any_line',
       setWinPattern: (pattern: WinPattern) => void admin('pattern', { pattern }),
       roundNumber: g?.roundNumber ?? 1,
