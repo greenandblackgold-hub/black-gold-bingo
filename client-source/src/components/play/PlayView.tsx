@@ -227,7 +227,7 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark, balance, buyCards } = usePlayer();
   const {
-    phase, winPattern, calledNumbers, claimBingo, winner, roundNumber,
+    phase, bonusRound = false, winPattern, calledNumbers, claimBingo, winner, roundNumber,
     nextCallAt, roundPrizeEtb, nextRoundAt, firstCallAt, endedAt,
   } = useRound();
   const { cardPrice } = useAppSettings();
@@ -307,9 +307,14 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
     const seconds = Math.max(0, Math.floor(milliseconds / 1000));
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   };
-  const quickBuyTotal = quickBuyCount * cardPrice;
-  const quickBuyAllowed = phase === 'waiting';
-  const quickBuyInsufficient = quickBuyTotal > balance;
+  const quickBuyTotal = bonusRound ? 0 : quickBuyCount * cardPrice;
+  const quickBuyAllowed = bonusRound || phase === 'waiting';
+  const quickBuyInsufficient = !bonusRound && quickBuyTotal > balance;
+  const quickBuyOptions = bonusRound ? [1, 2, 3] : [1, 2, 5, 10, 15, 20, 30, 40];
+
+  useEffect(() => {
+    if (bonusRound) setQuickBuyCount(count => Math.min(count, 3));
+  }, [bonusRound]);
   const submitQuickBuy = async () => {
     if (!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy) return;
     setQuickBuyBusy(true);
@@ -606,26 +611,34 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
                 <h2 id="quick-buy-title" className="text-lg font-black text-yellow-300">የካርድ ፓኬጅ ይምረጡ</h2>
                 <button type="button" disabled={quickBuyBusy} onClick={() => setQuickBuyOpen(false)} aria-label="ዝጋ" className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/50 text-xl text-white disabled:opacity-40">×</button>
               </div>
-              <p className="mb-3 text-xs text-yellow-100/80">የአንድ ካርድ ዋጋ፦ {formatAmount(lang, cardPrice)} ብር</p>
+              {bonusRound ? (
+                <p className="mb-3 rounded-lg border border-emerald-400/40 bg-emerald-950/40 p-2 text-center text-sm font-bold text-emerald-300">🎁 የቦነስ ጨዋታ፦ እስከ 3 ካርዶች በነጻ ይውሰዱ።</p>
+              ) : (
+                <p className="mb-3 text-xs text-yellow-100/80">የአንድ ካርድ ዋጋ፦ {formatAmount(lang, cardPrice)} ብር</p>
+              )}
               <div className="grid grid-cols-4 gap-2">
-                {[1, 2, 5, 10, 15, 20, 30, 40].map(count => (
+                {quickBuyOptions.map(count => (
                   <button key={count} type="button" aria-pressed={quickBuyCount === count} onClick={() => setQuickBuyCount(count)} className={`rounded-xl border px-2 py-3 text-sm font-black transition ${quickBuyCount === count ? 'border-yellow-200 bg-yellow-400 text-black' : 'border-yellow-500/40 bg-black text-yellow-100 hover:bg-yellow-950'}`}>
                     {count} {count === 1 ? 'ካርድ' : 'ካርዶች'}
                   </button>
                 ))}
               </div>
-              <div className="my-4 flex items-center justify-between border-t border-yellow-500/30 pt-3 text-sm">
-                <span className="text-yellow-100/80">ጠቅላላ ዋጋ</span>
-                <strong className="text-xl font-black text-yellow-300">{formatAmount(lang, quickBuyTotal)} ብር</strong>
-              </div>
-              <div className="mb-3 flex items-center justify-between text-xs text-yellow-100/70">
-                <span>ቀሪ ሂሳብ</span><strong className="text-yellow-200">{formatAmount(lang, balance)} ብር</strong>
-              </div>
+              {!bonusRound && (
+                <>
+                  <div className="my-4 flex items-center justify-between border-t border-yellow-500/30 pt-3 text-sm">
+                    <span className="text-yellow-100/80">ጠቅላላ ዋጋ</span>
+                    <strong className="text-xl font-black text-yellow-300">{formatAmount(lang, quickBuyTotal)} ብር</strong>
+                  </div>
+                  <div className="mb-3 flex items-center justify-between text-xs text-yellow-100/70">
+                    <span>ቀሪ ሂሳብ</span><strong className="text-yellow-200">{formatAmount(lang, balance)} ብር</strong>
+                  </div>
+                </>
+              )}
               {!quickBuyAllowed && <p role="status" className="mb-3 rounded-lg bg-amber-950/60 p-2 text-xs text-amber-200">አዲስ ካርድ መግዛት የሚቻለው ጨዋታው በመጠባበቅ ላይ ሲሆን ብቻ ነው። ዙሩ እስኪያበቃ ይጠብቁ።</p>}
-              {quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">በቂ ቀሪ ሂሳብ የለዎትም። እባክዎ ቀሪ ሂሳብዎን ይሙሉ።</p>}
+              {!bonusRound && quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">በቂ ቀሪ ሂሳብ የለዎትም። እባክዎ ቀሪ ሂሳብዎን ይሙሉ።</p>}
               {quickBuyMessage && <p role="status" className="mb-3 text-xs font-bold text-yellow-300">{quickBuyMessage}</p>}
               <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="sticky bottom-0 z-10 mt-2 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
-                {quickBuyBusy ? 'በመግዛት ላይ…' : 'ካርዶቹን ግዛ'}
+                {quickBuyBusy ? 'በመግዛት ላይ…' : bonusRound ? 'ነጻ ካርዶቹን ውሰድ' : 'ካርዶቹን ግዛ'}
               </button>
             </section>
           </div>
