@@ -118,7 +118,7 @@ function DepositPanel({
   const methodLabel = method === 'telebirr' ? t('telebirr') : t('cbe');
 
   return (
-    <section className="rounded-2xl border border-gold-700/25 bg-cardbg p-4 shadow-lg shadow-black/10 ring-1 ring-gold-700/40 sm:p-5">
+    <section className="rounded-2xl border border-gold-700/30 bg-gradient-to-b from-[#17140e] to-[#0b0b0a] p-4 shadow-[0_18px_44px_rgba(0,0,0,.24)] sm:p-5">
       <h2 className="mb-4 text-lg font-bold text-gold-300">{t('deposit')}</h2>
 
       {stage === 'form' && (
@@ -300,7 +300,7 @@ function PurchasePanel({
   };
 
   return (
-    <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
+    <section className="rounded-2xl border border-gold-700/30 bg-gradient-to-b from-[#17140e] to-[#0b0b0a] p-4 shadow-[0_18px_44px_rgba(0,0,0,.24)] sm:p-5">
       <h2 className="mb-4 text-lg font-bold text-gold-300">{t('buy')}</h2>
 
       <div className="mb-4 flex items-center justify-between text-sm">
@@ -394,27 +394,36 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
   const { phase } = useRound();
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 pb-2">
+    <div className="mx-auto w-full max-w-5xl space-y-4 pb-4 sm:space-y-5">
       {/* Balance */}
-      <section className="relative overflow-hidden rounded-3xl border border-gold-400/25 bg-gradient-to-br from-gold-700/40 via-cardbg to-cardbg p-5 shadow-xl shadow-black/20 ring-1 ring-gold-500/50 sm:p-7">
-        <p className="text-sm text-gold-300">{t('balance')}</p>
-        <p className="mt-2 text-4xl font-black tracking-tight tabular-nums text-gold-300 sm:text-6xl" aria-live="polite">
-          {fmt(balance)}
-          <span className="ml-2 text-xl font-bold text-gold-500">{t('etb')}</span>
-        </p>
-        <p className="mt-3 text-sm text-gold-500">
-          {t('owned')}: <span className="font-bold tabular-nums text-gold-300">{formatNumber(lang, ownedCount)}</span>
-        </p>
+      <section className="relative isolate overflow-hidden rounded-3xl border border-gold-400/30 bg-[radial-gradient(ellipse_at_top_right,rgba(214,173,69,.18),transparent_55%),linear-gradient(135deg,#201a0d_0%,#11100c_48%,#090909_100%)] p-5 shadow-[0_22px_55px_rgba(0,0,0,.34)] sm:p-7">
+        <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full border-[22px] border-gold-300/[0.06]" />
+        <div className="relative flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[.28em] text-gold-500">BLACK GOLD BINGO</p>
+            <p className="mt-2 text-sm font-semibold text-gold-300">{t('balance')}</p>
+            <p className="mt-1 break-words text-4xl font-black tracking-tight tabular-nums text-gold-200 sm:text-5xl" aria-live="polite">
+              {fmt(balance)}
+              <span className="ml-2 text-base font-bold text-gold-500 sm:text-lg">{t('etb')}</span>
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 rounded-xl border border-gold-400/20 bg-black/30 px-3 py-2">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-gold-400/10 text-gold-300" aria-hidden="true">▦</span>
+            <span>
+              <span className="block text-[10px] text-gold-600">{t('owned')}</span>
+              <span className="block text-lg font-black tabular-nums text-gold-200">{formatNumber(lang, ownedCount)}</span>
+            </span>
+          </div>
+        </div>
       </section>
 
-      <div className="grid items-start gap-5 lg:grid-cols-2">
-        {SERVER_MODE ? <SmsDepositPanel /> : <DepositPanel t={t} formatAmount={fmt} onDeposit={deposit} />}
-        <PurchasePanel t={t} formatAmount={fmt} formatNumber={fmtNumber} price={cardPrice} balance={balance} onBuy={buyCards} onGoToPlay={onGoToPlay} locked={phase !== 'waiting'} />
-        {SERVER_MODE && <SimulationWithdrawalPanel />}
+      <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-5">
+        <div className="min-w-0">{SERVER_MODE ? <SmsDepositPanel /> : <DepositPanel t={t} formatAmount={fmt} onDeposit={deposit} />}</div>
+        <div className="min-w-0"><PurchasePanel t={t} formatAmount={fmt} formatNumber={fmtNumber} price={cardPrice} balance={balance} onBuy={buyCards} onGoToPlay={onGoToPlay} locked={phase !== 'waiting'} /></div>
+        {SERVER_MODE && <div className="min-w-0 lg:col-span-2"><SimulationWithdrawalPanel /></div>}
       </div>
 
-
-      {SERVER_MODE && <AccountPanel />}
+      {SERVER_MODE && <div className="border-t border-gold-700/25 pt-3"><AccountPanel /></div>}
     </div>
   );
 }
