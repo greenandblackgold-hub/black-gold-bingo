@@ -41,7 +41,7 @@ export function createWalletService({ repo, config, chapa }) {
       // Auto-approval is deliberately limited to the exact Telebirr -> configured CBE
       // receipt format. Incoming SMS text is still user-supplied and can be forged;
       // this fast path is an explicit operator risk choice, not proof of settlement.
-      const configuredRecipient = String(config.cbeDepositAccount ?? '').replace(/\\D/g, '');
+      const configuredRecipient = String(config.cbeDepositAccount ?? '').replace(/\D/g, '');
       if (parsed.provider !== 'telebirr' || !configuredRecipient || parsed.recipientAccount !== configuredRecipient) {
         throw new HttpError(400, 'unverified_recipient', 'Only a Telebirr transfer receipt addressed to the configured CBE deposit account can be auto-approved.');
       }
