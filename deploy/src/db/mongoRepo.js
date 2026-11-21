@@ -270,7 +270,7 @@ export async function createMongoRepo({ uri, dbName }) {
         const g = await games.findOneAndUpdate(
           { _id: 'state', phase: 'running', roundNumber: round, version: expectedVersion },
           { $set: { phase: 'ended', autoCall: false, nextCallAt: null,
-            winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: ref, payoutStatus: 'paid', at: Date.now() } },
+            winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: ref, payoutStatus: 'paid', at: Date.now() }, lastCompletedRoundNumber: round, lastCompletedWasBonus: g.bonusRound === true },
             $inc: { version: 1 } },
           { returnDocument: 'after', session },
         );
