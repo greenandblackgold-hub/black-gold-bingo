@@ -6,6 +6,8 @@ import { useRound } from '@/context/RoundContext';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { play } from '@/lib/audio';
 import { findWinningPattern, patternMasks } from '@/lib/bingo';
+import { getPatternDescription } from '@/lib/patternCatalog';
+import { patternNames } from '@/lib/localization';
 import type { BingoCard, WinPattern } from '@/types/game';
 
 const LETTERS = ['B', 'I', 'N', 'G', 'O'] as const;
@@ -264,6 +266,26 @@ export function PlayView({ onGoToWallet }: { onGoToWallet: () => void }) {
             </div>
           </div>
         </header>
+
+        {phase === 'waiting' && (
+          <section
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="rounded-2xl border border-yellow-400/80 bg-yellow-950/70 px-4 py-4 text-center shadow-[0_0_20px_rgba(250,204,21,.2)]"
+          >
+            <span className="mb-1 block text-xs font-black tracking-wide text-yellow-300">📢 የቀጣይ ጨዋታ ማስታወቂያ</span>
+            <h2 className="text-lg font-black text-yellow-100">
+              የጨዋታው ዓይነት፦ {patternNames[lang][winPattern]}
+            </h2>
+            <p className="mt-2 text-sm font-semibold leading-relaxed text-yellow-50">
+              {getPatternDescription(lang, winPattern)}
+            </p>
+            <p className="mt-2 text-xs text-yellow-300/90">
+              {lang === 'am' ? 'የሚያሸንፉት ከላይ የተገለጸውን ቅርጽ በካርድዎ ላይ በማሟላት ነው። ጨዋታው ከመጀመሩ በፊት ቅርጹን ይመልከቱ።' : lang === 'ti' ? 'ንምዕዋት እቲ ኣብ ላዕሊ ዝተገልጸ ቅርጺ ኣብ ካርድኩም ምሉእ ግበሩ። ቅድሚ ጸወታ ምጅማሩ እቲ ቅርጺ ርኣዩ።' : 'To win, complete the pattern shown above on your card. Review it before the round starts.'}
+            </p>
+          </section>
+        )}
 
         {announcement?.message && (
           <section
