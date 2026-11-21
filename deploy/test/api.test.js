@@ -758,10 +758,12 @@ test('fixed prize is announced, frozen at round start, capped by gross revenue, 
   assert.equal(configured.status, 200, JSON.stringify(configured.json));
   assert.equal(configured.json.prizeMode, 'fixed');
   assert.equal(configured.json.fixedPrizeEtb, 15);
+  let state = (await api('GET', '/api/game')).json;
+  assert.equal(state.roundPrizeEtb, 15, 'the configured fixed prize is visible before any player buys cards');
   const bought = await api('POST', '/api/cards/buy', { token: player.token, body: { count: 3 } });
   assert.equal(bought.status, 200, JSON.stringify(bought.json));
-  let state = (await api('GET', '/api/game')).json;
-  assert.equal(state.roundPrizeEtb, 15, 'the configured fixed prize is shown before the round starts');
+  state = (await api('GET', '/api/game')).json;
+  assert.equal(state.roundPrizeEtb, 15, 'the configured fixed prize remains visible before the round starts');
   assert.equal((await api('POST', '/api/admin/round/start', { token: ctx.adminToken })).status, 200);
   state = (await api('GET', '/api/game')).json;
   assert.equal(state.roundPrizeEtb, 15, 'the prize remains fixed after the round starts');
