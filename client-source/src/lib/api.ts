@@ -99,6 +99,12 @@ export interface ServerGameState {
   serverTime: number;
   roundPrizeEtb: number;
   roundCardCount: number;
+  roundPlayerCount: number;
+  prizeMode: 'revenue_percent' | 'per_player';
+  prizePercent: number;
+  prizePerPlayer: number;
+  maxPrizeCap: number;
+  roundIntervalMinutes: 4 | 5 | 10;
 }
 
 export interface ServerWithdrawal {
