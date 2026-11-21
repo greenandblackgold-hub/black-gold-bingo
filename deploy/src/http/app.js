@@ -389,7 +389,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
     const headers = {
       'Content-Type': MIME[ext] ?? 'application/octet-stream',
       'Content-Length': stat.size,
-      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400',
+      'Cache-Control': ext === '.html' || pathname === '/sw.js' ? 'no-cache' : 'public, max-age=86400',
       'X-Content-Type-Options': 'nosniff',
     };
     if (ext === '.html') {
