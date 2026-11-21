@@ -20,10 +20,13 @@ export function createGameService({ repo, config, now = Date.now }) {
         ? Math.floor(Math.max(0, Number(g.prizePerPlayer) || 0) * Math.max(0, Number(g.roundPlayerIds?.length) || 0))
         : Math.floor(gross * (Math.min(100, Math.max(0, Number(g.prizePercent ?? config.prizePercent) || 0))) / 100);
     const cap = Number(g.maxPrizeCap) > 0 ? Math.floor(Number(g.maxPrizeCap)) : gross;
-    const amount = mode === 'fixed' && Number.isSafeInteger(g.roundPrize)
-      ? Math.max(0, Math.floor(g.roundPrize))
-      : configured;
-    return Math.min(gross, cap, amount);
+    // Once a round starts, roundPrize is the final capped amount for that round.
+    // Keep using this snapshot through the running and ended phases so later game
+    // mutations (including winner settlement) cannot make the announced prize vanish.
+    if (Number.isSafeInteger(g.roundPrize)) {
+      return Math.max(0, Math.floor(g.roundPrize));
+    }
+    return Math.min(gross, cap, configured);
   };
   const ROUND_DURATION_MS = 8 * 60 * 1000;
   const AUTO_CALL_SECONDS = 8;
@@ -43,8 +46,8 @@ export function createGameService({ repo, config, now = Date.now }) {
     winner: g.winner ? { cardId: g.winner.cardCode, serial: g.winner.serial, at: g.winner.at } : null,
     roomId: config.roomId,
     cardPrice: config.cardPrice / 100,
-    // Before sales begin, show the configured fixed prize to players. Once the round
-    // starts, calculatePrize uses the frozen snapshot and applies the gross-revenue cap.
+    // Before sales begin, preview the configured fixed prize. At round start, every
+    // prize mode is frozen as a capped roundPrize snapshot and remains visible to the end.
     roundPrizeEtb: g.phase === 'waiting' && g.prizeMode === 'fixed' && !Number.isSafeInteger(g.roundPrize)
       ? Math.min(
           Math.max(0, Math.floor(Number(g.fixedPrize) || 0)),
@@ -108,7 +111,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         } else if (g.nextRoundAt <= now()) {
           await mutate('waiting', () => ({
             phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
-            roundPrize: g.prizeMode === 'fixed' ? calculatePrize({ ...g, roundPrize: null }) : null,
+            roundPrize: calculatePrize({ ...g, roundPrize: null }),
             autoCall: true, callIntervalSec: AUTO_CALL_SECONDS,
             nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
             roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, nextRoundAt: null,
@@ -178,7 +181,7 @@ export function createGameService({ repo, config, now = Date.now }) {
     startRound: () =>
       mutate('waiting', (g) => ({
         phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
-        roundPrize: g.prizeMode === 'fixed' ? calculatePrize({ ...g, roundPrize: null }) : null,
+        roundPrize: calculatePrize({ ...g, roundPrize: null }),
         autoCall: true, callIntervalSec: AUTO_CALL_SECONDS, nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
         roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, nextRoundAt: null,
       })),
