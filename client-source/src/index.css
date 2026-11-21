@@ -553,4 +553,9 @@ body { min-height: 100vh; min-height: 100dvh; }
     color: #090909;
   }
 }
-/* The latest called number keeps its requested yellow-orange pulse. */
+.premium-ui .bingo-latest-called-number {
+  background-color: #facc15;
+  animation: bingo-latest-call-glow 900ms ease-in-out infinite !important;
+}
+
+/* Keep the requested yellow-orange flash active despite the global reduced-motion rule. */
