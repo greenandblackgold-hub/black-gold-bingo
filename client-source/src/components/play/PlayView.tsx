@@ -227,7 +227,7 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
   const { cards, markedByCard, toggleMark, balance, buyCards } = usePlayer();
   const {
     phase, winPattern, calledNumbers, claimBingo, winner,
-    nextCallAt, roundPrizeEtb, startedAt, nextRoundAt, firstCallAt, endedAt,
+    nextCallAt, roundPrizeEtb, nextRoundAt, firstCallAt, endedAt,
   } = useRound();
   const { cardPrice } = useAppSettings();
   const [now, setNow] = useState(() => Date.now());
