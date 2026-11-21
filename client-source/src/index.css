@@ -445,3 +445,46 @@ body { min-height: 100vh; min-height: 100dvh; }
     padding-inline: .3rem;
   }
 }
+
+
+/* Prominent Quick Buy action directly below the called-number board. */
+.player-quick-buy-slot {
+  display: flex;
+  justify-content: center;
+  padding: .1rem 0 .25rem;
+}
+.player-quick-buy-cta {
+  display: flex;
+  width: min(100%, 34rem);
+  min-height: 3.35rem;
+  align-items: center;
+  justify-content: center;
+  gap: .65rem;
+  border: 2px solid #fecaca;
+  border-radius: 1rem;
+  background: linear-gradient(110deg, #7f1d1d, #ef4444 48%, #991b1b);
+  color: #fff;
+  font-size: clamp(.95rem, 3.5vw, 1.15rem);
+  font-weight: 950;
+  letter-spacing: .035em;
+  text-shadow: 0 1px 3px rgba(0,0,0,.75);
+  box-shadow: 0 0 12px rgba(239,68,68,.8), 0 0 26px rgba(220,38,38,.45), inset 0 1px rgba(255,255,255,.35);
+  animation: player-quick-buy-pulse 1.15s ease-in-out infinite;
+  transition: filter .2s ease, transform .2s ease;
+}
+.player-quick-buy-cta:hover:not(:disabled) { filter: brightness(1.18); transform: translateY(-1px); }
+.player-quick-buy-cta:active:not(:disabled) { transform: scale(.985); }
+.player-quick-buy-cta:disabled { cursor: not-allowed; opacity: .45; animation: none; filter: saturate(.55); }
+.player-quick-buy-cta > span:first-child { font-size: 1.45em; line-height: 1; }
+.player-quick-buy-amh { font-size: .72em; letter-spacing: 0; }
+@keyframes player-quick-buy-pulse {
+  0%, 100% { filter: brightness(.88); box-shadow: 0 0 8px rgba(239,68,68,.55), 0 0 16px rgba(220,38,38,.3), inset 0 1px rgba(255,255,255,.25); }
+  50% { filter: brightness(1.28); box-shadow: 0 0 18px rgba(248,113,113,1), 0 0 34px rgba(220,38,38,.8), inset 0 1px rgba(255,255,255,.45); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .player-quick-buy-cta { animation: none; }
+}
+@media (max-width: 390px) {
+  .player-quick-buy-cta { min-height: 3rem; gap: .45rem; font-size: .9rem; }
+  .player-quick-buy-amh { font-size: .66em; }
+}
