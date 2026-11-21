@@ -466,7 +466,7 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
             aria-atomic="true"
             className="rounded-2xl border border-yellow-400/80 bg-yellow-950/70 px-3 py-3 text-center shadow-[0_0_20px_rgba(250,204,21,.2)]"
           >
-            <span className="mb-1 block text-[11px] font-bold tracking-wide text-yellow-300">{phase === 'waiting' ? '📢 ቀጣይ ዙር የጨዋታ ማብራሪያ' : '📢 የዚህ ዙር የጨዋታ ማብራሪያ'}</span>
+            <span className="mb-1 block text-[11px] font-bold tracking-wide text-yellow-300">{phase === 'running' ? '📢 የዚህ ዙር የጨዋታ ማብራሪያ' : '📢 ቀጣይ ዙር የጨዋታ ማብራሪያ'}</span>
             <h2 className="text-xs font-bold text-yellow-100">
               የጨዋታው ዓይነት፦ {patternNames[lang][winPattern]}
             </h2>
