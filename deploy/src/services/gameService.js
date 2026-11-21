@@ -270,7 +270,24 @@ export function createGameService({ repo, config, now = Date.now }) {
         throw new HttpError(400, 'invalid_count', `Buy 1 to ${Math.min(config.maxCardsPerPurchase, 50)} cards`);
       }
       const g = await repo.getGame();
-      if (g.bonusRound === true) throw new HttpError(409, 'bonus_free_cards_only', 'Bonus-round cards are free and are issued automatically');
+      if (g.bonusRound === true) {
+        if (user.role !== 'player' || user.phoneVerified !== true) {
+          throw new HttpError(403, 'player_only', 'Verified player accounts only');
+        }
+        // Bonus cards are pre-issued automatically. The Player "add card" action
+        // must return those free cards instead of falling into the paid-card path.
+        const freeCards = (await repo.listCards(user.id, g.roundNumber))
+          .filter((card) => card.bonusFree === true)
+          .slice(0, Math.min(n, 3));
+        if (!freeCards.length) {
+          throw new HttpError(409, 'bonus_cards_not_ready', 'Your free bonus cards are not available yet');
+        }
+        return {
+          balance: Number(user.balance ?? 0) / 100,
+          free: true,
+          cards: freeCards.map((card) => ({ id: card.code, serial: card.serial, grid: card.grid })),
+        };
+      }
       if (g.phase !== 'waiting') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
       if (requestedSerial !== undefined && requestedSerial !== null && (n !== 1 || !/^\d{5}$/.test(String(requestedSerial)))) {
         throw new HttpError(400, 'invalid_card_number', 'Enter one unique five-digit card number and buy one card at a time');

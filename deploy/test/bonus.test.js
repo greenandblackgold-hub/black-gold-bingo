@@ -44,6 +44,14 @@ test('ten completed regular rounds trigger one free ETB 10,000 bonus round with 
       assert.equal(cards.length, 3);
       assert.ok(cards.every((card) => card.bonusFree === true));
       assert.ok(cards.every((card) => card.sig));
+
+      const balanceBefore = (await repo.findUserById(player.id)).balance;
+      const addCardResult = await game.buyCards(player, 5);
+      const balanceAfter = (await repo.findUserById(player.id)).balance;
+      assert.equal(addCardResult.free, true);
+      assert.equal(addCardResult.cards.length, 3);
+      assert.deepEqual(addCardResult.cards.map((card) => card.id), cards.map((card) => card.code));
+      assert.equal(balanceAfter, balanceBefore);
     }
     assert.equal(state.roundPlayerIds.length, 2);
     assert.ok(pushed.some((message) => message.includes('2 መደበኛ ዙሮች')));
