@@ -99,6 +99,7 @@ export function RoundProvider({ children }: { children: ReactNode }) {
     commit({
       ...g,
       calledNumbers: [...g.calledNumbers, n],
+      firstCallAt: g.firstCallAt ?? Date.now(),
       nextCallAt: g.autoCall ? Date.now() + g.callIntervalSec * 1000 : null,
     });
     return n;
@@ -107,7 +108,7 @@ export function RoundProvider({ children }: { children: ReactNode }) {
   const startRound = useCallback(() => {
     const g = gameRef.current;
     if (!canHost || g.phase !== 'waiting') return;
-    commit({ ...g, phase: 'running', calledNumbers: [], winner: null, autoCall: false, nextCallAt: null, startedAt: Date.now(), endedAt: null, nextRoundAt: null });
+    commit({ ...g, phase: 'running', calledNumbers: [], winner: null, autoCall: false, nextCallAt: Date.now() + g.callIntervalSec * 1000, firstCallAt: null, startedAt: Date.now(), endedAt: null, nextRoundAt: null });
   }, [canHost, commit]);
 
   const endRound = useCallback(() => {
@@ -128,6 +129,9 @@ export function RoundProvider({ children }: { children: ReactNode }) {
       winner: null,
       autoCall: false,
       nextCallAt: null,
+      firstCallAt: null,
+      startedAt: null,
+      endedAt: null,
     });
     void backend.clearClaims().catch(() => undefined);
   }, [backend, canHost, commit]);
@@ -277,6 +281,8 @@ export function RoundProvider({ children }: { children: ReactNode }) {
       callIntervalSec: game.callIntervalSec,
       setCallIntervalSec,
       nextCallAt: game.nextCallAt,
+      firstCallAt: game.firstCallAt,
+      endedAt: game.endedAt,
       startedAt: game.startedAt,
       nextRoundAt: game.nextRoundAt,
       announcement: null,
