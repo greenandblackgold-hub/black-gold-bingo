@@ -68,6 +68,8 @@ export interface SharedGame {
   callIntervalSec: number;
   /** epoch ms of the next scheduled auto-call, or null */
   nextCallAt: number | null;
+  /** epoch ms when the first number was called in this round, or null */
+  firstCallAt: number | null;
   /** epoch ms when this round started, or null before it starts */
   startedAt: number | null;
   /** epoch ms when this round ended, or null while it is running */
@@ -164,6 +166,10 @@ export interface RoundContextValue {
   setCallIntervalSec: (sec: number) => void;
   /** epoch ms of the next scheduled call, or null */
   nextCallAt: number | null;
+  /** epoch ms when the first number was called in this round, or null */
+  firstCallAt: number | null;
+  /** epoch ms when the round ended, or null while running */
+  endedAt: number | null;
   /** epoch ms when the current round started, or null */
   startedAt: number | null;
   /** epoch ms when the next round countdown reaches zero, or null */
