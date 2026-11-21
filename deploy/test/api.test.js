@@ -709,7 +709,11 @@ test('production safety gates block registration and all real-money routes until
 
 // Prize settings use collected gross revenue and unique players, never card count.
 test('admin prize modes are capped by gross revenue and count each unique player once', async () => {
-  await freshRound();
+  let initial = (await api('GET', '/api/game')).json;
+  if (initial.phase === 'waiting') await api('POST', '/api/admin/round/start', { token: ctx.adminToken });
+  initial = (await api('GET', '/api/game')).json;
+  if (initial.phase === 'running') await api('POST', '/api/admin/round/end', { token: ctx.adminToken });
+  await api('POST', '/api/admin/round/reset', { token: ctx.adminToken });
   const a = await newPlayer('Prize Player A', 100);
   const b = await newPlayer('Prize Player B', 100);
   const configured = await api('POST', '/api/admin/prize-schedule', {
