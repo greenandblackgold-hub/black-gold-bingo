@@ -36,7 +36,6 @@ export function createBonusService({ repo, game, config }) {
       await game.setAnnouncement('🎁 ለነፃው 10,000 ብር የቦነስ ጨዋታ 2 መደበኛ ዙሮች ቀርተዋል። እንዳያመልጥዎ!');
     } else if (!isBonus && count === BONUS_EVERY - 1) {
       await game.setAnnouncement('🎁 አንድ መደበኛ ዙር ብቻ ቀርቷል! ከዚያ በኋላ 10,000 ብር የሚያሸልመው ነፃ የቦነስ ጨዋታ ይጀምራል። እስከ 3 ነፃ ካርቴላ ያግኙ!');
-    }
     } else if (!isBonus && count === BONUS_EVERY) {
       await game.setAnnouncement('🎉 10 መደበኛ ዙሮች ተጠናቀዋል! የ10,000 ብር ነፃ የቦነስ ጨዋታ አሁን ይጀምራል።');
     }
@@ -64,13 +63,9 @@ export function createBonusService({ repo, game, config }) {
       roundPlayerIds: [],
     });
     if (!prepared) return;
-    await game.setAnnouncement('🎉 ነፃ የቦነስ ጨዋታ አሁን ተጀምሯል! የሽልማቱ መጠን 10,000 ብር ነው። ለእያንዳንዱ ተጫዋች እስከ 3 ነፃ ካርቴላ ተሰጥቷል።');
     await grantFreeCards(prepared);
     await game.startRound();
-    const running = await repo.getGame();
-    if (running.phase === 'running' && running.bonusRound && running.bonusRoundPrepared) {
-      await repo.casGame(running.version, { bonusRoundPrepared: false });
-    }
+    await game.setAnnouncement('🎉 ነፃ የቦነስ ጨዋታ ተጀምሯል! የሽልማቱ መጠን 10,000 ብር ነው። ለእያንዳንዱ ተጫዋች እስከ 3 ነፃ ካርቴላ ተሰጥቷል።');
   }
 
   async function grantFreeCards(g) {
@@ -135,10 +130,7 @@ export function createBonusService({ repo, game, config }) {
     if (g.phase === 'waiting' && g.bonusRound && g.bonusRoundPrepared) {
       await grantFreeCards(g);
       await game.startRound();
-      const running = await repo.getGame();
-      if (running.phase === 'running' && running.bonusRound && running.bonusRoundPrepared) {
-        await repo.casGame(running.version, { bonusRoundPrepared: false });
-      }
+      await game.setAnnouncement('🎉 ነፃ የቦነስ ጨዋታ ተጀምሯል! የሽልማቱ መጠን 10,000 ብር ነው። ለእያንዳንዱ ተጫዋች እስከ 3 ነፃ ካርቴላ ተሰጥቷል።');
     }
   }
 
