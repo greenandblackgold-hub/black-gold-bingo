@@ -46,7 +46,34 @@ export function PushNotificationPrompt() {
     return () => { cancelled = true; };
   }, [user?.id, user?.role, user?.phoneVerified]);
 
-  if (!user || user.role !== 'player' || user.phoneVerified !== true || !config?.enabled || !ready || subscribed) return null;
+  if (!user || user.role !== 'player' || user.phoneVerified !== true || !config?.enabled || !ready) return null;
+
+  const disable = async () => {
+    setBusy(true);
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        await api.post('/api/push/unsubscribe', { endpoint: subscription.endpoint });
+        await subscription.unsubscribe();
+      }
+      setSubscribed(false);
+      setMessage('የPush ማሳወቂያ ተዘግቷል።');
+    } catch {
+      setMessage('ማሳወቂያን ማጥፋት አልተሳካም።');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (subscribed) return (
+    <aside className="fixed bottom-3 left-3 right-3 z-[80] mx-auto max-w-md rounded-xl border border-emerald-400/30 bg-[#111114] px-4 py-3 text-white shadow-xl">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-emerald-300">🔔 የቦነስ ማሳወቂያ ክፍት ነው</p>
+        <button type="button" disabled={busy} onClick={() => void disable()} className="text-xs text-white/60 underline disabled:opacity-60">አጥፋ</button>
+      </div>
+    </aside>
+  );
 
   const enable = async () => {
     setBusy(true);
