@@ -565,7 +565,7 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
                     const isLatestCall = calledNumbers[calledNumbers.length - 1] === number;
                     const visible = numberBoardMode === 'all' || isCalled;
                     return (
-                      <div key={number} aria-label={visible ? `${letter} ${number}${isLatestCall ? ', latest called number' : isCalled ? ', called' : ''}` : undefined} className={`grid aspect-square min-w-0 place-items-center rounded-[4px] border text-[clamp(12px,2vw,18px)] font-black tabular-nums transition sm:text-base ${!visible ? 'border-transparent bg-transparent text-transparent' : isLatestCall ? 'animate-pulse border-white bg-amber-300 text-black shadow-[0_0_14px_rgba(250,204,21,.95)] ring-2 ring-yellow-200' : isCalled ? 'border-yellow-200 bg-blue-600 text-white shadow-[0_0_8px_rgba(59,130,246,.65)]' : 'border-yellow-500/20 bg-zinc-900 text-yellow-100/90'}`}>
+                      <div key={number} aria-label={visible ? `${letter} ${number}${isLatestCall ? ', latest called number' : isCalled ? ', called' : ''}` : undefined} className={`grid aspect-square min-w-0 place-items-center rounded-[4px] border text-[clamp(12px,2vw,18px)] font-black tabular-nums transition sm:text-base ${!visible ? 'border-transparent bg-transparent text-transparent' : isLatestCall ? 'bingo-latest-called-number border-white text-black shadow-[0_0_18px_rgba(250,204,21,.95)] ring-2 ring-yellow-200' : isCalled ? 'border-yellow-200 bg-blue-600 text-white shadow-[0_0_8px_rgba(59,130,246,.65)]' : 'border-yellow-500/20 bg-zinc-900 text-yellow-100/90'}`}>
                         {visible ? number : ''}
                       </div>
                     );

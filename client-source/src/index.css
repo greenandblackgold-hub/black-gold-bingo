@@ -535,3 +535,27 @@ body { min-height: 100vh; min-height: 100dvh; }
 .player-quick-buy-footer-cta:disabled > span:first-child {
   animation: none;
 }
+
+
+/* Alternate the latest called BINGO number between bright yellow and orange until the next call. */
+.bingo-latest-called-number {
+  animation: bingo-latest-call-glow 900ms ease-in-out infinite;
+}
+@keyframes bingo-latest-call-glow {
+  0%, 100% {
+    background-color: #facc15;
+    box-shadow: 0 0 10px rgba(250, 204, 21, .9), 0 0 22px rgba(250, 204, 21, .65);
+    color: #090909;
+  }
+  50% {
+    background-color: #f97316;
+    box-shadow: 0 0 12px rgba(249, 115, 22, 1), 0 0 26px rgba(249, 115, 22, .75);
+    color: #090909;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bingo-latest-called-number {
+    animation: none;
+    background-color: #facc15;
+  }
+}
