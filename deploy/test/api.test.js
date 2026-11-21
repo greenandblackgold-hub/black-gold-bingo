@@ -87,7 +87,7 @@ test('directional winning patterns accept all rotated and mirrored orientations'
     }
   }
   assert.equal(patternMasks('t').length, 4, 'T has four distinct rotations');
-  assert.equal(patternMasks('l').length, 8, 'L has four rotations and four mirrored orientations');
+  assert.equal(patternMasks('l').length, 4, 'L has four distinct board orientations');
 });
 
 test('register, login, wrong PIN, lockout after 5 failures', async () => {
