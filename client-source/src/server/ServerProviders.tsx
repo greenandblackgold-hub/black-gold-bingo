@@ -172,11 +172,31 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
   const [game, setGame] = useState<ServerGameState | null>(null);
   const [offset, setOffset] = useState(0); // server clock minus device clock
   const canHost = user?.role === 'admin';
+  // Keep the prize announced for this round stable on the player device. The
+  // waiting -> running stream transition must not blank the banner if a server
+  // update briefly reports zero while the round snapshot is being propagated.
+  const prizeSnapshot = useRef<{ roundNumber: number; amountEtb: number } | null>(null);
 
-  const apply = useCallback((s: ServerGameState) => {
-    setGame(s);
-    setOffset(s.serverTime - Date.now());
-    setGameSettings({ cardPrice: s.cardPrice, roomId: s.roomId });
+  const apply = useCallback((incoming: ServerGameState) => {
+    const amountEtb = Number(incoming.roundPrizeEtb);
+    const safeAmount = Number.isFinite(amountEtb) && amountEtb > 0 ? amountEtb : 0;
+    const previous = prizeSnapshot.current;
+    if (!previous || previous.roundNumber !== incoming.roundNumber) {
+      prizeSnapshot.current = { roundNumber: incoming.roundNumber, amountEtb: safeAmount };
+    } else if (safeAmount > 0) {
+      prizeSnapshot.current = { roundNumber: incoming.roundNumber, amountEtb: safeAmount };
+    }
+
+    const snapshot = prizeSnapshot.current;
+    const stableGame = incoming.phase !== 'waiting' &&
+      snapshot?.roundNumber === incoming.roundNumber &&
+      incoming.roundPrizeEtb < snapshot.amountEtb
+      ? { ...incoming, roundPrizeEtb: snapshot.amountEtb }
+      : incoming;
+
+    setGame(stableGame);
+    setOffset(incoming.serverTime - Date.now());
+    setGameSettings({ cardPrice: incoming.cardPrice, roomId: incoming.roomId });
   }, [setGameSettings]);
 
   useEffect(() => {
