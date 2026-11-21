@@ -263,6 +263,13 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
       winner: g?.winner ?? null,
       roundPrizeEtb: g?.roundPrizeEtb ?? 0,
       roundCardCount: g?.roundCardCount ?? 0,
+      roundPlayerCount: g?.roundPlayerCount ?? 0,
+      prizeMode: g?.prizeMode ?? 'revenue_percent',
+      prizePercent: g?.prizePercent ?? 80,
+      prizePerPlayer: g?.prizePerPlayer ?? 0,
+      maxPrizeCap: g?.maxPrizeCap ?? 0,
+      roundIntervalMinutes: g?.roundIntervalMinutes ?? 10,
+      setPrizeScheduleSettings: (settings) => void admin('prize-schedule', settings),
       claims: [], // the server judges claims instantly; there is nothing for a host to review
       startRound: () => void admin('round/start'),
       endRound: () => void admin('round/end'),
