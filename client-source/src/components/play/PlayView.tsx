@@ -227,7 +227,7 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark, balance, buyCards } = usePlayer();
   const {
-    phase, winPattern, calledNumbers, claimBingo, winner,
+    phase, winPattern, calledNumbers, claimBingo, winner, roundNumber,
     nextCallAt, roundPrizeEtb, nextRoundAt, firstCallAt, endedAt,
   } = useRound();
   const { cardPrice } = useAppSettings();
@@ -363,6 +363,11 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
             </div>
           </div>
         </header>
+        <div className="flex justify-end px-1 -mt-1" aria-label={`ዙር ${roundNumber}`}>
+          <span className="rounded-full border border-yellow-500/15 bg-black/35 px-1.5 py-0.5 text-[8px] font-medium leading-none tracking-wide text-yellow-200/45 tabular-nums">
+            ዙር #{'{'}roundNumber{'}'}
+          </span>
+        </div>
 
         {settingsOpen && (
           <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-label="ሴቲንግ">
