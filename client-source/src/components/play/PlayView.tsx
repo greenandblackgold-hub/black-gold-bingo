@@ -229,7 +229,7 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
     phase, winPattern, calledNumbers, claimBingo, winner,
     nextCallAt, roundPrizeEtb, startedAt, nextRoundAt,
   } = useRound();
-  const { soundEnabled, setSoundEnabled, cardPrice } = useAppSettings();
+  const { cardPrice } = useAppSettings();
   const [now, setNow] = useState(() => Date.now());
   const [autoMark, setAutoMark] = useState(true);
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
@@ -240,18 +240,9 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
   const [quickBuyCount, setQuickBuyCount] = useState(1);
   const [quickBuyBusy, setQuickBuyBusy] = useState(false);
   const [quickBuyMessage, setQuickBuyMessage] = useState('');
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() =>
-    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied',
-  );
   const [selectedDepositAccount, setSelectedDepositAccount] = useState<DepositAccount | null>(null);
   const [copyStatus, setCopyStatus] = useState('');
 
-
-  const enableNotifications = useCallback(async () => {
-    if (!('Notification' in window)) return;
-    const permission = await Notification.requestPermission();
-    setNotificationPermission(permission);
-  }, []);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -361,8 +352,6 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
               </strong>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <button type="button" onClick={() => setSoundEnabled(!soundEnabled)} aria-label={soundEnabled ? 'Mute sound' : 'Enable sound'} aria-pressed={soundEnabled} className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/50 text-2xl text-white">{soundEnabled ? '◖))' : '◖̸'}</button>
-              <button type="button" onClick={() => void enableNotifications()} disabled={notificationPermission === 'granted' || !('Notification' in window)} aria-label="Enable player notifications" title={notificationPermission === 'granted' ? 'Notifications enabled' : 'Enable browser notifications'} className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/50 text-xl text-white disabled:opacity-50">{notificationPermission === 'granted' ? '🔔' : '♧'}</button>
               <button type="button" onClick={onOpenMenu} aria-label="የጨዋታ ሴቲንጎችን ክፈት" title="የጨዋታ ሴቲንጎች" className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/60 text-3xl leading-none text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">⋮</button>
             </div>
           </div>
@@ -586,13 +575,6 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
             ))}
           </section>
         )}
-        <section className="rounded-2xl border border-dashed border-yellow-500/70 bg-yellow-950/20 p-3 text-center">
-          <button type="button" onClick={() => { setQuickBuyMessage(''); setQuickBuyOpen(true); }} className="mx-auto flex min-h-12 items-center justify-center gap-2 rounded-full border-2 border-yellow-300 bg-gradient-to-b from-yellow-200 to-amber-500 px-6 py-2 text-sm font-black text-black shadow-[0_0_16px_rgba(250,204,21,.3)] transition hover:brightness-110">
-            <span className="grid h-7 w-7 place-items-center rounded-full bg-black text-xl leading-none text-yellow-300">+</span>
-            ተጨማሪ ካርድ ጨምር
-          </button>
-          <p className="mt-2 text-[10px] text-yellow-100/70">የሚፈልጉትን የካርድ ብዛት በፍጥነት ይምረጡ</p>
-        </section>
         {quickBuyOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:pb-3" role="presentation" onClick={() => !quickBuyBusy && setQuickBuyOpen(false)}>
             <section role="dialog" aria-modal="true" aria-labelledby="quick-buy-title" className="max-h-[calc(100dvh-7.5rem-env(safe-area-inset-bottom))] w-full max-w-md overflow-y-auto rounded-2xl border-2 border-yellow-400 bg-zinc-950 p-4 shadow-[0_0_30px_rgba(250,204,21,.3)] sm:max-h-[calc(100dvh-2rem)]" onClick={event => event.stopPropagation()}>
@@ -634,6 +616,10 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
             }} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
               <span className="text-[10px] font-black text-white sm:text-xs">Auto-Mark</span>
               <span className={`relative h-6 w-10 shrink-0 rounded-full ${autoMark ? 'bg-green-500' : 'bg-zinc-600'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${autoMark ? 'translate-x-5' : 'translate-x-1'}`} /></span>
+            </button>
+            <button type="button" onClick={() => { setQuickBuyMessage(''); setQuickBuyOpen(true); }} disabled={!quickBuyAllowed} aria-label="ፈጣን ካርድ ግዢ" className="min-w-0 shrink-0 rounded-xl border border-yellow-500/50 px-2 py-2 text-center text-yellow-200 disabled:opacity-40">
+              <span className="block text-base leading-none" aria-hidden="true">＋</span>
+              <span className="text-[9px] font-black sm:text-xs">Quick Buy</span>
             </button>
             <button type="button" onClick={onGoToWallet} className="min-w-0 shrink-0 border-l border-yellow-500/50 px-2 text-left">
               <span className="flex items-center gap-1 text-lg leading-none text-yellow-400">▣ <span className="text-[9px] font-bold text-white sm:text-xs">ቀሪ ሂሳብ</span></span>
