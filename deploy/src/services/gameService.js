@@ -131,7 +131,7 @@ export function createGameService({ repo, config, now = Date.now }) {
           winPattern: ending.winPattern ?? 'any_line', pot: ending.pot, endedAt: new Date(now()),
         });
         await mutate('ended', (current) => ({
-          phase: 'waiting', roundNumber: current.roundNumber + 1, calledNumbers: [], winner: null,
+          phase: 'waiting', lastCompletedRoundNumber: current.roundNumber, lastCompletedWasBonus: current.bonusRound === true, roundNumber: current.roundNumber + 1, calledNumbers: [], winner: null,
           autoCall: false, nextCallAt: null, roundStartedAt: null, roundEndsAt: null, firstCallAt: null, endedAt: null,
           nextRoundAt: current.nextRoundAt ?? (now() + roundIntervalMs(current)), pot: 0, roundPlayerIds: [], roundPrize: null,
         }));
@@ -230,6 +230,8 @@ export function createGameService({ repo, config, now = Date.now }) {
       });
       return mutate('ended', (g) => ({
         phase: 'waiting',
+        lastCompletedRoundNumber: g.roundNumber,
+        lastCompletedWasBonus: g.bonusRound === true,
         roundNumber: g.roundNumber + 1,
         calledNumbers: [],
         winner: null,
