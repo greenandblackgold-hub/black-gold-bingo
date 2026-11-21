@@ -26,6 +26,7 @@ export function createGameService({ repo, config, now = Date.now }) {
     if (Number.isSafeInteger(g.roundPrize)) {
       return Math.max(0, Math.floor(g.roundPrize));
     }
+    if (g.bonusRound === true) return Math.min(configured, cap);
     return Math.min(gross, cap, configured);
   };
   const ROUND_DURATION_MS = 8 * 60 * 1000;
@@ -35,6 +36,8 @@ export function createGameService({ repo, config, now = Date.now }) {
   /** What every connected browser may see. Never includes anyone's card grid or user id. */
   const publicState = (g) => ({
     phase: g.phase,
+    bonusRound: g.bonusRound === true,
+    regularRoundsUntilBonus: Math.max(0, 10 - Math.max(0, Number(g.regularRoundsSinceBonus) || 0)),
     winPattern: g.winPattern ?? 'any_line',
     roundNumber: g.roundNumber,
     calledNumbers: g.calledNumbers,
@@ -128,7 +131,7 @@ export function createGameService({ repo, config, now = Date.now }) {
           winPattern: ending.winPattern ?? 'any_line', pot: ending.pot, endedAt: new Date(now()),
         });
         await mutate('ended', (current) => ({
-          phase: 'waiting', roundNumber: current.roundNumber + 1, calledNumbers: [], winner: null,
+          phase: 'waiting', lastCompletedRoundNumber: current.roundNumber, lastCompletedWasBonus: current.bonusRound === true, roundNumber: current.roundNumber + 1, calledNumbers: [], winner: null,
           autoCall: false, nextCallAt: null, roundStartedAt: null, roundEndsAt: null, firstCallAt: null, endedAt: null,
           nextRoundAt: current.nextRoundAt ?? (now() + roundIntervalMs(current)), pot: 0, roundPlayerIds: [], roundPrize: null,
         }));
@@ -182,7 +185,7 @@ export function createGameService({ repo, config, now = Date.now }) {
 
     startRound: () =>
       mutate('waiting', (g) => ({
-        phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
+        phase: 'running', bonusRoundPrepared: g.bonusRound === true ? false : g.bonusRoundPrepared, winPattern: randomPattern(), calledNumbers: [], winner: null,
         roundPrize: calculatePrize({ ...g, roundPrize: null }),
         autoCall: true, callIntervalSec: AUTO_CALL_SECONDS, nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
         roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, firstCallAt: null, endedAt: null, nextRoundAt: null,
@@ -227,6 +230,8 @@ export function createGameService({ repo, config, now = Date.now }) {
       });
       return mutate('ended', (g) => ({
         phase: 'waiting',
+        lastCompletedRoundNumber: g.roundNumber,
+        lastCompletedWasBonus: g.bonusRound === true,
         roundNumber: g.roundNumber + 1,
         calledNumbers: [],
         winner: null,
@@ -264,6 +269,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         throw new HttpError(400, 'invalid_count', `Buy 1 to ${Math.min(config.maxCardsPerPurchase, 50)} cards`);
       }
       const g = await repo.getGame();
+      if (g.bonusRound === true) throw new HttpError(409, 'bonus_free_cards_only', 'Bonus-round cards are free and are issued automatically');
       if (g.phase !== 'waiting') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
       if (requestedSerial !== undefined && requestedSerial !== null && (n !== 1 || !/^\d{5}$/.test(String(requestedSerial)))) {
         throw new HttpError(400, 'invalid_card_number', 'Enter one unique five-digit card number and buy one card at a time');

@@ -220,6 +220,20 @@ export async function createMongoRepo({ uri, dbName }) {
         return { balance: user.balance, game };
       });
     },
+    async listPlayerIds() {
+      return (await users.find({ role: 'player', phoneVerified: true }, { projection: { _id: 1 } }).toArray()).map((u) => u._id);
+    },
+    async insertFreeCards({ userId, round, cards: newCards }) {
+      const game = await games.findOne({ _id: 'state', phase: 'waiting', roundNumber: round }, { projection: { _id: 1 } });
+      if (!game) throw new RepoError('ROUND_NOT_OPEN');
+      if (!newCards.length) return;
+      try {
+        await cards.insertMany(newCards.map((c) => ({ ...c, userId, round, createdAt: new Date(), bonusFree: true })), { ordered: true });
+      } catch (e) {
+        if (isDuplicate(e)) throw new RepoError('CARD_NUMBER_TAKEN');
+        throw e;
+      }
+    },
     async listCards(userId, round) {
       return (await cards.find({ userId, round }).sort({ serial: 1 }).toArray()).map(toDoc);
     },
@@ -253,10 +267,15 @@ export async function createMongoRepo({ uri, dbName }) {
     /** End the round and enqueue a prize; wallet credit is deferred until admin approval. */
     async settleWin({ round, expectedVersion, card, prize, ref }) {
       return tx(async (session) => {
+        const before = await games.findOne(
+          { _id: 'state', phase: 'running', roundNumber: round, version: expectedVersion },
+          { session, projection: { bonusRound: 1 } },
+        );
+        if (!before) return null;
         const g = await games.findOneAndUpdate(
           { _id: 'state', phase: 'running', roundNumber: round, version: expectedVersion },
           { $set: { phase: 'ended', autoCall: false, nextCallAt: null,
-            winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: ref, payoutStatus: 'paid', at: Date.now() } },
+            winner: { cardCode: card.code, serial: card.serial, userId: card.userId, prize, payoutId: ref, payoutStatus: 'paid', at: Date.now() }, lastCompletedRoundNumber: round, lastCompletedWasBonus: before.bonusRound === true },
             $inc: { version: 1 } },
           { returnDocument: 'after', session },
         );
