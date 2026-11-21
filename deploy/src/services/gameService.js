@@ -185,7 +185,7 @@ export function createGameService({ repo, config, now = Date.now }) {
 
     startRound: () =>
       mutate('waiting', (g) => ({
-        phase: 'running', winPattern: randomPattern(), calledNumbers: [], winner: null,
+        phase: 'running', bonusRoundPrepared: g.bonusRound === true ? false : g.bonusRoundPrepared, winPattern: randomPattern(), calledNumbers: [], winner: null,
         roundPrize: calculatePrize({ ...g, roundPrize: null }),
         autoCall: true, callIntervalSec: AUTO_CALL_SECONDS, nextCallAt: now() + AUTO_CALL_SECONDS * 1000,
         roundStartedAt: now(), roundEndsAt: now() + ROUND_DURATION_MS, firstCallAt: null, endedAt: null, nextRoundAt: null,
@@ -269,6 +269,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         throw new HttpError(400, 'invalid_count', `Buy 1 to ${Math.min(config.maxCardsPerPurchase, 50)} cards`);
       }
       const g = await repo.getGame();
+      if (g.bonusRound === true) throw new HttpError(409, 'bonus_free_cards_only', 'Bonus-round cards are free and are issued automatically');
       if (g.phase !== 'waiting') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
       if (requestedSerial !== undefined && requestedSerial !== null && (n !== 1 || !/^\d{5}$/.test(String(requestedSerial)))) {
         throw new HttpError(400, 'invalid_card_number', 'Enter one unique five-digit card number and buy one card at a time');
