@@ -365,7 +365,7 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
         </header>
         <div className="flex justify-end px-1 -mt-1" aria-label={`ዙር ${roundNumber}`}>
           <span className="rounded-full border border-yellow-500/15 bg-black/35 px-1.5 py-0.5 text-[8px] font-medium leading-none tracking-wide text-yellow-200/45 tabular-nums">
-            ዙር #{'{'}roundNumber{'}'}
+            ዙር #{roundNumber}
           </span>
         </div>
 
