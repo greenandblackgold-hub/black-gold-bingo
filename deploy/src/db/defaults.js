@@ -20,6 +20,8 @@ export const DEFAULT_GAME = {
   // Sponsored bonus cycle; bonus rounds are excluded from the regular-round counter.
   regularRoundsSinceBonus: 0,
   lastCountedRegularRound: 0,
+  lastCompletedRoundNumber: 0,
+  lastCompletedWasBonus: false,
   bonusDue: false,
   bonusRound: false,
   bonusRoundPrepared: false,
