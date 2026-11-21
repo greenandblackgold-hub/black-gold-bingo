@@ -356,6 +356,8 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
       callIntervalSec: g?.callIntervalSec ?? 5,
       setCallIntervalSec: (sec: number) => void admin('auto', { on: g?.autoCall ?? false, intervalSec: sec }),
       nextCallAt: g?.nextCallAt != null ? g.nextCallAt - offset : null,
+      firstCallAt: g?.firstCallAt != null ? g.firstCallAt - offset : null,
+      endedAt: g?.endedAt != null ? g.endedAt - offset : null,
       startedAt: null,
       nextRoundAt: g?.nextRoundAt != null ? g.nextRoundAt - offset : null,
       announcement: g?.announcement ?? null,
