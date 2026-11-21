@@ -79,8 +79,8 @@ export function createGameService({ repo, config, now = Date.now }) {
     if (g.phase === 'waiting') due = g.nextRoundAt ?? (now() + roundIntervalMs(g));
     else if (g.phase === 'running') due = g.autoCall
       ? Math.min(g.nextCallAt ?? (now() + g.callIntervalSec * 1000), g.roundEndsAt ?? (now() + roundIntervalMs(g)))
-      : (g.roundEndsAt ?? (now() + ROUND_INTERVAL_MS));
-    else if (g.phase === 'ended') due = g.nextRoundAt ?? (now() + ROUND_INTERVAL_MS);
+      : (g.roundEndsAt ?? (now() + roundIntervalMs(g)));
+    else if (g.phase === 'ended') due = g.nextRoundAt ?? (now() + roundIntervalMs(g));
     if (due === null) return;
     timer = setTimeout(tick, Math.max(0, due - now()));
     timer.unref?.();
@@ -147,10 +147,10 @@ export function createGameService({ repo, config, now = Date.now }) {
     async resume() {
       let g = await repo.getGame();
       if (g.phase === 'waiting' && !g.nextRoundAt) {
-        g = await repo.casGame(g.version, { nextRoundAt: now() + ROUND_INTERVAL_MS }) ?? await repo.getGame();
+        g = await repo.casGame(g.version, { nextRoundAt: now() + roundIntervalMs(g) }) ?? await repo.getGame();
       }
       if (g.phase === 'ended' && !g.nextRoundAt) {
-        g = await repo.casGame(g.version, { nextRoundAt: now() + ROUND_INTERVAL_MS }) ?? await repo.getGame();
+        g = await repo.casGame(g.version, { nextRoundAt: now() + roundIntervalMs(g) }) ?? await repo.getGame();
       }
       schedule(g);
     },
@@ -211,7 +211,7 @@ export function createGameService({ repo, config, now = Date.now }) {
         winner: null,
         autoCall: false,
         nextCallAt: null,
-        nextRoundAt: now() + ROUND_INTERVAL_MS,
+        nextRoundAt: now() + roundIntervalMs(g),
         pot: 0, roundPlayerIds: [],
       }));
     },
@@ -309,7 +309,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       const prize = calculatePrize(g);
       const settled = await repo.settleWin({ round: g.roundNumber, expectedVersion: g.version, card, prize, ref: `win:${g.roundNumber}:${card.code}` });
       if (!settled) return { ok: false, reason: 'already_won' };
-      const advanced = await repo.casGame(settled.version, { nextRoundAt: (g.roundStartedAt ?? now()) + ROUND_INTERVAL_MS }) ?? await repo.getGame();
+      const advanced = await repo.casGame(settled.version, { nextRoundAt: (g.roundStartedAt ?? now()) + roundIntervalMs(g) }) ?? await repo.getGame();
       schedule(advanced);
       broadcast(advanced);
       log('prize_credited_to_wallet', { round: g.roundNumber, card: card.code, userId: user.id, etb: prize / 100, potEtb: g.pot / 100 });
