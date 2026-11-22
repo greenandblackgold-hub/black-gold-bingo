@@ -14,19 +14,28 @@ export function createWalletService({ repo, config, chapa }) {
     const expectedRecipient = String(config.cbeDepositAccount ?? '').replace(/\D/g, '');
     const match = payment?.smsMatch;
     if (!payment || payment.source !== 'automatic-sms' || payment.status !== 'pending' ||
-        match?.status !== 'matched' || match.provider !== 'telebirr' ||
+        !payment.smsEventId || match?.status !== 'matched' || match.provider !== 'telebirr' ||
         !expectedRecipient || String(match.recipientAccount ?? '').replace(/\D/g, '') !== expectedRecipient ||
         Number(match.amount) !== Number(payment.amount)) return null;
-    const result = await repo.confirmDeposit({
-      txRef: payment.txRef,
-      chapaRef: `admin-sms-auto:${payment.smsEventId}`,
-    });
-    if (result.credited) {
-      log('admin_phone_sms_auto_approved_deposit', {
-        txRef: payment.txRef, userId: payment.userId, etb: etb(payment.amount),
+    try {
+      const result = await repo.confirmDeposit({
+        txRef: payment.txRef,
+        chapaRef: `admin-sms-auto:${payment.smsEventId}`,
       });
+      if (result.credited) {
+        log('admin_phone_sms_auto_approved_deposit', {
+          txRef: payment.txRef, userId: payment.userId, etb: etb(payment.amount),
+        });
+      }
+      return result;
+    } catch (error) {
+      // Preserve the pending request and its matched evidence; Admin can use the
+      // manual exception path if a transient storage failure prevents auto-credit.
+      log('admin_phone_sms_auto_approval_deferred', {
+        txRef: payment.txRef, reason: String(error?.code ?? error?.message ?? 'unknown').slice(0, 100),
+      });
+      return null;
     }
-    return result;
   };
 
   const service = {
