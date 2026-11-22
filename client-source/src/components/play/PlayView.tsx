@@ -369,20 +369,20 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
       <div className="pointer-events-none absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_50%_12%,rgba(255,196,0,.17),transparent_36%),radial-gradient(ellipse_at_50%_100%,rgba(255,196,0,.13),transparent_38%)]" />
       <div className="relative z-10 space-y-2 sm:space-y-3">
         <header className="rounded-2xl border border-yellow-400/90 bg-black px-3 py-2 shadow-[0_0_24px_rgba(250,204,21,.4)]">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2 justify-self-start">
               <button type="button" onClick={onLogout} aria-label="ውጣ" title="ውጣ" className="flex min-h-10 items-center gap-2 rounded-full border border-yellow-300/70 px-3 text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">
                 <span className="text-3xl font-black leading-none">‹</span>
                 <span className="whitespace-nowrap text-sm font-black sm:text-base">ውጣ</span>
               </button>
             </div>
-            <div className="flex min-w-0 flex-1 items-center justify-center gap-2 border-x border-yellow-500/70 px-2 text-yellow-300">
+            <div className="flex min-w-0 items-center justify-center gap-2 border-x border-yellow-500/70 px-2 text-yellow-300 justify-self-center">
               <span className="text-4xl leading-none drop-shadow-[0_0_12px_rgba(255,215,0,1)] sm:text-5xl">🏆</span>
               <strong className="whitespace-nowrap text-lg font-black tracking-tight text-yellow-300 drop-shadow-[0_0_12px_rgba(255,215,0,.9)] sm:text-3xl">
                 {roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} ብር
               </strong>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2 justify-self-end">
               <button type="button" onClick={onOpenMenu} aria-label="ሜኑ ክፈት" title="ሜኑ" className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/60 text-3xl leading-none text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">⋮</button>
               <button type="button" onClick={() => setSettingsOpen(true)} aria-label="ሴቲንግ ክፈት" title="ሴቲንግ" className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/60 text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
