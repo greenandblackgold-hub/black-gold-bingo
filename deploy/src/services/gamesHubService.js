@@ -222,6 +222,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       balanceEtb: wallet.balance / 100,
     };
     if (game === 'keno') {
+      state.payoutTable = KENO_PAYOUTS;
       state.drawCount = 20;
       state.selectedNumberLimit = 10;
       if (round.status === 'settled') {
