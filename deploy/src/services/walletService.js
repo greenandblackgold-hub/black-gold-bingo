@@ -117,7 +117,7 @@ export function createWalletService({ repo, config, chapa }) {
         throw new HttpError(400, 'stale_sms', 'Bank SMS is too old or has an invalid timestamp.');
       }
       const result = await repo.recordSmsEventAndMatch({
-        txRef, eventId: String(event.eventId ?? txRef).slice(0, 120), amount,
+        reference: txRef, eventId: String(event.eventId ?? txRef).slice(0, 120), amount,
         provider: String(event.provider ?? 'unknown'), rawMessage: String(metadata.rawMessage ?? '').slice(0, 4000),
         transactionAt, receivedAt, sender: String(metadata.sender ?? '').slice(0, 80),
         recipientAccount: event.recipientAccount ?? null,
