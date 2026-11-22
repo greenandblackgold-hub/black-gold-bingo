@@ -608,7 +608,7 @@ export async function createMongoRepo({ uri, dbName }) {
       );
       return toDoc(updated);
     },
-    async placeGameHubBet({ game, roundId, bet, amount, ref }) {
+    async placeGameHubBet({ game, roundId, bet, amount, ref, acceptedAt }) {
       return tx(async (session) => {
         const key = game + ':' + roundId;
         const round = await gameHubRounds.findOne({ _id: key }, { session });
@@ -618,7 +618,7 @@ export async function createMongoRepo({ uri, dbName }) {
           const owner = await users.findOne({ _id: bet.userId }, { session, projection: { balance: 1 } });
           return { bet: existing, balance: owner?.balance ?? 0, duplicate: true };
         }
-        if (round.status !== 'betting') throw new RepoError('ROUND_NOT_OPEN');
+        if (round.status !== 'betting' || round.bettingEndsAt <= acceptedAt) throw new RepoError('ROUND_NOT_OPEN');
         await moveMoney(session, { userId: bet.userId, amount: -amount, kind: 'game_bet', ref, meta: { game, roundId, betId: bet.id } });
         const updated = await gameHubRounds.findOneAndUpdate(
           { _id: key, version: round.version, status: 'betting' },
