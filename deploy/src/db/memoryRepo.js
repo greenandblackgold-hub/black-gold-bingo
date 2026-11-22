@@ -252,7 +252,7 @@ export function createMemoryRepo() {
     },
     async listSimulationDeposits({ status = 'pending' } = {}) {
       return [...payments.values()]
-        .filter((p) => ['manual-simulation', 'sms-simulation'].includes(p.source) && (!status || p.status === status))
+        .filter((p) => ['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(p.source) && (!status || p.status === status))
         .sort((a, b) => b.createdAt - a.createdAt)
         .slice(0, 200)
         .map((p) => {
