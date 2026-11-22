@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 
+const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 type Props = { onOpenBingo: () => void; onOpenKeno: () => void; onOpenAviator: () => void; serverMode: boolean };
 
 function GameCard({ title, subtitle, detail, icon, onClick, featured = false, disabled = false, disabledLabel = 'Unavailable' }: {
@@ -23,12 +25,12 @@ function GameCard({ title, subtitle, detail, icon, onClick, featured = false, di
 }
 
 export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode }: Props) {
-  const [availability, setAvailability] = useState<{ kenoEnabled: boolean; aviatorEnabled: boolean } | null>(null);
+  const [availability, setAvailability] = useState<{ kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number } | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
   useEffect(() => {
     if (!serverMode) return;
     let active = true;
-    api.get<{ kenoEnabled: boolean; aviatorEnabled: boolean }>('/api/games/settings')
+    api.get<{ kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number }>('/api/games/settings')
       .then((value) => { if (active) { setAvailability(value); setAvailabilityError(''); } })
       .catch(() => { if (active) setAvailabilityError('Game availability could not be loaded. Please refresh.'); });
     return () => { active = false; };
