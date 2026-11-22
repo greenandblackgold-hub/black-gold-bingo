@@ -169,7 +169,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
 
   // The native admin companion uses a scoped, expiring token; incoming SMS only matches requests and never credits wallets.
   route('POST', '/api/webhooks/sms/device', 'public', 'money', async ({ req, body }) => {
-    const bearer = String(req.headers.authorization ?? '').replace(/^Bearer\\s+/i, '');
+    const bearer = String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
     const payload = verifyJwt(bearer, config.jwtSecret);
     if (!payload || payload.role !== 'admin' || payload.scope !== 'sms:ingest' || !payload.sub) {
       throw new HttpError(401, 'invalid_sms_device_token', 'The SMS bridge is not authorized. Open the Admin App to reconnect it.');
