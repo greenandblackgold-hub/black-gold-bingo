@@ -254,17 +254,6 @@ export function createMemoryRepo() {
       smsEvents.set(event.eventId, clone({ ...safeEvent, createdAt: new Date() }));
       return matchStoredSmsDeposit(event.reference);
     },
-    async matchSmsDeposit({ txRef, eventId, amount, provider, rawMessage, transactionAt, receivedAt, sender, recipientAccount }) {
-      if ([...payments.values()].some((p) => p.smsEventId === eventId)) return { matched: false, duplicate: true };
-      const p = payments.get(txRef);
-      if (!p || p.source !== 'automatic-sms') return { matched: false, unmatched: true };
-      if (p.status !== 'pending') return { matched: false, processed: true };
-      if (p.smsEventId) return { matched: false, duplicate: true };
-      const status = p.amount === amount ? 'matched' : 'amount-mismatch';
-      p.smsEventId = eventId;
-      p.smsMatch = { status, provider, amount, rawMessage, transactionAt, receivedAt, sender, recipientAccount: recipientAccount ?? null, matchedAt: new Date() };
-      return { matched: status === 'matched', mismatch: status === 'amount-mismatch', reference: txRef };
-    },
     async listUserSimulationDeposits(userId, limit = 30) {
       return [...payments.values()]
         .filter((p) => p.userId === userId && ['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(p.source))
