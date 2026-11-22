@@ -5,7 +5,7 @@
  * "server mode": real accounts, server-held wallets and cards, Chapa payments.
  */
 export const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
-/** Server mode = real accounts, wallets and payments. On when the site is served by the API itself, or VITE_API_URL is set. */
+/** Server mode = server-backed accounts, wallets and manual bank-transfer deposits. On when the site is served by the API itself, or VITE_API_URL is set. */
 export const SERVER_MODE = import.meta.env.VITE_SERVER_MODE === 'true' || API_URL !== '';
 
 const TOKEN_KEY = 'bgb.token';
