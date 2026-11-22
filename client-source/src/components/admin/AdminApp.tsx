@@ -5,6 +5,7 @@ import { translations } from '@/lib/localization';
 import { AdminSimulationWithdrawals } from '@/components/admin/AdminSimulationWithdrawals';
 import { AdminDeposits } from '@/components/admin/AdminDeposits';
 import { AdminSmsSync } from '@/components/admin/AdminSmsSync';
+import { AdminGamesHub } from '@/components/admin/AdminGamesHub';
 import { HostView } from '@/components/host/HostView';
 import { useBackend } from '@/context/BackendContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -87,6 +88,7 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
           {SERVER_MODE && <AdminPhoneVerifications />}
           {SERVER_MODE && <AdminPinResets />}
           {SERVER_MODE && <AdminSmsSync />}
+          {SERVER_MODE && <AdminGamesHub />}
           <HostView />
           {SERVER_MODE && <AdminDeposits />}
           {SERVER_MODE && <AdminWinPayouts />}
