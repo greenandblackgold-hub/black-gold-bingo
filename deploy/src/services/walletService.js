@@ -10,7 +10,7 @@ export function createWalletService({ repo, config, chapa }) {
   const service = {
     /** Player submits only the amount and bank transaction reference; the admin phone supplies the SMS independently. */
     async startSmsSimulationDeposit(user, input = {}) {
-      const txRef = String(input.reference ?? '').trim();
+      const txRef = String(input.reference ?? '').trim().toUpperCase();
       const amount = toSantim(input.amount);
       if (!/^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$/.test(txRef)) throw new HttpError(400, 'invalid_reference', 'Enter a valid transaction reference (6-64 letters or numbers).');
       if (!Number.isSafeInteger(amount) || amount < config.minDeposit || amount > config.maxDeposit) throw new HttpError(400, 'invalid_amount', `Deposit between ${etb(config.minDeposit)} and ${etb(config.maxDeposit)} ETB`);
