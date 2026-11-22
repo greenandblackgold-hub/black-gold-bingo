@@ -4,7 +4,7 @@
 
 Keno and Aviator are separate game modules. They use the existing authenticated player account and a separate **Games Demo Wallet** shared by Keno and Aviator. This wallet starts with 1,000 demo ETB credits per player and is stored separately from the existing Bingo wallet and withdrawal ledger. It is non-withdrawable, cannot be transferred, and cannot be converted to cash. This separation is intentional because the existing manual withdrawal workflow can pay the main wallet; simulation credits must never enter that balance. The service also rejects these games in production if the legacy real-money flag is enabled. This does not approve, activate, or implement real-money gambling, deposits, withdrawals, or cash prizes.
 
-The existing Bingo engine, Bingo round document, card collection, card signing, Bingo wallet, and Bingo settlement paths are not changed by the Games Center. New game records live in the separate `gameHubRounds`, `gameHubState`, `gameHubSettings`, `gameHubWallets`, and `gameHubLedger` MongoDB collections. The in-memory repository implements the same additive methods for tests.
+The existing Bingo engine, Bingo round document, card collection, card signing, Bingo wallet, and Bingo settlement paths are not changed by the Games Center. New game records live in the separate `gameHubRounds`, `gameHubState`, `gameHubSettings`, `gameHubWallets`, and `gameHubLedger` MongoDB collections. The in-memory repository implements the same additive methods for tests. Completed game rounds are retained for 30 days in MongoDB and then removed automatically by a TTL index.
 
 ## Keno
 
