@@ -98,6 +98,7 @@ export async function createMongoRepo({ uri, dbName }) {
         pushSubscriptions.createIndex({ endpoint: 1 }, { unique: true }),
         pushSubscriptions.createIndex({ userId: 1 }),
         gameHubRounds.createIndex({ game: 1, createdAt: -1 }),
+        gameHubRounds.createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 }),
         gameHubRounds.createIndex({ game: 1, roundId: 1 }, { unique: true }),
         gameHubLedger.createIndex({ ref: 1 }, { unique: true }),
         gameHubLedger.createIndex({ userId: 1, createdAt: -1 }),
