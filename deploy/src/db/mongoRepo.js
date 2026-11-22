@@ -364,13 +364,14 @@ export async function createMongoRepo({ uri, dbName }) {
       const status = payment.amount === event.amount ? 'matched' : 'amount-mismatch';
       const updated = await payments.updateOne(
         { txRef, source: 'automatic-sms', status: 'pending', smsEventId: { $exists: false } },
-        { $set: { smsEventId: event.eventId, smsMatch: { status, provider: event.provider, amount: event.amount, rawMessage: event.rawMessage, transactionAt: event.transactionAt, receivedAt: event.receivedAt, sender: event.sender, recipientAccount: event.recipientAccount ?? null, matchedAt: new Date() } } },
+        { $set: { smsEventId: event.eventId, smsMatch: { status, provider: event.provider, amount: event.amount, transactionAt: event.transactionAt, receivedAt: event.receivedAt, sender: event.sender, recipientAccount: event.recipientAccount ?? null, matchedAt: new Date() } } },
       );
       if (updated.modifiedCount !== 1) return { matched: false, duplicate: true };
       return { matched: status === 'matched', mismatch: status === 'amount-mismatch', reference: txRef };
     },
     async recordSmsEventAndMatch(event) {
-      try { await smsEvents.insertOne({ ...event, createdAt: new Date() }); }
+      const { rawMessage, ...safeEvent } = event;
+      try { await smsEvents.insertOne({ ...safeEvent, createdAt: new Date() }); }
       catch (error) { if (isDuplicate(error)) return { matched: false, duplicate: true }; throw error; }
       return this.matchStoredSmsDeposit({ txRef: event.reference });
     },
