@@ -43,6 +43,10 @@ jobs:
         working-directory: client-source
         run: npx cap add android
 
+      - name: Install native automatic SMS bridge
+        working-directory: client-source
+        run: node scripts/configure-android-sms.mjs
+
       - name: Sync Capacitor
         working-directory: client-source
         run: npx cap sync android
