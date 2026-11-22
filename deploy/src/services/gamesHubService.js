@@ -351,6 +351,16 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       timer = null;
     },
     getSettings: settings,
+    async getPublicSettings() {
+      const current = await settings();
+      return {
+        kenoEnabled: current.kenoEnabled === true,
+        aviatorEnabled: current.aviatorEnabled === true,
+        minBetEtb: current.minBet / 100,
+        maxBetEtb: current.maxBet / 100,
+        mode: 'SIMULATION_ONLY',
+      };
+    },
     getState,
     placeKenoBet: (user, input) => placeBet('keno', user, input),
     placeAviatorBet: (user, input) => placeBet('aviator', user, input),
