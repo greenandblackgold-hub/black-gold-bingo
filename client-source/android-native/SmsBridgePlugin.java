@@ -47,7 +47,7 @@ public class SmsBridgePlugin extends Plugin {
         }
         SharedPreferences prefs = getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         prefs.edit().putString("api_url", apiUrl).putString("device_token", token).apply();
-        SmsReceiver.flushPending(getContext());
+        SmsReceiver.flushPendingAsync(getContext());
         JSObject result = new JSObject();
         result.put("configured", true);
         call.resolve(result);
