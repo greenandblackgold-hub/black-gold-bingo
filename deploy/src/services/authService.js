@@ -29,6 +29,12 @@ export function createAuthService({ repo, config }) {
   const createPinResetChallenge = async (userId) => { const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0'); const expiresAt = new Date(Date.now() + OTP_TTL_MS); await repo.createPinResetChallenge({ userId, codeHash: pinResetHash(config.jwtSecret, userId, code), codeEncrypted: encryptPinResetCode(config.jwtSecret, code), expiresAt }); return expiresAt.getTime(); };
 
   return {
+    issueSmsDeviceToken(user) {
+      if (user?.role !== 'admin') throw new HttpError(403, 'admin_only', 'Administrator access required.');
+      const expiresIn = 30 * 24 * 60 * 60;
+      return { token: signJwt({ sub: user.id, role: 'admin', scope: 'sms:ingest' }, config.jwtSecret, expiresIn), expiresIn };
+    },
+
     async register({ phone, name, pin, pinConfirm }) {
       if (!config.registrationEnabled) throw new HttpError(503, 'registration_disabled', 'New registrations are temporarily disabled until phone verification is ready.');
       const p = normalizePhone(phone);

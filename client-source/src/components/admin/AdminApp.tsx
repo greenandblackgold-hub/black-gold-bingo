@@ -4,6 +4,7 @@ import { AdminPinResets } from '@/components/admin/AdminPinResets';
 import { translations } from '@/lib/localization';
 import { AdminSimulationWithdrawals } from '@/components/admin/AdminSimulationWithdrawals';
 import { AdminDeposits } from '@/components/admin/AdminDeposits';
+import { AdminSmsSync } from '@/components/admin/AdminSmsSync';
 import { HostView } from '@/components/host/HostView';
 import { useBackend } from '@/context/BackendContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -85,6 +86,7 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
         <div className="space-y-5">
           {SERVER_MODE && <AdminPhoneVerifications />}
           {SERVER_MODE && <AdminPinResets />}
+          {SERVER_MODE && <AdminSmsSync />}
           <HostView />
           {SERVER_MODE && <AdminDeposits />}
           {SERVER_MODE && <AdminWinPayouts />}

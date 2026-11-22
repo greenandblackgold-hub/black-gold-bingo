@@ -25,22 +25,12 @@ test('production real-money mode is off unless explicitly approved', () => {
     JWT_SECRET: secret,
     REAL_MONEY_ENABLED: 'true',
   }), /LOTTERY_LICENSE_APPROVED/);
-  assert.throws(() => loadConfig({
-    NODE_ENV: 'production',
-    MONGODB_URI: 'mongodb://example.invalid/db',
-    JWT_SECRET: secret,
-    REAL_MONEY_ENABLED: 'true',
-    LOTTERY_LICENSE_APPROVED: 'true',
-    CHAPA_MERCHANT_APPROVED: 'true',
-  }), /CHAPA_SECRET_KEY/);
   const approved = loadConfig({
     NODE_ENV: 'production',
     MONGODB_URI: 'mongodb://example.invalid/db',
     JWT_SECRET: secret,
     REAL_MONEY_ENABLED: 'true',
     LOTTERY_LICENSE_APPROVED: 'true',
-    CHAPA_MERCHANT_APPROVED: 'true',
-    CHAPA_SECRET_KEY: 'live-key-placeholder',
   });
   assert.equal(approved.realMoneyEnabled, true);
 });

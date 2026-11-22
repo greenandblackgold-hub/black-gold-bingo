@@ -19,26 +19,20 @@ test('production registration can still be disabled by deployment setting', () =
 });
 
 
-test('production real-money play requires both lottery licensing and Chapa merchant approval', () => {
+test('production manual bank deposits require lottery authorization but not Chapa approval', () => {
   assert.equal(loadConfig({ ...productionEnv }).realMoneyEnabled, false);
   assert.throws(
-    () => loadConfig({ ...productionEnv, REAL_MONEY_ENABLED: 'true', CHAPA_SECRET_KEY: 'test-secret' }),
+    () => loadConfig({ ...productionEnv, REAL_MONEY_ENABLED: 'true' }),
     /LOTTERY_LICENSE_APPROVED is required/,
-  );
-  assert.throws(
-    () => loadConfig({ ...productionEnv, REAL_MONEY_ENABLED: 'true', LOTTERY_LICENSE_APPROVED: 'true', CHAPA_SECRET_KEY: 'test-secret' }),
-    /CHAPA_MERCHANT_APPROVED is required/,
   );
   const approved = loadConfig({
     ...productionEnv,
     REAL_MONEY_ENABLED: 'true',
     LOTTERY_LICENSE_APPROVED: 'true',
-    CHAPA_MERCHANT_APPROVED: 'true',
-    CHAPA_SECRET_KEY: 'test-secret',
   });
   assert.equal(approved.realMoneyEnabled, true);
+  assert.equal(approved.chapaMerchantApproved, false);
 });
-
 
 test('Android Capacitor WebView origin is allowed without dropping configured website origins', () => {
   const config = loadConfig({ ...productionEnv, CLIENT_ORIGINS: 'https://black-gold-bingo.onrender.com' });

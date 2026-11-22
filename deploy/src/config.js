@@ -78,8 +78,6 @@ export function loadConfig(env = process.env) {
     if (cfg.storage !== 'mongo') problems.push('Production requires STORAGE=mongo with MONGODB_URI');
     if (cfg.chapa.mock) problems.push('CHAPA_MOCK must be false in production');
     if (cfg.realMoneyEnabled && !cfg.lotteryLicenseApproved) problems.push('LOTTERY_LICENSE_APPROVED is required before real-money play');
-    if (cfg.realMoneyEnabled && !cfg.chapaMerchantApproved) problems.push('CHAPA_MERCHANT_APPROVED is required before real-money play');
-    if (cfg.realMoneyEnabled && !cfg.chapa.secretKey) problems.push('CHAPA_SECRET_KEY is required when real-money play is enabled');
     if (cfg.adminPhone && !/^\d{6}$/.test(cfg.adminPin)) problems.push('ADMIN_PIN must be exactly 6 digits');
   }
   if (problems.length) throw new Error('Invalid configuration:\n - ' + problems.join('\n - '));

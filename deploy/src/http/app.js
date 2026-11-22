@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { HttpError } from '../util/errors.js';
+import { verifyJwt } from '../util/crypto.js';
 import { publicUser } from '../services/authService.js';
 import { parseBankSms } from '../payments/bankSmsParser.js';
 
@@ -101,15 +102,15 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
     routes.push({ method, re, keys, access, bucket, handler });
   };
 
-  // Production money routes remain locked until the required permit and provider approval are confirmed.
+  // Production real-money activity remains locked until the applicable lottery permit is confirmed.
   const requireRegistration = () => {
     if (config.prod && !config.registrationEnabled) {
       throw new HttpError(503, 'registration_disabled', 'Registration is temporarily unavailable');
     }
   };
   const requireRealMoney = () => {
-    if (config.prod && (!config.realMoneyEnabled || !config.lotteryLicenseApproved || !config.chapaMerchantApproved)) {
-      throw new HttpError(503, 'real_money_disabled', 'Real-money play is not enabled until licensing and payment approval are verified');
+    if (config.prod && (!config.realMoneyEnabled || !config.lotteryLicenseApproved)) {
+      throw new HttpError(503, 'real_money_disabled', 'Real-money play is disabled until the required lottery authorization is verified');
     }
   };
 
@@ -156,7 +157,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
     const rows = await repo.listLedger(user.id, 30);
     return rows.map((e) => ({ id: e.ref, kind: ledgerKind(e.kind), amount: e.amount / 100, label: ledgerLabel[e.kind], at: new Date(e.createdAt).getTime() }));
   });
-  route('POST', '/api/simulation/deposits', 'user', 'money', ({ user, body }) => wallet.startSmsSimulationDeposit(user, body));
+  route('POST', '/api/simulation/deposits', 'user', 'money', ({ user, body }) => { requireRealMoney(); return wallet.startSmsSimulationDeposit(user, body); });
   route('GET', '/api/simulation/deposits', 'user', 'default', ({ user }) => wallet.listUserSimulationDeposits(user));
   route('GET', '/api/simulation/deposits/:txRef', 'user', 'default', ({ user, params }) => wallet.simulationDepositStatus(user, decodeURIComponent(params.txRef)));
 
@@ -165,6 +166,32 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
   route('GET', '/api/simulation/withdrawals', 'user', 'default', ({ user, query }) =>
     wallet.listMySimulationWithdrawals(user).then((rows) => rows.map((w) => ({ id: w.id, amount: w.amount, method: w.method, destination: w.destination, status: w.status, at: w.at }))),
   );
+
+  // The native admin companion uses a scoped, expiring token; incoming SMS only matches requests and never credits wallets.
+  route('POST', '/api/webhooks/sms/device', 'public', 'money', async ({ req, body }) => {
+    const bearer = String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
+    const payload = verifyJwt(bearer, config.jwtSecret);
+    if (!payload || payload.role !== 'admin' || payload.scope !== 'sms:ingest' || !payload.sub) {
+      throw new HttpError(401, 'invalid_sms_device_token', 'The SMS bridge is not authorized. Open the Admin App to reconnect it.');
+    }
+    const owner = await repo.findUserById(payload.sub);
+    if (!owner || owner.role !== 'admin') throw new HttpError(401, 'invalid_sms_device_token', 'The SMS bridge is no longer authorized.');
+    const sender = String(body.sender ?? '');
+    const smsText = String(body.text ?? '');
+    let event;
+    try {
+      event = parseBankSms({
+        sender, text: smsText, eventId: body.eventId,
+        expectedRecipientAccount: config.cbeDepositAccount,
+        timezoneOffsetMinutes: config.smsTimezoneOffsetMinutes,
+      });
+    } catch (error) {
+      throw new HttpError(400, error.message || 'sms_parse_failed', 'SMS is not a recognized incoming bank or Telebirr transaction.');
+    }
+    return wallet.matchSmsSimulationDeposit(event, {
+      rawMessage: smsText, sender, receivedAt: body.receivedAt,
+    });
+  });
 
   // The gateway signs the exact raw JSON body with HMAC-SHA256. Never trust unsigned SMS text.
   route('POST', '/api/webhooks/sms', 'public', 'money', async ({ req, rawBody }) => {
@@ -255,6 +282,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
 
   /* admin */
   const admin = (method, path, handler, bucket = 'default') => route(method, path, 'admin', bucket, handler);
+  admin('POST', '/api/admin/sms-device/token', async ({ user }) => auth.issueSmsDeviceToken(user));
   admin('GET', '/api/admin/manual-withdrawals', async ({ query }) =>
     wallet.listManualWithdrawals({ status: query.get('status') || 'pending' }),
   );
@@ -297,8 +325,10 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
   admin('POST', '/api/admin/win-payouts/:id/reject', async ({ params, body }) =>
     wallet.rejectWinPayout(decodeURIComponent(params.id), body.note),
   );
-  admin('POST', '/api/admin/deposits/:txRef/approve', async ({ params }) =>
-    wallet.approveSimulationDeposit(decodeURIComponent(params.txRef)),
+  admin('POST', '/api/admin/deposits/:txRef/approve', async ({ params }) => {
+    requireRealMoney();
+    return wallet.approveSimulationDeposit(decodeURIComponent(params.txRef));
+  },
   );
   admin('POST', '/api/admin/deposits/:txRef/test-approve', async ({ params }) =>
     wallet.testApproveSimulationDeposit(decodeURIComponent(params.txRef)),

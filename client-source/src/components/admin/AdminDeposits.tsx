@@ -10,6 +10,8 @@ interface DepositRow {
   reference: string;
   rawMessage?: string;
   provider?: string;
+  source?: string;
+  smsMatch?: { status: 'matched' | 'amount-mismatch'; provider?: string; amount?: number; transactionAt?: number; sender?: string } | null;
   userId: string;
   userName: string;
   userPhone: string;
@@ -37,7 +39,7 @@ export function AdminDeposits() {
 
   useEffect(() => {
     void load();
-    const timer = window.setInterval(() => void load(), 15000);
+    const timer = window.setInterval(() => void load(), 5000);
     return () => window.clearInterval(timer);
   }, [load]);
 
@@ -79,14 +81,25 @@ export function AdminDeposits() {
                 <div><dt className="inline text-gold-600">{t.player}: </dt><dd className="inline text-gold-300">{row.userName} · {row.userPhone}</dd></div>
                 <div><dt className="inline text-gold-600">{t.reference}: </dt><dd className="inline break-all font-mono text-gold-300">{row.reference}</dd></div>
                 {row.provider && <div><dt className="inline text-gold-600">Provider: </dt><dd className="inline text-gold-300">{row.provider}</dd></div>}
-                {row.rawMessage && <div className="mt-2"><dt className="mb-1 block text-gold-600">Full transaction SMS:</dt><dd className="whitespace-pre-wrap break-words rounded-lg bg-black/30 p-3 text-xs leading-relaxed text-gold-200">{row.rawMessage}</dd></div>}
+                {row.source === 'automatic-sms' && (
+                  <div className="mt-2 rounded-lg border border-gold-700/40 bg-black/20 p-3 text-xs">
+                    <p className={row.smsMatch?.status === 'matched' ? 'font-bold text-emerald-300' : row.smsMatch?.status === 'amount-mismatch' ? 'font-bold text-red-300' : 'font-bold text-amber-200'}>
+                      {row.smsMatch?.status === 'matched' ? 'Bank SMS matched — ready for your approval' : row.smsMatch?.status === 'amount-mismatch' ? 'SMS received, but amount does not match' : 'Waiting for bank SMS from Admin phone'}
+                    </p>
+                    {row.smsMatch?.provider && <p className="mt-1 text-gold-400">Provider: {row.smsMatch.provider}</p>}
+                    {row.smsMatch?.amount !== undefined && <p className="mt-1 text-gold-300">SMS amount: {row.smsMatch.amount} ETB</p>}
+                    {row.smsMatch?.sender && <p className="mt-1 text-gold-500">Sender: {row.smsMatch.sender}</p>}
+                    {row.smsMatch?.transactionAt && <p className="mt-1 text-gold-500">Transaction time: {formatDateTime(lang, row.smsMatch.transactionAt)}</p>}
+                  </div>
+                )}
+                {row.rawMessage && <div className="mt-2"><dt className="mb-1 block text-gold-600">Transaction SMS:</dt><dd className="whitespace-pre-wrap break-words rounded-lg bg-black/30 p-3 text-xs leading-relaxed text-gold-200">{row.rawMessage}</dd></div>}
                 <div><dt className="inline text-gold-600">{t.sent}: </dt><dd className="inline text-gold-500">{formatDateTime(lang, row.at)}</dd></div>
               </dl>
               <div className="mt-3 flex flex-wrap gap-2">
                 {/^TEST-/i.test(row.reference) ? (
                   <button type="button" disabled={busyId === row.id} onClick={() => void act(row, 'test-approve')} className={`${button} flex-1 bg-sky-500/20 text-sky-100 ring-sky-400/50`}>{t.testApprove}</button>
                 ) : (
-                  <button type="button" disabled={busyId === row.id} onClick={() => void act(row, 'approve')} className={`${button} flex-1 bg-gold-500 text-darkbg ring-gold-400`}>{t.approve}</button>
+                  <button type="button" disabled={busyId === row.id || (row.source === 'automatic-sms' && row.smsMatch?.status !== 'matched')} onClick={() => void act(row, 'approve')} className={`${button} flex-1 bg-gold-500 text-darkbg ring-gold-400`}>{t.approve}</button>
                 )}
                 <button type="button" disabled={busyId === row.id} onClick={() => void act(row, 'reject')} className={`${button} flex-1 text-gold-300 ring-gold-700/60`}>{t.reject}</button>
               </div>

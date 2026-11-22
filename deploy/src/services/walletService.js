@@ -8,73 +8,25 @@ const toSantim = (etbAmount) => Math.round(Number(etbAmount) * 100);
 
 export function createWalletService({ repo, config, chapa }) {
   const service = {
-    /** Player submits the complete provider SMS. Parsed details are cross-checked before it enters admin review. */
+    /** Player submits only the amount and bank transaction reference; the admin phone supplies the SMS independently. */
     async startSmsSimulationDeposit(user, input = {}) {
-      // Compatibility for existing clients; the wallet UI now submits the full SMS.
-      if (!input.message) {
-        const txRef = String(input.reference ?? '').trim();
-        const amount = toSantim(input.amount);
-        if (!/^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$/.test(txRef)) throw new HttpError(400, 'invalid_reference', 'Enter a valid transaction reference (6-64 letters or numbers).');
-        if (!Number.isSafeInteger(amount) || amount < config.minDeposit || amount > config.maxDeposit) throw new HttpError(400, 'invalid_amount', `Deposit between ${etb(config.minDeposit)} and ${etb(config.maxDeposit)} ETB`);
-        try { await repo.createPayment({ txRef, userId: user.id, amount, source: 'manual-simulation' }); }
-        catch (error) {
-          if (error?.code === 'PAYMENT_REFERENCE_TAKEN' || error?.code === 11000 || error?.errorResponse?.code === 11000) throw new HttpError(409, 'reference_used', 'This transaction reference has already been submitted.');
-          throw error;
-        }
-        return { reference: txRef, amount: etb(amount), status: 'pending', currency: 'ETB' };
-      }
-      const { message: rawMessage, provider } = input;
-      const message = String(rawMessage ?? '').trim();
-      if (message.length < 20 || message.length > 4000) {
-        throw new HttpError(400, 'invalid_sms_message', 'Paste the complete transaction SMS (20-4000 characters).');
-      }
-      let parsed;
+      const txRef = String(input.reference ?? '').trim().toUpperCase();
+      const amount = toSantim(input.amount);
+      if (!/^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$/.test(txRef)) throw new HttpError(400, 'invalid_reference', 'Enter a valid transaction reference (6-64 letters or numbers).');
+      if (!Number.isSafeInteger(amount) || amount < config.minDeposit || amount > config.maxDeposit) throw new HttpError(400, 'invalid_amount', `Deposit between ${etb(config.minDeposit)} and ${etb(config.maxDeposit)} ETB`);
       try {
-        parsed = parseBankSms({ sender: provider, text: message, expectedRecipientAccount: config.cbeDepositAccount, timezoneOffsetMinutes: config.smsTimezoneOffsetMinutes });
+        await repo.createPayment({ txRef, userId: user.id, amount, source: 'automatic-sms' });
+        await repo.matchStoredSmsDeposit({ txRef });
       } catch (error) {
-        throw new HttpError(400, 'invalid_sms_message', 'The message is not a recognizable incoming Telebirr or CBE transfer SMS.');
-      }
-      const amount = toSantim(parsed.amount);
-      if (!Number.isSafeInteger(amount) || amount < config.minDeposit || amount > config.maxDeposit) {
-        throw new HttpError(400, 'invalid_amount', `Deposit between ${etb(config.minDeposit)} and ${etb(config.maxDeposit)} ETB`);
-      }
-      // A player-provided SMS is untrusted input and can be forged.
-      // Keep the request pending until an authenticated SMS gateway event or an administrator
-      // confirms the transfer. Parsing validates format and destination, not settlement.
-      const configuredRecipient = String(config.cbeDepositAccount ?? '').replace(/\D/g, '');
-      if (parsed.provider !== 'telebirr' || !configuredRecipient || parsed.recipientAccount !== configuredRecipient) {
-        throw new HttpError(400, 'unverified_recipient', 'Only a Telebirr transfer receipt addressed to the configured CBE deposit account can be submitted.');
-      }
-      const smsAgeMs = Date.now() - parsed.transactionAt;
-      const maxSmsAgeMs = Number(config.smsMaxAgeMinutes ?? 1440) * 60_000;
-      if (!Number.isFinite(parsed.transactionAt) || smsAgeMs > maxSmsAgeMs || smsAgeMs < -5 * 60_000) {
-        throw new HttpError(400, 'stale_sms', 'This transfer SMS is too old or has a future timestamp. Submit a recent, complete receipt.');
-      }
-      try {
-        await repo.createPayment({
-          txRef: parsed.reference, userId: user.id, amount, source: 'sms-simulation',
-          rawMessage: message, provider: parsed.provider,
-        });
-      } catch (error) {
-        if (error?.code === 'PAYMENT_REFERENCE_TAKEN' || error?.code === 11000 || error?.errorResponse?.code === 11000) {
-          throw new HttpError(409, 'reference_used', 'This transaction reference has already been submitted.');
-        }
+        if (error?.code === 'PAYMENT_REFERENCE_TAKEN' || error?.code === 11000 || error?.errorResponse?.code === 11000) throw new HttpError(409, 'reference_used', 'This transaction reference has already been submitted.');
         throw error;
       }
-      return {
-        reference: parsed.reference,
-        amount: etb(amount),
-        provider: parsed.provider,
-        status: 'pending',
-        approved: false,
-        credited: false,
-        currency: 'ETB',
-      };
+      return { reference: txRef, amount: etb(amount), status: 'pending', currency: 'ETB' };
     },
 
     async simulationDepositStatus(user, txRef) {
       const payment = await repo.getPayment(String(txRef ?? ''));
-      if (!payment || payment.userId !== user.id || !['manual-simulation', 'sms-simulation'].includes(payment.source)) {
+      if (!payment || payment.userId !== user.id || !['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(payment.source)) {
         throw new HttpError(404, 'deposit_not_found', 'Unknown simulation deposit reference.');
       }
       return { status: payment.status };
@@ -106,7 +58,7 @@ export function createWalletService({ repo, config, chapa }) {
     /** Credit a pending simulation request exactly once after an administrator verifies it. */
     async approveSimulationDeposit(txRef) {
       const payment = await repo.getPayment(String(txRef ?? ''));
-      if (!payment || !['manual-simulation', 'sms-simulation'].includes(payment.source)) {
+      if (!payment || !['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(payment.source)) {
         throw new HttpError(404, 'deposit_not_found', 'Unknown simulation deposit request.');
       }
       if (/^TEST-/i.test(payment.txRef)) {
@@ -114,6 +66,7 @@ export function createWalletService({ repo, config, chapa }) {
       }
       if (payment.status === 'success') return { status: 'success', credited: false };
       if (payment.status !== 'pending') throw new HttpError(409, 'wrong_status', 'Deposit request is no longer pending.');
+      if (payment.source === 'automatic-sms' && payment.smsMatch?.status !== 'matched') throw new HttpError(409, 'sms_not_matched', 'A matching bank SMS must be received before approval.');
       const result = await repo.confirmDeposit({ txRef: payment.txRef, chapaRef: 'manual-admin' });
       if (result.credited) log('simulation_deposit_manually_approved', { txRef: payment.txRef, userId: payment.userId, etb: etb(payment.amount) });
       if (!result.credited) {
@@ -127,7 +80,7 @@ export function createWalletService({ repo, config, chapa }) {
     async testApproveSimulationDeposit(txRef) {
       const reference = String(txRef ?? '');
       const payment = await repo.getPayment(reference);
-      if (!payment || !['manual-simulation', 'sms-simulation'].includes(payment.source) || !/^TEST-/i.test(payment.txRef)) {
+      if (!payment || !['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(payment.source) || !/^TEST-/i.test(payment.txRef)) {
         throw new HttpError(404, 'test_deposit_not_found', 'Only TEST-prefixed simulation requests can use test approval.');
       }
       if (payment.status !== 'pending') throw new HttpError(409, 'wrong_status', 'Test request is no longer pending.');
@@ -140,7 +93,7 @@ export function createWalletService({ repo, config, chapa }) {
     /** Reject a pending simulation request without changing the player's balance. */
     async rejectSimulationDeposit(txRef, note) {
       const payment = await repo.getPayment(String(txRef ?? ''));
-      if (!payment || !['manual-simulation', 'sms-simulation'].includes(payment.source)) {
+      if (!payment || !['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(payment.source)) {
         throw new HttpError(404, 'deposit_not_found', 'Unknown simulation deposit request.');
       }
       if (payment.status !== 'pending') throw new HttpError(409, 'wrong_status', 'Deposit request is no longer pending.');
@@ -150,24 +103,32 @@ export function createWalletService({ repo, config, chapa }) {
       return { status: 'rejected' };
     },
 
-    /** Process a normalized, HMAC-authenticated SMS gateway event. */
-    async confirmSmsSimulationDeposit(event) {
+    /** Match a trusted admin-phone SMS to a pending request. Matching never credits the wallet. */
+    async matchSmsSimulationDeposit(event, metadata = {}) {
       const txRef = String(event.reference ?? '').trim();
-      const payment = await repo.getPayment(txRef);
-      if (!payment || payment.source !== 'sms-simulation') {
-        throw new HttpError(404, 'deposit_not_found', 'No pending simulation deposit matches this reference.');
-      }
-      if (payment.status === 'success') return { status: 'success', credited: false };
-      if (payment.status !== 'pending') return { status: payment.status, credited: false };
-      if (String(event.status ?? '').toLowerCase() !== 'success') return { status: 'ignored', credited: false };
       const amount = toSantim(event.amount);
-      if (String(event.currency ?? '').toUpperCase() !== 'ETB' || !Number.isSafeInteger(amount) || amount !== payment.amount) {
-        await repo.failPayment(txRef, 'amount_mismatch');
-        throw new HttpError(400, 'deposit_mismatch', 'SMS amount or currency does not match the pending request.');
+      if (!txRef || !Number.isSafeInteger(amount) || amount <= 0) throw new HttpError(400, 'invalid_sms_event', 'Invalid bank SMS event.');
+      if (String(event.status ?? '').toLowerCase() !== 'success' || String(event.currency ?? '').toUpperCase() !== 'ETB') throw new HttpError(400, 'invalid_sms_event', 'Only successful ETB bank credits can match a deposit request.');
+      const receivedAt = Number(metadata.receivedAt ?? Date.now());
+      const transactionAt = Number(event.transactionAt ?? receivedAt);
+      const ageMs = Date.now() - transactionAt;
+      const maxAgeMs = Number(config.smsMaxAgeMinutes ?? 1440) * 60_000;
+      if (!Number.isFinite(transactionAt) || !Number.isFinite(receivedAt) || ageMs > maxAgeMs || ageMs < -5 * 60_000 || receivedAt > Date.now() + 5 * 60_000) {
+        throw new HttpError(400, 'stale_sms', 'Bank SMS is too old or has an invalid timestamp.');
       }
-      const result = await repo.confirmDeposit({ txRef, chapaRef: String(event.eventId ?? txRef) });
-      if (result.credited) log('simulation_sms_deposit_credited', { txRef, userId: payment.userId, etb: etb(payment.amount) });
-      return { status: 'success', credited: result.credited };
+      const result = await repo.recordSmsEventAndMatch({
+        reference: txRef, eventId: String(event.eventId ?? txRef).slice(0, 120), amount,
+        provider: String(event.provider ?? 'unknown'), rawMessage: String(metadata.rawMessage ?? '').slice(0, 4000),
+        transactionAt, receivedAt, sender: String(metadata.sender ?? '').slice(0, 80),
+        recipientAccount: event.recipientAccount ?? null,
+      });
+      if (result.matched) log('admin_phone_sms_matched_deposit', { txRef, provider: event.provider, amount: etb(amount) });
+      return { ...result, status: result.matched ? 'matched' : result.mismatch ? 'amount-mismatch' : 'unmatched' };
+    },
+
+    /** Legacy webhook is deliberately non-crediting; only an administrator can approve a matched request. */
+    async confirmSmsSimulationDeposit(event) {
+      return this.matchSmsSimulationDeposit(event, { rawMessage: event.rawMessage ?? '', sender: event.sender ?? '', receivedAt: Date.now() });
     },
 
     /** Step 1 of a deposit: record a pending payment and get the Chapa checkout link. */

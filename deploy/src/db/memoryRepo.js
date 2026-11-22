@@ -32,6 +32,20 @@ export function createMemoryRepo() {
     return { applied: true, balance: user.balance };
   };
 
+  const smsEvents = new Map();
+  const matchStoredSmsDeposit = (txRef) => {
+    const payment = payments.get(txRef);
+    if (!payment || payment.source !== 'automatic-sms' || payment.status !== 'pending') return { matched: false, unmatched: true };
+    if (payment.smsEventId) return { matched: false, duplicate: true };
+    const event = [...smsEvents.values()].filter((item) => item.reference === txRef && !item.consumedBy).sort((a, b) => b.receivedAt - a.receivedAt)[0];
+    if (!event) return { matched: false, unmatched: true };
+    event.consumedBy = txRef;
+    const status = payment.amount === event.amount ? 'matched' : 'amount-mismatch';
+    payment.smsEventId = event.eventId;
+    payment.smsMatch = { status, provider: event.provider, amount: event.amount, transactionAt: event.transactionAt, receivedAt: event.receivedAt, sender: event.sender, recipientAccount: event.recipientAccount ?? null, matchedAt: new Date() };
+    return { matched: status === 'matched', mismatch: status === 'amount-mismatch', reference: txRef };
+  };
+
   return {
     kind: 'memory',
     async init() {},
@@ -233,21 +247,28 @@ export function createMemoryRepo() {
     async getPayment(txRef) {
       return clone(payments.get(txRef) ?? null);
     },
+    async matchStoredSmsDeposit({ txRef }) { return matchStoredSmsDeposit(txRef); },
+    async recordSmsEventAndMatch(event) {
+      if (smsEvents.has(event.eventId)) return { matched: false, duplicate: true };
+      const { rawMessage, ...safeEvent } = event;
+      smsEvents.set(event.eventId, clone({ ...safeEvent, createdAt: new Date() }));
+      return matchStoredSmsDeposit(event.reference);
+    },
     async listUserSimulationDeposits(userId, limit = 30) {
       return [...payments.values()]
-        .filter((p) => p.userId === userId && ['manual-simulation', 'sms-simulation'].includes(p.source))
+        .filter((p) => p.userId === userId && ['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(p.source))
         .sort((a, b) => b.createdAt - a.createdAt)
         .slice(0, limit)
         .map((p) => ({ reference: p.txRef, amount: p.amount / 100, status: p.status, currency: 'ETB', at: p.createdAt.getTime() }));
     },
     async listSimulationDeposits({ status = 'pending' } = {}) {
       return [...payments.values()]
-        .filter((p) => ['manual-simulation', 'sms-simulation'].includes(p.source) && (!status || p.status === status))
+        .filter((p) => ['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(p.source) && (!status || p.status === status))
         .sort((a, b) => b.createdAt - a.createdAt)
         .slice(0, 200)
         .map((p) => {
           const user = users.get(p.userId);
-          return { id: p.txRef, reference: p.txRef, rawMessage: p.rawMessage ?? '', provider: p.provider ?? '', userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: p.createdAt.getTime() };
+          return { id: p.txRef, reference: p.txRef, rawMessage: p.rawMessage ?? '', provider: p.provider ?? '', smsMatch: p.smsMatch ?? null, source: p.source, userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: p.createdAt.getTime() };
         });
     },
     /** pending -> success and credit the wallet, exactly once. */
