@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 
 type AviatorBet = { id: string; status: string; stakeEtb: number; multiplier: number | null; payoutEtb: number; createdAt: number };
-type AviatorState = { balanceEtb: number; game: 'aviator'; roundId: string; status: 'betting' | 'flying' | 'crashed'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; startedAt?: number; growthPerMs?: number; crashMultiplier?: number; serverSeed?: string; myBets: AviatorBet[]; minBetEtb: number; maxBetEtb: number; mode: string };
+type AviatorState = { enabled: boolean; balanceEtb: number; game: 'aviator'; roundId: string; status: 'betting' | 'flying' | 'crashed'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; startedAt?: number; growthPerMs?: number; crashMultiplier?: number; serverSeed?: string; myBets: AviatorBet[]; minBetEtb: number; maxBetEtb: number; mode: string };
 type HistoryRound = { roundId: string; status: string; crashMultiplier?: number; serverSeedHash: string; serverSeed?: string; myBets: AviatorBet[] };
 const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const requestId = () => 'aviator_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
@@ -72,7 +72,7 @@ export function AviatorGame({ onBack }: { onBack: () => void }) {
     finally { setBusy(false); }
   };
 
-  const isBetting = state?.status === 'betting' && secondsLeft > 0;
+  const isBetting = state?.enabled === true && state.status === 'betting' && secondsLeft > 0;
   const crashed = state?.status === 'crashed';
 
   return (
