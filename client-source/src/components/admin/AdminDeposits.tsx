@@ -11,7 +11,7 @@ interface DepositRow {
   rawMessage?: string;
   provider?: string;
   source?: string;
-  smsMatch?: { status: 'matched' | 'amount-mismatch'; provider?: string; amount?: number; rawMessage?: string; transactionAt?: number; sender?: string } | null;
+  smsMatch?: { status: 'matched' | 'amount-mismatch'; provider?: string; amount?: number; transactionAt?: number; sender?: string } | null;
   userId: string;
   userName: string;
   userPhone: string;
@@ -87,7 +87,9 @@ export function AdminDeposits() {
                       {row.smsMatch?.status === 'matched' ? 'Bank SMS matched — ready for your approval' : row.smsMatch?.status === 'amount-mismatch' ? 'SMS received, but amount does not match' : 'Waiting for bank SMS from Admin phone'}
                     </p>
                     {row.smsMatch?.provider && <p className="mt-1 text-gold-400">Provider: {row.smsMatch.provider}</p>}
-                    {row.smsMatch?.rawMessage && <p className="mt-2 whitespace-pre-wrap break-words text-gold-200">{row.smsMatch.rawMessage}</p>}
+                    {row.smsMatch?.amount !== undefined && <p className="mt-1 text-gold-300">SMS amount: {row.smsMatch.amount} ETB</p>}
+                    {row.smsMatch?.sender && <p className="mt-1 text-gold-500">Sender: {row.smsMatch.sender}</p>}
+                    {row.smsMatch?.transactionAt && <p className="mt-1 text-gold-500">Transaction time: {formatDateTime(lang, row.smsMatch.transactionAt)}</p>}
                   </div>
                 )}
                 {row.rawMessage && <div className="mt-2"><dt className="mb-1 block text-gold-600">Transaction SMS:</dt><dd className="whitespace-pre-wrap break-words rounded-lg bg-black/30 p-3 text-xs leading-relaxed text-gold-200">{row.rawMessage}</dd></div>}
