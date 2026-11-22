@@ -32,6 +32,20 @@ export function createMemoryRepo() {
     return { applied: true, balance: user.balance };
   };
 
+  const smsEvents = new Map();
+  const matchStoredSmsDeposit = (txRef) => {
+    const payment = payments.get(txRef);
+    if (!payment || payment.source !== 'automatic-sms' || payment.status !== 'pending') return { matched: false, unmatched: true };
+    if (payment.smsEventId) return { matched: false, duplicate: true };
+    const event = [...smsEvents.values()].filter((item) => item.reference === txRef && !item.consumedBy).sort((a, b) => b.receivedAt - a.receivedAt)[0];
+    if (!event) return { matched: false, unmatched: true };
+    event.consumedBy = txRef;
+    const status = payment.amount === event.amount ? 'matched' : 'amount-mismatch';
+    payment.smsEventId = event.eventId;
+    payment.smsMatch = { status, provider: event.provider, amount: event.amount, rawMessage: event.rawMessage, transactionAt: event.transactionAt, receivedAt: event.receivedAt, sender: event.sender, recipientAccount: event.recipientAccount ?? null, matchedAt: new Date() };
+    return { matched: status === 'matched', mismatch: status === 'amount-mismatch', reference: txRef };
+  };
+
   return {
     kind: 'memory',
     async init() {},
@@ -232,6 +246,12 @@ export function createMemoryRepo() {
     },
     async getPayment(txRef) {
       return clone(payments.get(txRef) ?? null);
+    },
+    async matchStoredSmsDeposit({ txRef }) { return matchStoredSmsDeposit(txRef); },
+    async recordSmsEventAndMatch(event) {
+      if (smsEvents.has(event.eventId)) return { matched: false, duplicate: true };
+      smsEvents.set(event.eventId, clone({ ...event, createdAt: new Date() }));
+      return matchStoredSmsDeposit(event.reference);
     },
     async matchSmsDeposit({ txRef, eventId, amount, provider, rawMessage, transactionAt, receivedAt, sender, recipientAccount }) {
       if ([...payments.values()].some((p) => p.smsEventId === eventId)) return { matched: false, duplicate: true };
