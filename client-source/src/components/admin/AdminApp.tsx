@@ -55,7 +55,7 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
             <p className="whitespace-nowrap bg-gradient-to-r from-gold-300 via-gold-400 to-gold-600 bg-clip-text text-base font-black text-transparent sm:text-lg">
               {t.title}
             </p>
-            <p className="hidden text-xs font-semibold text-gold-500 sm:block">Black Gold PLC · Bingo PRO</p>
+            <p className="hidden text-xs font-semibold text-gold-500 sm:block">Black Gold PLC · Games Center</p>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             <div role="group" aria-label={t.languageLabel} className="flex overflow-hidden rounded-full ring-1 ring-gold-700/60">
