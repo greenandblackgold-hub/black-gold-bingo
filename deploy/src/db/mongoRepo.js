@@ -618,7 +618,7 @@ export async function createMongoRepo({ uri, dbName }) {
           const owner = await users.findOne({ _id: bet.userId }, { session, projection: { balance: 1 } });
           return { bet: existing, balance: owner?.balance ?? 0, duplicate: true };
         }
-        if (round.status !== 'betting' || round.bettingEndsAt <= Date.now()) throw new RepoError('ROUND_NOT_OPEN');
+        if (round.status !== 'betting') throw new RepoError('ROUND_NOT_OPEN');
         await moveMoney(session, { userId: bet.userId, amount: -amount, kind: 'game_bet', ref, meta: { game, roundId, betId: bet.id } });
         const updated = await gameHubRounds.findOneAndUpdate(
           { _id: key, version: round.version, status: 'betting' },
