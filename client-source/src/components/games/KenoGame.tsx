@@ -1,16 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
 
 type KenoBet = { id: string; status: string; stakeEtb: number; selectedNumbers: number[]; matchedNumbers: number[]; hits: number; payoutEtb: number; createdAt: number; settledAt?: number | null };
-type KenoState = { game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; drawnNumbers?: number[]; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; mode: string };
+type KenoState = { balanceEtb: number; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; drawnNumbers?: number[]; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; mode: string };
 type HistoryRound = { roundId: string; status: string; drawnNumbers?: number[]; serverSeedHash: string; serverSeed?: string; myBets: KenoBet[] };
 
 const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const requestId = () => 'keno_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
 
 export function KenoGame({ onBack }: { onBack: () => void }) {
-  const { user, refresh } = useAuth();
   const [state, setState] = useState<KenoState | null>(null);
   const [history, setHistory] = useState<HistoryRound[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
@@ -59,7 +57,7 @@ export function KenoGame({ onBack }: { onBack: () => void }) {
       await api.post('/api/games/keno/bets', { requestId: requestId(), amount: Number(amount), selectedNumbers: selected });
       setNotice('Your Keno entry is confirmed.');
       setSelected([]);
-      await Promise.all([loadState(), loadHistory(), refresh()]);
+      await Promise.all([loadState(), loadHistory()]);
     } catch (e) { setError(e instanceof ApiError ? e.message : 'Your Keno entry could not be placed.'); }
     finally { setBusy(false); }
   };
@@ -72,7 +70,7 @@ export function KenoGame({ onBack }: { onBack: () => void }) {
     <div className="mx-auto w-full max-w-5xl space-y-5 pb-8">
       <div className="flex items-center justify-between gap-3"><button onClick={onBack} className="rounded-xl border border-amber-400/25 px-3 py-2 text-sm font-bold text-amber-200">← Games Center</button><span className="rounded-full border border-amber-400/25 bg-amber-400/5 px-3 py-1.5 text-[10px] font-bold tracking-widest text-amber-300">SIMULATION ONLY</span></div>
       <header className="rounded-3xl border border-amber-400/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.2),transparent_45%),linear-gradient(135deg,#17140c,#080808)] p-5 sm:p-7">
-        <p className="text-[10px] font-black uppercase tracking-[.3em] text-amber-400">BLACK GOLD · NUMBER GAME</p><div className="mt-2 flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-black text-amber-50 sm:text-4xl">KENO</h1><p className="mt-2 text-sm text-amber-100/60">Pick 1–10 numbers from 1 to 80. Twenty numbers are drawn each round.</p></div><div className="text-right"><p className="text-[10px] uppercase tracking-wider text-amber-500">Available demo balance</p><p className="text-xl font-black text-amber-200">{money(user?.balance ?? 0)} ETB</p></div></div>
+        <p className="text-[10px] font-black uppercase tracking-[.3em] text-amber-400">BLACK GOLD · NUMBER GAME</p><div className="mt-2 flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-black text-amber-50 sm:text-4xl">KENO</h1><p className="mt-2 text-sm text-amber-100/60">Pick 1–10 numbers from 1 to 80. Twenty numbers are drawn each round.</p></div><div className="text-right"><p className="text-[10px] uppercase tracking-wider text-amber-500">Available demo balance</p><p className="text-xl font-black text-amber-200">{money(state?.balanceEtb ?? 0)} ETB</p></div></div>
       </header>
       {error && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-950/40 p-3 text-sm text-red-200">{error}</p>}
       {notice && <p role="status" className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-3 text-sm text-emerald-200">{notice}</p>}
