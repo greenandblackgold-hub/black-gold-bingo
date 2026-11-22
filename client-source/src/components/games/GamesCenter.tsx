@@ -49,6 +49,10 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode
           <span className="rounded-full border border-amber-300/25 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">Aviator</span>
         </div>
       </header>
+      {serverMode && <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/20 bg-black/45 px-4 py-3">
+        <div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Shared Keno + Aviator Demo Wallet</p><p className="mt-1 text-xl font-black text-amber-100">{availability ? money(availability.balanceEtb) + ' ETB' : 'Loading balance…'}</p></div>
+        <span className="rounded-full border border-amber-300/20 px-3 py-1.5 text-[9px] font-bold tracking-wider text-amber-300">NON-WITHDRAWABLE DEMO CREDITS</span>
+      </div>}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div><p className="text-[10px] font-bold uppercase tracking-[.25em] text-amber-500">Choose your experience</p><h2 className="mt-1 text-xl font-black text-amber-50 sm:text-2xl">Explore Games</h2></div>
         <span className="rounded-full border border-amber-500/20 bg-amber-400/5 px-3 py-1.5 text-[10px] font-semibold tracking-wide text-amber-300">DEMO CREDITS ONLY</span>
