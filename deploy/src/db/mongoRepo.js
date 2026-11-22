@@ -22,6 +22,7 @@ export async function createMongoRepo({ uri, dbName }) {
   const cards = db.collection('cards');
   const ledger = db.collection('ledger');
   const payments = db.collection('payments');
+  const smsEvents = db.collection('adminBankSmsEvents');
   const withdrawals = db.collection('withdrawals');
   const winPayouts = db.collection('winPayouts');
   const rounds = db.collection('rounds');
@@ -68,6 +69,9 @@ export async function createMongoRepo({ uri, dbName }) {
         ledger.createIndex({ userId: 1, createdAt: -1 }),
         payments.createIndex({ txRef: 1 }, { unique: true }),
         payments.createIndex({ smsEventId: 1 }, { unique: true, sparse: true }),
+        smsEvents.createIndex({ eventId: 1 }, { unique: true }),
+        smsEvents.createIndex({ reference: 1, receivedAt: -1 }),
+        smsEvents.createIndex({ createdAt: 1 }, { expireAfterSeconds: 604800 }),
         withdrawals.createIndex({ status: 1, createdAt: -1 }),
         withdrawals.createIndex({ userId: 1, createdAt: -1 }),
         withdrawals.createIndex({ externalPayoutReference: 1 }, { unique: true, partialFilterExpression: { externalPayoutReference: { $type: 'string' } } }),
@@ -347,6 +351,28 @@ export async function createMongoRepo({ uri, dbName }) {
     },
     async getPayment(txRef) {
       return payments.findOne({ txRef });
+    },
+    async matchStoredSmsDeposit({ txRef }) {
+      const payment = await payments.findOne({ txRef, source: 'automatic-sms', status: 'pending', smsEventId: { $exists: false } });
+      if (!payment) return { matched: false, unmatched: true };
+      const event = await smsEvents.findOneAndUpdate(
+        { reference: txRef, consumedBy: { $exists: false } },
+        { $set: { consumedBy: txRef } },
+        { sort: { receivedAt: -1 }, returnDocument: 'after' },
+      );
+      if (!event) return { matched: false, unmatched: true };
+      const status = payment.amount === event.amount ? 'matched' : 'amount-mismatch';
+      const updated = await payments.updateOne(
+        { txRef, source: 'automatic-sms', status: 'pending', smsEventId: { $exists: false } },
+        { $set: { smsEventId: event.eventId, smsMatch: { status, provider: event.provider, amount: event.amount, rawMessage: event.rawMessage, transactionAt: event.transactionAt, receivedAt: event.receivedAt, sender: event.sender, recipientAccount: event.recipientAccount ?? null, matchedAt: new Date() } } },
+      );
+      if (updated.modifiedCount !== 1) return { matched: false, duplicate: true };
+      return { matched: status === 'matched', mismatch: status === 'amount-mismatch', reference: txRef };
+    },
+    async recordSmsEventAndMatch(event) {
+      try { await smsEvents.insertOne({ ...event, createdAt: new Date() }); }
+      catch (error) { if (isDuplicate(error)) return { matched: false, duplicate: true }; throw error; }
+      return this.matchStoredSmsDeposit({ txRef: event.reference });
     },
     async matchSmsDeposit({ txRef, eventId, amount, provider, rawMessage, transactionAt, receivedAt, sender, recipientAccount }) {
       if (await payments.findOne({ smsEventId: eventId }, { projection: { _id: 1 } })) return { matched: false, duplicate: true };
