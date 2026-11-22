@@ -107,6 +107,7 @@ export function createWalletService({ repo, config, chapa }) {
       const txRef = String(event.reference ?? '').trim();
       const amount = toSantim(event.amount);
       if (!txRef || !Number.isSafeInteger(amount) || amount <= 0) throw new HttpError(400, 'invalid_sms_event', 'Invalid bank SMS event.');
+      if (String(event.status ?? '').toLowerCase() !== 'success' || String(event.currency ?? '').toUpperCase() !== 'ETB') throw new HttpError(400, 'invalid_sms_event', 'Only successful ETB bank credits can match a deposit request.');
       const receivedAt = Number(metadata.receivedAt ?? Date.now());
       const transactionAt = Number(event.transactionAt ?? receivedAt);
       const ageMs = Date.now() - transactionAt;
