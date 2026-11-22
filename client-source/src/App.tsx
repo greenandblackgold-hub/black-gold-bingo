@@ -42,6 +42,7 @@ function useHash(): string {
 function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLogout: () => void }) {
   const [tab, setTab] = useState<TabId>(() => (window.location.hash === '#wallet' ? 'wallet' : 'play'));
   const [menuOpen, setMenuOpen] = useState(false);
+  const [playerSettingsOpen, setPlayerSettingsOpen] = useState(false);
   const handleNavChange = (next: TabId) => {
     if (next === 'menu') { setMenuOpen(true); return; }
     setMenuOpen(false);
@@ -49,9 +50,9 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
   };
   return (
     <div className="premium-ui min-h-screen pb-28">
-      <Suspense fallback={<RouteLoading />}><AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} hideControls={tab === 'play'} /></Suspense>
+      <Suspense fallback={<RouteLoading />}><AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} onLogout={onLogout} onOpenMenu={() => setMenuOpen(true)} onOpenSettings={() => setPlayerSettingsOpen(true)} hideControls={tab === 'play'} /></Suspense>
       <main className={tab === 'play' ? 'mx-auto w-full max-w-none px-2 pt-2 sm:px-4 sm:pt-4' : 'mx-auto max-w-6xl px-4 pt-5 sm:pt-8'}>
-        {tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} onOpenMenu={() => setMenuOpen(true)} onLogout={onLogout} /></Suspense>}
+        {tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} settingsOpen={playerSettingsOpen} onSettingsOpenChange={setPlayerSettingsOpen} /></Suspense>}
         {tab === 'wallet' && <Suspense fallback={<RouteLoading />}><WalletView onGoToPlay={() => setTab('play')} /></Suspense>}
       </main>
       {menuOpen && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Menu">
