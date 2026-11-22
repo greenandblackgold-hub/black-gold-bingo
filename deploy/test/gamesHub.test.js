@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash, createHmac } from 'node:crypto';
 import { createMemoryRepo } from '../src/db/memoryRepo.js';
 import { createGamesHubService } from '../src/services/gamesHubService.js';
 import { HttpError } from '../src/util/errors.js';
@@ -105,6 +106,11 @@ test('Aviator commits a round before betting and reveals its seed only after cra
   const completed = await f.service.getState('aviator', f.user);
   assert.equal(completed.status, 'crashed');
   assert.equal(completed.serverSeed.length, 64);
+  assert.equal(completed.serverSeedHash, createHash('sha256').update(completed.serverSeed).digest('hex'));
+  const crashDigest = createHmac('sha256', Buffer.from(completed.serverSeed, 'hex')).update('aviator-crash-v1').digest('hex');
+  const fraction = Number(BigInt('0x' + crashDigest.slice(0, 13))) / 0x1_0000_0000_0000_0;
+  const expectedCrash = Math.min(1000, Math.max(1, Math.floor((0.99 / Math.max(1e-12, 1 - fraction)) * 100) / 100));
+  assert.equal(completed.crashMultiplier, expectedCrash);
   assert.equal(completed.crashMultiplier >= 1, true);
 });
 
