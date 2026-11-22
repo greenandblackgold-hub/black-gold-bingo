@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - feat/android-capacitor-app
     paths:
       - 'client-source/**'
       - '.github/workflows/android-apk.yml'
@@ -54,6 +53,47 @@ jobs:
         working-directory: client-source/android
         run: ./gradlew assembleDebug
 
+      - name: Build release APK
+        working-directory: client-source/android
+        run: ./gradlew assembleRelease
+
+      - name: Sign release APK when private signing secrets are configured
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_PASSWORD" ]]; then
+            echo "Signing secrets are not configured; skipping production signing."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          KEYSTORE_PATH="$RUNNER_TEMP/black-gold-release.keystore"
+          UNSIGNED_APK="client-source/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          SIGNED_APK="client-source/android/app/build/outputs/apk/release/black-gold-bingo-release.apk"
+
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -n "$APKSIGNER"
+          test -f "$UNSIGNED_APK"
+
+          "$APKSIGNER" sign \
+            --ks "$KEYSTORE_PATH" \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" \
+            --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+            --key-pass env:ANDROID_KEY_PASSWORD \
+            --out "$SIGNED_APK" \
+            "$UNSIGNED_APK"
+
+          "$APKSIGNER" verify --verbose "$SIGNED_APK"
+          rm -f "$KEYSTORE_PATH"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
@@ -61,3 +101,12 @@ jobs:
           path: client-source/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Upload signed release APK
+        if: steps.signing.outputs.signed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: black-gold-bingo-android-release
+          path: client-source/android/app/build/outputs/apk/release/black-gold-bingo-release.apk
+          if-no-files-found: error
+          retention-days: 30
