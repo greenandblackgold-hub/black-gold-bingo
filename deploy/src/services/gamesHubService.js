@@ -345,6 +345,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
 
   return {
     async resume() {
+      if (config.prod && config.realMoneyEnabled) return;
       await tickAll();
       timer = setInterval(() => { void tickAll().catch((error) => log('games_hub_tick_failed', { message: String(error?.message ?? error) })); }, 250);
       timer.unref?.();
@@ -355,6 +356,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     },
     getSettings: settings,
     async getPublicSettings(user) {
+      ensureSimulationMode();
       const current = await settings();
       const wallet = await repo.getGameHubWallet(user.id);
       return {
