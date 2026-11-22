@@ -379,7 +379,7 @@ export async function createMongoRepo({ uri, dbName }) {
       const rows = await payments.find(filter).sort({ createdAt: -1 }).limit(200).toArray();
       return Promise.all(rows.map(async (p) => {
         const user = await users.findOne({ _id: p.userId }, { projection: { name: 1, phone: 1 } });
-        return { id: p.txRef, reference: p.txRef, rawMessage: p.rawMessage ?? '', provider: p.provider ?? '', smsMatch: p.smsMatch ?? null, userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: new Date(p.createdAt).getTime() };
+        return { id: p.txRef, reference: p.txRef, rawMessage: p.rawMessage ?? '', provider: p.provider ?? '', smsMatch: p.smsMatch ?? null, source: p.source, userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: new Date(p.createdAt).getTime() };
       }));
     },
     async confirmDeposit({ txRef, chapaRef }) {
