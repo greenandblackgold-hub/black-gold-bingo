@@ -65,8 +65,8 @@ export function createWalletService({ repo, config, chapa }) {
         throw new HttpError(409, 'test_only_reference', 'TEST references must use the isolated test approval action.');
       }
       if (payment.status === 'success') return { status: 'success', credited: false };
-      if (payment.source === 'automatic-sms' && payment.smsMatch?.status !== 'matched') throw new HttpError(409, 'sms_not_matched', 'A matching bank SMS must be received before approval.');
       if (payment.status !== 'pending') throw new HttpError(409, 'wrong_status', 'Deposit request is no longer pending.');
+      if (payment.source === 'automatic-sms' && payment.smsMatch?.status !== 'matched') throw new HttpError(409, 'sms_not_matched', 'A matching bank SMS must be received before approval.');
       const result = await repo.confirmDeposit({ txRef: payment.txRef, chapaRef: 'manual-admin' });
       if (result.credited) log('simulation_deposit_manually_approved', { txRef: payment.txRef, userId: payment.userId, etb: etb(payment.amount) });
       if (!result.credited) {
