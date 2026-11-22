@@ -46,7 +46,7 @@ export function parseBankSms({ sender, provider: providerHint, text, eventId, ex
       /\b(?:bank\s+)?(?:transaction\s*(?:id|ref|no\.?))\s*[:#=]?\s*([A-Z0-9][A-Z0-9_-]{4,39})/i,
     ]);
     if (!Number.isFinite(amount) || amount <= 0 || !bankReference) throw new Error('sms_transfer_details_missing');
-    return { eventId: String(eventId ?? bankReference).slice(0, 120), reference: bankReference, amount, currency: 'ETB', status: 'success', provider: 'telebirr', recipientAccount, transactionAt };
+    return { eventId: String(eventId ?? bankReference).slice(0, 120), reference: bankReference.toUpperCase(), amount, currency: 'ETB', status: 'success', provider: 'telebirr', recipientAccount, transactionAt };
   }
 
   // An outgoing receipt for any other destination is not a deposit notification.
@@ -80,6 +80,6 @@ export function parseBankSms({ sender, provider: providerHint, text, eventId, ex
   }
   const uniqueAmounts = [...new Set(amounts)];
   if (uniqueAmounts.length !== 1) throw new Error('sms_amount_missing_or_ambiguous');
-  return { eventId: String(eventId ?? reference).slice(0, 120), reference, amount: uniqueAmounts[0], currency: 'ETB', status: 'success', provider };
+  return { eventId: String(eventId ?? reference).slice(0, 120), reference: reference.toUpperCase(), amount: uniqueAmounts[0], currency: 'ETB', status: 'success', provider };
 }
 export const supportedSmsSenders = ['Telebirr', 'CBE', 'Lion Bank'];
