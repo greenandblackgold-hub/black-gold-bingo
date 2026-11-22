@@ -16,6 +16,7 @@ export function createWalletService({ repo, config, chapa }) {
       if (!Number.isSafeInteger(amount) || amount < config.minDeposit || amount > config.maxDeposit) throw new HttpError(400, 'invalid_amount', `Deposit between ${etb(config.minDeposit)} and ${etb(config.maxDeposit)} ETB`);
       try {
         await repo.createPayment({ txRef, userId: user.id, amount, source: 'automatic-sms' });
+        await repo.matchStoredSmsDeposit({ txRef });
       } catch (error) {
         if (error?.code === 'PAYMENT_REFERENCE_TAKEN' || error?.code === 11000 || error?.errorResponse?.code === 11000) throw new HttpError(409, 'reference_used', 'This transaction reference has already been submitted.');
         throw error;
@@ -115,7 +116,7 @@ export function createWalletService({ repo, config, chapa }) {
       if (!Number.isFinite(transactionAt) || !Number.isFinite(receivedAt) || ageMs > maxAgeMs || ageMs < -5 * 60_000 || receivedAt > Date.now() + 5 * 60_000) {
         throw new HttpError(400, 'stale_sms', 'Bank SMS is too old or has an invalid timestamp.');
       }
-      const result = await repo.matchSmsDeposit({
+      const result = await repo.recordSmsEventAndMatch({
         txRef, eventId: String(event.eventId ?? txRef).slice(0, 120), amount,
         provider: String(event.provider ?? 'unknown'), rawMessage: String(metadata.rawMessage ?? '').slice(0, 4000),
         transactionAt, receivedAt, sender: String(metadata.sender ?? '').slice(0, 80),
