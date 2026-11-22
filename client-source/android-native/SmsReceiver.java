@@ -65,7 +65,7 @@ public class SmsReceiver extends BroadcastReceiver {
 
     private static boolean isBankSender(String sender) {
         String normalized = sender == null ? "" : sender.toUpperCase().replaceAll("[^A-Z0-9]", "");
-        return normalized.contains("TELEBIRR") || normalized.equals("CBE") ||
+        return normalized.contains("TELEBIRR") || normalized.equals("CBE") || normalized.equals("CBEETHIOPIA") ||
             normalized.contains("COMMERCIALBANK") || normalized.contains("LIONBANK");
     }
 
