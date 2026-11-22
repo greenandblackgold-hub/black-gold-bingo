@@ -169,53 +169,62 @@ const telebirrReceipt = (reference, ageHours = 0, account = '1000737138686') => 
   return `ውድ Customer ከቴሌ ብር አካውንትዎ 251900000000 ለ Commercial Bank of Ethiopia አካውንት ቁጥር ${account} 125.50 ብር በቀን ${stamp} በተሳካ ሁኔታ አስተላልፈዋል። የቴሌብር ሂሳብ እንቅስቃሴ ቁጥርዎ DKK7G8RIQH እና የባንክ ሂሳብ እንቅስቃሴ ቁጥርዎ ${reference} ነው።`;
 };
 
-test('player-submitted SMS deposits stay pending until an authenticated gateway confirms them', async () => {
+test('admin phone SMS automatically matches deposit requests but wallet credit still requires admin approval', async () => {
   const p = await newPlayer();
-  const genericSms = 'You have received ETB 125.50. Transaction ID: TB123456789. Thank you.';
-  const unverified = await api('POST', '/api/simulation/deposits', {
-    token: p.token, body: { provider: 'Telebirr', message: genericSms },
+  const request = await api('POST', '/api/simulation/deposits', {
+    token: p.token, body: { amount: 125.5, reference: 'FT26325ZWP2R', provider: 'Telebirr' },
   });
-  assert.equal(unverified.status, 400);
-  assert.equal(unverified.json.error, 'unverified_recipient');
-
-  const sms = telebirrReceipt('FT26325ZWP2R');
-  const created = await api('POST', '/api/simulation/deposits', {
-    token: p.token, body: { provider: 'Telebirr', message: sms },
-  });
-  assert.equal(created.status, 200, JSON.stringify(created.json));
-  assert.equal(created.json.reference, 'FT26325ZWP2R');
-  assert.equal(created.json.amount, 125.5);
-  assert.equal(created.json.provider, 'telebirr');
-  assert.equal(created.json.status, 'pending');
-  assert.equal(created.json.approved, false);
-  assert.equal(created.json.credited, false);
+  assert.equal(request.status, 200, JSON.stringify(request.json));
+  assert.equal(request.json.status, 'pending');
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
 
-  const duplicate = await api('POST', '/api/simulation/deposits', {
-    token: p.token, body: { provider: 'Telebirr', message: sms },
-  });
-  assert.equal(duplicate.status, 409);
-  assert.equal(duplicate.json.error, 'reference_used');
-  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
+  const premature = await api('POST', '/api/admin/deposits/FT26325ZWP2R/approve', { token: ctx.adminToken });
+  assert.equal(premature.status, 409);
+  assert.equal(premature.json.error, 'sms_not_matched');
 
-  const stale = await api('POST', '/api/simulation/deposits', {
-    token: p.token, body: { provider: 'Telebirr', message: telebirrReceipt('FT26325ZWP2S', 25) },
+  const device = await api('POST', '/api/admin/sms-device/token', { token: ctx.adminToken, body: {} });
+  assert.equal(device.status, 200, JSON.stringify(device.json));
+  assert.ok(device.json.token);
+  const smsBody = 'Your account is credited with ETB 125.50. Available balance is ETB 2,450.00. Ref No: FT26325ZWP2R';
+  const matched = await api('POST', '/api/webhooks/sms/device', {
+    headers: { Authorization: `Bearer ${device.json.token}` },
+    body: { sender: 'CBE', text: smsBody, eventId: 'admin-phone-sms-001', receivedAt: Date.now() },
   });
-  assert.equal(stale.status, 400);
-  assert.equal(stale.json.error, 'stale_sms');
-  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
+  assert.equal(matched.status, 200, JSON.stringify(matched.json));
+  assert.equal(matched.json.status, 'matched');
+  assert.equal(matched.json.matched, true);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0,
+    'SMS matching must never credit the wallet automatically');
 
-  // Only a gateway event authenticated with the configured HMAC secret may auto-confirm this SMS request.
-  ctx.config.smsWebhookSecret = 'test-sms-webhook-secret-at-least-32-characters';
-  const payload = { eventId: 'gateway-event-001', reference: 'FT26325ZWP2R', amount: 125.5, currency: 'ETB', status: 'success' };
-  const raw = JSON.stringify(payload);
-  const signature = createHmac('sha256', ctx.config.smsWebhookSecret).update(raw, 'utf8').digest('hex');
-  const confirmed = await api('POST', '/api/webhooks/sms', { body: payload, headers: { 'x-sms-signature': signature } });
-  assert.equal(confirmed.status, 200, JSON.stringify(confirmed.json));
-  assert.equal(confirmed.json.status, 'success');
-  assert.equal(confirmed.json.credited, true);
+  const duplicate = await api('POST', '/api/webhooks/sms/device', {
+    headers: { Authorization: `Bearer ${device.json.token}` },
+    body: { sender: 'CBE', text: smsBody, eventId: 'admin-phone-sms-001', receivedAt: Date.now() },
+  });
+  assert.equal(duplicate.status, 200);
+  assert.equal(duplicate.json.duplicate, true);
+
+  const approved = await api('POST', '/api/admin/deposits/FT26325ZWP2R/approve', { token: ctx.adminToken });
+  assert.equal(approved.status, 200, JSON.stringify(approved.json));
+  assert.equal(approved.json.credited, true);
+  const replay = await api('POST', '/api/admin/deposits/FT26325ZWP2R/approve', { token: ctx.adminToken });
+  assert.equal(replay.json.credited, false);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
+
+  const mismatchRequest = await api('POST', '/api/simulation/deposits', {
+    token: p.token, body: { amount: 50, reference: 'TXN-MISMATCH-123' },
+  });
+  assert.equal(mismatchRequest.status, 200);
+  const mismatch = await api('POST', '/api/webhooks/sms/device', {
+    headers: { Authorization: `Bearer ${device.json.token}` },
+    body: { sender: 'CBE', text: 'Your account is credited with ETB 60.00. Ref No: TXN-MISMATCH-123', eventId: 'admin-phone-sms-002', receivedAt: Date.now() },
+  });
+  assert.equal(mismatch.status, 200);
+  assert.equal(mismatch.json.status, 'amount-mismatch');
+  assert.equal((await api('POST', '/api/admin/deposits/TXN-MISMATCH-123/approve', { token: ctx.adminToken })).json.error, 'sms_not_matched');
+  await api('POST', '/api/admin/deposits/TXN-MISMATCH-123/reject', { token: ctx.adminToken });
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
 });
+
 
 test('simulation deposits require admin review and credit exactly once', async () => {
   const p = await newPlayer();
