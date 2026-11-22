@@ -223,7 +223,25 @@ test('admin phone SMS automatically matches deposit requests but wallet credit s
   assert.equal((await api('POST', '/api/admin/deposits/TXN-MISMATCH-123/approve', { token: ctx.adminToken })).json.error, 'sms_not_matched');
   await api('POST', '/api/admin/deposits/TXN-MISMATCH-123/reject', { token: ctx.adminToken });
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
+
+  // The admin SMS may arrive just before the player submits the request; keep it briefly and match later.
+  const earlySms = await api('POST', '/api/webhooks/sms/device', {
+    headers: { Authorization: `Bearer ${device.json.token}` },
+    body: { sender: 'CBE', text: 'Your account is credited with ETB 75.00. Ref No: TXN-EARLY-12345', eventId: 'admin-phone-sms-early', receivedAt: Date.now() },
+  });
+  assert.equal(earlySms.status, 200);
+  assert.equal(earlySms.json.status, 'unmatched');
+  const lateRequest = await api('POST', '/api/simulation/deposits', {
+    token: p.token, body: { amount: 75, reference: 'TXN-EARLY-12345' },
+  });
+  assert.equal(lateRequest.status, 200);
+  const earlyRow = (await api('GET', '/api/admin/deposits?status=pending', { token: ctx.adminToken })).json.find((row) => row.reference === 'TXN-EARLY-12345');
+  assert.equal(earlyRow.smsMatch.status, 'matched');
+  const earlyApproved = await api('POST', '/api/admin/deposits/TXN-EARLY-12345/approve', { token: ctx.adminToken });
+  assert.equal(earlyApproved.status, 200);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 200);
 });
+
 
 
 test('simulation deposits require admin review and credit exactly once', async () => {
