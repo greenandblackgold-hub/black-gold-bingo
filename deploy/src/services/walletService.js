@@ -57,7 +57,7 @@ export function createWalletService({ repo, config, chapa }) {
     /** Credit a pending simulation request exactly once after an administrator verifies it. */
     async approveSimulationDeposit(txRef) {
       const payment = await repo.getPayment(String(txRef ?? ''));
-      if (!payment || !['manual-simulation', 'sms-simulation'].includes(payment.source)) {
+      if (!payment || !['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(payment.source)) {
         throw new HttpError(404, 'deposit_not_found', 'Unknown simulation deposit request.');
       }
       if (/^TEST-/i.test(payment.txRef)) {
