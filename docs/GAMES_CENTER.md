@@ -29,7 +29,7 @@ The draw uses a deterministic Fisher–Yates selection. For counter values 0, 1,
 
 Fairness commitment:
 1. The server creates a cryptographically random 32-byte seed and publishes its SHA-256 hash before betting.
-2. The crash value is derived from the first 52 bits of SHA-256(seed): `u = value / 2^52`.
+2. The crash value is derived from the first 52 bits of HMAC-SHA256 using the secret seed as the key and `aviator-crash-v1` as the domain-separated message: `u = value / 2^52`. The public SHA-256 commitment alone does not reveal the crash result.
 3. The crash multiplier is `min(1000, max(1, floor((0.99 / (1 - u)) * 100) / 100))`.
 4. The seed is revealed after the round crashes so the commitment and crash value can be independently checked.
 
