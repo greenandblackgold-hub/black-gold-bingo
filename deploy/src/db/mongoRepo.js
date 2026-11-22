@@ -375,23 +375,6 @@ export async function createMongoRepo({ uri, dbName }) {
       catch (error) { if (isDuplicate(error)) return { matched: false, duplicate: true }; throw error; }
       return this.matchStoredSmsDeposit({ txRef: event.reference });
     },
-    async matchSmsDeposit({ txRef, eventId, amount, provider, rawMessage, transactionAt, receivedAt, sender, recipientAccount }) {
-      if (await payments.findOne({ smsEventId: eventId }, { projection: { _id: 1 } })) return { matched: false, duplicate: true };
-      const payment = await payments.findOne({ txRef, source: 'automatic-sms', status: 'pending' });
-      if (!payment) return { matched: false, unmatched: true };
-      const status = payment.amount === amount ? 'matched' : 'amount-mismatch';
-      try {
-        const result = await payments.updateOne(
-          { txRef, source: 'automatic-sms', status: 'pending', smsEventId: { $exists: false } },
-          { $set: { smsEventId: eventId, smsMatch: { status, provider, amount, rawMessage, transactionAt, receivedAt, sender, recipientAccount: recipientAccount ?? null, matchedAt: new Date() } } },
-        );
-        if (result.modifiedCount !== 1) return { matched: false, duplicate: true };
-        return { matched: status === 'matched', mismatch: status === 'amount-mismatch', reference: txRef };
-      } catch (error) {
-        if (isDuplicate(error)) return { matched: false, duplicate: true };
-        throw error;
-      }
-    },
     async listUserSimulationDeposits(userId, limit = 30) {
       const rows = await payments.find({ userId, source: { $in: ['manual-simulation', 'sms-simulation', 'automatic-sms'] } })
         .sort({ createdAt: -1 }).limit(limit).toArray();
