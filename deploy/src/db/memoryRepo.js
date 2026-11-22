@@ -42,7 +42,7 @@ export function createMemoryRepo() {
     event.consumedBy = txRef;
     const status = payment.amount === event.amount ? 'matched' : 'amount-mismatch';
     payment.smsEventId = event.eventId;
-    payment.smsMatch = { status, provider: event.provider, amount: event.amount, rawMessage: event.rawMessage, transactionAt: event.transactionAt, receivedAt: event.receivedAt, sender: event.sender, recipientAccount: event.recipientAccount ?? null, matchedAt: new Date() };
+    payment.smsMatch = { status, provider: event.provider, amount: event.amount, transactionAt: event.transactionAt, receivedAt: event.receivedAt, sender: event.sender, recipientAccount: event.recipientAccount ?? null, matchedAt: new Date() };
     return { matched: status === 'matched', mismatch: status === 'amount-mismatch', reference: txRef };
   };
 
@@ -250,7 +250,8 @@ export function createMemoryRepo() {
     async matchStoredSmsDeposit({ txRef }) { return matchStoredSmsDeposit(txRef); },
     async recordSmsEventAndMatch(event) {
       if (smsEvents.has(event.eventId)) return { matched: false, duplicate: true };
-      smsEvents.set(event.eventId, clone({ ...event, createdAt: new Date() }));
+      const { rawMessage, ...safeEvent } = event;
+      smsEvents.set(event.eventId, clone({ ...safeEvent, createdAt: new Date() }));
       return matchStoredSmsDeposit(event.reference);
     },
     async matchSmsDeposit({ txRef, eventId, amount, provider, rawMessage, transactionAt, receivedAt, sender, recipientAccount }) {
