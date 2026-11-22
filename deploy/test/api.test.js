@@ -304,7 +304,8 @@ test('legacy SMS webhook cannot approve new manual-review simulation requests', 
   const raw = JSON.stringify(payload);
   const signature = createHmac('sha256', ctx.config.smsWebhookSecret).update(raw, 'utf8').digest('hex');
   const response = await api('POST', '/api/webhooks/sms', { body: payload, headers: { 'x-sms-signature': signature } });
-  assert.equal(response.status, 404);
+  assert.equal(response.status, 200, JSON.stringify(response.json));
+  assert.equal(response.json.status, 'matched');
   assert.equal((await api('GET', '/api/simulation/deposits/TXN-MANUAL-1234', { token: p.token })).json.status, 'pending');
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
 });
