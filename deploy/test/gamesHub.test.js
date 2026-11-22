@@ -79,6 +79,15 @@ test('Aviator commits a round before betting and reveals its seed only after cra
     amount: 5,
   });
   assert.equal(placed.balanceEtb, 995);
+  const duplicate = await f.service.placeAviatorBet(f.user, {
+    requestId: 'aviator_test_request_01',
+    amount: 5,
+  });
+  assert.equal(duplicate.duplicate, true);
+  await assert.rejects(
+    f.service.placeAviatorBet(f.user, { requestId: 'aviator_test_request_02', amount: 5 }),
+    (e) => e instanceof HttpError && e.code === 'aviator_bet_already_placed',
+  );
 
   f.advance(9_000);
   const flyingOrCrashed = await f.service.getState('aviator', f.user);
