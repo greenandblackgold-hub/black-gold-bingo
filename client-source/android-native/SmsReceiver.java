@@ -88,6 +88,10 @@ public class SmsReceiver extends BroadcastReceiver {
         prefs.edit().putString("pending_events", queue.toString()).apply();
     }
 
+    public static void flushPendingAsync(Context context) {
+        EXECUTOR.execute(() -> flushPending(context));
+    }
+
     public static synchronized void flushPending(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         String apiUrl = prefs.getString("api_url", "");
@@ -127,7 +131,7 @@ public class SmsReceiver extends BroadcastReceiver {
                 output.write(payload);
             }
             int status = connection.getResponseCode();
-            return status >= 200 && status < 300;
+            return (status >= 200 && status < 300) || (status >= 400 && status < 500 && status != 401 && status != 403 && status != 429);
         } catch (Exception e) {
             return false;
         } finally {
