@@ -238,6 +238,12 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [numberBoardMode, setNumberBoardMode] = useState<'all' | 'called'>('all');
   const [numberBoardExpanded, setNumberBoardExpanded] = useState(true);
+  const [cardsPerRow, setCardsPerRow] = useState(() => {
+    try {
+      const saved = Number(localStorage.getItem('bgb.cardsPerRow'));
+      return Number.isInteger(saved) && saved >= 2 && saved <= 4 ? saved : 2;
+    } catch { return 2; }
+  });
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
   const [quickBuyCount, setQuickBuyCount] = useState(1);
   const [quickBuyBusy, setQuickBuyBusy] = useState(false);
@@ -253,6 +259,22 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
 
   useEffect(() => {
     try { setAutoMark(localStorage.getItem('bgb.autoMark') !== 'off'); } catch { /* use default */ }
+  }, []);
+
+  useEffect(() => {
+    const syncCardLayout = () => {
+      try {
+        const saved = Number(localStorage.getItem('bgb.cardsPerRow'));
+        setCardsPerRow(Number.isInteger(saved) && saved >= 2 && saved <= 4 ? saved : 2);
+      } catch { setCardsPerRow(2); }
+    };
+    window.addEventListener('bgb-player-settings', syncCardLayout);
+    window.addEventListener('storage', syncCardLayout);
+    syncCardLayout();
+    return () => {
+      window.removeEventListener('bgb-player-settings', syncCardLayout);
+      window.removeEventListener('storage', syncCardLayout);
+    };
   }, []);
 
   const called = useMemo(() => new Set(calledNumbers), [calledNumbers]);
@@ -587,7 +609,7 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
         </section>
 
         {cards.length > 0 && (
-          <section className="grid grid-cols-2 gap-2 sm:gap-4">
+          <section className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))` }}>
             {cards.map((card, index) => (
               <BingoCardView
                 key={card.id}
