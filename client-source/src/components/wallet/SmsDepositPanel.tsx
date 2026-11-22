@@ -122,7 +122,7 @@ export function SmsDepositPanel() {
           </div>
           <div>
             <label htmlFor="simulation-deposit-reference" className="mb-1 block text-xs text-gold-500">{t.reference}</label>
-            <input id="simulation-deposit-reference" className={inputClass} autoComplete="off" maxLength={64} placeholder={t.placeholder} value={reference} onChange={(event) => setReference(event.target.value.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64))} disabled={busy} />
+            <input id="simulation-deposit-reference" className={inputClass} autoComplete="off" maxLength={64} placeholder={t.placeholder} value={reference} onChange={(event) => setReference(event.target.value.replace(/[^A-Za-z0-9_-]/g, '').toUpperCase().slice(0, 64))} disabled={busy} />
           </div>
           {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
           <button type="button" onClick={submit} disabled={busy} className="w-full rounded-lg bg-gradient-to-r from-gold-300 via-gold-500 to-gold-600 py-2.5 text-sm font-bold text-darkbg shadow-md shadow-gold-900/20 transition duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:ring-offset-2 focus-visible:ring-offset-darkbg">
