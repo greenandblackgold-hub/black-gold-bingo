@@ -68,9 +68,9 @@ export function AppHeader({ onOpenWallet, onOpenAdmin, onLogout, onOpenMenu, onO
           <div className="flex min-w-0 flex-col items-start justify-center gap-1">
             <p className="max-w-full truncate text-[9px] font-black leading-none tracking-wide text-gold-400 sm:text-xs">Black Gold PLC</p>
           </div>
-          <div className="flex min-w-0 items-center justify-center gap-1 border-x border-yellow-500/70 px-2 text-yellow-300 sm:gap-2 sm:px-3">
-            <span className="text-2xl leading-none drop-shadow-[0_0_12px_rgba(255,215,0,1)] sm:text-4xl">🏆</span>
-            <strong className="whitespace-nowrap text-sm font-black tracking-tight text-yellow-300 drop-shadow-[0_0_12px_rgba(255,215,0,.9)] sm:text-2xl">
+          <div className="flex min-w-0 items-center justify-center gap-1 border-x border-yellow-500/70 px-2 text-yellow-200 sm:gap-2 sm:px-3">
+            <span className="text-3xl leading-none drop-shadow-[0_0_16px_rgba(255,215,0,1)] sm:text-5xl">🏆</span>
+            <strong className="whitespace-nowrap text-base font-black tracking-tight text-yellow-200 drop-shadow-[0_0_16px_rgba(255,215,0,1)] sm:text-3xl">
               {roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} ብር
             </strong>
           </div>
