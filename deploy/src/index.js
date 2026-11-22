@@ -9,6 +9,7 @@ import { createGameService } from './services/gameService.js';
 import { createBonusService } from './services/bonusService.js';
 import { createPushService } from './services/pushService.js';
 import { createWalletService } from './services/walletService.js';
+import { createGamesHubService } from './services/gamesHubService.js';
 import { createChapa } from './payments/chapa.js';
 import { createApp } from './http/app.js';
 
@@ -25,6 +26,7 @@ export async function createRepo(config) {
 /** Compose the production API and its services. Also used by the integration tests. */
 export async function build(config = loadConfig()) {
   const repo = await createRepo(config);
+  let gamesHub = null;
   try {
     await repo.init();
     const auth = createAuthService({ repo, config });
@@ -33,6 +35,7 @@ export async function build(config = loadConfig()) {
     const bonus = createBonusService({ repo, game, config, push });
     const chapa = createChapa({ ...config.chapa, publicApiUrl: config.publicApiUrl });
     const wallet = createWalletService({ repo, config, chapa });
+    gamesHub = createGamesHubService({ repo, config });
 
     // Bootstrap the one owner account from private Render environment variables.
     // Never promote an existing player account; ensureAdmin deliberately fails closed.
@@ -45,9 +48,11 @@ export async function build(config = loadConfig()) {
 
     await game.resume();
     await bonus.resume();
-    const app = createApp({ config, auth, game, wallet, chapa, repo, push });
-    return { config, repo, auth, game, bonus, push, wallet, chapa, app };
+    await gamesHub.resume();
+    const app = createApp({ config, auth, game, wallet, chapa, repo, push, gamesHub });
+    return { config, repo, auth, game, bonus, push, wallet, chapa, gamesHub, app };
   } catch (error) {
+    gamesHub?.stop();
     gameStopIfCreated();
     await repo.close().catch(() => undefined);
     throw error;
@@ -71,6 +76,7 @@ if (process.env.RUN_SERVER === 'true' && isMainModule) {
     server.close();
     ctx.game.stop();
     ctx.bonus.stop();
+    ctx.gamesHub.stop();
     ctx.app.close();
     await ctx.repo.close();
   };
