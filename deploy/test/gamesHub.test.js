@@ -34,6 +34,8 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   });
   assert.equal(placed.balanceEtb, 990);
   assert.equal(placed.bet.stakeEtb, 10);
+  assert.equal((await f.repo.findUserById(f.user.id)).balance, 100000, 'Bingo wallet remains untouched');
+  assert.equal((await f.repo.getGameHubWallet(f.user.id)).balance, 99000, 'Keno debits only the Games Demo Wallet');
 
   const duplicate = await f.service.placeKenoBet(f.user, {
     requestId: 'keno_test_request_01',
@@ -80,6 +82,8 @@ test('Aviator commits a round before betting and reveals its seed only after cra
     amount: 5,
   });
   assert.equal(placed.balanceEtb, 995);
+  assert.equal((await f.repo.findUserById(f.user.id)).balance, 100000, 'Bingo wallet remains untouched');
+  assert.equal((await f.repo.getGameHubWallet(f.user.id)).balance, 99500, 'Aviator debits only the Games Demo Wallet');
   const duplicate = await f.service.placeAviatorBet(f.user, {
     requestId: 'aviator_test_request_01',
     amount: 5,
