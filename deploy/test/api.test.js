@@ -178,9 +178,6 @@ test('admin phone SMS automatically matches deposit requests but wallet credit s
   assert.equal(request.json.status, 'pending');
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
 
-  const premature = await api('POST', '/api/admin/deposits/FT26325ZWP2R/approve', { token: ctx.adminToken });
-  assert.equal(premature.status, 409);
-  assert.equal(premature.json.error, 'sms_not_matched');
 
   const device = await api('POST', '/api/admin/sms-device/token', { token: ctx.adminToken, body: {} });
   assert.equal(device.status, 200, JSON.stringify(device.json));
@@ -220,7 +217,6 @@ test('admin phone SMS automatically matches deposit requests but wallet credit s
   });
   assert.equal(mismatch.status, 200);
   assert.equal(mismatch.json.status, 'amount-mismatch');
-  assert.equal((await api('POST', '/api/admin/deposits/TXN-MISMATCH-123/approve', { token: ctx.adminToken })).json.error, 'sms_not_matched');
   await api('POST', '/api/admin/deposits/TXN-MISMATCH-123/reject', { token: ctx.adminToken });
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
 
@@ -243,6 +239,65 @@ test('admin phone SMS automatically matches deposit requests but wallet credit s
 });
 
 
+
+test('trusted Telebirr-to-configured-CBE SMS auto-approves exact deposits once, including SMS-first transition', async () => {
+  const p = await newPlayer();
+  const device = await api('POST', '/api/admin/sms-device/token', { token: ctx.adminToken, body: {} });
+  assert.equal(device.status, 200);
+
+  const first = await api('POST', '/api/simulation/deposits', {
+    token: p.token, body: { amount: 125.5, reference: 'FT-AUTO-EXACT-001' },
+  });
+  assert.equal(first.status, 200);
+  assert.equal(first.json.status, 'pending');
+
+  const sms = await api('POST', '/api/webhooks/sms/device', {
+    headers: { Authorization: `Bearer ${device.json.token}` },
+    body: { sender: 'Telebirr', text: telebirrReceipt('FT-AUTO-EXACT-001'), eventId: 'trusted-telebirr-auto-001', receivedAt: Date.now() },
+  });
+  assert.equal(sms.status, 200, JSON.stringify(sms.json));
+  assert.equal(sms.json.status, 'auto-approved');
+  assert.equal(sms.json.credited, true);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
+
+  const replay = await api('POST', '/api/webhooks/sms/device', {
+    headers: { Authorization: `Bearer ${device.json.token}` },
+    body: { sender: 'Telebirr', text: telebirrReceipt('FT-AUTO-EXACT-001'), eventId: 'trusted-telebirr-auto-001', receivedAt: Date.now() },
+  });
+  assert.equal(replay.json.duplicate, true);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
+  assert.equal((await api('GET', '/api/ledger', { token: p.token })).json.filter((row) => row.kind === 'deposit').length, 1);
+
+  // Transition case: trusted SMS arrives before the player creates the request.
+  const early = await api('POST', '/api/webhooks/sms/device', {
+    headers: { Authorization: `Bearer ${device.json.token}` },
+    body: { sender: 'Telebirr', text: telebirrReceipt('FT-AUTO-EARLY-002'), eventId: 'trusted-telebirr-auto-early-002', receivedAt: Date.now() },
+  });
+  assert.equal(early.status, 200);
+  assert.equal(early.json.status, 'unmatched');
+
+  const late = await api('POST', '/api/simulation/deposits', {
+    token: p.token, body: { amount: 125.5, reference: 'FT-AUTO-EARLY-002' },
+  });
+  assert.equal(late.status, 200, JSON.stringify(late.json));
+  assert.equal(late.json.status, 'success');
+  assert.equal(late.json.approved, true);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 251);
+  assert.equal((await api('GET', '/api/ledger', { token: p.token })).json.filter((row) => row.kind === 'deposit').length, 2);
+});
+
+test('Admin can manually approve an unmatched deposit only through the explicit exception action', async () => {
+  const p = await newPlayer();
+  const request = await api('POST', '/api/simulation/deposits', {
+    token: p.token, body: { amount: 45, reference: 'TXN-MANUAL-EXCEPTION-1' },
+  });
+  assert.equal(request.status, 200);
+  assert.equal(request.json.status, 'pending');
+  const approved = await api('POST', '/api/admin/deposits/TXN-MANUAL-EXCEPTION-1/approve', { token: ctx.adminToken });
+  assert.equal(approved.status, 200);
+  assert.equal(approved.json.credited, true);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 45);
+});
 
 test('simulation deposits require admin review and credit exactly once', async () => {
   const p = await newPlayer();

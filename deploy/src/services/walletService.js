@@ -7,6 +7,37 @@ const etb = (santim) => santim / 100;
 const toSantim = (etbAmount) => Math.round(Number(etbAmount) * 100);
 
 export function createWalletService({ repo, config, chapa }) {
+  // Only a trusted Admin-phone SMS proving a recent Telebirr transfer to the
+  // configured CBE deposit account may auto-credit. Other cases require Admin review.
+  const autoApproveMatchedSmsDeposit = async (txRef) => {
+    const payment = await repo.getPayment(txRef);
+    const expectedRecipient = String(config.cbeDepositAccount ?? '').replace(/\D/g, '');
+    const match = payment?.smsMatch;
+    if (!payment || payment.source !== 'automatic-sms' || payment.status !== 'pending' ||
+        !payment.smsEventId || match?.status !== 'matched' || match.provider !== 'telebirr' ||
+        !expectedRecipient || String(match.recipientAccount ?? '').replace(/\D/g, '') !== expectedRecipient ||
+        Number(match.amount) !== Number(payment.amount)) return null;
+    try {
+      const result = await repo.confirmDeposit({
+        txRef: payment.txRef,
+        chapaRef: `admin-sms-auto:${payment.smsEventId}`,
+      });
+      if (result.credited) {
+        log('admin_phone_sms_auto_approved_deposit', {
+          txRef: payment.txRef, userId: payment.userId, etb: etb(payment.amount),
+        });
+      }
+      return result;
+    } catch (error) {
+      // Preserve the pending request and its matched evidence; Admin can use the
+      // manual exception path if a transient storage failure prevents auto-credit.
+      log('admin_phone_sms_auto_approval_deferred', {
+        txRef: payment.txRef, reason: String(error?.code ?? error?.message ?? 'unknown').slice(0, 100),
+      });
+      return null;
+    }
+  };
+
   const service = {
     /** Player submits only the amount and bank transaction reference; the admin phone supplies the SMS independently. */
     async startSmsSimulationDeposit(user, input = {}) {
@@ -16,12 +47,14 @@ export function createWalletService({ repo, config, chapa }) {
       if (!Number.isSafeInteger(amount) || amount < config.minDeposit || amount > config.maxDeposit) throw new HttpError(400, 'invalid_amount', `Deposit between ${etb(config.minDeposit)} and ${etb(config.maxDeposit)} ETB`);
       try {
         await repo.createPayment({ txRef, userId: user.id, amount, source: 'automatic-sms' });
-        await repo.matchStoredSmsDeposit({ txRef });
+        const storedMatch = await repo.matchStoredSmsDeposit({ txRef });
+        if (storedMatch.matched) await autoApproveMatchedSmsDeposit(txRef);
       } catch (error) {
         if (error?.code === 'PAYMENT_REFERENCE_TAKEN' || error?.code === 11000 || error?.errorResponse?.code === 11000) throw new HttpError(409, 'reference_used', 'This transaction reference has already been submitted.');
         throw error;
       }
-      return { reference: txRef, amount: etb(amount), status: 'pending', currency: 'ETB' };
+      const saved = await repo.getPayment(txRef);
+      return { reference: txRef, amount: etb(amount), status: saved?.status ?? 'pending', approved: saved?.status === 'success', currency: 'ETB' };
     },
 
     async simulationDepositStatus(user, txRef) {
@@ -55,7 +88,7 @@ export function createWalletService({ repo, config, chapa }) {
       return result;
     },
 
-    /** Credit a pending simulation request exactly once after an administrator verifies it. */
+    /** Admin exception path: approve a pending request after independently verifying the bank receipt. */
     async approveSimulationDeposit(txRef) {
       const payment = await repo.getPayment(String(txRef ?? ''));
       if (!payment || !['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(payment.source)) {
@@ -66,7 +99,7 @@ export function createWalletService({ repo, config, chapa }) {
       }
       if (payment.status === 'success') return { status: 'success', credited: false };
       if (payment.status !== 'pending') throw new HttpError(409, 'wrong_status', 'Deposit request is no longer pending.');
-      if (payment.source === 'automatic-sms' && payment.smsMatch?.status !== 'matched') throw new HttpError(409, 'sms_not_matched', 'A matching bank SMS must be received before approval.');
+
       const result = await repo.confirmDeposit({ txRef: payment.txRef, chapaRef: 'manual-admin' });
       if (result.credited) log('simulation_deposit_manually_approved', { txRef: payment.txRef, userId: payment.userId, etb: etb(payment.amount) });
       if (!result.credited) {
@@ -103,7 +136,7 @@ export function createWalletService({ repo, config, chapa }) {
       return { status: 'rejected' };
     },
 
-    /** Match a trusted admin-phone SMS to a pending request. Matching never credits the wallet. */
+    /** Match trusted Admin-phone SMS; only exact configured Telebirr-to-CBE receipts auto-credit. */
     async matchSmsSimulationDeposit(event, metadata = {}) {
       const txRef = String(event.reference ?? '').trim();
       const amount = toSantim(event.amount);
@@ -123,10 +156,11 @@ export function createWalletService({ repo, config, chapa }) {
         recipientAccount: event.recipientAccount ?? null,
       });
       if (result.matched) log('admin_phone_sms_matched_deposit', { txRef, provider: event.provider, amount: etb(amount) });
-      return { ...result, status: result.matched ? 'matched' : result.mismatch ? 'amount-mismatch' : 'unmatched' };
+      const autoApproval = result.matched ? await autoApproveMatchedSmsDeposit(txRef) : null;
+      return { ...result, status: autoApproval?.credited ? 'auto-approved' : result.matched ? 'matched' : result.mismatch ? 'amount-mismatch' : 'unmatched', approved: autoApproval?.credited === true, credited: autoApproval?.credited === true };
     },
 
-    /** Legacy webhook is deliberately non-crediting; only an administrator can approve a matched request. */
+    /** Legacy authenticated SMS events are match-only; auto-approval requires trusted Admin-device recipient proof. */
     async confirmSmsSimulationDeposit(event) {
       return this.matchSmsSimulationDeposit(event, { rawMessage: event.rawMessage ?? '', sender: event.sender ?? '', receivedAt: Date.now() });
     },
