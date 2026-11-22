@@ -233,9 +233,19 @@ export function createMemoryRepo() {
     async getPayment(txRef) {
       return clone(payments.get(txRef) ?? null);
     },
+    async matchSmsDeposit({ txRef, eventId, amount, provider, rawMessage, transactionAt, receivedAt, sender, recipientAccount }) {
+      if ([...payments.values()].some((p) => p.smsEventId === eventId)) return { matched: false, duplicate: true };
+      const p = payments.get(txRef);
+      if (!p || p.source !== 'automatic-sms') return { matched: false, unmatched: true };
+      if (p.status !== 'pending') return { matched: false, processed: true };
+      const status = p.amount === amount ? 'matched' : 'amount-mismatch';
+      p.smsEventId = eventId;
+      p.smsMatch = { status, provider, amount, rawMessage, transactionAt, receivedAt, sender, recipientAccount: recipientAccount ?? null, matchedAt: new Date() };
+      return { matched: status === 'matched', mismatch: status === 'amount-mismatch', reference: txRef };
+    },
     async listUserSimulationDeposits(userId, limit = 30) {
       return [...payments.values()]
-        .filter((p) => p.userId === userId && ['manual-simulation', 'sms-simulation'].includes(p.source))
+        .filter((p) => p.userId === userId && ['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(p.source))
         .sort((a, b) => b.createdAt - a.createdAt)
         .slice(0, limit)
         .map((p) => ({ reference: p.txRef, amount: p.amount / 100, status: p.status, currency: 'ETB', at: p.createdAt.getTime() }));
@@ -247,7 +257,7 @@ export function createMemoryRepo() {
         .slice(0, 200)
         .map((p) => {
           const user = users.get(p.userId);
-          return { id: p.txRef, reference: p.txRef, rawMessage: p.rawMessage ?? '', provider: p.provider ?? '', userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: p.createdAt.getTime() };
+          return { id: p.txRef, reference: p.txRef, rawMessage: p.rawMessage ?? '', provider: p.provider ?? '', smsMatch: p.smsMatch ?? null, userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: p.createdAt.getTime() };
         });
     },
     /** pending -> success and credit the wallet, exactly once. */
