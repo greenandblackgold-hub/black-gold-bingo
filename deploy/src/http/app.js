@@ -25,7 +25,7 @@ const PAGE_CSP = [
   "base-uri 'self'", "form-action 'self'",
 ].join('; ');
 
-export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
+export function createApp({ config, auth, game, wallet, chapa, repo, push, gamesHub }) {
   /* ───────────── rate limiting (per IP, in memory: fine for a single instance) ───────────── */
   const hits = new Map();
   const sweep = setInterval(() => {
@@ -132,6 +132,15 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
 
   /* game (public state; the SSE stream is handled separately below) */
   route('GET', '/api/game', 'public', 'default', () => game.getPublicState());
+
+  /* Keno and Aviator: isolated game modules sharing the existing signed-in player and demo-credit wallet. */
+  route('GET', '/api/games/keno/state', 'user', 'default', ({ user }) => gamesHub.getState('keno', user));
+  route('POST', '/api/games/keno/bets', 'user', 'money', ({ user, body }) => gamesHub.placeKenoBet(user, body));
+  route('GET', '/api/games/keno/history', 'user', 'default', ({ user, query }) => gamesHub.getHistory('keno', user, Number(query.get('limit') || 10)));
+  route('GET', '/api/games/aviator/state', 'user', 'default', ({ user }) => gamesHub.getState('aviator', user));
+  route('POST', '/api/games/aviator/bets', 'user', 'money', ({ user, body }) => gamesHub.placeAviatorBet(user, body));
+  route('POST', '/api/games/aviator/cashout', 'user', 'money', ({ user, body }) => gamesHub.cashOutAviator(user, body.betId));
+  route('GET', '/api/games/aviator/history', 'user', 'default', ({ user, query }) => gamesHub.getHistory('aviator', user, Number(query.get('limit') || 10)));
 
   /* opt-in Web Push subscriptions */
   route('GET', '/api/push/public-key', 'public', 'default', () => ({ enabled: push.isEnabled(), publicKey: push.getPublicKey() }));
@@ -302,6 +311,9 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
     wallet.rejectManualWithdrawal(decodeURIComponent(params.id), body.note, user.id),
     'money',
   );
+
+  admin('GET', '/api/admin/games/overview', () => gamesHub.getAdminOverview());
+  admin('POST', '/api/admin/games/settings', async ({ body }) => gamesHub.updateSettings(body));
 
   admin('GET', '/api/admin/stats', () => repo.stats());
   admin('GET', '/api/admin/withdrawals/simulation', async ({ query }) =>
