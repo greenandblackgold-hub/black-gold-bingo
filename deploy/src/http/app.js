@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { HttpError } from '../util/errors.js';
+import { verifyJwt } from '../util/crypto.js';
 import { publicUser } from '../services/authService.js';
 import { parseBankSms } from '../payments/bankSmsParser.js';
 
@@ -166,6 +167,32 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
     wallet.listMySimulationWithdrawals(user).then((rows) => rows.map((w) => ({ id: w.id, amount: w.amount, method: w.method, destination: w.destination, status: w.status, at: w.at }))),
   );
 
+  // The native admin companion uses a scoped, expiring token; incoming SMS only matches requests and never credits wallets.
+  route('POST', '/api/webhooks/sms/device', 'public', 'money', async ({ req, body }) => {
+    const bearer = String(req.headers.authorization ?? '').replace(/^Bearer\\s+/i, '');
+    const payload = verifyJwt(bearer, config.jwtSecret);
+    if (!payload || payload.role !== 'admin' || payload.scope !== 'sms:ingest' || !payload.sub) {
+      throw new HttpError(401, 'invalid_sms_device_token', 'The SMS bridge is not authorized. Open the Admin App to reconnect it.');
+    }
+    const owner = await repo.findUserById(payload.sub);
+    if (!owner || owner.role !== 'admin') throw new HttpError(401, 'invalid_sms_device_token', 'The SMS bridge is no longer authorized.');
+    const sender = String(body.sender ?? '');
+    const smsText = String(body.text ?? '');
+    let event;
+    try {
+      event = parseBankSms({
+        sender, text: smsText, eventId: body.eventId,
+        expectedRecipientAccount: config.cbeDepositAccount,
+        timezoneOffsetMinutes: config.smsTimezoneOffsetMinutes,
+      });
+    } catch (error) {
+      throw new HttpError(400, error.message || 'sms_parse_failed', 'SMS is not a recognized incoming bank or Telebirr transaction.');
+    }
+    return wallet.matchSmsSimulationDeposit(event, {
+      rawMessage: smsText, sender, receivedAt: body.receivedAt,
+    });
+  });
+
   // The gateway signs the exact raw JSON body with HMAC-SHA256. Never trust unsigned SMS text.
   route('POST', '/api/webhooks/sms', 'public', 'money', async ({ req, rawBody }) => {
     if (!config.smsWebhookSecret || config.smsWebhookSecret.length < 32) {
@@ -255,6 +282,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
 
   /* admin */
   const admin = (method, path, handler, bucket = 'default') => route(method, path, 'admin', bucket, handler);
+  admin('POST', '/api/admin/sms-device/token', async ({ user }) => auth.issueSmsDeviceToken(user));
   admin('GET', '/api/admin/manual-withdrawals', async ({ query }) =>
     wallet.listManualWithdrawals({ status: query.get('status') || 'pending' }),
   );
