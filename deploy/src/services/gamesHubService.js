@@ -203,7 +203,6 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     if (!GAME_IDS.includes(game)) throw new HttpError(404, 'game_not_found', 'Unknown game.');
     ensureSimulationMode();
     const currentSettings = await settings();
-    if (!currentSettings[game + 'Enabled']) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
     const round = await tickGame(game);
     const serverTime = now();
     const myBets = (round.bets ?? []).filter((bet) => bet.userId === user.id).map(publicBet);
@@ -219,6 +218,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       minBetEtb: currentSettings.minBet / 100,
       maxBetEtb: currentSettings.maxBet / 100,
       mode: 'SIMULATION_ONLY',
+      enabled: currentSettings[game + 'Enabled'] === true,
       balanceEtb: wallet.balance / 100,
     };
     if (game === 'keno') {
