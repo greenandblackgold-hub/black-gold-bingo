@@ -435,7 +435,7 @@ export function createMemoryRepo() {
       if (!round) throw new RepoError('ROUND_NOT_OPEN');
       const existing = (round.bets ?? []).find((item) => item.userId === bet.userId && item.requestId === bet.requestId);
       if (existing) return { bet: clone(existing), balance: users.get(bet.userId)?.balance ?? 0, duplicate: true };
-      if (round.status !== 'betting' || round.bettingEndsAt <= Date.now()) throw new RepoError('ROUND_NOT_OPEN');
+      if (round.status !== 'betting') throw new RepoError('ROUND_NOT_OPEN');
       const movement = credit(bet.userId, -amount, 'game_bet', ref, { game, roundId, betId: bet.id });
       round.bets.push(clone(bet));
       round.version += 1;
