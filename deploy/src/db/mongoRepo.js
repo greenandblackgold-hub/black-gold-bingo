@@ -595,22 +595,20 @@ export async function createMongoRepo({ uri, dbName }) {
     },
     async getGameHubWallet(userId) {
       if (!(await users.findOne({ _id: userId }, { projection: { _id: 1 } }))) throw new RepoError('USER_NOT_FOUND');
-      const createdAt = new Date();
-      const upsert = await gameHubWallets.updateOne(
-        { _id: userId },
-        { $setOnInsert: { balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt } },
-        { upsert: true },
-      );
-      if (upsert.upsertedCount) {
-        const ref = 'games:initial-demo-credit:' + userId;
-        await gameHubLedger.updateOne(
-          { ref },
-          { $setOnInsert: { userId, amount: 100000, kind: 'demo_grant', ref, meta: { reason: 'initial_demo_wallet' }, createdAt } },
-          { upsert: true },
+      return tx(async (session) => {
+        const createdAt = new Date();
+        const upsert = await gameHubWallets.updateOne(
+          { _id: userId },
+          { $setOnInsert: { balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt } },
+          { upsert: true, session },
         );
-      }
-      const wallet = await gameHubWallets.findOne({ _id: userId });
-      return { userId: wallet._id, balance: wallet.balance, currency: wallet.currency, balanceType: wallet.balanceType, createdAt: wallet.createdAt };
+        if (upsert.upsertedCount) {
+          const ref = 'games:initial-demo-credit:' + userId;
+          await gameHubLedger.insertOne({ userId, amount: 100000, kind: 'demo_grant', ref, meta: { reason: 'initial_demo_wallet' }, createdAt }, { session });
+        }
+        const wallet = await gameHubWallets.findOne({ _id: userId }, { session });
+        return { userId: wallet._id, balance: wallet.balance, currency: wallet.currency, balanceType: wallet.balanceType, createdAt: wallet.createdAt };
+      });
     },
     async listGameHubLedger(userId, limit = 30) {
       return gameHubLedger.find({ userId }).sort({ createdAt: -1 }).limit(limit).toArray();
