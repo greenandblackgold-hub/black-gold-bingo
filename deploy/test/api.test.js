@@ -239,6 +239,14 @@ test('simulation deposits require admin review and credit exactly once', async (
   assert.equal(listed.status, 200);
   assert.ok(listed.json.some((row) => row.reference === 'TXN-ADMIN-12345' && row.amount === 125.5 && row.userId === p.user.id));
 
+  const smsDevice = await api('POST', '/api/admin/sms-device/token', { token: ctx.adminToken, body: {} });
+  const smsMatch = await api('POST', '/api/webhooks/sms/device', {
+    headers: { Authorization: `Bearer ${smsDevice.json.token}` },
+    body: { sender: 'CBE', text: 'Your account is credited with ETB 125.50. Ref No: TXN-ADMIN-12345', eventId: 'admin-queue-sms-12345', receivedAt: Date.now() },
+  });
+  assert.equal(smsMatch.status, 200, JSON.stringify(smsMatch.json));
+  assert.equal(smsMatch.json.status, 'matched');
+
   const approved = await api('POST', '/api/admin/deposits/TXN-ADMIN-12345/approve', { token: ctx.adminToken });
   assert.equal(approved.status, 200, JSON.stringify(approved.json));
   assert.equal(approved.json.status, 'success');
