@@ -62,7 +62,7 @@ export function KenoGame({ onBack }: { onBack: () => void }) {
     finally { setBusy(false); }
   };
 
-  const latestBet = state?.myBets?.[0];
+  const latestBet = state?.myBets?.[state.myBets.length - 1];
   const drawSet = useMemo(() => new Set(state?.drawnNumbers ?? []), [state?.drawnNumbers]);
   const isBetting = state?.enabled === true && state.status === 'betting' && secondsLeft > 0;
 
