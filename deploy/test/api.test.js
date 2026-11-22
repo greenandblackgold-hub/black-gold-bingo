@@ -743,6 +743,7 @@ test('production safety gates block registration and all real-money routes until
 
     assert.equal((await api('POST', '/api/auth/register', { body: { phone: newPhone(), name: 'Blocked', pin: '123456', pinConfirm: '123456' } })).status, 503);
     assert.equal((await api('POST', '/api/payments/deposit', { token: p.token, body: { amount: 100 } })).status, 503);
+    assert.equal((await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: 100, reference: 'TXN-LICENSE-BLOCK-01' } })).status, 503);
     assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 1 } })).status, 200);
     assert.equal((await api('POST', '/api/claim', { token: p.token, body: { cardId: 'BG-TEST22' } })).status, 409);
     assert.equal((await api('POST', '/api/withdrawals', { token: p.token, body: { amount: 50, accountName: 'Test Name', accountNumber: '0911000111', bankCode: '1' } })).status, 503);
