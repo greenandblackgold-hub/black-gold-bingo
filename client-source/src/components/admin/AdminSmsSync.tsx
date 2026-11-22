@@ -51,7 +51,7 @@ export function AdminSmsSync() {
           {busy || state === 'checking' ? 'በመገናኘት ላይ…' : 'Reconnect'}
         </button>
       </div>
-      <p className="mt-3 text-xs leading-relaxed text-gold-700">SMS-ዎች የባንክ/Telebirr መለያ ከሆኑ ብቻ ይላካሉ። መልዕክቱ ከDeposit ጥያቄ ጋር ቢዛመድም Wallet የሚጨምረው Admin Approve ካደረገ ብቻ ነው።</p>
+      <p className="mt-3 text-xs leading-relaxed text-gold-700">SMS-ዎች የባንክ/Telebirr መለያ ከሆኑ ብቻ ይላካሉ። የቅርብ ጊዜ Telebirr ወደ ተዋቀረው CBE አካውንት የተላለፈ ደረሰኝ ከDeposit ማጣቀሻና መጠን ጋር 100% ከተዛመደ በራስ-ሰር ይፀድቃል፤ ሌሎች ወይም ያልተዛመዱ ጉዳዮች Admin በእጅ ይመረምራል።</p>
     </section>
   );
 }
