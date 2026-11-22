@@ -134,6 +134,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   route('GET', '/api/game', 'public', 'default', () => game.getPublicState());
 
   /* Keno and Aviator: isolated game modules sharing the existing signed-in player and demo-credit wallet. */
+  route('GET', '/api/games/settings', 'user', 'default', () => gamesHub.getPublicSettings());
   route('GET', '/api/games/keno/state', 'user', 'default', ({ user }) => gamesHub.getState('keno', user));
   route('POST', '/api/games/keno/bets', 'user', 'money', ({ user, body }) => gamesHub.placeKenoBet(user, body));
   route('GET', '/api/games/keno/history', 'user', 'default', ({ user, query }) => gamesHub.getHistory('keno', user, Number(query.get('limit') || 10)));
