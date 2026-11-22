@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
 
 type AviatorBet = { id: string; status: string; stakeEtb: number; multiplier: number | null; payoutEtb: number; createdAt: number };
-type AviatorState = { game: 'aviator'; roundId: string; status: 'betting' | 'flying' | 'crashed'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; startedAt?: number; growthPerMs?: number; crashMultiplier?: number; serverSeed?: string; myBets: AviatorBet[]; minBetEtb: number; maxBetEtb: number; mode: string };
+type AviatorState = { balanceEtb: number; game: 'aviator'; roundId: string; status: 'betting' | 'flying' | 'crashed'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; startedAt?: number; growthPerMs?: number; crashMultiplier?: number; serverSeed?: string; myBets: AviatorBet[]; minBetEtb: number; maxBetEtb: number; mode: string };
 type HistoryRound = { roundId: string; status: string; crashMultiplier?: number; serverSeedHash: string; serverSeed?: string; myBets: AviatorBet[] };
 const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const requestId = () => 'aviator_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
 
 export function AviatorGame({ onBack }: { onBack: () => void }) {
-  const { user, refresh } = useAuth();
   const [state, setState] = useState<AviatorState | null>(null);
   const [history, setHistory] = useState<HistoryRound[]>([]);
   const [amount, setAmount] = useState('10.00');
@@ -58,7 +56,7 @@ export function AviatorGame({ onBack }: { onBack: () => void }) {
       await api.post('/api/games/aviator/bets', { requestId: id, amount: Number(amount) });
       setNotice('Your Aviator bet is confirmed.');
       setBetRequestId('');
-      await Promise.all([loadState(), refresh()]);
+      await loadState();
     } catch (e) { setError(e instanceof ApiError ? e.message : 'Your bet could not be placed.'); }
     finally { setBusy(false); }
   };
@@ -80,7 +78,7 @@ export function AviatorGame({ onBack }: { onBack: () => void }) {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5 pb-8">
       <div className="flex items-center justify-between gap-3"><button onClick={onBack} className="rounded-xl border border-amber-400/25 px-3 py-2 text-sm font-bold text-amber-200">← Games Center</button><span className="rounded-full border border-amber-400/25 bg-amber-400/5 px-3 py-1.5 text-[10px] font-bold tracking-widest text-amber-300">SIMULATION ONLY</span></div>
-      <header className="rounded-3xl border border-amber-400/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.2),transparent_45%),linear-gradient(135deg,#17140c,#080808)] p-5 sm:p-7"><p className="text-[10px] font-black uppercase tracking-[.3em] text-amber-400">BLACK GOLD · MULTIPLIER GAME</p><div className="mt-2 flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-black text-amber-50 sm:text-4xl">AVIATOR</h1><p className="mt-2 text-sm text-amber-100/60">Cash out while the multiplier is rising. The server decides the round result.</p></div><div className="text-right"><p className="text-[10px] uppercase tracking-wider text-amber-500">Available demo balance</p><p className="text-xl font-black text-amber-200">{money(user?.balance ?? 0)} ETB</p></div></div></header>
+      <header className="rounded-3xl border border-amber-400/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.2),transparent_45%),linear-gradient(135deg,#17140c,#080808)] p-5 sm:p-7"><p className="text-[10px] font-black uppercase tracking-[.3em] text-amber-400">BLACK GOLD · MULTIPLIER GAME</p><div className="mt-2 flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-black text-amber-50 sm:text-4xl">AVIATOR</h1><p className="mt-2 text-sm text-amber-100/60">Cash out while the multiplier is rising. The server decides the round result.</p></div><div className="text-right"><p className="text-[10px] uppercase tracking-wider text-amber-500">Available demo balance</p><p className="text-xl font-black text-amber-200">{money(state?.balanceEtb ?? 0)} ETB</p></div></div></header>
       {error && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-950/40 p-3 text-sm text-red-200">{error}</p>}
       {notice && <p role="status" className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-3 text-sm text-emerald-200">{notice}</p>}
       <section className="relative flex min-h-[300px] flex-col items-center justify-center overflow-hidden rounded-3xl border border-amber-400/20 bg-[radial-gradient(ellipse_at_50%_80%,rgba(197,145,34,.16),transparent_55%),linear-gradient(180deg,#10100e,#050505)] p-5">
