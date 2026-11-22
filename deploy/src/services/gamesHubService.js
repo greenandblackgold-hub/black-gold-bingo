@@ -126,6 +126,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       serverSeedHash: seedHash(seed),
       serverSeed: seed,
       createdAt,
+      expireAt: new Date(createdAt + 30 * 24 * 60 * 60 * 1000),
       bettingEndsAt: createdAt + (game === 'keno' ? currentSettings.kenoBettingSeconds : currentSettings.aviatorBettingSeconds) * 1000,
     };
     return repo.createGameHubRound(game, round);
