@@ -67,6 +67,7 @@ export async function createMongoRepo({ uri, dbName }) {
         ledger.createIndex({ ref: 1 }, { unique: true }),
         ledger.createIndex({ userId: 1, createdAt: -1 }),
         payments.createIndex({ txRef: 1 }, { unique: true }),
+        payments.createIndex({ smsEventId: 1 }, { unique: true, sparse: true }),
         withdrawals.createIndex({ status: 1, createdAt: -1 }),
         withdrawals.createIndex({ userId: 1, createdAt: -1 }),
         withdrawals.createIndex({ externalPayoutReference: 1 }, { unique: true, partialFilterExpression: { externalPayoutReference: { $type: 'string' } } }),
@@ -347,8 +348,25 @@ export async function createMongoRepo({ uri, dbName }) {
     async getPayment(txRef) {
       return payments.findOne({ txRef });
     },
+    async matchSmsDeposit({ txRef, eventId, amount, provider, rawMessage, transactionAt, receivedAt, sender, recipientAccount }) {
+      if (await payments.findOne({ smsEventId: eventId }, { projection: { _id: 1 } })) return { matched: false, duplicate: true };
+      const payment = await payments.findOne({ txRef, source: 'automatic-sms', status: 'pending' });
+      if (!payment) return { matched: false, unmatched: true };
+      const status = payment.amount === amount ? 'matched' : 'amount-mismatch';
+      try {
+        const result = await payments.updateOne(
+          { txRef, source: 'automatic-sms', status: 'pending', smsEventId: { $exists: false } },
+          { $set: { smsEventId: eventId, smsMatch: { status, provider, amount, rawMessage, transactionAt, receivedAt, sender, recipientAccount: recipientAccount ?? null, matchedAt: new Date() } } },
+        );
+        if (result.modifiedCount !== 1) return { matched: false, duplicate: true };
+        return { matched: status === 'matched', mismatch: status === 'amount-mismatch', reference: txRef };
+      } catch (error) {
+        if (isDuplicate(error)) return { matched: false, duplicate: true };
+        throw error;
+      }
+    },
     async listUserSimulationDeposits(userId, limit = 30) {
-      const rows = await payments.find({ userId, source: { $in: ['manual-simulation', 'sms-simulation'] } })
+      const rows = await payments.find({ userId, source: { $in: ['manual-simulation', 'sms-simulation', 'automatic-sms'] } })
         .sort({ createdAt: -1 }).limit(limit).toArray();
       return rows.map((p) => ({
         reference: p.txRef, amount: p.amount / 100, status: p.status, currency: 'ETB',
@@ -356,12 +374,12 @@ export async function createMongoRepo({ uri, dbName }) {
       }));
     },
     async listSimulationDeposits({ status = 'pending' } = {}) {
-      const filter = { source: { $in: ['manual-simulation', 'sms-simulation'] } };
+      const filter = { source: { $in: ['manual-simulation', 'sms-simulation', 'automatic-sms'] } };
       if (status) filter.status = status;
       const rows = await payments.find(filter).sort({ createdAt: -1 }).limit(200).toArray();
       return Promise.all(rows.map(async (p) => {
         const user = await users.findOne({ _id: p.userId }, { projection: { name: 1, phone: 1 } });
-        return { id: p.txRef, reference: p.txRef, rawMessage: p.rawMessage ?? '', provider: p.provider ?? '', userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: new Date(p.createdAt).getTime() };
+        return { id: p.txRef, reference: p.txRef, rawMessage: p.rawMessage ?? '', provider: p.provider ?? '', smsMatch: p.smsMatch ?? null, userId: p.userId, userName: user?.name ?? 'Unknown', userPhone: user?.phone ?? '', amount: p.amount / 100, status: p.status, at: new Date(p.createdAt).getTime() };
       }));
     },
     async confirmDeposit({ txRef, chapaRef }) {
