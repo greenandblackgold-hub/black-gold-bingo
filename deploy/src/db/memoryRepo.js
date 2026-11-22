@@ -238,6 +238,7 @@ export function createMemoryRepo() {
       const p = payments.get(txRef);
       if (!p || p.source !== 'automatic-sms') return { matched: false, unmatched: true };
       if (p.status !== 'pending') return { matched: false, processed: true };
+      if (p.smsEventId) return { matched: false, duplicate: true };
       const status = p.amount === amount ? 'matched' : 'amount-mismatch';
       p.smsEventId = eventId;
       p.smsMatch = { status, provider, amount, rawMessage, transactionAt, receivedAt, sender, recipientAccount: recipientAccount ?? null, matchedAt: new Date() };
