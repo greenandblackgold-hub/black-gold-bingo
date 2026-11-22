@@ -1,4 +1,4 @@
-package com.blackgoldplc.bingopro;
+package com.blackgoldplc.bingopro.adminsms;
 
 import android.Manifest;
 import android.content.Context;

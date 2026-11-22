@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const androidRoot = path.resolve('android/app/src/main');
-const packageName = 'com.blackgoldplc.bingopro';
+const packageName = 'com.blackgoldplc.bingopro.adminsms';
 const packagePath = path.join(androidRoot, 'java', ...packageName.split('.'));
 fs.mkdirSync(packagePath, { recursive: true });
 
