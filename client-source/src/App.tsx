@@ -56,7 +56,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
     <div className="premium-ui min-h-screen pb-28">
       <Suspense fallback={<RouteLoading />}><AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} onLogout={onLogout} onOpenMenu={() => setMenuOpen(true)} onOpenSettings={() => setPlayerSettingsOpen(true)} hideControls={tab === 'play' || tab === 'keno' || tab === 'aviator'} /></Suspense>
       <main className={tab === 'play' ? 'mx-auto w-full max-w-none px-2 pt-2 sm:px-4 sm:pt-4' : 'mx-auto max-w-6xl px-4 pt-5 sm:pt-8'}>
-        {tab === 'games' && <GamesCenter onOpenBingo={() => setTab('play')} onOpenKeno={() => setTab('keno')} onOpenAviator={() => setTab('aviator')} />}
+        {tab === 'games' && <GamesCenter serverMode={SERVER_MODE} onOpenBingo={() => setTab('play')} onOpenKeno={() => setTab('keno')} onOpenAviator={() => setTab('aviator')} />}
         {tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} settingsOpen={playerSettingsOpen} onSettingsOpenChange={setPlayerSettingsOpen} /></Suspense>}
         {tab === 'keno' && <KenoGame onBack={() => setTab('games')} />}
         {tab === 'aviator' && <AviatorGame onBack={() => setTab('games')} />}
