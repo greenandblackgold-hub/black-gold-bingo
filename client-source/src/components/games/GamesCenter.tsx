@@ -1,10 +1,10 @@
-type Props = { onOpenBingo: () => void; onOpenKeno: () => void; onOpenAviator: () => void };
+type Props = { onOpenBingo: () => void; onOpenKeno: () => void; onOpenAviator: () => void; serverMode: boolean };
 
-function GameCard({ title, subtitle, detail, icon, onClick, featured = false }: {
-  title: string; subtitle: string; detail: string; icon: 'bingo' | 'keno' | 'aviator'; onClick: () => void; featured?: boolean;
+function GameCard({ title, subtitle, detail, icon, onClick, featured = false, disabled = false }: {
+  title: string; subtitle: string; detail: string; icon: 'bingo' | 'keno' | 'aviator'; onClick: () => void; featured?: boolean; disabled?: boolean;
 }) {
   return (
-    <button type="button" onClick={onClick} className={`group relative flex min-h-64 w-full flex-col overflow-hidden rounded-3xl border text-left transition duration-300 hover:-translate-y-1 hover:border-amber-300/70 hover:shadow-[0_18px_55px_rgba(212,175,55,.16)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300 ${featured ? 'border-amber-300/50 bg-gradient-to-br from-[#28200d] via-[#100f0b] to-black' : 'border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black'} p-5 sm:p-6`}>
+    <button type="button" disabled={disabled} onClick={onClick} className={`group relative disabled:cursor-not-allowed disabled:opacity-55 ${disabled ? '' : ''}  flex min-h-64 w-full flex-col overflow-hidden rounded-3xl border text-left transition duration-300 hover:-translate-y-1 hover:border-amber-300/70 hover:shadow-[0_18px_55px_rgba(212,175,55,.16)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300 ${featured ? 'border-amber-300/50 bg-gradient-to-br from-[#28200d] via-[#100f0b] to-black' : 'border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black'} p-5 sm:p-6`}>
       <span className="absolute -right-8 -top-12 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl transition group-hover:bg-amber-300/20" />
       <span className="relative grid h-14 w-14 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]">
         {icon === 'bingo' && <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/><path d="m6 6 2 2m8 8 2 2" /></svg>}
@@ -14,12 +14,12 @@ function GameCard({ title, subtitle, detail, icon, onClick, featured = false }: 
       <span className="relative mt-6 text-[10px] font-black uppercase tracking-[.28em] text-amber-400">{subtitle}</span>
       <span className="relative mt-2 text-2xl font-black tracking-wide text-amber-50">{title}</span>
       <span className="relative mt-2 max-w-sm text-sm leading-6 text-amber-100/60">{detail}</span>
-      <span className="relative mt-auto flex items-center gap-2 pt-6 text-sm font-bold text-amber-300">Open game <span aria-hidden>→</span></span>
+      <span className="relative mt-auto flex items-center gap-2 pt-6 text-sm font-bold text-amber-300">{disabled ? 'Available in server mode' : 'Open game'} <span aria-hidden>{disabled ? '•' : '→'}</span></span>
     </button>
   );
 }
 
-export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator }: Props) {
+export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode }: Props) {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-7 pb-8">
       <header className="relative overflow-hidden rounded-3xl border border-amber-400/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.22),transparent_45%),linear-gradient(120deg,#17140c,#090909_58%,#151006)] px-5 py-8 shadow-[0_22px_65px_rgba(0,0,0,.4)] sm:px-8 sm:py-10">
@@ -40,8 +40,8 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator }: Props) {
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <GameCard title="Bingo PRO" subtitle="Classic favourite" detail="Your existing Bingo room, cards, live calls and player features remain here." icon="bingo" onClick={onOpenBingo} featured />
-        <GameCard title="Keno" subtitle="Pick your numbers" detail="Choose up to ten numbers, follow the draw and check your round results." icon="keno" onClick={onOpenKeno} />
-        <GameCard title="Aviator" subtitle="Ride the multiplier" detail="Watch the multiplier climb and cash out before the plane flies away." icon="aviator" onClick={onOpenAviator} />
+        <GameCard title="Keno" subtitle="Pick your numbers" detail="Choose up to ten numbers, follow the draw and check your round results." icon="keno" onClick={onOpenKeno} disabled={!serverMode} />
+        <GameCard title="Aviator" subtitle="Ride the multiplier" detail="Watch the multiplier climb and cash out before the plane flies away." icon="aviator" onClick={onOpenAviator} disabled={!serverMode} />
       </div>
       <p className="text-center text-[11px] leading-5 text-amber-100/40">Keno and Aviator currently use non-redeemable simulation credits. No real-money betting or cash prizes are enabled.</p>
     </div>
