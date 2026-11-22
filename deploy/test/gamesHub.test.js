@@ -132,8 +132,10 @@ test('Admin settings are validated and persist independently of Bingo settings',
     f.service.updateSettings({ minBetEtb: 500, maxBetEtb: 10 }),
     (e) => e instanceof HttpError && e.code === 'invalid_bet_range',
   );
+  const pausedState = await f.service.getState('keno', f.user);
+  assert.equal(pausedState.enabled, false);
   await assert.rejects(
-    f.service.getState('keno', f.user),
+    f.service.placeKenoBet(f.user, { requestId: 'keno_paused_request_01', amount: 10, selectedNumbers: [1] }),
     (e) => e instanceof HttpError && e.code === 'game_disabled',
   );
 });
