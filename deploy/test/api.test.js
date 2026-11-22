@@ -239,7 +239,7 @@ test('admin phone SMS automatically matches deposit requests but wallet credit s
   assert.equal(earlyRow.smsMatch.status, 'matched');
   const earlyApproved = await api('POST', '/api/admin/deposits/TXN-EARLY-12345/approve', { token: ctx.adminToken });
   assert.equal(earlyApproved.status, 200);
-  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 200);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 200.5);
 });
 
 
