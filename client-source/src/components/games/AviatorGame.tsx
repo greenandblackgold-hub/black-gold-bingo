@@ -67,7 +67,7 @@ export function AviatorGame({ onBack }: { onBack: () => void }) {
     try {
       const result = await api.post<{ multiplier: number; bet: AviatorBet }>('/api/games/aviator/cashout', { betId: activeBet.id });
       setNotice('Cashed out at ' + result.multiplier.toFixed(2) + '×. Payout: ' + money(result.bet.payoutEtb) + ' ETB.');
-      await Promise.all([loadState(), refresh()]);
+      await loadState();
     } catch (e) { setError(e instanceof ApiError ? e.message : 'Cash Out was not accepted by the server.'); }
     finally { setBusy(false); }
   };
