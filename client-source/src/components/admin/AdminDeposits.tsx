@@ -44,7 +44,8 @@ export function AdminDeposits() {
   }, [load]);
 
   const act = async (row: DepositRow, action: 'approve' | 'reject' | 'test-approve') => {
-    if (action === 'approve' && !window.confirm(t.confirm)) return;
+    const oneClickMatchedSms = action === 'approve' && row.source === 'automatic-sms' && row.smsMatch?.status === 'matched';
+    if (action === 'approve' && !oneClickMatchedSms && !window.confirm(t.confirm)) return;
     if (action === 'test-approve' && !window.confirm(t.testConfirm)) return;
     setBusyId(row.id);
     setError('');
@@ -70,11 +71,13 @@ export function AdminDeposits() {
         <p className="py-3 text-center text-sm text-gold-600">{t.empty}</p>
       ) : (
         <ul className="space-y-3">
-          {rows.map((row) => (
-            <li key={row.id} className="rounded-xl bg-white/[0.04] p-3">
+          {[...rows].sort((a, b) => Number(b.source === 'automatic-sms' && b.smsMatch?.status === 'matched') - Number(a.source === 'automatic-sms' && a.smsMatch?.status === 'matched')).map((row) => {
+            const matchedSms = row.source === 'automatic-sms' && row.smsMatch?.status === 'matched';
+            return (
+            <li key={row.id} className={`rounded-xl p-3 ${matchedSms ? 'bg-emerald-500/[0.08] ring-1 ring-emerald-400/50' : 'bg-white/[0.04]'}`}>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-lg font-black tabular-nums text-gold-400">{formatAmount(lang, row.amount)} ETB</span>
-                <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs text-amber-200">{t.pending}</span>
+                <span className={`rounded-full px-2.5 py-1 text-xs ${matchedSms ? 'bg-emerald-500/20 font-bold text-emerald-200' : 'bg-amber-500/15 text-amber-200'}`}>{matchedSms ? 'SMS MATCHED · READY' : t.pending}</span>
               </div>
               {/^TEST-/i.test(row.reference) && <p className="mt-2 rounded-lg bg-sky-500/10 px-3 py-2 text-xs font-bold text-sky-200">{t.testOnly}</p>}
               <dl className="mt-2 space-y-1 text-sm">
@@ -99,12 +102,13 @@ export function AdminDeposits() {
                 {/^TEST-/i.test(row.reference) ? (
                   <button type="button" disabled={busyId === row.id} onClick={() => void act(row, 'test-approve')} className={`${button} flex-1 bg-sky-500/20 text-sky-100 ring-sky-400/50`}>{t.testApprove}</button>
                 ) : (
-                  <button type="button" disabled={busyId === row.id || (row.source === 'automatic-sms' && row.smsMatch?.status !== 'matched')} onClick={() => void act(row, 'approve')} className={`${button} flex-1 bg-gold-500 text-darkbg ring-gold-400`}>{t.approve}</button>
+                  <button type="button" disabled={busyId === row.id || (row.source === 'automatic-sms' && row.smsMatch?.status !== 'matched')} onClick={() => void act(row, 'approve')} className={`${button} flex-1 ${matchedSms ? 'bg-emerald-400 text-black ring-emerald-300' : 'bg-gold-500 text-darkbg ring-gold-400'}`}>{matchedSms ? 'One-click Approve' : t.approve}</button>
                 )}
                 <button type="button" disabled={busyId === row.id} onClick={() => void act(row, 'reject')} className={`${button} flex-1 text-gold-300 ring-gold-700/60`}>{t.reject}</button>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </section>
