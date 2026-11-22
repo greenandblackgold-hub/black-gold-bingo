@@ -595,20 +595,32 @@ export async function createMongoRepo({ uri, dbName }) {
     },
     async getGameHubWallet(userId) {
       if (!(await users.findOne({ _id: userId }, { projection: { _id: 1 } }))) throw new RepoError('USER_NOT_FOUND');
-      return tx(async (session) => {
-        const createdAt = new Date();
-        const upsert = await gameHubWallets.updateOne(
-          { _id: userId },
-          { $setOnInsert: { balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt } },
-          { upsert: true, session },
-        );
-        if (upsert.upsertedCount) {
-          const ref = 'games:initial-demo-credit:' + userId;
-          await gameHubLedger.insertOne({ userId, amount: 100000, kind: 'demo_grant', ref, meta: { reason: 'initial_demo_wallet' }, createdAt }, { session });
+      const shape = (wallet) => ({ userId: wallet._id, balance: wallet.balance, currency: wallet.currency, balanceType: wallet.balanceType, createdAt: wallet.createdAt });
+      const existing = await gameHubWallets.findOne({ _id: userId });
+      if (existing) return shape(existing);
+      try {
+        return await tx(async (session) => {
+          const createdAt = new Date();
+          const upsert = await gameHubWallets.updateOne(
+            { _id: userId },
+            { $setOnInsert: { balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt } },
+            { upsert: true, session },
+          );
+          if (upsert.upsertedCount) {
+            const ref = 'games:initial-demo-credit:' + userId;
+            await gameHubLedger.insertOne({ userId, amount: 100000, kind: 'demo_grant', ref, meta: { reason: 'initial_demo_wallet' }, createdAt }, { session });
+          }
+          const wallet = await gameHubWallets.findOne({ _id: userId }, { session });
+          return shape(wallet);
+        });
+      } catch (error) {
+        // Concurrent first visits can race to create the same wallet; read the winner after the transaction conflict.
+        if ([11000, 112].includes(error?.code) || error?.codeName === 'WriteConflict') {
+          const created = await gameHubWallets.findOne({ _id: userId });
+          if (created) return shape(created);
         }
-        const wallet = await gameHubWallets.findOne({ _id: userId }, { session });
-        return { userId: wallet._id, balance: wallet.balance, currency: wallet.currency, balanceType: wallet.balanceType, createdAt: wallet.createdAt };
-      });
+        throw error;
+      }
     },
     async listGameHubLedger(userId, limit = 30) {
       return gameHubLedger.find({ userId }).sort({ createdAt: -1 }).limit(limit).toArray();
