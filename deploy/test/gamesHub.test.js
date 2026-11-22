@@ -25,6 +25,8 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   const f = await fixture();
   const initial = await f.service.getState('keno', f.user);
   assert.equal(initial.status, 'betting');
+  assert.equal(initial.balanceEtb, 1000);
+  assert.equal((await f.repo.listGameHubLedger(f.user.id)).length, 1, 'initial demo credit is ledgered');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
 
   const placed = await f.service.placeKenoBet(f.user, {
@@ -74,6 +76,7 @@ test('Aviator commits a round before betting and reveals its seed only after cra
   const f = await fixture();
   const initial = await f.service.getState('aviator', f.user);
   assert.equal(initial.status, 'betting');
+  assert.equal(initial.balanceEtb, 1000);
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
   assert.equal(initial.serverSeed, undefined);
 
