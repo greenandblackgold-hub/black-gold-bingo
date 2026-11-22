@@ -67,10 +67,6 @@ export function AppHeader({ onOpenWallet, onOpenAdmin, onLogout, onOpenMenu, onO
         <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-2 py-2 sm:gap-3 sm:px-4">
           <div className="flex min-w-0 flex-col items-start justify-center gap-1">
             <p className="max-w-full truncate text-[9px] font-black leading-none tracking-wide text-gold-400 sm:text-xs">Black Gold PLC</p>
-            <button type="button" onClick={onLogout} aria-label="ውጣ" title="ውጣ" className="flex min-h-8 items-center gap-1 rounded-full border border-yellow-300/70 px-2 text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">
-              <span className="text-2xl font-black leading-none">‹</span>
-              <span className="whitespace-nowrap text-xs font-black sm:text-sm">ውጣ</span>
-            </button>
           </div>
           <div className="flex min-w-0 items-center justify-center gap-1 border-x border-yellow-500/70 px-2 text-yellow-300 sm:gap-2 sm:px-3">
             <span className="text-2xl leading-none drop-shadow-[0_0_12px_rgba(255,215,0,1)] sm:text-4xl">🏆</span>
@@ -78,7 +74,7 @@ export function AppHeader({ onOpenWallet, onOpenAdmin, onLogout, onOpenMenu, onO
               {roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} ብር
             </strong>
           </div>
-          <div className="flex shrink-0 items-center justify-self-end gap-1 sm:gap-2">
+          <div className="flex shrink-0 items-center justify-self-end gap-3 sm:gap-3">
             <button type="button" onClick={onOpenMenu} aria-label="ሜኑ ክፈት" title="ሜኑ" className="grid h-9 w-9 place-items-center rounded-full border border-yellow-400/60 text-2xl leading-none text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300 sm:h-10 sm:w-10">⋮</button>
             <button type="button" onClick={onOpenSettings} aria-label="ሴቲንግ ክፈት" title="ሴቲንግ" className="grid h-9 w-9 place-items-center rounded-full border border-yellow-400/60 text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300 sm:h-10 sm:w-10">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
