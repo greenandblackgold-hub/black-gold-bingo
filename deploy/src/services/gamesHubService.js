@@ -106,6 +106,7 @@ function mapRepoError(error) {
 export function createGamesHubService({ repo, config, now = Date.now }) {
   let timer = null;
   let ticking = false;
+  const gameTickLocks = new Map();
   const settingsDefaults = { ...DEFAULT_SETTINGS };
 
   async function settings() {
@@ -129,7 +130,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     return repo.createGameHubRound(game, round);
   }
 
-  async function tickGame(game) {
+  async function runGameTick(game) {
     const currentSettings = await settings();
     let round = await repo.getCurrentGameHubRound(game);
     if (!round || (['settled', 'crashed'].includes(round.status) && Number(round.nextRoundAt ?? 0) <= now())) {
@@ -168,6 +169,15 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       log('games_hub_aviator_round_crashed', { roundId: round.roundId, multiplier: round.crashMultiplier });
     }
     return round;
+  }
+
+  async function tickGame(game) {
+    const pending = gameTickLocks.get(game);
+    if (pending) return pending;
+    const task = runGameTick(game);
+    gameTickLocks.set(game, task);
+    try { return await task; }
+    finally { if (gameTickLocks.get(game) === task) gameTickLocks.delete(game); }
   }
 
   async function tickAll() {
@@ -263,7 +273,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       bet.selectedNumbers = [...selected].sort((a, b) => a - b);
     }
     try {
-      const result = await repo.placeGameHubBet({ game, roundId: round.roundId, bet, amount: stake, ref: `games:${game}:bet:${bet.id}` });
+      const result = await repo.placeGameHubBet({ game, roundId: round.roundId, bet, amount: stake, ref: `games:${game}:bet:${bet.id}`, acceptedAt: now() });
       return { bet: publicBet(result.bet), balanceEtb: result.balance / 100, duplicate: result.duplicate === true };
     } catch (error) {
       mapRepoError(error);
