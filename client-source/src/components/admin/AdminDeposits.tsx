@@ -91,7 +91,7 @@ export function AdminDeposits() {
                       {row.smsMatch?.status === 'matched' ? (autoEligibleSms ? 'Configured Telebirr-to-CBE receipt matched — auto approval eligible' : 'SMS matched; Admin review is required for this payment type') : row.smsMatch?.status === 'amount-mismatch' ? 'SMS received, but amount does not match — manual review required' : 'Waiting for bank SMS; Admin may review the bank receipt manually'}
                     </p>
                     {row.smsMatch?.provider && <p className="mt-1 text-gold-400">Provider: {row.smsMatch.provider}</p>}
-                    {row.smsMatch?.amount !== undefined && <p className="mt-1 text-gold-300">SMS amount: {row.smsMatch.amount} ETB</p>}
+                    {row.smsMatch?.amount !== undefined && <p className="mt-1 text-gold-300">SMS amount: {formatAmount(lang, row.smsMatch.amount / 100)} ETB</p>}
                     {row.smsMatch?.sender && <p className="mt-1 text-gold-500">Sender: {row.smsMatch.sender}</p>}
                     {row.smsMatch?.transactionAt && <p className="mt-1 text-gold-500">Transaction time: {formatDateTime(lang, row.smsMatch.transactionAt)}</p>}
                   </div>
