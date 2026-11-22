@@ -246,6 +246,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   async function placeBet(game, user, input = {}) {
     ensureSimulationMode();
     assertVerifiedPlayer(user);
+    await repo.getGameHubWallet(user.id);
     const currentSettings = await settings();
     if (!currentSettings[game + 'Enabled']) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
     const round = await tickGame(game);
