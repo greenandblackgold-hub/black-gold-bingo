@@ -83,7 +83,7 @@ test('defaults need no configuration on Render, and unsafe production settings a
   });
   assert.equal(cfg.publicApiUrl, 'https://bingo.onrender.com');
   assert.equal(cfg.clientUrl, 'https://bingo.onrender.com');
-  assert.deepEqual(cfg.clientOrigins, ['https://bingo.onrender.com']);
+  assert.deepEqual(cfg.clientOrigins, ['https://bingo.onrender.com', 'https://localhost']);
   assert.equal(cfg.trustProxy, true);
   assert.equal(cfg.chapa.emailDomain, 'bingo.onrender.com');
   assert.equal(cfg.prizePercent, 80);
