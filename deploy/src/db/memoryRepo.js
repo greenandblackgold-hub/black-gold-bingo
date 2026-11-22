@@ -41,6 +41,8 @@ export function createMemoryRepo() {
     if (!users.has(userId)) throw new RepoError('USER_NOT_FOUND');
     if (!gameHubWallets.has(userId)) {
       gameHubWallets.set(userId, { userId, balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt: new Date() });
+      const ref = 'games:initial-demo-credit:' + userId;
+      gameHubLedger.set(ref, { userId, amount: 100000, kind: 'demo_grant', ref, meta: { reason: 'initial_demo_wallet' }, createdAt: new Date() });
     }
     return gameHubWallets.get(userId);
   };
