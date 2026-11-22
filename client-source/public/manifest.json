@@ -1,0 +1,22 @@
+{
+  "id": "./",
+  "name": "Black Gold PLC Bingo PRO",
+  "short_name": "Black Gold Bingo",
+  "description": "Black Gold PLC Bingo PRO",
+  "lang": "am",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#061D19",
+  "theme_color": "#061D19",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
