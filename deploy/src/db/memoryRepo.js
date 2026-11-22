@@ -430,12 +430,12 @@ export function createMemoryRepo() {
       Object.assign(round, clone(patch), { version: round.version + 1 });
       return clone(round);
     },
-    async placeGameHubBet({ game, roundId, bet, amount, ref }) {
+    async placeGameHubBet({ game, roundId, bet, amount, ref, acceptedAt }) {
       const round = gameHubRounds.get(game + ':' + roundId);
       if (!round) throw new RepoError('ROUND_NOT_OPEN');
       const existing = (round.bets ?? []).find((item) => item.userId === bet.userId && item.requestId === bet.requestId);
       if (existing) return { bet: clone(existing), balance: users.get(bet.userId)?.balance ?? 0, duplicate: true };
-      if (round.status !== 'betting') throw new RepoError('ROUND_NOT_OPEN');
+      if (round.status !== 'betting' || round.bettingEndsAt <= acceptedAt) throw new RepoError('ROUND_NOT_OPEN');
       const movement = credit(bet.userId, -amount, 'game_bet', ref, { game, roundId, betId: bet.id });
       round.bets.push(clone(bet));
       round.version += 1;
