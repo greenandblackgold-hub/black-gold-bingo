@@ -26,6 +26,7 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   const initial = await f.service.getState('keno', f.user);
   assert.equal(initial.status, 'betting');
   assert.equal(initial.balanceEtb, 1000);
+  assert.equal(initial.payoutTable['4']['4'], 4000, 'published Keno payout table is fixed and exposed');
   assert.equal((await f.repo.listGameHubLedger(f.user.id)).length, 1, 'initial demo credit is ledgered');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
 
