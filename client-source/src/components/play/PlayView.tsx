@@ -223,7 +223,7 @@ function CalledBall({ number, latest = false }: { number: number; latest?: boole
   );
 }
 
-export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet: () => void; onOpenMenu: () => void; onLogout: () => void }) {
+export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: { onGoToWallet: () => void; settingsOpen: boolean; onSettingsOpenChange: (open: boolean) => void }) {
   const { lang } = useLanguage();
   const { cards, markedByCard, toggleMark, balance, buyCards } = usePlayer();
   const {
@@ -235,7 +235,6 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
   const [autoMark, setAutoMark] = useState(true);
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
   const [patternOpen, setPatternOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [numberBoardMode, setNumberBoardMode] = useState<'all' | 'called'>('all');
   const [numberBoardExpanded, setNumberBoardExpanded] = useState(true);
   const [cardsPerRow, setCardsPerRow] = useState(() => {
@@ -368,28 +367,7 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
     <main className="player-play-view relative mx-auto min-h-full w-full max-w-[1100px] overflow-hidden rounded-[2rem] border-2 border-zinc-500/80 bg-[#030303] px-2 pb-32 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
       <div className="pointer-events-none absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_50%_12%,rgba(255,196,0,.17),transparent_36%),radial-gradient(ellipse_at_50%_100%,rgba(255,196,0,.13),transparent_38%)]" />
       <div className="relative z-10 space-y-2 sm:space-y-3">
-        <header className="rounded-2xl border border-yellow-400/90 bg-black px-3 py-2 shadow-[0_0_24px_rgba(250,204,21,.4)]">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
-            <div className="flex min-w-0 items-center gap-2 justify-self-start">
-              <button type="button" onClick={onLogout} aria-label="ውጣ" title="ውጣ" className="flex min-h-10 items-center gap-2 rounded-full border border-yellow-300/70 px-3 text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">
-                <span className="text-3xl font-black leading-none">‹</span>
-                <span className="whitespace-nowrap text-sm font-black sm:text-base">ውጣ</span>
-              </button>
-            </div>
-            <div className="flex min-w-0 items-center justify-center gap-2 border-x border-yellow-500/70 px-2 text-yellow-300 justify-self-center">
-              <span className="text-4xl leading-none drop-shadow-[0_0_12px_rgba(255,215,0,1)] sm:text-5xl">🏆</span>
-              <strong className="whitespace-nowrap text-lg font-black tracking-tight text-yellow-300 drop-shadow-[0_0_12px_rgba(255,215,0,.9)] sm:text-3xl">
-                {roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} ብር
-              </strong>
-            </div>
-            <div className="flex shrink-0 items-center gap-2 justify-self-end">
-              <button type="button" onClick={onOpenMenu} aria-label="ሜኑ ክፈት" title="ሜኑ" className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/60 text-3xl leading-none text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">⋮</button>
-              <button type="button" onClick={() => setSettingsOpen(true)} aria-label="ሴቲንግ ክፈት" title="ሴቲንግ" className="grid h-10 w-10 place-items-center rounded-full border border-yellow-400/60 text-white transition hover:bg-yellow-400/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
-              </button>
-            </div>
-          </div>
-        </header>
+
         <div className="flex justify-end px-1 -mt-1" aria-label={`ዙር ${roundNumber}`}>
           <span className="rounded-full border border-yellow-500/15 bg-black/35 px-1.5 py-0.5 text-[8px] font-medium leading-none tracking-wide text-yellow-200/45 tabular-nums">
             ዙር #{roundNumber}
@@ -401,7 +379,7 @@ export function PlayView({ onGoToWallet, onOpenMenu, onLogout }: { onGoToWallet:
             <section className="relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-amber-400/40 bg-[#090909] p-4 shadow-2xl sm:p-5">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="text-lg font-black text-amber-200">⚙ ሴቲንግ</h2>
-                <button type="button" onClick={() => setSettingsOpen(false)} aria-label="ዝጋ" className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold text-amber-100">ዝጋ ✕</button>
+                <button type="button" onClick={() => onSettingsOpenChange(false)} aria-label="ዝጋ" className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold text-amber-100">ዝጋ ✕</button>
               </div>
               <PlayerFeatures onGoToWallet={onGoToWallet} settingsOnly />
             </section>
