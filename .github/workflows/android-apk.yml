@@ -28,8 +28,11 @@ jobs:
         working-directory: client-source
         run: npm install --no-audit --no-fund
 
-      - name: Build web app
+      - name: Build web app in live server mode
         working-directory: client-source
+        env:
+          VITE_SERVER_MODE: 'true'
+          VITE_API_URL: https://black-gold-bingo.onrender.com
         run: npm run build
 
       - name: Add Android platform
