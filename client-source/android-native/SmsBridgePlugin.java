@@ -39,8 +39,10 @@ public class SmsBridgePlugin extends Plugin {
 
     @PluginMethod
     public void configure(PluginCall call) {
-        String apiUrl = call.getString("apiUrl", "");
-        String token = call.getString("token", "");
+        String apiUrl = call.getString("apiUrl");
+        String token = call.getString("token");
+        if (apiUrl == null) apiUrl = "";
+        if (token == null) token = "";
         if (!apiUrl.startsWith("https://") || token.length() < 40) {
             call.reject("Invalid secure SMS bridge configuration.");
             return;
