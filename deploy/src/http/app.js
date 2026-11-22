@@ -102,15 +102,15 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
     routes.push({ method, re, keys, access, bucket, handler });
   };
 
-  // Production money routes remain locked until the required permit and provider approval are confirmed.
+  // Production real-money activity remains locked until the applicable lottery permit is confirmed.
   const requireRegistration = () => {
     if (config.prod && !config.registrationEnabled) {
       throw new HttpError(503, 'registration_disabled', 'Registration is temporarily unavailable');
     }
   };
   const requireRealMoney = () => {
-    if (config.prod && (!config.realMoneyEnabled || !config.lotteryLicenseApproved || !config.chapaMerchantApproved)) {
-      throw new HttpError(503, 'real_money_disabled', 'Real-money play is not enabled until licensing and payment approval are verified');
+    if (config.prod && (!config.realMoneyEnabled || !config.lotteryLicenseApproved)) {
+      throw new HttpError(503, 'real_money_disabled', 'Real-money play is disabled until the required lottery authorization is verified');
     }
   };
 
@@ -157,7 +157,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
     const rows = await repo.listLedger(user.id, 30);
     return rows.map((e) => ({ id: e.ref, kind: ledgerKind(e.kind), amount: e.amount / 100, label: ledgerLabel[e.kind], at: new Date(e.createdAt).getTime() }));
   });
-  route('POST', '/api/simulation/deposits', 'user', 'money', ({ user, body }) => wallet.startSmsSimulationDeposit(user, body));
+  route('POST', '/api/simulation/deposits', 'user', 'money', ({ user, body }) => { requireRealMoney(); return wallet.startSmsSimulationDeposit(user, body); });
   route('GET', '/api/simulation/deposits', 'user', 'default', ({ user }) => wallet.listUserSimulationDeposits(user));
   route('GET', '/api/simulation/deposits/:txRef', 'user', 'default', ({ user, params }) => wallet.simulationDepositStatus(user, decodeURIComponent(params.txRef)));
 
@@ -325,8 +325,10 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push }) {
   admin('POST', '/api/admin/win-payouts/:id/reject', async ({ params, body }) =>
     wallet.rejectWinPayout(decodeURIComponent(params.id), body.note),
   );
-  admin('POST', '/api/admin/deposits/:txRef/approve', async ({ params }) =>
-    wallet.approveSimulationDeposit(decodeURIComponent(params.txRef)),
+  admin('POST', '/api/admin/deposits/:txRef/approve', async ({ params }) => {
+    requireRealMoney();
+    return wallet.approveSimulationDeposit(decodeURIComponent(params.txRef));
+  },
   );
   admin('POST', '/api/admin/deposits/:txRef/test-approve', async ({ params }) =>
     wallet.testApproveSimulationDeposit(decodeURIComponent(params.txRef)),
