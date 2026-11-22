@@ -114,8 +114,8 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
     }
   };
 
-  const ledgerLabel = { prize: 'Prize', withdraw_hold: 'Cash-out', withdraw_refund: 'Cash-out refund' };
-  const ledgerKind = (k) => (k === 'card_purchase' || k === 'withdraw_hold' ? 'purchase' : 'deposit');
+  const ledgerLabel = { prize: 'Prize', game_bet: 'Game entry', game_prize: 'Game prize', withdraw_hold: 'Cash-out', withdraw_refund: 'Cash-out refund' };
+  const ledgerKind = (k) => (['card_purchase', 'withdraw_hold', 'game_bet'].includes(k) ? 'purchase' : 'deposit');
 
   route('GET', '/health', 'public', 'default', async () => ({ ok: true, storage: repo.kind }));
 
