@@ -46,6 +46,21 @@ test('the server serves the website and falls back to the single page for app ro
   assert.equal((await get('/nope.js')).status, 404, 'a missing file is a real 404');
 });
 
+test('Capacitor Android origin can preflight authenticated API requests', async () => {
+  const r = await get('/api/auth/login', {
+    method: 'OPTIONS',
+    headers: {
+      Origin: 'https://localhost',
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'authorization,content-type',
+    },
+  });
+  assert.equal(r.status, 204);
+  assert.equal(r.headers.get('access-control-allow-origin'), 'https://localhost');
+  assert.match(r.headers.get('access-control-allow-headers') ?? '', /Authorization/i);
+  assert.match(r.headers.get('access-control-allow-headers') ?? '', /Content-Type/i);
+});
+
 test('API paths never fall back to the website', async () => {
   const r = await get('/api/does-not-exist');
   assert.equal(r.status, 404);
@@ -83,7 +98,7 @@ test('defaults need no configuration on Render, and unsafe production settings a
   });
   assert.equal(cfg.publicApiUrl, 'https://bingo.onrender.com');
   assert.equal(cfg.clientUrl, 'https://bingo.onrender.com');
-  assert.deepEqual(cfg.clientOrigins, ['https://bingo.onrender.com']);
+  assert.deepEqual(cfg.clientOrigins, ['https://bingo.onrender.com', 'https://localhost']);
   assert.equal(cfg.trustProxy, true);
   assert.equal(cfg.chapa.emailDomain, 'bingo.onrender.com');
   assert.equal(cfg.prizePercent, 80);

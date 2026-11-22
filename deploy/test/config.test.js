@@ -38,3 +38,9 @@ test('production real-money play requires both lottery licensing and Chapa merch
   });
   assert.equal(approved.realMoneyEnabled, true);
 });
+
+
+test('Android Capacitor WebView origin is allowed without dropping configured website origins', () => {
+  const config = loadConfig({ ...productionEnv, CLIENT_ORIGINS: 'https://black-gold-bingo.onrender.com' });
+  assert.deepEqual(config.clientOrigins, ['https://black-gold-bingo.onrender.com', 'https://localhost']);
+});

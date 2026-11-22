@@ -25,7 +25,9 @@ export function loadConfig(env = process.env) {
     mongoUri: env.MONGODB_URI ?? '',
     dbName: env.DB_NAME ?? 'blackgold_bingo',
     jwtSecret: env.JWT_SECRET ?? (prod ? '' : 'dev-only-secret-change-me-dev-only-secret'),
-    clientOrigins: (env.CLIENT_ORIGINS ?? clientUrl).split(',').map((s) => s.trim()).filter(Boolean),
+    // Capacitor Android serves its bundled WebView from https://localhost.
+    // Keep that exact origin allowed so the native app can call this same API.
+    clientOrigins: [...new Set([...(env.CLIENT_ORIGINS ?? clientUrl).split(',').map((s) => s.trim()).filter(Boolean), 'https://localhost'])],
     clientUrl,
     publicApiUrl: selfUrl,
     // The built website (served by this same process). Missing folder = API only.
