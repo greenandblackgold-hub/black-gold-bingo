@@ -41,7 +41,7 @@ export function createWalletService({ repo, config, chapa }) {
       // A player-provided SMS is untrusted input and can be forged.
       // Keep the request pending until an authenticated SMS gateway event or an administrator
       // confirms the transfer. Parsing validates format and destination, not settlement.
-      const configuredRecipient = String(config.cbeDepositAccount ?? '').replace(/\\D/g, '');
+      const configuredRecipient = String(config.cbeDepositAccount ?? '').replace(/\D/g, '');
       if (parsed.provider !== 'telebirr' || !configuredRecipient || parsed.recipientAccount !== configuredRecipient) {
         throw new HttpError(400, 'unverified_recipient', 'Only a Telebirr transfer receipt addressed to the configured CBE deposit account can be submitted.');
       }
