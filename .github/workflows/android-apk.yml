@@ -1,0 +1,65 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - feat/android-capacitor-app
+    paths:
+      - 'client-source/**'
+      - '.github/workflows/android-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client-source/package-lock.json
+
+      - name: Install dependencies
+        working-directory: client-source
+        run: npm install --no-audit --no-fund
+
+      - name: Build web app
+        working-directory: client-source
+        run: npm run build
+
+      - name: Add Android platform
+        working-directory: client-source
+        run: npx cap add android
+
+      - name: Sync Capacitor
+        working-directory: client-source
+        run: npx cap sync android
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build debug APK
+        working-directory: client-source/android
+        run: ./gradlew assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: black-gold-bingo-android-debug
+          path: client-source/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
