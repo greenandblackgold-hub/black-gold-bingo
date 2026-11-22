@@ -51,7 +51,8 @@ function deterministicKenoDraw(seed, count = 20) {
 }
 
 function deterministicCrashPoint(seed) {
-  const digest = createHash('sha256').update(seed).digest('hex');
+  // Domain-separated HMAC keeps the crash result secret even though SHA-256(seed) is public as the commitment.
+  const digest = createHmac('sha256', Buffer.from(seed, 'hex')).update('aviator-crash-v1').digest('hex');
   const fraction = Number(BigInt('0x' + digest.slice(0, 13))) / 0x1_0000_0000_0000_0;
   const raw = Math.floor((0.99 / Math.max(1e-12, 1 - fraction)) * 100) / 100;
   return Math.min(MAX_MULTIPLIER, Math.max(1, raw));
