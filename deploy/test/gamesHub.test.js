@@ -1,0 +1,127 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createMemoryRepo } from '../src/db/memoryRepo.js';
+import { createGamesHubService } from '../src/services/gamesHubService.js';
+import { HttpError } from '../src/util/errors.js';
+
+async function fixture() {
+  let clock = Date.now();
+  const repo = createMemoryRepo();
+  const user = await repo.createUser({
+    phone: '0912345678', name: 'Games Test', pinHash: 'not-used',
+    role: 'player', phoneVerified: true,
+  });
+  await repo.applyLedger({ userId: user.id, amount: 100000, kind: 'deposit', ref: 'seed:games-test' });
+  const service = createGamesHubService({
+    repo,
+    config: { prod: false, realMoneyEnabled: false },
+    now: () => clock,
+  });
+  return { repo, user, service, advance: (ms) => { clock += ms; }, time: () => clock };
+}
+
+test('Keno accepts a valid selection, debits once and settles a committed 20-number draw', async () => {
+  const f = await fixture();
+  const initial = await f.service.getState('keno', f.user);
+  assert.equal(initial.status, 'betting');
+  assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
+
+  const placed = await f.service.placeKenoBet(f.user, {
+    requestId: 'keno_test_request_01',
+    amount: 10,
+    selectedNumbers: [1, 8, 23, 80],
+  });
+  assert.equal(placed.balanceEtb, 990);
+  assert.equal(placed.bet.stakeEtb, 10);
+
+  const duplicate = await f.service.placeKenoBet(f.user, {
+    requestId: 'keno_test_request_01',
+    amount: 10,
+    selectedNumbers: [1, 8, 23, 80],
+  });
+  assert.equal(duplicate.duplicate, true);
+  assert.equal(duplicate.balanceEtb, 990);
+
+  f.advance(21_000);
+  const settled = await f.service.getState('keno', f.user);
+  assert.equal(settled.status, 'settled');
+  assert.equal(settled.drawnNumbers.length, 20);
+  assert.equal(new Set(settled.drawnNumbers).size, 20);
+  assert.ok(settled.drawnNumbers.every((n) => Number.isInteger(n) && n >= 1 && n <= 80));
+  assert.equal(settled.serverSeed.length, 64);
+  assert.equal(settled.myBets.length, 1);
+  assert.ok(['won', 'lost'].includes(settled.myBets[0].status));
+  assert.equal((await f.repo.listGameHubRounds('keno', 1))[0].status, 'settled');
+});
+
+test('Keno rejects duplicate or out-of-range selections and insufficient balance', async () => {
+  const f = await fixture();
+  await f.service.getState('keno', f.user);
+  await assert.rejects(
+    f.service.placeKenoBet(f.user, { requestId: 'keno_bad_request_1', amount: 10, selectedNumbers: [1, 1] }),
+    (e) => e instanceof HttpError && e.code === 'invalid_keno_numbers',
+  );
+  await assert.rejects(
+    f.service.placeKenoBet(f.user, { requestId: 'keno_bad_request_2', amount: 1001, selectedNumbers: [1] }),
+    (e) => e instanceof HttpError && e.code === 'invalid_bet_amount',
+  );
+});
+
+test('Aviator commits a round before betting and reveals its seed only after crash', async () => {
+  const f = await fixture();
+  const initial = await f.service.getState('aviator', f.user);
+  assert.equal(initial.status, 'betting');
+  assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
+  assert.equal(initial.serverSeed, undefined);
+
+  const placed = await f.service.placeAviatorBet(f.user, {
+    requestId: 'aviator_test_request_01',
+    amount: 5,
+  });
+  assert.equal(placed.balanceEtb, 995);
+
+  f.advance(9_000);
+  const flyingOrCrashed = await f.service.getState('aviator', f.user);
+  assert.ok(['flying', 'crashed'].includes(flyingOrCrashed.status));
+  if (flyingOrCrashed.status === 'flying') {
+    const current = await f.repo.getCurrentGameHubRound('aviator');
+    assert.ok(current.crashAt >= current.startedAt);
+    assert.equal(flyingOrCrashed.serverSeed, undefined);
+    const cashed = await f.service.cashOutAviator(f.user, placed.bet.id);
+    assert.ok(cashed.multiplier >= 1);
+    assert.ok(cashed.bet.payoutEtb >= 5);
+  }
+
+  f.advance(120_000);
+  const completed = await f.service.getState('aviator', f.user);
+  assert.equal(completed.status, 'crashed');
+  assert.equal(completed.serverSeed.length, 64);
+  assert.equal(completed.crashMultiplier >= 1, true);
+});
+
+test('Admin settings are validated and persist independently of Bingo settings', async () => {
+  const f = await fixture();
+  const settings = await f.service.updateSettings({ kenoEnabled: false, minBetEtb: 8, maxBetEtb: 200, kenoBettingSeconds: 30 });
+  assert.equal(settings.kenoEnabled, false);
+  assert.equal(settings.minBet, 800);
+  assert.equal(settings.maxBet, 20000);
+  assert.equal(settings.kenoBettingSeconds, 30);
+  await assert.rejects(
+    f.service.updateSettings({ minBetEtb: 500, maxBetEtb: 10 }),
+    (e) => e instanceof HttpError && e.code === 'invalid_bet_range',
+  );
+  await assert.rejects(
+    f.service.getState('keno', f.user),
+    (e) => e instanceof HttpError && e.code === 'game_disabled',
+  );
+});
+
+test('Keno and Aviator remain blocked if production real-money mode is enabled', async () => {
+  const repo = createMemoryRepo();
+  const user = await repo.createUser({ phone: '0911111111', name: 'Locked', pinHash: 'x', role: 'player', phoneVerified: true });
+  const service = createGamesHubService({ repo, config: { prod: true, realMoneyEnabled: true } });
+  await assert.rejects(
+    service.getState('keno', user),
+    (e) => e instanceof HttpError && e.code === 'games_hub_demo_only',
+  );
+});
