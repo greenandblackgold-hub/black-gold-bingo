@@ -29,6 +29,11 @@ export async function createMongoRepo({ uri, dbName }) {
   const phoneChallenges = db.collection('phoneVerificationChallenges');
   const pinResetChallenges = db.collection('pinResetChallenges');
   const pushSubscriptions = db.collection('pushSubscriptions');
+  const gameHubRounds = db.collection('gameHubRounds');
+  const gameHubState = db.collection('gameHubState');
+  const gameHubSettings = db.collection('gameHubSettings');
+  const gameHubWallets = db.collection('gameHubWallets');
+  const gameHubLedger = db.collection('gameHubLedger');
 
   async function tx(fn) {
     const session = client.startSession();
@@ -56,6 +61,17 @@ export async function createMongoRepo({ uri, dbName }) {
 
   const balanceOf = async (userId) => (await users.findOne({ _id: userId }, { projection: { balance: 1 } }))?.balance ?? 0;
 
+  /** Separate non-withdrawable simulation credits for Keno and Aviator. */
+  async function moveGameHubCredits(session, { userId, amount, kind, ref, meta }) {
+    const filter = amount < 0 ? { _id: userId, balance: { $gte: -amount } } : { _id: userId };
+    const r = await gameHubWallets.updateOne(filter, { $inc: { balance: amount } }, { session });
+    if (!r.matchedCount) {
+      const exists = await gameHubWallets.findOne({ _id: userId }, { session, projection: { _id: 1 } });
+      throw new RepoError(exists ? 'INSUFFICIENT_FUNDS' : 'GAME_WALLET_NOT_FOUND');
+    }
+    await gameHubLedger.insertOne({ userId, amount, kind, ref, meta: meta ?? {}, createdAt: new Date() }, { session });
+  }
+
   return {
     kind: 'mongo',
 
@@ -81,6 +97,11 @@ export async function createMongoRepo({ uri, dbName }) {
         pinResetChallenges.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
         pushSubscriptions.createIndex({ endpoint: 1 }, { unique: true }),
         pushSubscriptions.createIndex({ userId: 1 }),
+        gameHubRounds.createIndex({ game: 1, createdAt: -1 }),
+        gameHubRounds.createIndex({ expireAt: 1 }, { expireAfterSeconds: 0 }),
+        gameHubRounds.createIndex({ game: 1, roundId: 1 }, { unique: true }),
+        gameHubLedger.createIndex({ ref: 1 }, { unique: true }),
+        gameHubLedger.createIndex({ userId: 1, createdAt: -1 }),
       ]);
       await games.updateOne({ _id: 'state' }, { $setOnInsert: { ...DEFAULT_GAME } }, { upsert: true });
     },
@@ -564,6 +585,187 @@ export async function createMongoRepo({ uri, dbName }) {
       const w = await withdrawals.findOne({ _id: id });
       if (!w) throw new RepoError('WITHDRAWAL_NOT_FOUND');
       return this.applyLedger({ userId: w.userId, amount: w.amount, kind: 'withdraw_refund', ref: `wd-refund:${id}`, meta: { id } });
+    },
+
+    /* Isolated Keno and Aviator persistence; the existing Bingo collections and methods remain unchanged. */
+    async getGameHubSettings() {
+      const saved = await gameHubSettings.findOne({ _id: 'settings' });
+      if (!saved) return {};
+      const { _id, ...settings } = saved;
+      return settings;
+    },
+    async getGameHubWallet(userId) {
+      if (!(await users.findOne({ _id: userId }, { projection: { _id: 1 } }))) throw new RepoError('USER_NOT_FOUND');
+      const shape = (wallet) => ({ userId: wallet._id, balance: wallet.balance, currency: wallet.currency, balanceType: wallet.balanceType, createdAt: wallet.createdAt });
+      const existing = await gameHubWallets.findOne({ _id: userId });
+      if (existing) return shape(existing);
+      try {
+        return await tx(async (session) => {
+          const createdAt = new Date();
+          const upsert = await gameHubWallets.updateOne(
+            { _id: userId },
+            { $setOnInsert: { balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt } },
+            { upsert: true, session },
+          );
+          if (upsert.upsertedCount) {
+            const ref = 'games:initial-demo-credit:' + userId;
+            await gameHubLedger.insertOne({ userId, amount: 100000, kind: 'demo_grant', ref, meta: { reason: 'initial_demo_wallet' }, createdAt }, { session });
+          }
+          const wallet = await gameHubWallets.findOne({ _id: userId }, { session });
+          return shape(wallet);
+        });
+      } catch (error) {
+        // Concurrent first visits can race to create the same wallet; read the winner after the transaction conflict.
+        if ([11000, 112].includes(error?.code) || error?.codeName === 'WriteConflict') {
+          const created = await gameHubWallets.findOne({ _id: userId });
+          if (created) return shape(created);
+        }
+        throw error;
+      }
+    },
+    async listGameHubLedger(userId, limit = 30) {
+      return gameHubLedger.find({ userId }).sort({ createdAt: -1 }).limit(limit).toArray();
+    },
+    async updateGameHubSettings(settings) {
+      await gameHubSettings.updateOne({ _id: 'settings' }, { $set: { ...settings, updatedAt: new Date() } }, { upsert: true });
+      return this.getGameHubSettings();
+    },
+    async getCurrentGameHubRound(game) {
+      const state = await gameHubState.findOne({ _id: game });
+      if (!state?.currentRoundId) return null;
+      return toDoc(await gameHubRounds.findOne({ _id: state.currentRoundId }));
+    },
+    async createGameHubRound(game, round) {
+      return tx(async (session) => {
+        const state = await gameHubState.findOne({ _id: game }, { session });
+        if (state?.currentRoundId) {
+          const current = await gameHubRounds.findOne({ _id: state.currentRoundId }, { session });
+          if (current && !['settled', 'crashed'].includes(current.status)) return toDoc(current);
+        }
+        const doc = { ...round, _id: game + ':' + round.roundId, game, version: 1 };
+        await gameHubRounds.insertOne(doc, { session });
+        await gameHubState.updateOne({ _id: game }, { $set: { currentRoundId: doc._id, updatedAt: new Date() } }, { upsert: true, session });
+        return toDoc(doc);
+      });
+    },
+    async updateGameHubRound(game, id, expectedVersion, patch) {
+      const updated = await gameHubRounds.findOneAndUpdate(
+        { _id: game + ':' + id, version: expectedVersion },
+        { $set: patch, $inc: { version: 1 } },
+        { returnDocument: 'after' },
+      );
+      return toDoc(updated);
+    },
+    async placeGameHubBet({ game, roundId, bet, amount, ref, acceptedAt }) {
+      return tx(async (session) => {
+        const key = game + ':' + roundId;
+        const round = await gameHubRounds.findOne({ _id: key }, { session });
+        if (!round) throw new RepoError('ROUND_NOT_OPEN');
+        await gameHubWallets.updateOne(
+          { _id: bet.userId },
+          { $setOnInsert: { balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt: new Date() } },
+          { upsert: true, session },
+        );
+        const existing = (round.bets ?? []).find((item) => item.userId === bet.userId && item.requestId === bet.requestId);
+        if (existing) {
+          const wallet = await gameHubWallets.findOne({ _id: bet.userId }, { session, projection: { balance: 1 } });
+          return { bet: existing, balance: wallet?.balance ?? 0, duplicate: true };
+        }
+        if (round.status !== 'betting' || round.bettingEndsAt <= acceptedAt) throw new RepoError('ROUND_NOT_OPEN');
+        await moveGameHubCredits(session, { userId: bet.userId, amount: -amount, kind: 'game_bet', ref, meta: { game, roundId, betId: bet.id } });
+        const updated = await gameHubRounds.findOneAndUpdate(
+          { _id: key, version: round.version, status: 'betting' },
+          { $push: { bets: bet }, $inc: { version: 1 } },
+          { returnDocument: 'after', session },
+        );
+        if (!updated) throw new RepoError('ROUND_NOT_OPEN');
+        const wallet = await gameHubWallets.findOne({ _id: bet.userId }, { session, projection: { balance: 1 } });
+        return { bet, balance: wallet?.balance ?? 0, duplicate: false };
+      });
+    },
+    async settleKenoGameHubRound({ roundId, drawnNumbers, results, serverSeed, settledAt, nextRoundAt }) {
+      return tx(async (session) => {
+        const key = 'keno:' + roundId;
+        const round = await gameHubRounds.findOne({ _id: key }, { session });
+        if (!round) throw new RepoError('ROUND_NOT_OPEN');
+        if (round.status === 'settled') return toDoc(round);
+        if (round.status !== 'betting') throw new RepoError('ROUND_NOT_OPEN');
+        const byId = new Map(results.map((result) => [result.betId, result]));
+        const bets = (round.bets ?? []).map((bet) => {
+          const result = byId.get(bet.id) ?? { payout: 0, hits: 0, matchedNumbers: [] };
+          return { ...bet, status: result.payout > 0 ? 'won' : 'lost', hits: result.hits, matchedNumbers: result.matchedNumbers, payout: result.payout, settledAt };
+        });
+        for (const bet of bets) {
+          if (bet.payout > 0) await moveGameHubCredits(session, {
+            userId: bet.userId, amount: bet.payout, kind: 'game_prize',
+            ref: 'games:keno:win:' + bet.id, meta: { game: 'keno', roundId, betId: bet.id },
+          });
+        }
+        const updated = await gameHubRounds.findOneAndUpdate(
+          { _id: key, version: round.version, status: 'betting' },
+          { $set: { status: 'settled', drawnNumbers, serverSeed, bets, settledAt, nextRoundAt }, $inc: { version: 1 } },
+          { returnDocument: 'after', session },
+        );
+        if (!updated) throw new RepoError('ROUND_NOT_OPEN');
+        return toDoc(updated);
+      });
+    },
+    async startAviatorGameHubRound({ roundId, startedAt, crashAt, crashMultiplier }) {
+      const updated = await gameHubRounds.findOneAndUpdate(
+        { _id: 'aviator:' + roundId, status: 'betting' },
+        { $set: { status: 'flying', startedAt, crashAt, crashMultiplier }, $inc: { version: 1 } },
+        { returnDocument: 'after' },
+      );
+      if (updated) return toDoc(updated);
+      const current = await gameHubRounds.findOne({ _id: 'aviator:' + roundId });
+      if (current?.status === 'flying') return toDoc(current);
+      throw new RepoError('ROUND_NOT_OPEN');
+    },
+    async cashOutAviatorGameHubBet({ roundId, betId, userId, multiplier, payout, cashedOutAt, ref }) {
+      return tx(async (session) => {
+        const key = 'aviator:' + roundId;
+        const round = await gameHubRounds.findOne({ _id: key }, { session });
+        if (!round || round.status !== 'flying' || cashedOutAt >= round.crashAt) throw new RepoError('BET_NOT_ACTIVE');
+        const bet = (round.bets ?? []).find((item) => item.id === betId && item.userId === userId);
+        if (!bet) throw new RepoError('BET_NOT_ACTIVE');
+        if (bet.status === 'cashed_out') {
+          const wallet = await gameHubWallets.findOne({ _id: userId }, { session, projection: { balance: 1 } });
+          return { bet, balance: wallet?.balance ?? 0, duplicate: true };
+        }
+        if (bet.status !== 'active') throw new RepoError('BET_NOT_ACTIVE');
+        await moveGameHubCredits(session, { userId, amount: payout, kind: 'game_prize', ref, meta: { game: 'aviator', roundId, betId, multiplier } });
+        const bets = round.bets.map((item) => item.id === betId
+          ? { ...item, status: 'cashed_out', multiplier, payout, cashedOutAt }
+          : item);
+        const updated = await gameHubRounds.findOneAndUpdate(
+          { _id: key, version: round.version, status: 'flying', crashAt: { $gt: cashedOutAt } },
+          { $set: { bets }, $inc: { version: 1 } },
+          { returnDocument: 'after', session },
+        );
+        if (!updated) throw new RepoError('BET_NOT_ACTIVE');
+        const wallet = await gameHubWallets.findOne({ _id: userId }, { session, projection: { balance: 1 } });
+        return { bet: bets.find((item) => item.id === betId), balance: wallet?.balance ?? 0, duplicate: false };
+      });
+    },
+    async crashAviatorGameHubRound({ roundId, crashedAt, nextRoundAt }) {
+      return tx(async (session) => {
+        const key = 'aviator:' + roundId;
+        const round = await gameHubRounds.findOne({ _id: key }, { session });
+        if (!round) throw new RepoError('ROUND_NOT_OPEN');
+        if (round.status === 'crashed') return toDoc(round);
+        if (round.status !== 'flying') throw new RepoError('ROUND_NOT_OPEN');
+        const bets = (round.bets ?? []).map((bet) => bet.status === 'active' ? { ...bet, status: 'lost' } : bet);
+        const updated = await gameHubRounds.findOneAndUpdate(
+          { _id: key, version: round.version, status: 'flying' },
+          { $set: { status: 'crashed', crashedAt, nextRoundAt, bets }, $inc: { version: 1 } },
+          { returnDocument: 'after', session },
+        );
+        if (!updated) throw new RepoError('ROUND_NOT_OPEN');
+        return toDoc(updated);
+      });
+    },
+    async listGameHubRounds(game, limit = 10) {
+      return (await gameHubRounds.find({ game }).sort({ createdAt: -1 }).limit(limit).toArray()).map(toDoc);
     },
 
     async stats() {

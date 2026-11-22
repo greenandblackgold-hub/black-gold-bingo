@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { translations } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
 
-export type TabId = 'play' | 'wallet' | 'menu';
+export type TabId = 'games' | 'play' | 'wallet' | 'menu';
 
 const LABELS = translations.navigation;
 
@@ -15,6 +15,7 @@ function Icon({ children }: { children: ReactNode }) {
 }
 
 const ICONS: Record<TabId, ReactNode> = {
+  games: <Icon><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></Icon>,
   play: (
     <Icon>
       <circle cx="12" cy="12" r="9" />
@@ -33,7 +34,7 @@ const ICONS: Record<TabId, ReactNode> = {
   ),
 };
 
-const ORDER: TabId[] = ['play', 'wallet', 'menu'];
+const ORDER: TabId[] = ['games', 'play', 'wallet', 'menu'];
 
 export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab: TabId) => void }) {
   const { lang } = useLanguage();
@@ -42,7 +43,7 @@ export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab:
       aria-label={LABELS[lang].main}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-gold-500/20 bg-darkbg/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.25)] backdrop-blur-xl"
     >
-      <ul className="mx-auto grid max-w-xl grid-cols-3 px-2">
+      <ul className="mx-auto grid max-w-2xl grid-cols-4 px-2">
         {ORDER.map((id) => {
           const on = id === active;
           return (
@@ -58,7 +59,7 @@ export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab:
                 ].join(' ')}
               >
                 {ICONS[id]}
-                {id === 'menu' ? (lang === 'en' ? 'Menu' : lang === 'ti' ? 'ምናሌ' : 'ምናሌ') : LABELS[lang][id]}
+                {id === 'menu' ? (lang === 'en' ? 'Menu' : 'ምናሌ') : id === 'games' ? (lang === 'en' ? 'Games' : lang === 'ti' ? 'ጸወታታት' : 'ጨዋታዎች') : id === 'play' ? 'Bingo' : LABELS[lang].wallet}
               </button>
             </li>
           );

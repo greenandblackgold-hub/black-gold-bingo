@@ -19,6 +19,11 @@ export function createMemoryRepo() {
   const phoneChallenges = new Map();
   const pinResetChallenges = new Map();
   const pushSubscriptions = new Map();
+  const gameHubRounds = new Map();
+  const gameHubCurrent = new Map();
+  const gameHubWallets = new Map();
+  const gameHubLedger = new Map();
+  let gameHubSettings = { kenoEnabled: true, aviatorEnabled: true, minBet: 500, maxBet: 100000, kenoBettingSeconds: 20, aviatorBettingSeconds: 8 };
   let game = { ...DEFAULT_GAME, calledNumbers: [] };
   let nextCardSerial = 1;
 
@@ -30,6 +35,24 @@ export function createMemoryRepo() {
     user.balance += amount;
     ledger.set(ref, { userId, amount, kind, ref, meta, createdAt: new Date() });
     return { applied: true, balance: user.balance };
+  };
+
+  const ensureGameHubWallet = (userId) => {
+    if (!users.has(userId)) throw new RepoError('USER_NOT_FOUND');
+    if (!gameHubWallets.has(userId)) {
+      gameHubWallets.set(userId, { userId, balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt: new Date() });
+      const ref = 'games:initial-demo-credit:' + userId;
+      gameHubLedger.set(ref, { userId, amount: 100000, kind: 'demo_grant', ref, meta: { reason: 'initial_demo_wallet' }, createdAt: new Date() });
+    }
+    return gameHubWallets.get(userId);
+  };
+  const moveGameHubCredits = (userId, amount, kind, ref, meta = {}) => {
+    const wallet = ensureGameHubWallet(userId);
+    if (gameHubLedger.has(ref)) return { applied: false, balance: wallet.balance };
+    if (amount < 0 && wallet.balance + amount < 0) throw new RepoError('INSUFFICIENT_FUNDS');
+    wallet.balance += amount;
+    gameHubLedger.set(ref, { userId, amount, kind, ref, meta: clone(meta), createdAt: new Date() });
+    return { applied: true, balance: wallet.balance };
   };
 
   const smsEvents = new Map();
@@ -401,6 +424,93 @@ export function createMemoryRepo() {
       const w = withdrawals.get(id);
       if (!w) throw new RepoError('WITHDRAWAL_NOT_FOUND');
       return credit(w.userId, w.amount, 'withdraw_refund', `wd-refund:${id}`, { id });
+    },
+
+    /* Isolated Keno and Aviator records. Existing Bingo game/card collections are untouched. */
+    async getGameHubSettings() { return clone(gameHubSettings); },
+    async getGameHubWallet(userId) { return clone(ensureGameHubWallet(userId)); },
+    async listGameHubLedger(userId, limit = 30) { return [...gameHubLedger.values()].filter((entry) => entry.userId === userId).sort((a, b) => b.createdAt - a.createdAt).slice(0, limit).map(clone); },
+    async updateGameHubSettings(settings) { gameHubSettings = { ...gameHubSettings, ...clone(settings) }; return clone(gameHubSettings); },
+    async getCurrentGameHubRound(game) {
+      const id = gameHubCurrent.get(game);
+      return id ? clone(gameHubRounds.get(id) ?? null) : null;
+    },
+    async createGameHubRound(game, round) {
+      const currentId = gameHubCurrent.get(game);
+      const current = currentId ? gameHubRounds.get(currentId) : null;
+      if (current && !['settled', 'crashed'].includes(current.status)) return clone(current);
+      const id = game + ':' + round.roundId;
+      const doc = { ...clone(round), _id: id, game, version: 1 };
+      gameHubRounds.set(id, doc);
+      gameHubCurrent.set(game, id);
+      return clone(doc);
+    },
+    async updateGameHubRound(game, id, expectedVersion, patch) {
+      const key = game + ':' + id;
+      const round = gameHubRounds.get(key);
+      if (!round || round.version !== expectedVersion) return null;
+      Object.assign(round, clone(patch), { version: round.version + 1 });
+      return clone(round);
+    },
+    async placeGameHubBet({ game, roundId, bet, amount, ref, acceptedAt }) {
+      const round = gameHubRounds.get(game + ':' + roundId);
+      if (!round) throw new RepoError('ROUND_NOT_OPEN');
+      const existing = (round.bets ?? []).find((item) => item.userId === bet.userId && item.requestId === bet.requestId);
+      const wallet = ensureGameHubWallet(bet.userId);
+      if (existing) return { bet: clone(existing), balance: wallet.balance, duplicate: true };
+      if (round.status !== 'betting' || round.bettingEndsAt <= acceptedAt) throw new RepoError('ROUND_NOT_OPEN');
+      const movement = moveGameHubCredits(bet.userId, -amount, 'game_bet', ref, { game, roundId, betId: bet.id });
+      round.bets.push(clone(bet));
+      round.version += 1;
+      return { bet: clone(bet), balance: movement.balance, duplicate: false };
+    },
+    async settleKenoGameHubRound({ roundId, drawnNumbers, results, serverSeed, settledAt, nextRoundAt }) {
+      const key = 'keno:' + roundId;
+      const round = gameHubRounds.get(key);
+      if (!round) throw new RepoError('ROUND_NOT_OPEN');
+      if (round.status === 'settled') return clone(round);
+      if (round.status !== 'betting') throw new RepoError('ROUND_NOT_OPEN');
+      const byId = new Map(results.map((result) => [result.betId, result]));
+      const bets = round.bets.map((bet) => {
+        const result = byId.get(bet.id) ?? { payout: 0, hits: 0, matchedNumbers: [] };
+        if (result.payout > 0) moveGameHubCredits(bet.userId, result.payout, 'game_prize', 'games:keno:win:' + bet.id, { game: 'keno', roundId, betId: bet.id });
+        return { ...bet, status: result.payout > 0 ? 'won' : 'lost', hits: result.hits, matchedNumbers: result.matchedNumbers, payout: result.payout, settledAt };
+      });
+      Object.assign(round, { status: 'settled', drawnNumbers: clone(drawnNumbers), serverSeed, bets, settledAt, nextRoundAt, version: round.version + 1 });
+      return clone(round);
+    },
+    async startAviatorGameHubRound({ roundId, startedAt, crashAt, crashMultiplier }) {
+      const round = gameHubRounds.get('aviator:' + roundId);
+      if (!round) throw new RepoError('ROUND_NOT_OPEN');
+      if (round.status === 'flying') return clone(round);
+      if (round.status !== 'betting') throw new RepoError('ROUND_NOT_OPEN');
+      Object.assign(round, { status: 'flying', startedAt, crashAt, crashMultiplier, version: round.version + 1 });
+      return clone(round);
+    },
+    async cashOutAviatorGameHubBet({ roundId, betId, userId, multiplier, payout, cashedOutAt, ref }) {
+      const round = gameHubRounds.get('aviator:' + roundId);
+      if (!round || round.status !== 'flying' || cashedOutAt >= round.crashAt) throw new RepoError('BET_NOT_ACTIVE');
+      const bet = round.bets.find((item) => item.id === betId && item.userId === userId);
+      if (!bet) throw new RepoError('BET_NOT_ACTIVE');
+      if (bet.status === 'cashed_out') return { bet: clone(bet), balance: ensureGameHubWallet(userId).balance, duplicate: true };
+      if (bet.status !== 'active') throw new RepoError('BET_NOT_ACTIVE');
+      const movement = moveGameHubCredits(userId, payout, 'game_prize', ref, { game: 'aviator', roundId, betId, multiplier });
+      Object.assign(bet, { status: 'cashed_out', multiplier, payout, cashedOutAt });
+      round.version += 1;
+      return { bet: clone(bet), balance: movement.balance, duplicate: false };
+    },
+    async crashAviatorGameHubRound({ roundId, crashedAt, nextRoundAt }) {
+      const round = gameHubRounds.get('aviator:' + roundId);
+      if (!round) throw new RepoError('ROUND_NOT_OPEN');
+      if (round.status === 'crashed') return clone(round);
+      if (round.status !== 'flying') throw new RepoError('ROUND_NOT_OPEN');
+      for (const bet of round.bets) if (bet.status === 'active') bet.status = 'lost';
+      Object.assign(round, { status: 'crashed', crashedAt, nextRoundAt, version: round.version + 1 });
+      return clone(round);
+    },
+    async listGameHubRounds(game, limit = 10) {
+      return [...gameHubRounds.values()].filter((round) => round.game === game)
+        .sort((a, b) => b.createdAt - a.createdAt).slice(0, limit).map(clone);
     },
 
     async stats() {
