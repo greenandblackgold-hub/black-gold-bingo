@@ -169,7 +169,7 @@ const telebirrReceipt = (reference, ageHours = 0, account = '1000737138686') => 
   return `ውድ Customer ከቴሌ ብር አካውንትዎ 251900000000 ለ Commercial Bank of Ethiopia አካውንት ቁጥር ${account} 125.50 ብር በቀን ${stamp} በተሳካ ሁኔታ አስተላልፈዋል። የቴሌብር ሂሳብ እንቅስቃሴ ቁጥርዎ DKK7G8RIQH እና የባንክ ሂሳብ እንቅስቃሴ ቁጥርዎ ${reference} ነው።`;
 };
 
-test('SMS deposits reject unverified recipients and auto-approve only recent configured-CBE receipts once', async () => {
+test('player-submitted SMS deposits stay pending until an authenticated gateway confirms them', async () => {
   const p = await newPlayer();
   const genericSms = 'You have received ETB 125.50. Transaction ID: TB123456789. Thank you.';
   const unverified = await api('POST', '/api/simulation/deposits', {
@@ -186,23 +186,34 @@ test('SMS deposits reject unverified recipients and auto-approve only recent con
   assert.equal(created.json.reference, 'FT26325ZWP2R');
   assert.equal(created.json.amount, 125.5);
   assert.equal(created.json.provider, 'telebirr');
-  assert.equal(created.json.status, 'success');
-  assert.equal(created.json.approved, true);
-  assert.equal(created.json.credited, true);
-  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
+  assert.equal(created.json.status, 'pending');
+  assert.equal(created.json.approved, false);
+  assert.equal(created.json.credited, false);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
 
   const duplicate = await api('POST', '/api/simulation/deposits', {
     token: p.token, body: { provider: 'Telebirr', message: sms },
   });
   assert.equal(duplicate.status, 409);
   assert.equal(duplicate.json.error, 'reference_used');
-  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
 
   const stale = await api('POST', '/api/simulation/deposits', {
     token: p.token, body: { provider: 'Telebirr', message: telebirrReceipt('FT26325ZWP2S', 25) },
   });
   assert.equal(stale.status, 400);
   assert.equal(stale.json.error, 'stale_sms');
+  assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
+
+  // Only a gateway event authenticated with the configured HMAC secret may auto-confirm this SMS request.
+  ctx.config.smsWebhookSecret = 'test-sms-webhook-secret-at-least-32-characters';
+  const payload = { eventId: 'gateway-event-001', reference: 'FT26325ZWP2R', amount: 125.5, currency: 'ETB', status: 'success' };
+  const raw = JSON.stringify(payload);
+  const signature = createHmac('sha256', ctx.config.smsWebhookSecret).update(raw, 'utf8').digest('hex');
+  const confirmed = await api('POST', '/api/webhooks/sms', { body: payload, headers: { 'x-sms-signature': signature } });
+  assert.equal(confirmed.status, 200, JSON.stringify(confirmed.json));
+  assert.equal(confirmed.json.status, 'success');
+  assert.equal(confirmed.json.credited, true);
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 125.5);
 });
 
