@@ -25,7 +25,7 @@ export function createWalletService({ repo, config, chapa }) {
 
     async simulationDepositStatus(user, txRef) {
       const payment = await repo.getPayment(String(txRef ?? ''));
-      if (!payment || payment.userId !== user.id || !['manual-simulation', 'sms-simulation'].includes(payment.source)) {
+      if (!payment || payment.userId !== user.id || !['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(payment.source)) {
         throw new HttpError(404, 'deposit_not_found', 'Unknown simulation deposit reference.');
       }
       return { status: payment.status };
@@ -79,7 +79,7 @@ export function createWalletService({ repo, config, chapa }) {
     async testApproveSimulationDeposit(txRef) {
       const reference = String(txRef ?? '');
       const payment = await repo.getPayment(reference);
-      if (!payment || !['manual-simulation', 'sms-simulation'].includes(payment.source) || !/^TEST-/i.test(payment.txRef)) {
+      if (!payment || !['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(payment.source) || !/^TEST-/i.test(payment.txRef)) {
         throw new HttpError(404, 'test_deposit_not_found', 'Only TEST-prefixed simulation requests can use test approval.');
       }
       if (payment.status !== 'pending') throw new HttpError(409, 'wrong_status', 'Test request is no longer pending.');
@@ -92,7 +92,7 @@ export function createWalletService({ repo, config, chapa }) {
     /** Reject a pending simulation request without changing the player's balance. */
     async rejectSimulationDeposit(txRef, note) {
       const payment = await repo.getPayment(String(txRef ?? ''));
-      if (!payment || !['manual-simulation', 'sms-simulation'].includes(payment.source)) {
+      if (!payment || !['manual-simulation', 'sms-simulation', 'automatic-sms'].includes(payment.source)) {
         throw new HttpError(404, 'deposit_not_found', 'Unknown simulation deposit request.');
       }
       if (payment.status !== 'pending') throw new HttpError(409, 'wrong_status', 'Deposit request is no longer pending.');
