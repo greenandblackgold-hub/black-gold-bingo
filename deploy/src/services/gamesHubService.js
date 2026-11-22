@@ -207,6 +207,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const round = await tickGame(game);
     const serverTime = now();
     const myBets = (round.bets ?? []).filter((bet) => bet.userId === user.id).map(publicBet);
+    const wallet = await repo.getGameHubWallet(user.id);
     const state = {
       game,
       roundId: round.roundId,
@@ -218,6 +219,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       minBetEtb: currentSettings.minBet / 100,
       maxBetEtb: currentSettings.maxBet / 100,
       mode: 'SIMULATION_ONLY',
+      balanceEtb: wallet.balance / 100,
     };
     if (game === 'keno') {
       state.drawCount = 20;
@@ -351,13 +353,15 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       timer = null;
     },
     getSettings: settings,
-    async getPublicSettings() {
+    async getPublicSettings(user) {
       const current = await settings();
+      const wallet = await repo.getGameHubWallet(user.id);
       return {
         kenoEnabled: current.kenoEnabled === true,
         aviatorEnabled: current.aviatorEnabled === true,
         minBetEtb: current.minBet / 100,
         maxBetEtb: current.maxBet / 100,
+        balanceEtb: wallet.balance / 100,
         mode: 'SIMULATION_ONLY',
       };
     },
