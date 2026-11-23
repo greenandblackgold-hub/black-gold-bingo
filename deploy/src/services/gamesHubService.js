@@ -29,6 +29,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   kenoEnabled: true,
   aviatorEnabled: true,
   minBet: 500,
+  kenoMinBet: 200,
   maxBet: 100000,
   kenoBettingSeconds: 20,
   aviatorBettingSeconds: 8,
@@ -246,7 +247,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       serverTime,
       serverSeedHash: round.serverSeedHash,
       myBets,
-      minBetEtb: currentSettings.minBet / 100,
+      minBetEtb: (game === 'keno' ? currentSettings.kenoMinBet : currentSettings.minBet) / 100,
       maxBetEtb: currentSettings.maxBet / 100,
       maxPayoutEtb: MAX_GAMES_HUB_PAYOUT_SANTIM / 100,
       houseEdgePercent: currentSettings.houseEdgePercent ?? DEFAULT_HOUSE_EDGE_PERCENT,
@@ -294,7 +295,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     if (game === 'aviator' && (round.bets ?? []).some((item) => item.userId === user.id && item.requestId !== requestId)) {
       throw new HttpError(409, 'aviator_bet_already_placed', 'You can place one Aviator bet per round.');
     }
-    const stake = amountToSantim(input.amount, currentSettings);
+    const stake = amountToSantim(input.amount, { ...currentSettings, minBet: game === 'keno' ? currentSettings.kenoMinBet : currentSettings.minBet });
     const bet = {
       id: randomBytes(12).toString('hex'),
       requestId,
@@ -355,6 +356,13 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       }
       next.minBet = Math.round(n * 100);
     }
+    if (input.kenoMinBetEtb !== undefined) {
+      const n = Number(input.kenoMinBetEtb);
+      if (!Number.isFinite(n) || n < 2 || n > 1000 || Math.abs(n * 100 - Math.round(n * 100)) > 1e-7) {
+        throw new HttpError(400, 'invalid_keno_min_bet', 'Keno minimum bet must be 2–1,000 ETB with up to two decimal places.');
+      }
+      next.kenoMinBet = Math.round(n * 100);
+    }
     if (input.maxBetEtb !== undefined) {
       const n = Number(input.maxBetEtb);
       if (!Number.isFinite(n) || n < 1 || n > 5000 || Math.abs(n * 100 - Math.round(n * 100)) > 1e-7) {
@@ -375,7 +383,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     }
     if (input.aviatorBettingSeconds !== undefined) {
       const n = Number(input.aviatorBettingSeconds);
-      if (!Number.isInteger(n) || n < 5 || n > 20) throw new HttpError(400, 'invalid_aviator_timer', 'Aviator betting time must be 5–20 seconds.');
+      if (!Number.isInteger(n) || n < 5 || n > 60) throw new HttpError(400, 'invalid_aviator_timer', 'Aviator betting time must be 5–60 seconds.');
       next.aviatorBettingSeconds = n;
     }
     return repo.updateGameHubSettings(next);
@@ -438,6 +446,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
         settings: {
           ...currentSettings,
           minBetEtb: currentSettings.minBet / 100,
+          kenoMinBetEtb: currentSettings.kenoMinBet / 100,
           maxBetEtb: currentSettings.maxBet / 100,
           maxPayoutEtb: MAX_GAMES_HUB_PAYOUT_SANTIM / 100,
           houseEdgePercent: currentSettings.houseEdgePercent ?? DEFAULT_HOUSE_EDGE_PERCENT,
