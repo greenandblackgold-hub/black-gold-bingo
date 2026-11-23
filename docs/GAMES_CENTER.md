@@ -58,16 +58,9 @@ Keno's existing table is used only to determine relative prize weights. If aggre
 
 | Admin commission | Maximum player pool |
 |---:|---:|
-| 1 | 12.50% |
-| 2 | 13.92% |
-| 3 | 47.27% |
-| 4 | 50.99% |
-| 5 | 41.87% |
-| 6 | 29.34% |
-| 7 | 41.93% |
-| 8 | 30.70% |
-| 9 | 35.88% |
-| 10 | 41.48% |
+| 50% | 50% |
+| 55% | 45% |
+| 60% | 40% |
 
 The commission setting is visible in Admin. If raw table payouts are lower than the player-pool ceiling, the unused amount remains undistributed, so actual operator retention may exceed the configured minimum.
 
