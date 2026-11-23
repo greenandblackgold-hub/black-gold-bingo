@@ -30,7 +30,7 @@ export function KenoGame({ onBack, onSwitchGame }: { onBack: () => void; onSwitc
       setOffset(next.serverTime - Date.now());
       setError('');
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : t.loadError);
+      setError(t.loadError);
     }
   }, []);
   const loadHistory = useCallback(async () => {
@@ -62,7 +62,7 @@ export function KenoGame({ onBack, onSwitchGame }: { onBack: () => void; onSwitc
       setNotice(t.betConfirmed);
       setSelected([]);
       await Promise.all([loadState(), loadHistory()]);
-    } catch (e) { setError(e instanceof ApiError ? e.message : t.betError); }
+    } catch (e) { setError(t.betError); }
     finally { setBusy(false); }
   };
 
