@@ -86,6 +86,7 @@ function deterministicCrashPoint(seed) {
 function publicBet(bet) {
   return {
     id: bet.id,
+    requestId: bet.requestId ?? null,
     status: bet.status,
     stakeEtb: bet.stake / 100,
     selectedNumbers: bet.selectedNumbers,
