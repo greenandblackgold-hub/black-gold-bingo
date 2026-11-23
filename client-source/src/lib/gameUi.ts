@@ -254,7 +254,7 @@ export const gameUi = {
   playerFeatures: {
     am: {
       ariaLabel: 'የተጫዋች መረጃና ቅንብሮች', currentGameType: 'የአሁኑ ዙር የBingo ዓይነት',
-      running: 'በጨዋታ ላይ', waiting: 'በመጠባበቅ ላይ', ended: 'ተጠናቋል',
+      round: 'ዙር', running: 'በጨዋታ ላይ', waiting: 'በመጠባበቅ ላይ', ended: 'ተጠናቋል',
       showPatterns: 'የሚቻሉ የአሸናፊነት ቅርጾችን አሳይ', patternList: 'የBingo አሸናፊነት ቅርጾች',
       possiblePatterns: 'የሚቻሉ የአሸናፊነት ቅርጾች', currentPattern: 'የአሁኑ ዙር ቅርጽ',
       patternCount: 'የአሸናፊነት ቅርጾች', freeExplanation: 'FREE የመካከለኛው ሳጥን በራሱ ተሟልቶ ይቆጠራል። እዚህ የሚታዩት ሁሉም ቅርጾች ምሳሌዎች ናቸው፤ በዚህ ዙር የሚሰራው ሆስቱ የመረጠው ቅርጽ ብቻ ነው።',
@@ -293,7 +293,7 @@ export const gameUi = {
     },
     ti: {
       ariaLabel: 'ሓበሬታን ቅንብራትን ተጻወትቲ', currentGameType: 'ዓይነት ጸወታ ናይዚ ዙር',
-      running: 'ጸወታ ይካየድ ኣሎ', waiting: 'ይጽበ ኣሎ', ended: 'ተወዲኡ',
+      round: 'ዙር', running: 'ጸወታ ይካየድ ኣሎ', waiting: 'ይጽበ ኣሎ', ended: 'ተወዲኡ',
       showPatterns: 'ዝከኣሉ ቅርጺታት ዓወት ኣርኢ', patternList: 'ቅርጺታት ዓወት Bingo',
       possiblePatterns: 'ዝከኣሉ ቅርጺታት ዓወት', currentPattern: 'ቅርጺ ናይዚ ዙር',
       patternCount: 'ቅርጺታት ዓወት', freeExplanation: 'FREE እቲ ኣብ ማእከል ዘሎ ሳጹን ብኣውቶማቲክ ከም ዝተመልአ ይቑጸር። ኣብዚ ዝርኣዩ ቅርጺታት ኣብነታት እዮም፤ ኣብዚ ዙር ዝሰርሕ እቲ ሆስት ዝመረጾ ጥራይ እዩ።',
@@ -332,7 +332,7 @@ export const gameUi = {
     },
     en: {
       ariaLabel: 'Player information and settings', currentGameType: 'Current round game type',
-      running: 'In progress', waiting: 'Waiting', ended: 'Ended',
+      round: 'Round', running: 'In progress', waiting: 'Waiting', ended: 'Ended',
       showPatterns: 'Show possible winning patterns', patternList: 'Bingo winning patterns',
       possiblePatterns: 'Possible winning patterns', currentPattern: 'Current round pattern',
       patternCount: 'winning patterns', freeExplanation: 'The center FREE square is automatically counted as complete. The patterns shown here are examples; only the pattern selected by the Host is active for this round.',
@@ -364,7 +364,7 @@ export const gameUi = {
       notificationPermission: 'Browser permission is required to receive notifications when cards are registered.',
       customerService: 'Black Gold Bingo · Customer service',
       purchaseInsufficient: 'Your balance is not enough to purchase the selected cards.',
-      purchaseSuccess: 'cards purchased successfully.',
+      purchaseSuccess: 'purchased successfully.',
       purchaseError: 'Purchase failed. Check your balance or the round status.',
       purchaseRetry: 'Purchase failed. Please try again.',
       rulesList: ['You need enough balance in your account to purchase cards.','Watch the called numbers carefully and mark only numbers that have been called.','When you complete BINGO, submit a BINGO claim; the system verifies the win.','Submit complete proof for money transactions.'],
