@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 
 type Overview = {
-  settings: { kenoEnabled: boolean; aviatorEnabled: boolean; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; houseEdgePercent: number; kenoBettingSeconds: number; aviatorBettingSeconds: number };
+  settings: { bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; houseEdgePercent: number; kenoBettingSeconds: number; aviatorBettingSeconds: number };
   games: { keno: { roundId: string | null; status: string; bets: number }; aviator: { roundId: string | null; status: string; bets: number } };
   mode: string;
 };
@@ -51,9 +51,11 @@ export function AdminGamesHub() {
       <p className="mt-3 text-xs leading-5 text-amber-100/55">Keno and Aviator pay from the round pool only. Cash Out multipliers are recorded immediately; Aviator wallet credits are settled after the crash. The configured commission is reserved before player payouts.</p>
       <p className="mt-2 text-xs leading-5 text-amber-300/80">Round-level pool cap: enabled server-side; total prizes cannot exceed the configured 40%–50% player share of collected stakes.</p>
     </div>
-    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-      <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Keno</p><p className="text-xs text-amber-100/45">{overview?.games.keno.status ?? 'Loading'} · {overview?.games.keno.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ kenoEnabled: !overview?.settings.kenoEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.kenoEnabled ? 'Disable' : 'Enable'}</button></div></div>
-      <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Aviator</p><p className="text-xs text-amber-100/45">{overview?.games.aviator.status ?? 'Loading'} · {overview?.games.aviator.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ aviatorEnabled: !overview?.settings.aviatorEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.aviatorEnabled ? 'Disable' : 'Enable'}</button></div></div>
+    <p className="mt-4 text-xs font-semibold text-amber-100/60">Host controls · Games shown in Player Game Center</p>
+    <div className="mt-2 grid gap-3 sm:grid-cols-3">
+      <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Bingo PRO</p><p className="text-xs text-amber-100/45">{overview?.settings.bingoEnabled ? 'Visible to players' : 'Hidden from players'}</p></div><button disabled={busy || !overview} onClick={() => void save({ bingoEnabled: !overview?.settings.bingoEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.bingoEnabled ? 'Turn OFF' : 'Turn ON'}</button></div></div>
+      <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Keno</p><p className="text-xs text-amber-100/45">{overview?.games.keno.status ?? 'Loading'} · {overview?.games.keno.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ kenoEnabled: !overview?.settings.kenoEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.kenoEnabled ? 'Turn OFF' : 'Turn ON'}</button></div></div>
+      <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Aviator</p><p className="text-xs text-amber-100/45">{overview?.games.aviator.status ?? 'Loading'} · {overview?.games.aviator.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ aviatorEnabled: !overview?.settings.aviatorEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.aviatorEnabled ? 'Turn OFF' : 'Turn ON'}</button></div></div>
     </div>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       <label className={label}>Minimum bet (ETB)<input className={input} type="number" min="1" max="1000" step=".01" value={minBet} onChange={e=>setMinBet(e.target.value)}/></label>
