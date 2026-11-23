@@ -10,7 +10,7 @@ The existing Bingo round engine, card collection, card signing, and settlement r
 
 ## Profit and payout controls across the three games
 
-- **Bingo:** the existing default `PRIZE_PERCENT=80` allocates 80% of the eligible round pot to the prize calculation; the remaining nominal 20% is the operator share before operating costs and any other liabilities. The existing Bingo Admin prize-schedule controls support revenue-percent, fixed-prize and per-player modes, plus a prize cap. Bonus/fixed prize arrangements can differ from the 80/20 default. This PR does not change those rules.
+- **Bingo:** the existing Bingo engine and prize-schedule logic are unchanged. This branch sets the deployment default `PRIZE_PERCENT=45`: 45% of the eligible round pot is allocated to prizes and the nominal operator share is 55% before operating costs and other liabilities. Existing Bingo Admin prize-schedule controls remain available; fixed/per-player schedules and bonus arrangements can differ.
 - **Keno:** the existing payout table determines relative ticket weights, but a round-level pool settlement scales aggregate payouts down when needed so the total never exceeds the configured 40%–50% player pool. Admin Games controls the company commission from 50% to 60%.
 - **Aviator:** the existing crash-point formula remains unchanged. Cash Out records the server-accepted multiplier immediately; wallet credits are deferred until the round crashes, then the available 40%–50% player pool is allocated proportionally by stake × recorded multiplier. Each bet is capped at ETB 20,000.
 - **Important:** house edge is a long-run mathematical expectation, not guaranteed company profit. Actual results, payment costs, fraud, bonus funding and legal obligations affect operating profit.
@@ -35,7 +35,7 @@ The draw uses a deterministic Fisher–Yates selection. For counter values 0, 1,
 - The displayed multiplier is an animation derived from the server start time; the server remains authoritative for Cash Out.
 - Cash Out is accepted only while the round is flying and the server timestamp is strictly earlier than the server crash timestamp.
 - Remaining active bets are marked lost when the round crashes.
-- A bet can be paid only once; the cash-out ledger reference is unique and the bet transition is guarded by a database transaction.
+- A bet can be paid only once; the pool-settlement ledger reference is unique and the bet transition is guarded by a database transaction.
 - Every Aviator bet payout is capped server-side at ETB 20,000. Cash Out only records the multiplier; the round pool is distributed after crash, within the configured player-pool share of collected stakes.
 
 Fairness commitment:
