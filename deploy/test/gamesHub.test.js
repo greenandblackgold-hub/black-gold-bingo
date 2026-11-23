@@ -5,10 +5,10 @@ import { createMemoryRepo } from '../src/db/memoryRepo.js';
 import { createGamesHubService, capGamesHubPayout, MAX_GAMES_HUB_PAYOUT_SANTIM } from '../src/services/gamesHubService.js';
 import { HttpError } from '../src/util/errors.js';
 
-test('Keno and Aviator payouts are capped at ETB 100,000 per bet', () => {
-  assert.equal(MAX_GAMES_HUB_PAYOUT_SANTIM, 10_000_000);
-  assert.equal(capGamesHubPayout(25_000_000), 10_000_000);
-  assert.equal(capGamesHubPayout(9_999_999), 9_999_999);
+test('Keno and Aviator payouts are capped at ETB 20,000 per bet', () => {
+  assert.equal(MAX_GAMES_HUB_PAYOUT_SANTIM, 2_000_000);
+  assert.equal(capGamesHubPayout(25_000_000), 2_000_000);
+  assert.equal(capGamesHubPayout(1_999_999), 1_999_999);
   assert.equal(capGamesHubPayout(-100), 0);
 });
 
@@ -34,6 +34,8 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   assert.equal(initial.status, 'betting');
   assert.equal(initial.balanceEtb, 1000);
   assert.equal(initial.walletMode, 'shared');
+  assert.equal(initial.houseEdgePercent, 55);
+  assert.equal(initial.maxPayoutEtb, 20000);
   assert.equal(initial.payoutTable['4']['4'], 4000, 'published Keno payout table is fixed and exposed');
   assert.equal((await f.repo.listGameHubLedger(f.user.id)).length, 0, 'new rounds do not create separate demo-wallet credits');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
@@ -66,6 +68,7 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   assert.equal(settled.serverSeed.length, 64);
   assert.equal(settled.myBets.length, 1);
   assert.ok(['won', 'lost'].includes(settled.myBets[0].status));
+  assert.ok(settled.myBets.reduce((sum, bet) => sum + Math.round(bet.payoutEtb * 100), 0) <= 450, 'Keno payouts cannot exceed 45% of this round stake');
   assert.equal((await f.repo.listGameHubRounds('keno', 1))[0].status, 'settled');
 });
 
@@ -132,9 +135,9 @@ test('Aviator commits a round before betting and reveals its seed only after cra
     assert.equal(flyingOrCrashed.serverSeed, undefined);
     const cashed = await f.service.cashOutAviator(f.user, placed.bet.id);
     assert.ok(cashed.multiplier >= 1);
-    assert.ok(cashed.bet.payoutEtb >= 5);
-    assert.ok((await f.repo.findUserById(f.user.id)).balance >= 100000, 'cash-out credits the same Bingo wallet');
-    assert.ok((await f.repo.listLedger(f.user.id)).some((entry) => entry.ref === `games:aviator:cashout:${placed.bet.id}`), 'cash-out is recorded in the common ledger');
+    assert.equal(cashed.bet.status, 'cashout_pending', 'Cash Out multiplier is recorded immediately but payout is deferred');
+    assert.equal(cashed.bet.payoutEtb, 0, 'no wallet payout occurs before round settlement');
+    assert.equal((await f.repo.findUserById(f.user.id)).balance, 99500, 'cash-out does not credit the wallet before the pool is settled');
   }
 
   f.advance(120_000);
@@ -147,15 +150,23 @@ test('Aviator commits a round before betting and reveals its seed only after cra
   const expectedCrash = Math.min(1000, Math.max(1, Math.floor((0.99 / Math.max(1e-12, 1 - fraction)) * 100) / 100));
   assert.equal(completed.crashMultiplier, expectedCrash);
   assert.equal(completed.crashMultiplier >= 1, true);
+  if (flyingOrCrashed.status === 'flying') {
+    assert.equal(completed.myBets[0].status, 'cashed_out');
+    assert.ok(completed.myBets[0].payoutEtb <= 2.25, 'Aviator round payouts stay within 45% of the collected 5 ETB stake');
+    assert.ok((await f.repo.listLedger(f.user.id)).some((entry) => entry.ref === `games:aviator:pool-win:${placed.bet.id}`), 'pool settlement is recorded in the common ledger');
+    assert.equal((await f.repo.findUserById(f.user.id)).balance, 99500 + Math.round(completed.myBets[0].payoutEtb * 100));
+  }
 });
 
 test('Admin settings are validated and persist independently of Bingo settings', async () => {
   const f = await fixture();
-  const settings = await f.service.updateSettings({ kenoEnabled: false, minBetEtb: 8, maxBetEtb: 200, kenoBettingSeconds: 30 });
+  const settings = await f.service.updateSettings({ kenoEnabled: false, minBetEtb: 8, maxBetEtb: 200, houseEdgePercent: 60, kenoBettingSeconds: 30 });
   assert.equal(settings.kenoEnabled, false);
   assert.equal(settings.minBet, 800);
   assert.equal(settings.maxBet, 20000);
   assert.equal(settings.kenoBettingSeconds, 30);
+  assert.equal(settings.houseEdgePercent, 60);
+  await assert.rejects(f.service.updateSettings({ houseEdgePercent: 49 }), (e) => e instanceof HttpError && e.code === 'invalid_house_edge');
   await assert.rejects(
     f.service.updateSettings({ minBetEtb: 500, maxBetEtb: 10 }),
     (e) => e instanceof HttpError && e.code === 'invalid_bet_range',
