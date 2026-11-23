@@ -45,6 +45,8 @@ export function AdminGamesHub() {
       <p className="text-xs font-semibold text-amber-100/60">Maximum payout per Keno ticket / Aviator bet</p>
       <p className="mt-1 text-2xl font-black text-amber-200">{overview ? Number(overview.settings.maxPayoutEtb).toLocaleString() : '100,000'} ETB</p>
       <p className="mt-1 text-[11px] text-amber-100/40">Enforced by the server. This limit is fixed for this pilot setting.</p>
+      <p className="mt-3 text-xs leading-5 text-amber-100/55">Keno's current theoretical house edge varies by selection (12.50%–50.99% at the ETB 5,000 maximum stake with this cap). Aviator keeps its existing 0.99 crash formula. Payout schedules are fixed, not editable here.</p>
+      <p className="mt-2 text-xs leading-5 text-amber-300/80">Aggregate round/company risk cap: not yet enabled; it requires an approved liability budget.</p>
     </div>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Keno</p><p className="text-xs text-amber-100/45">{overview?.games.keno.status ?? 'Loading'} · {overview?.games.keno.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ kenoEnabled: !overview?.settings.kenoEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.kenoEnabled ? 'Disable' : 'Enable'}</button></div></div>
