@@ -49,7 +49,7 @@ export function AdminGamesHub() {
       <p className="mt-1 text-[11px] text-amber-100/40">Enforced server-side per Keno ticket and Aviator bet.</p>
       <p className="mt-2 text-xs text-amber-100/60">Pool commission: {overview?.settings.houseEdgePercent ?? 55}% · player pool: {100 - (overview?.settings.houseEdgePercent ?? 55)}%</p>
       <p className="mt-3 text-xs leading-5 text-amber-100/55">Keno and Aviator pay from the round pool only. Cash Out multipliers are recorded immediately; Aviator wallet credits are settled after the crash. The configured commission is reserved before player payouts.</p>
-      <p className="mt-2 text-xs leading-5 text-amber-300/80">Aggregate round/company risk cap: not yet enabled; it requires an approved liability budget.</p>
+      <p className="mt-2 text-xs leading-5 text-amber-300/80">Round-level pool cap: enabled server-side; total prizes cannot exceed the configured 40%–50% player share of collected stakes.</p>
     </div>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Keno</p><p className="text-xs text-amber-100/45">{overview?.games.keno.status ?? 'Loading'} · {overview?.games.keno.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ kenoEnabled: !overview?.settings.kenoEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.kenoEnabled ? 'Disable' : 'Enable'}</button></div></div>
