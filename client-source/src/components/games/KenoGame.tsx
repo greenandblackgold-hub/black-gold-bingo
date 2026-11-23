@@ -87,7 +87,7 @@ export function KenoGame({ onBack, onSwitchGame }: { onBack: () => void; onSwitc
       <section className="grid gap-4 md:grid-cols-[1fr_1.2fr]">
         <div className="rounded-2xl border border-amber-400/20 bg-[#0c0c0a] p-4 sm:p-5">
           <h2 className="font-bold text-amber-100">Your entry</h2><label className="mt-4 block text-xs text-amber-100/60">Stake (ETB)</label><input type="number" min={state?.minBetEtb ?? 5} max={state?.maxBetEtb ?? 1000} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-2 w-full rounded-xl border border-amber-400/25 bg-black px-3 py-3 text-lg font-bold text-amber-100 outline-none focus:border-amber-300"/>
-          <p className="mt-2 text-[11px] text-amber-100/45">Allowed: {money(state?.minBetEtb ?? 5)}–{money(state?.maxBetEtb ?? 1000)} ETB · demo credits only · max payout {money(state?.maxPayoutEtb ?? 100000)} ETB</p>
+          <p className="mt-2 text-[11px] text-amber-100/45">Allowed: {money(state?.minBetEtb ?? 5)}–{money(state?.maxBetEtb ?? 1000)} ETB · demo credits only · max payout {money(state?.maxPayoutEtb ?? 20000)} ETB · pool-funded</p>
           <button disabled={!isBetting || !selected.length || busy} onClick={() => void submit()} className="mt-4 w-full rounded-xl bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-600 px-4 py-3 font-black text-black shadow-lg disabled:cursor-not-allowed disabled:opacity-40">{busy ? 'Confirming…' : 'Place Keno Entry'}</button>
         </div>
         <div className="rounded-2xl border border-amber-400/20 bg-[#0c0c0a] p-4 sm:p-5"><h2 className="font-bold text-amber-100">Draw results</h2><p className="mt-1 text-xs text-amber-100/50">20 numbers · server-seeded draw</p>
