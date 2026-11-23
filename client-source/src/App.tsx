@@ -58,8 +58,8 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
       <main className={tab === 'play' ? 'mx-auto w-full max-w-none px-2 pt-2 sm:px-4 sm:pt-4' : 'mx-auto max-w-6xl px-4 pt-5 sm:pt-8'}>
         {tab === 'games' && <GamesCenter serverMode={SERVER_MODE} onOpenBingo={() => setTab('play')} onOpenKeno={() => setTab('keno')} onOpenAviator={() => setTab('aviator')} />}
         {tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} settingsOpen={playerSettingsOpen} onSettingsOpenChange={setPlayerSettingsOpen} /></Suspense>}
-        {tab === 'keno' && <KenoGame onBack={() => setTab('games')} />}
-        {tab === 'aviator' && <AviatorGame onBack={() => setTab('games')} />}
+        {tab === 'keno' && <KenoGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} />}
+        {tab === 'aviator' && <AviatorGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} />}
         {tab === 'wallet' && <Suspense fallback={<RouteLoading />}><WalletView onGoToPlay={() => setTab('play')} /></Suspense>}
       </main>
       {menuOpen && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Menu">
