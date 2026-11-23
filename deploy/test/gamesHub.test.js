@@ -15,7 +15,7 @@ async function fixture() {
   await repo.applyLedger({ userId: user.id, amount: 100000, kind: 'deposit', ref: 'seed:games-test' });
   const service = createGamesHubService({
     repo,
-    config: { prod: false, realMoneyEnabled: false },
+    config: { prod: false, realMoneyEnabled: false, gamesHubSharedWalletEnabled: true },
     now: () => clock,
   });
   return { repo, user, service, advance: (ms) => { clock += ms; }, time: () => clock };
@@ -26,6 +26,7 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   const initial = await f.service.getState('keno', f.user);
   assert.equal(initial.status, 'betting');
   assert.equal(initial.balanceEtb, 1000);
+  assert.equal(initial.walletMode, 'shared');
   assert.equal(initial.payoutTable['4']['4'], 4000, 'published Keno payout table is fixed and exposed');
   assert.equal((await f.repo.listGameHubLedger(f.user.id)).length, 0, 'new rounds do not create separate demo-wallet credits');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
@@ -79,6 +80,7 @@ test('Aviator commits a round before betting and reveals its seed only after cra
   const initial = await f.service.getState('aviator', f.user);
   assert.equal(initial.status, 'betting');
   assert.equal(initial.balanceEtb, 1000);
+  assert.equal(initial.walletMode, 'shared');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
   assert.equal(initial.serverSeed, undefined);
 
@@ -143,6 +145,16 @@ test('Admin settings are validated and persist independently of Bingo settings',
     f.service.placeKenoBet(f.user, { requestId: 'keno_paused_request_01', amount: 10, selectedNumbers: [1] }),
     (e) => e instanceof HttpError && e.code === 'game_disabled',
   );
+});
+
+test('Production keeps the separate demo wallet until the shared-wallet flag and approvals are enabled', async () => {
+  const repo = createMemoryRepo();
+  const user = await repo.createUser({ phone: '0912222222', name: 'Production Demo', pinHash: 'x', role: 'player', phoneVerified: true });
+  const service = createGamesHubService({ repo, config: { prod: true, realMoneyEnabled: false, gamesHubSharedWalletEnabled: false } });
+  const state = await service.getState('keno', user);
+  assert.equal(state.walletMode, 'legacy-demo');
+  assert.equal(state.balanceEtb, 1000);
+  assert.equal((await repo.findUserById(user.id)).balance, 0, 'production demo play cannot spend the Bingo wallet before opt-in');
 });
 
 test('Keno and Aviator remain blocked if production real-money mode is enabled', async () => {
