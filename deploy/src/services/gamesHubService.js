@@ -248,6 +248,8 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const round = await tickGame(game);
     const serverTime = now();
     const myBets = (round.bets ?? []).filter((bet) => bet.userId === user.id).map(publicBet);
+    const liveBets = game === 'aviator' ? (round.bets ?? []).map((bet) => ({ player: String(bet.username || 'Player').slice(0, 32), stakeEtb: bet.stake / 100, status: bet.status, multiplier: bet.multiplier ?? null, payoutEtb: (bet.payout ?? 0) / 100 })) : undefined;
+    const playerCount = game === 'aviator' ? new Set((round.bets ?? []).map((bet) => bet.userId)).size : undefined;
     const wallet = await repo.getGameHubWallet(user.id, round.walletMode === 'shared' ? 'shared' : 'legacy-demo');
     const state = {
       game,
@@ -257,6 +259,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       serverTime,
       serverSeedHash: round.serverSeedHash,
       myBets,
+      ...(game === 'aviator' ? { liveBets, playerCount } : {}),
       minBetEtb: currentSettings.minBet / 100,
       maxBetEtb: currentSettings.maxBet / 100,
       maxPayoutEtb: MAX_GAMES_HUB_PAYOUT_SANTIM / 100,
