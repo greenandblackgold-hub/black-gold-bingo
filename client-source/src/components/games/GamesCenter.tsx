@@ -29,12 +29,12 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
 export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode }: Props) {
   const { lang } = useLanguage();
   const t = gameUi.gamesCenter[lang];
-  const [availability, setAvailability] = useState<{ kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' } | null>(null);
+  const [availability, setAvailability] = useState<{ bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' } | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
   useEffect(() => {
     if (!serverMode) return;
     let active = true;
-    api.get<{ kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings')
+    api.get<{ bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings')
       .then((value) => { if (active) { setAvailability(value); setAvailabilityError(''); } })
       .catch(() => { if (active) setAvailabilityError(t.loadError); });
     return () => { active = false; };
@@ -47,11 +47,11 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode
         <p className="text-[10px] font-black uppercase tracking-[.34em] text-amber-400">BLACK GOLD PLC</p>
         <h1 className="mt-3 text-3xl font-black tracking-tight text-amber-50 sm:text-5xl">{t.title}</h1>
         <p className="mt-3 max-w-xl text-sm leading-6 text-amber-100/65 sm:text-base">{t.intro}</p>
-        <div className="mt-6 flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-amber-300/25 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">Bingo</span>
-          <span className="rounded-full border border-amber-300/25 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">Keno</span>
-          <span className="rounded-full border border-amber-300/25 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">Aviator</span>
-        </div>
+        {(!serverMode || availability) && <div className="mt-6 flex flex-wrap items-center gap-2">
+          {(!serverMode || availability?.bingoEnabled) && <span className="rounded-full border border-amber-300/25 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">Bingo</span>}
+          {(!serverMode || availability?.kenoEnabled) && <span className="rounded-full border border-amber-300/25 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">Keno</span>}
+          {(!serverMode || availability?.aviatorEnabled) && <span className="rounded-full border border-amber-300/25 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">Aviator</span>}
+        </div>}
       </header>
       {serverMode && <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/20 bg-black/45 px-4 py-3">
         <div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">{availability?.walletMode === 'shared' ? t.unifiedWallet : t.demoWallet}</p><p className="mt-1 text-xl font-black text-amber-100">{availability ? money(availability.balanceEtb) + ' ETB' : t.loadingBalance}</p></div>
@@ -63,10 +63,11 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode
       </div>
       {availabilityError && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-950/30 p-3 text-sm text-red-200">{availabilityError}</p>}
       <div className="grid gap-4 md:grid-cols-3">
-        <GameCard title="Bingo PRO" subtitle={t.bingoSubtitle} detail={t.bingoDetail} icon="bingo" onClick={onOpenBingo} openLabel={t.openGame} featured />
-        <GameCard title="Keno" subtitle={t.kenoSubtitle} detail={t.kenoDetail} icon="keno" onClick={onOpenKeno} openLabel={t.openGame} disabled={!serverMode || availability?.kenoEnabled !== true} disabledLabel={!serverMode ? t.serverOnly : availabilityError ? t.refreshUnavailable : availability ? t.temporarilyDisabled : t.loadingAvailability} />
-        <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} disabled={!serverMode || availability?.aviatorEnabled !== true} openLabel={t.openGame} disabledLabel={!serverMode ? t.serverOnly : availabilityError ? t.refreshUnavailable : availability ? t.temporarilyDisabled : t.loadingAvailability} />
+        {(!serverMode || availability?.bingoEnabled === true) && <GameCard title="Bingo PRO" subtitle={t.bingoSubtitle} detail={t.bingoDetail} icon="bingo" onClick={onOpenBingo} openLabel={t.openGame} featured />}
+        {(!serverMode || availability?.kenoEnabled === true) && <GameCard title="Keno" subtitle={t.kenoSubtitle} detail={t.kenoDetail} icon="keno" onClick={onOpenKeno} openLabel={t.openGame} />}
+        {(!serverMode || availability?.aviatorEnabled === true) && <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} openLabel={t.openGame} />}
       </div>
+      {serverMode && availability && !availability.bingoEnabled && !availability.kenoEnabled && !availability.aviatorEnabled && <p className="rounded-xl border border-amber-300/20 bg-black/40 p-4 text-center text-sm text-amber-100/70">All games are currently unavailable. Please check again later.</p>}
       <p className="text-center text-[11px] leading-5 text-amber-100/40">{t.demoNotice}</p>
     </div>
   );
