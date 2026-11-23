@@ -133,6 +133,11 @@ export function KenoGame({ onBack, onSwitchGame }: { onBack: () => void; onSwitc
         <div className="mt-2 flex items-center justify-between gap-2"><span className="text-[10px] text-slate-400">{selected.length} {t.selected}</span><div className="flex gap-2"><button disabled={!isBetting} onClick={quickPick} className="rounded-lg border border-emerald-300/30 px-3 py-2 text-[10px] font-black text-emerald-300 disabled:opacity-40">{c.quick}</button><button disabled={!isBetting} onClick={() => setSelected([])} className="rounded-lg border border-white/10 px-3 py-2 text-[10px] font-black text-slate-300 disabled:opacity-40">{c.clear}</button></div></div>
       </section>
 
+      <section className="rounded-xl border border-amber-400/15 bg-[#111812] px-3 py-2">
+        <div className="mb-2 flex items-center justify-between"><h2 className="text-[10px] font-black tracking-widest text-amber-300">{t.payoutTable}</h2><span className="text-[10px] text-slate-500">{selected.length}/10</span></div>
+        {selected.length && state?.payoutTable[String(selected.length)] ? <div className="flex gap-2 overflow-x-auto pb-1">{Object.entries(state.payoutTable[String(selected.length)]).sort(([a], [b]) => Number(a) - Number(b)).map(([matches, multiplier]) => <div key={matches} className="min-w-[76px] rounded-lg bg-[#1b2921] px-2 py-2 text-center"><p className="text-[9px] text-slate-400">{matches} {c.hits}</p><p className="text-sm font-black text-amber-300">{(multiplier / 100).toFixed(2)}×</p></div>)}</div> : <p className="text-[10px] text-slate-500">{c.selected} · {t.intro}</p>}
+      </section>
+
       <section className="rounded-xl border border-emerald-400/15 bg-[#0b1916] p-2.5">
         <div className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-1.5">
           <button disabled={!isBetting || Number(amount) <= minBet} onClick={() => adjustBet(-1)} className="rounded-lg bg-[#1a2b28] py-3 text-2xl font-black text-slate-300 disabled:opacity-35">−</button>
