@@ -6,10 +6,10 @@ import { gameUi } from '@/lib/gameUi';
 type AviatorBet = { id: string; status: string; stakeEtb: number; multiplier: number | null; payoutEtb: number; createdAt: number };
 type AviatorState = { enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'aviator'; roundId: string; status: 'betting' | 'flying' | 'crashed'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; startedAt?: number; growthPerMs?: number; crashMultiplier?: number; serverSeed?: string; myBets: AviatorBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string; liveBets?: { player: string; stakeEtb: number; status: string; multiplier: number | null; payoutEtb: number }[]; playerCount?: number };
 type HistoryRound = { roundId: string; status: string; crashMultiplier?: number; serverSeedHash: string; serverSeed?: string; myBets: AviatorBet[] };
-type BetPanel = { amount: string; requestId: string; busy: boolean };
+type BetPanel = { amount: string; requestId: string; betId: string; busy: boolean };
 const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const makeRequestId = () => 'aviator_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
-const freshPanel = (): BetPanel => ({ amount: '10.00', requestId: '', busy: false });
+const freshPanel = (): BetPanel => ({ amount: '10.00', requestId: '', betId: '', busy: false });
 
 export function AviatorGame({ onBack, onSwitchGame }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator') => void }) {
   const { lang } = useLanguage();
@@ -65,8 +65,8 @@ export function AviatorGame({ onBack, onSwitchGame }: { onBack: () => void; onSw
     updatePanel(index, { busy: true, requestId: id });
     setError(''); setNotice('');
     try {
-      await api.post('/api/games/aviator/bets', { requestId: id, amount: Number(panel.amount) });
-      updatePanel(index, { requestId: '' });
+      const result = await api.post<{ bet: AviatorBet }>('/api/games/aviator/bets', { requestId: id, amount: Number(panel.amount) });
+      updatePanel(index, { requestId: '', betId: result.bet.id });
       setNotice(t.betConfirmed);
       await loadState();
     } catch { setError(t.betError); }
@@ -147,11 +147,11 @@ export function AviatorGame({ onBack, onSwitchGame }: { onBack: () => void; onSw
       <section className="grid gap-3 lg:grid-cols-2">
         {[0, 1].map((index) => {
           const panel = panels[index];
-          const bet = state?.myBets[index];
+          const bet = state?.myBets.find((item) => item.id === panel.betId) ?? (!panel.betId ? state?.myBets[index] : undefined);
           const active = bet?.status === 'active';
           const placed = Boolean(bet);
           return <div key={index} className="aviator-bet-card">
-            <div className="aviator-bet-heading"><div><span>BET {index + 1}</span><h2>{index === 0 ? 'MAIN BET' : 'SECOND BET'}</h2></div><span className="aviator-mode">BET · AUTO</span></div>
+            <div className="aviator-bet-heading"><div><span>BET {index + 1}</span><h2>{index === 0 ? 'MAIN BET' : 'SECOND BET'}</h2></div><span className="aviator-mode">BET</span></div>
             <label htmlFor={'aviator-stake-' + index}>{t.stake}</label>
             <div className="aviator-amount-row"><button onClick={() => updatePanel(index, { amount: String(Math.max(state?.minBetEtb ?? 2, Number(panel.amount || 0) - 1).toFixed(2)) })} disabled={placed}>−</button><input id={'aviator-stake-' + index} type="number" min={state?.minBetEtb ?? 2} max={state?.maxBetEtb ?? 1000} step="0.01" value={panel.amount} disabled={placed} onChange={(e) => updatePanel(index, { amount: e.target.value })}/><button onClick={() => updatePanel(index, { amount: String(Math.min(state?.maxBetEtb ?? 1000, Number(panel.amount || 0) + 1).toFixed(2)) })} disabled={placed}>+</button></div>
             <div className="aviator-quick"><button disabled={placed} onClick={() => updatePanel(index, { amount: String((Number(panel.amount) * 2).toFixed(2)) })}>×2</button>{[10, 25, 50, 100].map((n) => <button key={n} disabled={placed} onClick={() => updatePanel(index, { amount: String(n.toFixed(2)) })}>{n}</button>)}</div>
