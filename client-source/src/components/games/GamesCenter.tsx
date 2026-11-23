@@ -50,7 +50,7 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode
         </div>
       </header>
       {serverMode && <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/20 bg-black/45 px-4 py-3">
-        <div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Shared Keno + Aviator Demo Wallet</p><p className="mt-1 text-xl font-black text-amber-100">{availability ? money(availability.balanceEtb) + ' ETB' : 'Loading balance…'}</p></div>
+        <div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Unified Bingo + Keno + Aviator Wallet</p><p className="mt-1 text-xl font-black text-amber-100">{availability ? money(availability.balanceEtb) + ' ETB' : 'Loading balance…'}</p></div>
         <span className="rounded-full border border-amber-300/20 px-3 py-1.5 text-[9px] font-bold tracking-wider text-amber-300">NON-WITHDRAWABLE DEMO CREDITS</span>
       </div>}
       <div className="flex flex-wrap items-end justify-between gap-3">
