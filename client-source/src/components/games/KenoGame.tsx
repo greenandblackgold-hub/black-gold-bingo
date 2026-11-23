@@ -18,7 +18,7 @@ const copy = {
   en: { title: 'BLACK GOLD KENO', rules: 'RULES', sound: 'SOUND', turbo: 'TURBO', draw: 'DRAWN NUMBERS', picks: 'PICKS', hits: 'HITS', bet: 'BET', total: 'TOTAL', game: 'GAME', history: 'HISTORY', results: 'RESULTS', stats: 'STATISTICS', live: 'MY TICKETS', clear: 'CLEAR', quick: 'QUICK PICK', selected: 'SELECTED NUMBERS', play: 'BET NOW', waiting: 'Waiting for draw', noTickets: 'No tickets in this round yet', noHistory: 'No completed rounds yet', rounds: 'Rounds', tickets: 'Tickets', wagered: 'Total wagered', won: 'Total returned', count: 'Count', status: 'Status', payout: 'Payout', noWin: 'No prize', minMax: 'Allowed', round: 'Round', drawComplete: 'DRAW COMPLETE', recent: 'RECENT RESULTS', poolNote: 'Final payouts may be adjusted by the round pool and the maximum payout cap.', simulation: 'DEMO CREDITS ONLY', boardClosed: 'All 20 numbers have been drawn. The board will return automatically when the next round opens.' },
 } as const;
 
-export function KenoGame({ onBack: _onBack, onSwitchGame: _onSwitchGame, onOpenMenu }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator') => void; onOpenMenu: () => void }) {
+export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator') => void; onOpenMenu: () => void }) {
   const { lang } = useLanguage();
   const { user } = useAuth();
   const t = gameUi.keno[lang];
@@ -76,9 +76,6 @@ export function KenoGame({ onBack: _onBack, onSwitchGame: _onSwitchGame, onOpenM
   const visibleDrawnNumbers = (state?.drawnNumbers ?? []).slice(0, visibleDrawCount);
   const secondsLeft = state?.status === 'betting' ? Math.max(0, Math.ceil((state.bettingEndsAt - (clock + offset)) / 1000)) : 0;
   const isBetting = state?.enabled === true && state.status === 'betting' && secondsLeft > 0;
-  const drawSet = useMemo(() => new Set(state?.drawnNumbers ?? []), [state?.drawnNumbers]);
-  const latestBet = state?.myBets?.[state.myBets.length - 1];
-  const hitSet = useMemo(() => new Set(latestBet?.matchedNumbers ?? []), [latestBet?.id, latestBet?.matchedNumbers]);
   const minBet = state?.minBetEtb ?? 2;
   const maxBet = state?.maxBetEtb ?? 1000;
   const numericAmount = Number(amount);
