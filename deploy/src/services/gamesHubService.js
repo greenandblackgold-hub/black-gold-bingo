@@ -26,6 +26,7 @@ function allocateProportionalPool(bets, houseEdgePercent, maxPayout = MAX_GAMES_
 }
 export const capGamesHubPayout = (payout) => Math.min(MAX_GAMES_HUB_PAYOUT_SANTIM, Math.max(0, Math.floor(Number(payout) || 0)));
 const DEFAULT_SETTINGS = Object.freeze({
+  bingoEnabled: true,
   kenoEnabled: true,
   aviatorEnabled: true,
   minBet: 500,
@@ -347,6 +348,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   async function updateSettings(input = {}) {
     const current = await settings();
     const next = { ...current };
+    if (input.bingoEnabled !== undefined) next.bingoEnabled = input.bingoEnabled === true;
     if (input.kenoEnabled !== undefined) next.kenoEnabled = input.kenoEnabled === true;
     if (input.aviatorEnabled !== undefined) next.aviatorEnabled = input.aviatorEnabled === true;
     if (input.minBetEtb !== undefined) {
@@ -401,12 +403,18 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       timer = null;
     },
     getSettings: settings,
+    async assertGameEnabled(game) {
+      if (!['bingo', 'keno', 'aviator'].includes(game)) throw new HttpError(404, 'game_not_found', 'Unknown game.');
+      const current = await settings();
+      if (current[game + 'Enabled'] !== true) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
+    },
     async getPublicSettings(user) {
       ensureSimulationMode();
       const current = await settings();
       const walletMode = !config.prod && config.gamesHubSharedWalletEnabled === true ? 'shared' : 'legacy-demo';
       const wallet = await repo.getGameHubWallet(user.id, walletMode);
       return {
+        bingoEnabled: current.bingoEnabled === true,
         kenoEnabled: current.kenoEnabled === true,
         aviatorEnabled: current.aviatorEnabled === true,
         minBetEtb: current.minBet / 100,
