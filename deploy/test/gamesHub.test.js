@@ -2,8 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash, createHmac } from 'node:crypto';
 import { createMemoryRepo } from '../src/db/memoryRepo.js';
-import { createGamesHubService } from '../src/services/gamesHubService.js';
+import { createGamesHubService, capGamesHubPayout, MAX_GAMES_HUB_PAYOUT_SANTIM } from '../src/services/gamesHubService.js';
 import { HttpError } from '../src/util/errors.js';
+
+test('Keno and Aviator payouts are capped at ETB 20,000 per bet', () => {
+  assert.equal(MAX_GAMES_HUB_PAYOUT_SANTIM, 2_000_000);
+  assert.equal(capGamesHubPayout(25_000_000), 2_000_000);
+  assert.equal(capGamesHubPayout(1_999_999), 1_999_999);
+  assert.equal(capGamesHubPayout(-100), 0);
+});
 
 async function fixture() {
   let clock = Date.now();
@@ -15,7 +22,7 @@ async function fixture() {
   await repo.applyLedger({ userId: user.id, amount: 100000, kind: 'deposit', ref: 'seed:games-test' });
   const service = createGamesHubService({
     repo,
-    config: { prod: false, realMoneyEnabled: false },
+    config: { prod: false, realMoneyEnabled: false, gamesHubSharedWalletEnabled: true },
     now: () => clock,
   });
   return { repo, user, service, advance: (ms) => { clock += ms; }, time: () => clock };
@@ -26,8 +33,11 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   const initial = await f.service.getState('keno', f.user);
   assert.equal(initial.status, 'betting');
   assert.equal(initial.balanceEtb, 1000);
+  assert.equal(initial.walletMode, 'shared');
+  assert.equal(initial.houseEdgePercent, 55);
+  assert.equal(initial.maxPayoutEtb, 20000);
   assert.equal(initial.payoutTable['4']['4'], 4000, 'published Keno payout table is fixed and exposed');
-  assert.equal((await f.repo.listGameHubLedger(f.user.id)).length, 1, 'initial demo credit is ledgered');
+  assert.equal((await f.repo.listGameHubLedger(f.user.id)).length, 0, 'new rounds do not create separate demo-wallet credits');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
 
   const placed = await f.service.placeKenoBet(f.user, {
@@ -37,8 +47,9 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   });
   assert.equal(placed.balanceEtb, 990);
   assert.equal(placed.bet.stakeEtb, 10);
-  assert.equal((await f.repo.findUserById(f.user.id)).balance, 100000, 'Bingo wallet remains untouched');
-  assert.equal((await f.repo.getGameHubWallet(f.user.id)).balance, 99000, 'Keno debits only the Games Demo Wallet');
+  assert.equal((await f.repo.findUserById(f.user.id)).balance, 99000, 'Keno debits the shared balance used by Bingo');
+  assert.equal((await f.repo.getGameHubWallet(f.user.id)).balance, 99000, 'Games Center reads the shared Bingo wallet');
+  assert.ok((await f.repo.listLedger(f.user.id)).some((entry) => entry.ref.startsWith('games:keno:bet:')), 'Keno debit is recorded in the common ledger');
 
   const duplicate = await f.service.placeKenoBet(f.user, {
     requestId: 'keno_test_request_01',
@@ -57,7 +68,22 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   assert.equal(settled.serverSeed.length, 64);
   assert.equal(settled.myBets.length, 1);
   assert.ok(['won', 'lost'].includes(settled.myBets[0].status));
+  assert.ok(settled.myBets.reduce((sum, bet) => sum + Math.round(bet.payoutEtb * 100), 0) <= 450, 'Keno payouts cannot exceed 45% of this round stake');
   assert.equal((await f.repo.listGameHubRounds('keno', 1))[0].status, 'settled');
+});
+
+test('legacy Keno rounds finish on their original demo wallet without touching Bingo balance', async () => {
+  const f = await fixture();
+  await f.repo.createGameHubRound('keno', {
+    roundId: 'legacy-round-01', game: 'keno', status: 'betting', version: 1, bets: [],
+    serverSeed: 'a'.repeat(64), serverSeedHash: 'b'.repeat(64), createdAt: f.time(),
+    expireAt: new Date(f.time() + 30 * 24 * 60 * 60 * 1000), bettingEndsAt: f.time() + 20_000,
+  });
+  const state = await f.service.getState('keno', f.user);
+  assert.equal(state.walletMode, 'legacy-demo');
+  await f.service.placeKenoBet(f.user, { requestId: 'legacy_keno_request_01', amount: 10, selectedNumbers: [1] });
+  assert.equal((await f.repo.findUserById(f.user.id)).balance, 100000, 'legacy round cannot debit Bingo wallet');
+  assert.equal((await f.repo.getGameHubWallet(f.user.id, 'legacy-demo')).balance, 99000);
 });
 
 test('Keno rejects duplicate or out-of-range selections and insufficient balance', async () => {
@@ -78,6 +104,7 @@ test('Aviator commits a round before betting and reveals its seed only after cra
   const initial = await f.service.getState('aviator', f.user);
   assert.equal(initial.status, 'betting');
   assert.equal(initial.balanceEtb, 1000);
+  assert.equal(initial.walletMode, 'shared');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
   assert.equal(initial.serverSeed, undefined);
 
@@ -86,8 +113,9 @@ test('Aviator commits a round before betting and reveals its seed only after cra
     amount: 5,
   });
   assert.equal(placed.balanceEtb, 995);
-  assert.equal((await f.repo.findUserById(f.user.id)).balance, 100000, 'Bingo wallet remains untouched');
-  assert.equal((await f.repo.getGameHubWallet(f.user.id)).balance, 99500, 'Aviator debits only the Games Demo Wallet');
+  assert.equal((await f.repo.findUserById(f.user.id)).balance, 99500, 'Aviator debits the shared balance used by Bingo');
+  assert.equal((await f.repo.getGameHubWallet(f.user.id)).balance, 99500, 'Aviator reads the shared Bingo wallet');
+  assert.ok((await f.repo.listLedger(f.user.id)).some((entry) => entry.ref.startsWith('games:aviator:bet:')), 'Aviator debit is recorded in the common ledger');
   const duplicate = await f.service.placeAviatorBet(f.user, {
     requestId: 'aviator_test_request_01',
     amount: 5,
@@ -107,10 +135,15 @@ test('Aviator commits a round before betting and reveals its seed only after cra
     assert.equal(flyingOrCrashed.serverSeed, undefined);
     const cashed = await f.service.cashOutAviator(f.user, placed.bet.id);
     assert.ok(cashed.multiplier >= 1);
-    assert.ok(cashed.bet.payoutEtb >= 5);
+    assert.equal(cashed.bet.status, 'cashout_pending', 'Cash Out multiplier is recorded immediately but payout is deferred');
+    assert.equal(cashed.bet.payoutEtb, 0, 'no wallet payout occurs before round settlement');
+    assert.equal((await f.repo.findUserById(f.user.id)).balance, 99500, 'cash-out does not credit the wallet before the pool is settled');
   }
 
-  f.advance(120_000);
+  if (flyingOrCrashed.status === 'flying') {
+    const current = await f.repo.getCurrentGameHubRound('aviator');
+    f.advance(Math.max(1, current.crashAt - f.time() + 1));
+  }
   const completed = await f.service.getState('aviator', f.user);
   assert.equal(completed.status, 'crashed');
   assert.equal(completed.serverSeed.length, 64);
@@ -120,15 +153,23 @@ test('Aviator commits a round before betting and reveals its seed only after cra
   const expectedCrash = Math.min(1000, Math.max(1, Math.floor((0.99 / Math.max(1e-12, 1 - fraction)) * 100) / 100));
   assert.equal(completed.crashMultiplier, expectedCrash);
   assert.equal(completed.crashMultiplier >= 1, true);
+  if (flyingOrCrashed.status === 'flying') {
+    assert.equal(completed.myBets[0].status, 'cashed_out');
+    assert.ok(completed.myBets[0].payoutEtb <= 2.25, 'Aviator round payouts stay within 45% of the collected 5 ETB stake');
+    assert.ok((await f.repo.listLedger(f.user.id)).some((entry) => entry.ref === `games:aviator:pool-win:${placed.bet.id}`), 'pool settlement is recorded in the common ledger');
+    assert.equal((await f.repo.findUserById(f.user.id)).balance, 99500 + Math.round(completed.myBets[0].payoutEtb * 100));
+  }
 });
 
 test('Admin settings are validated and persist independently of Bingo settings', async () => {
   const f = await fixture();
-  const settings = await f.service.updateSettings({ kenoEnabled: false, minBetEtb: 8, maxBetEtb: 200, kenoBettingSeconds: 30 });
+  const settings = await f.service.updateSettings({ kenoEnabled: false, minBetEtb: 8, maxBetEtb: 200, houseEdgePercent: 60, kenoBettingSeconds: 30 });
   assert.equal(settings.kenoEnabled, false);
   assert.equal(settings.minBet, 800);
   assert.equal(settings.maxBet, 20000);
   assert.equal(settings.kenoBettingSeconds, 30);
+  assert.equal(settings.houseEdgePercent, 60);
+  await assert.rejects(f.service.updateSettings({ houseEdgePercent: 49 }), (e) => e instanceof HttpError && e.code === 'invalid_house_edge');
   await assert.rejects(
     f.service.updateSettings({ minBetEtb: 500, maxBetEtb: 10 }),
     (e) => e instanceof HttpError && e.code === 'invalid_bet_range',
@@ -139,6 +180,31 @@ test('Admin settings are validated and persist independently of Bingo settings',
     f.service.placeKenoBet(f.user, { requestId: 'keno_paused_request_01', amount: 10, selectedNumbers: [1] }),
     (e) => e instanceof HttpError && e.code === 'game_disabled',
   );
+});
+
+test('Production keeps the separate demo wallet until the shared-wallet flag and approvals are enabled', async () => {
+  const repo = createMemoryRepo();
+  const user = await repo.createUser({ phone: '0912222222', name: 'Production Demo', pinHash: 'x', role: 'player', phoneVerified: true });
+  const service = createGamesHubService({ repo, config: { prod: true, realMoneyEnabled: false, gamesHubSharedWalletEnabled: false } });
+  const state = await service.getState('keno', user);
+  assert.equal(state.walletMode, 'legacy-demo');
+  assert.equal(state.balanceEtb, 1000);
+  assert.equal((await repo.findUserById(user.id)).balance, 0, 'production demo play cannot spend the Bingo wallet before opt-in');
+});
+
+test('Production shared-wallet flag fails closed while Keno and Aviator are demo-only', async () => {
+  const repo = createMemoryRepo();
+  const user = await repo.createUser({ phone: '0913333333', name: 'Shared Wallet Gate', pinHash: 'x', role: 'player', phoneVerified: true });
+  const service = createGamesHubService({ repo, config: { prod: true, realMoneyEnabled: false, gamesHubSharedWalletEnabled: true } });
+  await assert.rejects(
+    service.getState('keno', user),
+    (e) => e instanceof HttpError && e.code === 'games_hub_demo_only',
+  );
+  await service.resume();
+  const round = await repo.getCurrentGameHubRound('keno');
+  assert.equal(round.walletMode, 'legacy-demo', 'production scheduler never creates shared-wallet demo rounds');
+  service.stop();
+  assert.equal((await repo.findUserById(user.id)).balance, 0, 'production demo-mode games cannot touch the Bingo wallet');
 });
 
 test('Keno and Aviator remain blocked if production real-money mode is enabled', async () => {

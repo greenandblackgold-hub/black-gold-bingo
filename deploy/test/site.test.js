@@ -101,7 +101,7 @@ test('defaults need no configuration on Render, and unsafe production settings a
   assert.deepEqual(cfg.clientOrigins, ['https://bingo.onrender.com', 'https://localhost']);
   assert.equal(cfg.trustProxy, true);
   assert.equal(cfg.chapa.emailDomain, 'bingo.onrender.com');
-  assert.equal(cfg.prizePercent, 80);
+  assert.equal(cfg.prizePercent, 45, 'default Bingo prize share reserves a 55% operator share');
   assert.equal(cfg.autoPayout, false, 'cash-outs wait for the owner by default');
   assert.throws(() => loadConfig({ NODE_ENV: 'production', JWT_SECRET: 'x'.repeat(48), MONGODB_URI: 'mongodb://x', CHAPA_SECRET_KEY: 'k', ADMIN_PHONE: '0911223344', ADMIN_PIN: '12' }), /ADMIN_PIN/);
 });

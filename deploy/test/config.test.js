@@ -8,6 +8,21 @@ const productionEnv = {
   JWT_SECRET: 'a-long-test-secret-value-with-more-than-32-characters',
 };
 
+test('production shared Games Center wallet is disabled until both written approvals exist', () => {
+  assert.equal(loadConfig({ ...productionEnv }).gamesHubSharedWalletEnabled, false);
+  assert.throws(
+    () => loadConfig({ ...productionEnv, GAMES_HUB_SHARED_WALLET_ENABLED: 'true' }),
+    /GAMES_HUB_SHARED_WALLET_ENABLED requires LOTTERY_LICENSE_APPROVED and CHAPA_MERCHANT_APPROVED/,
+  );
+  const approved = loadConfig({
+    ...productionEnv,
+    GAMES_HUB_SHARED_WALLET_ENABLED: 'true',
+    LOTTERY_LICENSE_APPROVED: 'true',
+    CHAPA_MERCHANT_APPROVED: 'true',
+  });
+  assert.equal(approved.gamesHubSharedWalletEnabled, true);
+});
+
 test('production registration is enabled by default for this deployment', () => {
   const config = loadConfig({ ...productionEnv });
   assert.equal(config.registrationEnabled, true);

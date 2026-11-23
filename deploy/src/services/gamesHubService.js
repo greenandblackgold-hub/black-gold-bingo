@@ -5,6 +5,26 @@ import { log } from '../util/log.js';
 const GAME_IDS = ['keno', 'aviator'];
 const BETTING_GROWTH_PER_MS = 0.00007;
 const MAX_MULTIPLIER = 1000;
+// Hard server-side ceiling: ETB 20,000 per Keno ticket or Aviator bet.
+export const MAX_GAMES_HUB_PAYOUT_SANTIM = 2_000_000;
+const DEFAULT_HOUSE_EDGE_PERCENT = 55;
+
+function poolBudget(totalStake, houseEdgePercent) {
+  return Math.floor(totalStake * (100 - houseEdgePercent) / 100);
+}
+
+function allocateProportionalPool(bets, houseEdgePercent, maxPayout = MAX_GAMES_HUB_PAYOUT_SANTIM) {
+  const totalStake = bets.reduce((sum, bet) => sum + bet.stake, 0);
+  const budget = poolBudget(totalStake, houseEdgePercent);
+  const eligible = bets.filter((bet) => bet.status === 'cashout_pending');
+  const totalWeight = eligible.reduce((sum, bet) => sum + bet.stake * Math.max(100, Math.round((bet.multiplier ?? 1) * 100)), 0);
+  if (!totalWeight || !budget) return eligible.map((bet) => ({ betId: bet.id, payout: 0 }));
+  return eligible.map((bet) => ({
+    betId: bet.id,
+    payout: Math.min(maxPayout, Math.floor(budget * (bet.stake * Math.max(100, Math.round((bet.multiplier ?? 1) * 100))) / totalWeight)),
+  }));
+}
+export const capGamesHubPayout = (payout) => Math.min(MAX_GAMES_HUB_PAYOUT_SANTIM, Math.max(0, Math.floor(Number(payout) || 0)));
 const DEFAULT_SETTINGS = Object.freeze({
   kenoEnabled: true,
   aviatorEnabled: true,
@@ -12,6 +32,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   maxBet: 100000,
   kenoBettingSeconds: 20,
   aviatorBettingSeconds: 8,
+  houseEdgePercent: DEFAULT_HOUSE_EDGE_PERCENT,
 });
 const KENO_PAYOUTS = Object.freeze({
   1: { 1: 350 },
@@ -93,7 +114,7 @@ function assertVerifiedPlayer(user) {
 
 function mapRepoError(error) {
   if (error instanceof RepoError && error.code === 'INSUFFICIENT_FUNDS') {
-    throw new HttpError(402, 'insufficient_funds', 'Your available demo balance is not enough for this bet.');
+    throw new HttpError(402, 'insufficient_funds', 'Your available wallet balance is not enough for this bet.');
   }
   if (error instanceof RepoError && error.code === 'ROUND_NOT_OPEN') {
     throw new HttpError(409, 'betting_closed', 'Betting for this round has closed.');
@@ -120,6 +141,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const round = {
       roundId: roundId(),
       game,
+      walletMode: !config.prod && config.gamesHubSharedWalletEnabled === true ? 'shared' : 'legacy-demo',
       status: 'betting',
       version: 1,
       bets: [],
@@ -140,16 +162,21 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     }
     if (game === 'keno' && round.status === 'betting' && now() >= round.bettingEndsAt) {
       const drawnNumbers = deterministicKenoDraw(round.serverSeed, 20);
-      const results = (round.bets ?? []).map((bet) => {
+      const rawResults = (round.bets ?? []).map((bet) => {
         const matchedNumbers = bet.selectedNumbers.filter((n) => drawnNumbers.includes(n));
         const multiplierHundredths = KENO_PAYOUTS[bet.selectedNumbers.length]?.[matchedNumbers.length] ?? 0;
         return {
           betId: bet.id,
           hits: matchedNumbers.length,
           matchedNumbers,
-          payout: Math.floor((bet.stake * multiplierHundredths) / 100),
+          payout: capGamesHubPayout(Math.floor((bet.stake * multiplierHundredths) / 100)),
         };
       });
+      const totalStake = (round.bets ?? []).reduce((sum, bet) => sum + bet.stake, 0);
+      const rawTotal = rawResults.reduce((sum, result) => sum + result.payout, 0);
+      const payoutBudget = poolBudget(totalStake, currentSettings.houseEdgePercent ?? DEFAULT_HOUSE_EDGE_PERCENT);
+      const scale = rawTotal > payoutBudget && rawTotal > 0 ? payoutBudget / rawTotal : 1;
+      const results = rawResults.map((result) => ({ ...result, payout: Math.min(MAX_GAMES_HUB_PAYOUT_SANTIM, Math.floor(result.payout * scale)) }));
       round = await repo.settleKenoGameHubRound({
         roundId: round.roundId, drawnNumbers, results, serverSeed: round.serverSeed,
         settledAt: now(), nextRoundAt: now() + 6000,
@@ -165,8 +192,9 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       });
     }
     if (game === 'aviator' && round.status === 'flying' && now() >= round.crashAt) {
+      const settlements = allocateProportionalPool(round.bets ?? [], currentSettings.houseEdgePercent ?? DEFAULT_HOUSE_EDGE_PERCENT);
       round = await repo.crashAviatorGameHubRound({
-        roundId: round.roundId, crashedAt: round.crashAt, nextRoundAt: now() + 6000,
+        roundId: round.roundId, crashedAt: round.crashAt, nextRoundAt: now() + 6000, settlements,
       });
       log('games_hub_aviator_round_crashed', { roundId: round.roundId, multiplier: round.crashMultiplier });
     }
@@ -193,10 +221,12 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   }
 
   function ensureSimulationMode() {
-    // New games are deliberately demo-credit-only. They cannot become real-money games
-    // merely because the legacy Bingo/payment feature flags are changed.
-    if (config.prod && config.realMoneyEnabled) {
-      throw new HttpError(503, 'games_hub_demo_only', 'Keno and Aviator remain in demo-credit mode pending separate legal and payment approval.');
+    // Keno and Aviator are still simulation-only. In production, fail closed if
+    // either real-money mode OR the shared Bingo wallet is switched on: otherwise
+    // demo-labelled rounds could debit real customer balances before their own
+    // approved real-money settlement/risk controls exist.
+    if (config.prod && (config.realMoneyEnabled || config.gamesHubSharedWalletEnabled === true)) {
+      throw new HttpError(503, 'games_hub_demo_only', 'Keno and Aviator remain demo-only in production. Keep GAMES_HUB_SHARED_WALLET_ENABLED=false until their approved real-money flow is ready.');
     }
   }
 
@@ -207,7 +237,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const round = await tickGame(game);
     const serverTime = now();
     const myBets = (round.bets ?? []).filter((bet) => bet.userId === user.id).map(publicBet);
-    const wallet = await repo.getGameHubWallet(user.id);
+    const wallet = await repo.getGameHubWallet(user.id, round.walletMode === 'shared' ? 'shared' : 'legacy-demo');
     const state = {
       game,
       roundId: round.roundId,
@@ -218,7 +248,10 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       myBets,
       minBetEtb: currentSettings.minBet / 100,
       maxBetEtb: currentSettings.maxBet / 100,
+      maxPayoutEtb: MAX_GAMES_HUB_PAYOUT_SANTIM / 100,
+      houseEdgePercent: currentSettings.houseEdgePercent ?? DEFAULT_HOUSE_EDGE_PERCENT,
       mode: 'SIMULATION_ONLY',
+      walletMode: round.walletMode === 'shared' ? 'shared' : 'legacy-demo',
       enabled: currentSettings[game + 'Enabled'] === true,
       balanceEtb: wallet.balance / 100,
     };
@@ -248,7 +281,6 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   async function placeBet(game, user, input = {}) {
     ensureSimulationMode();
     assertVerifiedPlayer(user);
-    await repo.getGameHubWallet(user.id);
     const currentSettings = await settings();
     if (!currentSettings[game + 'Enabled']) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
     const round = await tickGame(game);
@@ -300,13 +332,12 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const bet = (round.bets ?? []).find((item) => item.id === String(betId) && item.userId === user.id);
     if (!bet) throw new HttpError(404, 'bet_not_found', 'Your bet was not found in this round.');
     const multiplier = Math.max(1, Math.floor(Math.exp((at - round.startedAt) * BETTING_GROWTH_PER_MS) * 100) / 100);
-    const payout = Math.floor((bet.stake * Math.round(multiplier * 100)) / 100);
     try {
       const result = await repo.cashOutAviatorGameHubBet({
         roundId: round.roundId, betId: bet.id, userId: user.id,
-        multiplier, payout, cashedOutAt: at, ref: `games:aviator:cashout:${bet.id}`,
+        multiplier, payout: 0, cashedOutAt: at, ref: `games:aviator:cashout:${bet.id}`,
       });
-      return { bet: publicBet(result.bet), balanceEtb: result.balance / 100, multiplier };
+      return { bet: publicBet(result.bet), balanceEtb: result.balance / 100, multiplier, payoutPending: true };
     } catch (error) {
       mapRepoError(error);
     }
@@ -337,6 +368,11 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       if (!Number.isInteger(n) || n < 10 || n > 60) throw new HttpError(400, 'invalid_keno_timer', 'Keno betting time must be 10–60 seconds.');
       next.kenoBettingSeconds = n;
     }
+    if (input.houseEdgePercent !== undefined) {
+      const n = Number(input.houseEdgePercent);
+      if (!Number.isInteger(n) || n < 50 || n > 60) throw new HttpError(400, 'invalid_house_edge', 'House edge must be a whole percentage from 50 to 60.');
+      next.houseEdgePercent = n;
+    }
     if (input.aviatorBettingSeconds !== undefined) {
       const n = Number(input.aviatorBettingSeconds);
       if (!Number.isInteger(n) || n < 5 || n > 20) throw new HttpError(400, 'invalid_aviator_timer', 'Aviator betting time must be 5–20 seconds.');
@@ -360,13 +396,15 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     async getPublicSettings(user) {
       ensureSimulationMode();
       const current = await settings();
-      const wallet = await repo.getGameHubWallet(user.id);
+      const walletMode = !config.prod && config.gamesHubSharedWalletEnabled === true ? 'shared' : 'legacy-demo';
+      const wallet = await repo.getGameHubWallet(user.id, walletMode);
       return {
         kenoEnabled: current.kenoEnabled === true,
         aviatorEnabled: current.aviatorEnabled === true,
         minBetEtb: current.minBet / 100,
         maxBetEtb: current.maxBet / 100,
         balanceEtb: wallet.balance / 100,
+        walletMode,
         mode: 'SIMULATION_ONLY',
       };
     },
@@ -401,6 +439,8 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
           ...currentSettings,
           minBetEtb: currentSettings.minBet / 100,
           maxBetEtb: currentSettings.maxBet / 100,
+          maxPayoutEtb: MAX_GAMES_HUB_PAYOUT_SANTIM / 100,
+          houseEdgePercent: currentSettings.houseEdgePercent ?? DEFAULT_HOUSE_EDGE_PERCENT,
           minBet: undefined,
           maxBet: undefined,
         },
