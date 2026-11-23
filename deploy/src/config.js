@@ -37,7 +37,7 @@ export function loadConfig(env = process.env) {
     adminName: env.ADMIN_NAME ?? 'Owner',
     roomId: env.ROOM_ID ?? 'BINGO-99',
     cardPrice: santim(num(env.CARD_PRICE_ETB, 10)),
-    prizePercent: num(env.PRIZE_PERCENT, 80),
+    prizePercent: num(env.PRIZE_PERCENT, 45),
     maxCardsPerPurchase: num(env.MAX_CARDS_PER_PURCHASE, 50),
     cbeDepositAccount: String(env.CBE_DEPOSIT_ACCOUNT ?? '1000737138686').replace(/\D/g, ''),
     smsMaxAgeMinutes: num(env.SMS_MAX_AGE_MINUTES, 1440),
