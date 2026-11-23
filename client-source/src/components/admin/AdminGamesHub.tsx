@@ -9,7 +9,7 @@ type Overview = {
 
 export function AdminGamesHub() {
   const [overview, setOverview] = useState<Overview | null>(null);
-  const [minBet, setMinBet] = useState('5');
+  const [minBet, setMinBet] = useState('2');
   const [maxBet, setMaxBet] = useState('1000');
   const [houseEdge, setHouseEdge] = useState('55');
   const [kenoSeconds, setKenoSeconds] = useState('20');
