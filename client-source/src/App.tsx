@@ -96,7 +96,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
           <div className="overflow-y-auto overscroll-contain px-4 pb-6"><PlayerFeatures onGoToWallet={() => { setMenuOpen(false); setTab('wallet'); }} menuOnly /></div>
         </section>
       </div>}
-      {generalEnabled && tab !== 'keno' && <Suspense fallback={null}><BottomNav active={menuOpen ? 'menu' : tab === 'keno' || tab === 'aviator' || tab === 'play' ? 'games' : tab} onChange={handleNavChange} /></Suspense>}
+      {generalEnabled && tab !== 'keno' && <Suspense fallback={null}><BottomNav active={menuOpen ? 'menu' : tab === 'aviator' || tab === 'play' ? 'games' : tab} onChange={handleNavChange} /></Suspense>}
     </div>
   );
 }
