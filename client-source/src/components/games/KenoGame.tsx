@@ -141,7 +141,7 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
       </nav>
 
       <div className="grid grid-cols-3 items-center px-2 py-1 text-[10px] text-emerald-100/65">
-        <div><span className="block text-[9px]">All</span><b className="font-mono text-emerald-300">{history.length}</b></div>
+        <div><span className="block text-[9px]">All rounds</span><b className="font-mono text-emerald-300">{history.length}</b></div>
         <div className="text-center"><span className="block text-[9px]">My Tickets</span><b className="font-mono text-emerald-300">{state?.myBets.length??0}</b></div>
         <div className="text-right"><span className="block text-[9px]">My Bets</span><b className="font-mono text-emerald-300">{state?.myBets.length??0}</b></div>
       </div>
@@ -156,7 +156,7 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
         <summary className="cursor-pointer px-3 py-3 text-xs font-black text-emerald-300">{c.selected} · {selected.length}/10 <span className="float-right text-emerald-100/50">＋</span></summary>
         <div className="space-y-3 border-t border-emerald-400/10 p-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-[10px] text-slate-400">{lang==='am'?'ከ1 እስከ 80 ያሉ 10 ቁጥሮችን ይምረጡ':lang==='ti'?'ካብ 1 ክሳብ 80 ዘለዉ 10 ቁጽሪታት ምረጹ':'Choose up to 10 numbers from 1–80'}</p><button type="button" disabled={!isBetting} onClick={quickPick} className="rounded-md border border-emerald-300/30 bg-emerald-950/50 px-3 py-1.5 text-[10px] font-black text-emerald-200 disabled:opacity-40">{c.quick}</button></div>
-          <div className="grid grid-cols-10 gap-1">{Array.from({length:80},(_,i)=>i+1).map(n=>{const chosen=selected.includes(n)||(!isBetting&&(latestBet?.selectedNumbers.includes(n)??false));const drawn=drawSet.has(n);const hit=hitSet.has(n)||(chosen&&drawn);return <button key={n} type="button" disabled={!isBetting||!!drawSet.size} onClick={()=>toggle(n)} aria-pressed={chosen} aria-label={'Number '+n+(hit?', hit':drawn?', drawn':chosen?', selected':'')} className={'relative grid aspect-square min-w-0 place-items-center rounded-md border text-[10px] font-black tabular-nums '+(hit?'border-emerald-100 bg-emerald-400 text-[#04120b]':drawn?'border-sky-300/70 bg-sky-500/25 text-sky-100':chosen?'border-amber-100 bg-amber-400 text-[#171307]':'border-slate-600/70 bg-[#17231f] text-slate-100')}>{n}{hit&&<span className="absolute -right-0.5 -top-1 text-[8px] text-white">★</span>}</button>})}</div>
+          {state?.status !== 'settled' && <div className="grid grid-cols-10 gap-1">{Array.from({length:80},(_,i)=>i+1).map(n=>{const chosen=selected.includes(n)||(!isBetting&&(latestBet?.selectedNumbers.includes(n)??false));const drawn=drawSet.has(n);const hit=hitSet.has(n)||(chosen&&drawn);return <button key={n} type="button" disabled={!isBetting||!!drawSet.size} onClick={()=>toggle(n)} aria-pressed={chosen} aria-label={'Number '+n+(hit?', hit':drawn?', drawn':chosen?', selected':'')} className={'relative grid aspect-square min-w-0 place-items-center rounded-md border text-[10px] font-black tabular-nums '+(hit?'border-emerald-100 bg-emerald-400 text-[#04120b]':drawn?'border-sky-300/70 bg-sky-500/25 text-sky-100':chosen?'border-amber-100 bg-amber-400 text-[#171307]':'border-slate-600/70 bg-[#17231f] text-slate-100')}>{n}{hit&&<span className="absolute -right-0.5 -top-1 text-[8px] text-white">★</span>}</button>})}</div>}
           <div className="grid grid-cols-[40px_minmax(66px,1fr)_40px_54px_58px] items-center gap-1.5">
             <button type="button" disabled={!isBetting||Number(amount)<=minBet} onClick={()=>adjustBet(-1)} aria-label="Decrease bet" className="rounded-lg border border-emerald-400/20 bg-[#172923] py-2 text-xl font-black text-emerald-200 disabled:opacity-35">−</button>
             <div className="min-w-0 text-center"><label htmlFor="keno-bet" className="block text-[8px] font-bold uppercase tracking-widest text-slate-500">{c.bet} (ETB)</label><input id="keno-bet" type="number" inputMode="decimal" min={minBet} max={maxBet} step="0.01" value={amount} onChange={e=>setAmount(e.target.value)} className="w-full bg-transparent text-center text-base font-black tabular-nums text-white outline-none"/></div>
@@ -180,7 +180,6 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
       {state?.serverSeedHash&&<details className="rounded-lg border border-emerald-400/10 bg-[#0b1915] p-3 text-xs text-slate-400"><summary className="cursor-pointer font-bold text-emerald-300">{t.fairness}</summary><p className="mt-2 break-all">{t.commitment}: {state.serverSeedHash}</p>{state.serverSeed?<><p className="mt-1 break-all">{t.revealedSeed}: {state.serverSeed}</p><p className="mt-2">{t.reproducible}</p></>:<p className="mt-2">{t.seedAfter}</p>}</details>}
       <p className="text-center text-[9px] font-bold tracking-[.2em] text-emerald-300/35">{c.simulation}</p>
     </main>
-  );
   );
 }
 
