@@ -1,7 +1,7 @@
 # Render Blueprint: ONE service serves both the website and the game server.
 services:
   - type: web
-    name: black-gold-bingo-pro
+    name: black-gold-bingo
     rootDir: .
     runtime: node
     plan: free
