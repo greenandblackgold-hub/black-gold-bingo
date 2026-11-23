@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 
 type Overview = {
-  settings: { kenoEnabled: boolean; aviatorEnabled: boolean; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; houseEdgePercent: number; kenoBettingSeconds: number; aviatorBettingSeconds: number };
+  settings: { kenoEnabled: boolean; aviatorEnabled: boolean; minBetEtb: number; kenoMinBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; houseEdgePercent: number; kenoBettingSeconds: number; aviatorBettingSeconds: number };
   games: { keno: { roundId: string | null; status: string; bets: number }; aviator: { roundId: string | null; status: string; bets: number } };
   mode: string;
 };
@@ -10,6 +10,7 @@ type Overview = {
 export function AdminGamesHub() {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [minBet, setMinBet] = useState('5');
+  const [kenoMinBet, setKenoMinBet] = useState('2');
   const [maxBet, setMaxBet] = useState('1000');
   const [houseEdge, setHouseEdge] = useState('55');
   const [kenoSeconds, setKenoSeconds] = useState('20');
@@ -22,6 +23,7 @@ export function AdminGamesHub() {
       const next = await api.get<Overview>('/api/admin/games/overview');
       setOverview(next);
       setMinBet(String(next.settings.minBetEtb));
+      setKenoMinBet(String(next.settings.kenoMinBetEtb ?? 2));
       setMaxBet(String(next.settings.maxBetEtb));
       setHouseEdge(String(next.settings.houseEdgePercent ?? 55));
       setKenoSeconds(String(next.settings.kenoBettingSeconds));
@@ -56,7 +58,8 @@ export function AdminGamesHub() {
       <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Aviator</p><p className="text-xs text-amber-100/45">{overview?.games.aviator.status ?? 'Loading'} · {overview?.games.aviator.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ aviatorEnabled: !overview?.settings.aviatorEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.aviatorEnabled ? 'Disable' : 'Enable'}</button></div></div>
     </div>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-      <label className={label}>Minimum bet (ETB)<input className={input} type="number" min="1" max="1000" step=".01" value={minBet} onChange={e=>setMinBet(e.target.value)}/></label>
+      <label className={label}>Aviator minimum bet (ETB)<input className={input} type="number" min="1" max="1000" step=".01" value={minBet} onChange={e=>setMinBet(e.target.value)}/></label>
+      <label className={label}>Keno minimum bet (ETB)<input className={input} type="number" min="2" max="1000" step=".01" value={kenoMinBet} onChange={e=>setKenoMinBet(e.target.value)}/><span className="mt-1 block text-[10px] font-normal text-amber-100/40">Minimum allowed Keno stake: 2 ETB.</span></label>
       <label className={label}>Maximum bet (ETB)<input className={input} type="number" min="1" max="5000" step=".01" value={maxBet} onChange={e=>setMaxBet(e.target.value)}/></label>
       <label className={label}>Company commission / House Edge (%)<input className={input} type="number" min="50" max="60" step="1" value={houseEdge} onChange={e=>setHouseEdge(e.target.value)}/></label>
       <label className={label}>Keno round / betting duration
@@ -70,9 +73,16 @@ export function AdminGamesHub() {
           </select>
           <span className="mt-1 block text-[10px] font-normal text-amber-100/40">Applies to the next Keno round.</span>
         </label>
-      <label className={label}>Aviator betting window (seconds)<input className={input} type="number" min="5" max="20" value={aviatorSeconds} onChange={e=>setAviatorSeconds(e.target.value)}/></label>
+      <label className={label}>Aviator betting window
+          <select className={input} value={aviatorSeconds} onChange={e=>setAviatorSeconds(e.target.value)}>
+            <optgroup label="Seconds">
+              <option value="5">5 seconds</option><option value="8">8 seconds</option><option value="10">10 seconds</option><option value="12">12 seconds</option><option value="15">15 seconds</option><option value="20">20 seconds</option><option value="30">30 seconds</option><option value="45">45 seconds</option><option value="60">60 seconds (1 minute)</option>
+            </optgroup>
+          </select>
+          <span className="mt-1 block text-[10px] font-normal text-amber-100/40">Applies to the next Aviator round.</span>
+        </label>
     </div>
-    <button disabled={busy} onClick={() => void save({ minBetEtb: Number(minBet), maxBetEtb: Number(maxBet), houseEdgePercent: Number(houseEdge), kenoBettingSeconds: Number(kenoSeconds), aviatorBettingSeconds: Number(aviatorSeconds) })} className="mt-4 rounded-xl bg-gradient-to-r from-amber-200 to-amber-500 px-5 py-3 text-sm font-black text-black disabled:opacity-50">{busy ? 'Saving…' : 'Save game settings'}</button>
+    <button disabled={busy} onClick={() => void save({ minBetEtb: Number(minBet), kenoMinBetEtb: Number(kenoMinBet), maxBetEtb: Number(maxBet), houseEdgePercent: Number(houseEdge), kenoBettingSeconds: Number(kenoSeconds), aviatorBettingSeconds: Number(aviatorSeconds) })} className="mt-4 rounded-xl bg-gradient-to-r from-amber-200 to-amber-500 px-5 py-3 text-sm font-black text-black disabled:opacity-50">{busy ? 'Saving…' : 'Save game settings'}</button>
     <p className="mt-3 text-[11px] leading-5 text-amber-100/40">Game availability, bet limits, round timers and pool commission (50%–60%). Payout settlement is capped by each round's collected stakes; the crash/draw fairness algorithms remain unchanged.</p>
   </section>;
 }
