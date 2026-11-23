@@ -682,6 +682,11 @@ export async function createMongoRepo({ uri, dbName }) {
             : await gameHubWallets.findOne({ _id: bet.userId }, { session, projection: { balance: 1 } });
           return { bet: existing, balance: wallet?.balance ?? 0, duplicate: true };
         }
+        // Enforce the two-ticket cap inside the transaction, not only in the
+        // service preflight, so concurrent requests cannot overrun the limit.
+        if (game === 'aviator' && (round.bets ?? []).filter((item) => item.userId === bet.userId).length >= 2) {
+          throw new RepoError('AVIATOR_BET_LIMIT');
+        }
         if (round.status !== 'betting' || round.bettingEndsAt <= acceptedAt) throw new RepoError('ROUND_NOT_OPEN');
         await moveGameHubCredits(session, { userId: bet.userId, amount: -amount, kind: 'game_bet', ref, meta: { game, roundId, betId: bet.id }, walletMode });
         const updated = await gameHubRounds.findOneAndUpdate(
