@@ -26,6 +26,9 @@ function allocateProportionalPool(bets, houseEdgePercent, maxPayout = MAX_GAMES_
 }
 export const capGamesHubPayout = (payout) => Math.min(MAX_GAMES_HUB_PAYOUT_SANTIM, Math.max(0, Math.floor(Number(payout) || 0)));
 const DEFAULT_SETTINGS = Object.freeze({
+  generalEnabled: true,
+  announcementText: '',
+  announcementVisible: false,
   bingoEnabled: true,
   kenoEnabled: true,
   aviatorEnabled: true,
@@ -159,6 +162,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const currentSettings = await settings();
     let round = await repo.getCurrentGameHubRound(game);
     if (!round || (['settled', 'crashed'].includes(round.status) && Number(round.nextRoundAt ?? 0) <= now())) {
+      if (currentSettings.generalEnabled === false) return round;
       round = await createRound(game, currentSettings);
     }
     if (game === 'keno' && round.status === 'betting' && now() >= round.bettingEndsAt) {
@@ -235,6 +239,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     if (!GAME_IDS.includes(game)) throw new HttpError(404, 'game_not_found', 'Unknown game.');
     ensureSimulationMode();
     const currentSettings = await settings();
+    if (currentSettings.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
     const round = await tickGame(game);
     const serverTime = now();
     const myBets = (round.bets ?? []).filter((bet) => bet.userId === user.id).map(publicBet);
@@ -283,6 +288,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     ensureSimulationMode();
     assertVerifiedPlayer(user);
     const currentSettings = await settings();
+    if (currentSettings.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
     if (!currentSettings[game + 'Enabled']) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
     const round = await tickGame(game);
     if (round.status !== 'betting' || now() >= round.bettingEndsAt) {
@@ -347,6 +353,13 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   async function updateSettings(input = {}) {
     const current = await settings();
     const next = { ...current };
+    if (input.generalEnabled !== undefined) next.generalEnabled = input.generalEnabled === true;
+    if (input.announcementVisible !== undefined) next.announcementVisible = input.announcementVisible === true;
+    if (input.announcementText !== undefined) {
+      const message = String(input.announcementText).trim();
+      if (message.length > 500) throw new HttpError(400, 'announcement_too_long', 'Announcement must be 500 characters or fewer.');
+      next.announcementText = message;
+    }
     if (input.bingoEnabled !== undefined) next.bingoEnabled = input.bingoEnabled === true;
     if (input.kenoEnabled !== undefined) next.kenoEnabled = input.kenoEnabled === true;
     if (input.aviatorEnabled !== undefined) next.aviatorEnabled = input.aviatorEnabled === true;
@@ -398,6 +411,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     async assertGameEnabled(game) {
       if (!['bingo', 'keno', 'aviator'].includes(game)) throw new HttpError(404, 'game_not_found', 'Unknown game.');
       const current = await settings();
+      if (current.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
       if (current[game + 'Enabled'] !== true) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
     },
     async getPublicSettings(user) {
@@ -406,6 +420,8 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       const walletMode = !config.prod && config.gamesHubSharedWalletEnabled === true ? 'shared' : 'legacy-demo';
       const wallet = await repo.getGameHubWallet(user.id, walletMode);
       return {
+        generalEnabled: current.generalEnabled !== false,
+        announcement: current.generalEnabled === false && current.announcementVisible === true && current.announcementText ? current.announcementText : null,
         bingoEnabled: current.bingoEnabled === true,
         kenoEnabled: current.kenoEnabled === true,
         aviatorEnabled: current.aviatorEnabled === true,
@@ -445,6 +461,9 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       return {
         settings: {
           ...currentSettings,
+          generalEnabled: currentSettings.generalEnabled !== false,
+          announcementText: currentSettings.announcementText ?? '',
+          announcementVisible: currentSettings.announcementVisible === true,
           minBetEtb: currentSettings.minBet / 100,
           maxBetEtb: currentSettings.maxBet / 100,
           maxPayoutEtb: MAX_GAMES_HUB_PAYOUT_SANTIM / 100,

@@ -29,13 +29,13 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
 export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode }: Props) {
   const { lang } = useLanguage();
   const t = gameUi.gamesCenter[lang];
-  const [availability, setAvailability] = useState<{ bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' } | null>(null);
+  const [availability, setAvailability] = useState<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' } | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
   useEffect(() => {
     if (!serverMode) return;
     let active = true;
     const refreshAvailability = () => {
-      api.get<{ bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings')
+      api.get<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings')
         .then((value) => { if (active) { setAvailability(value); setAvailabilityError(''); } })
         .catch(() => { if (active) setAvailabilityError(t.loadError); });
     };
@@ -43,6 +43,9 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode
     const poll = window.setInterval(refreshAvailability, 5000);
     return () => { active = false; window.clearInterval(poll); };
   }, [serverMode, t.loadError]);
+  if (serverMode && availability?.generalEnabled === false) {
+    return <main className="mx-auto min-h-[70vh] w-full max-w-6xl px-4 py-8">{availability.announcement && <p role="status" className="mx-auto max-w-2xl rounded-xl border border-amber-300/20 bg-black/40 p-5 text-center text-sm leading-7 text-amber-100">{availability.announcement}</p>}</main>;
+  }
   return (
     <div className="mx-auto w-full max-w-6xl space-y-7 pb-8">
       <header className="relative overflow-hidden rounded-3xl border border-amber-400/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.22),transparent_45%),linear-gradient(120deg,#17140c,#090909_58%,#151006)] px-5 py-8 shadow-[0_22px_65px_rgba(0,0,0,.4)] sm:px-8 sm:py-10">
