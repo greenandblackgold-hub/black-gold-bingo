@@ -653,3 +653,37 @@ body { min-height: 100vh; min-height: 100dvh; }
 .premium-ui .keno-reference-page [class*="border-green-"] {
   border-color: rgba(214,173,69,.38) !important;
 }
+
+
+/* Keno selection controls and recent-draw preview use the same Black Gold finish. */
+.premium-ui .keno-reference-page .keno-selection-count {
+  border-color: #f6d77a !important;
+  background: radial-gradient(circle at 30% 25%, #fff0b8, #d6ad45 55%, #5b3e0d) !important;
+  color: #100c04 !important;
+  box-shadow: 0 0 18px rgba(214,173,69,.42), inset 0 2px 8px rgba(255,255,255,.35) !important;
+}
+.premium-ui .keno-reference-page .keno-mini-ball,
+.premium-ui .keno-reference-page .keno-drawn-preview-ball {
+  border-color: rgba(246,215,122,.55) !important;
+  background: radial-gradient(circle at 35% 25%, #8d753f, #352a14 58%, #100d07) !important;
+  color: #fff0b8 !important;
+}
+.premium-ui .keno-reference-page [class*="bg-[#16432f]"],
+.premium-ui .keno-reference-page [class*="bg-[#172421]"] {
+  background: linear-gradient(145deg, #211b0e, #100e09) !important;
+  border-color: rgba(214,173,69,.3) !important;
+}
+.premium-ui .keno-reference-page [class*="bg-[#34484a]"] {
+  background: linear-gradient(145deg, #342a16, #17130b) !important;
+  color: #f3dfad !important;
+  border-color: rgba(214,173,69,.24) !important;
+}
+.premium-ui .keno-reference-page [class*="bg-[#101b19]"],
+.premium-ui .keno-reference-page [class*="bg-[#0b1915]"],
+.premium-ui .keno-reference-page [class*="bg-[#0b1915]"] {
+  background-color: #100e09 !important;
+  border-color: rgba(214,173,69,.2) !important;
+}
+.premium-ui .keno-reference-page [class*="bg-red-950"] {
+  border: 1px solid rgba(214,173,69,.22);
+}
