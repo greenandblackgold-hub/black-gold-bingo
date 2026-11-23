@@ -46,7 +46,8 @@ export function createMemoryRepo() {
     }
     return gameHubWallets.get(userId);
   };
-  const moveGameHubCredits = (userId, amount, kind, ref, meta = {}) => {
+  const moveGameHubCredits = (userId, amount, kind, ref, meta = {}, walletMode = 'shared') => {
+    if (walletMode === 'shared') return credit(userId, amount, kind, ref, meta);
     const wallet = ensureGameHubWallet(userId);
     if (gameHubLedger.has(ref)) return { applied: false, balance: wallet.balance };
     if (amount < 0 && wallet.balance + amount < 0) throw new RepoError('INSUFFICIENT_FUNDS');
@@ -428,7 +429,11 @@ export function createMemoryRepo() {
 
     /* Isolated Keno and Aviator records. Existing Bingo game/card collections are untouched. */
     async getGameHubSettings() { return clone(gameHubSettings); },
-    async getGameHubWallet(userId) { return clone(ensureGameHubWallet(userId)); },
+    async getGameHubWallet(userId, walletMode = 'shared') {
+      if (!users.has(userId)) throw new RepoError('USER_NOT_FOUND');
+      if (walletMode === 'shared') return { userId, balance: users.get(userId).balance, currency: 'ETB', balanceType: 'SHARED_BINGO_WALLET' };
+      return clone(ensureGameHubWallet(userId));
+    },
     async listGameHubLedger(userId, limit = 30) { return [...gameHubLedger.values()].filter((entry) => entry.userId === userId).sort((a, b) => b.createdAt - a.createdAt).slice(0, limit).map(clone); },
     async updateGameHubSettings(settings) { gameHubSettings = { ...gameHubSettings, ...clone(settings) }; return clone(gameHubSettings); },
     async getCurrentGameHubRound(game) {
@@ -456,10 +461,11 @@ export function createMemoryRepo() {
       const round = gameHubRounds.get(game + ':' + roundId);
       if (!round) throw new RepoError('ROUND_NOT_OPEN');
       const existing = (round.bets ?? []).find((item) => item.userId === bet.userId && item.requestId === bet.requestId);
-      const wallet = ensureGameHubWallet(bet.userId);
+      const walletMode = round.walletMode === 'shared' ? 'shared' : 'legacy-demo';
+      const wallet = walletMode === 'shared' ? users.get(bet.userId) : ensureGameHubWallet(bet.userId);
       if (existing) return { bet: clone(existing), balance: wallet.balance, duplicate: true };
       if (round.status !== 'betting' || round.bettingEndsAt <= acceptedAt) throw new RepoError('ROUND_NOT_OPEN');
-      const movement = moveGameHubCredits(bet.userId, -amount, 'game_bet', ref, { game, roundId, betId: bet.id });
+      const movement = moveGameHubCredits(bet.userId, -amount, 'game_bet', ref, { game, roundId, betId: bet.id }, walletMode);
       round.bets.push(clone(bet));
       round.version += 1;
       return { bet: clone(bet), balance: movement.balance, duplicate: false };
@@ -473,7 +479,7 @@ export function createMemoryRepo() {
       const byId = new Map(results.map((result) => [result.betId, result]));
       const bets = round.bets.map((bet) => {
         const result = byId.get(bet.id) ?? { payout: 0, hits: 0, matchedNumbers: [] };
-        if (result.payout > 0) moveGameHubCredits(bet.userId, result.payout, 'game_prize', 'games:keno:win:' + bet.id, { game: 'keno', roundId, betId: bet.id });
+        if (result.payout > 0) moveGameHubCredits(bet.userId, result.payout, 'game_prize', 'games:keno:win:' + bet.id, { game: 'keno', roundId, betId: bet.id }, round.walletMode === 'shared' ? 'shared' : 'legacy-demo');
         return { ...bet, status: result.payout > 0 ? 'won' : 'lost', hits: result.hits, matchedNumbers: result.matchedNumbers, payout: result.payout, settledAt };
       });
       Object.assign(round, { status: 'settled', drawnNumbers: clone(drawnNumbers), serverSeed, bets, settledAt, nextRoundAt, version: round.version + 1 });
@@ -492,9 +498,10 @@ export function createMemoryRepo() {
       if (!round || round.status !== 'flying' || cashedOutAt >= round.crashAt) throw new RepoError('BET_NOT_ACTIVE');
       const bet = round.bets.find((item) => item.id === betId && item.userId === userId);
       if (!bet) throw new RepoError('BET_NOT_ACTIVE');
-      if (bet.status === 'cashed_out') return { bet: clone(bet), balance: ensureGameHubWallet(userId).balance, duplicate: true };
+      const walletMode = round.walletMode === 'shared' ? 'shared' : 'legacy-demo';
+      if (bet.status === 'cashed_out') return { bet: clone(bet), balance: (walletMode === 'shared' ? users.get(userId) : ensureGameHubWallet(userId)).balance, duplicate: true };
       if (bet.status !== 'active') throw new RepoError('BET_NOT_ACTIVE');
-      const movement = moveGameHubCredits(userId, payout, 'game_prize', ref, { game: 'aviator', roundId, betId, multiplier });
+      const movement = moveGameHubCredits(userId, payout, 'game_prize', ref, { game: 'aviator', roundId, betId, multiplier }, walletMode);
       Object.assign(bet, { status: 'cashed_out', multiplier, payout, cashedOutAt });
       round.version += 1;
       return { bet: clone(bet), balance: movement.balance, duplicate: false };
