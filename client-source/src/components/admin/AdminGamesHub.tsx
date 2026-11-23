@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 
 type Overview = {
-  settings: { kenoEnabled: boolean; aviatorEnabled: boolean; minBetEtb: number; maxBetEtb: number; kenoBettingSeconds: number; aviatorBettingSeconds: number };
+  settings: { kenoEnabled: boolean; aviatorEnabled: boolean; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; kenoBettingSeconds: number; aviatorBettingSeconds: number };
   games: { keno: { roundId: string | null; status: string; bets: number }; aviator: { roundId: string | null; status: string; bets: number } };
   mode: string;
 };
@@ -41,6 +41,11 @@ export function AdminGamesHub() {
     <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.25em] text-amber-500">Games management</p><h2 className="mt-1 text-lg font-black text-amber-100">Games Center Controls</h2></div><span className="rounded-full border border-amber-400/20 px-3 py-1 text-[10px] font-bold text-amber-300">SIMULATION ONLY</span></div>
     {error && <p role="alert" className="mt-3 text-sm text-red-300">{error}</p>}
     {notice && <p role="status" className="mt-3 text-sm text-emerald-300">{notice}</p>}
+    <div className={card + ' mt-4'}>
+      <p className="text-xs font-semibold text-amber-100/60">Maximum payout per Keno ticket / Aviator bet</p>
+      <p className="mt-1 text-2xl font-black text-amber-200">{overview ? Number(overview.settings.maxPayoutEtb).toLocaleString() : '100,000'} ETB</p>
+      <p className="mt-1 text-[11px] text-amber-100/40">Enforced by the server. This limit is fixed for this pilot setting.</p>
+    </div>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Keno</p><p className="text-xs text-amber-100/45">{overview?.games.keno.status ?? 'Loading'} · {overview?.games.keno.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ kenoEnabled: !overview?.settings.kenoEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.kenoEnabled ? 'Disable' : 'Enable'}</button></div></div>
       <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Aviator</p><p className="text-xs text-amber-100/45">{overview?.games.aviator.status ?? 'Loading'} · {overview?.games.aviator.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ aviatorEnabled: !overview?.settings.aviatorEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.aviatorEnabled ? 'Disable' : 'Enable'}</button></div></div>
