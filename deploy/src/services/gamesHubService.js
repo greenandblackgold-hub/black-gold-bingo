@@ -5,6 +5,9 @@ import { log } from '../util/log.js';
 const GAME_IDS = ['keno', 'aviator'];
 const BETTING_GROWTH_PER_MS = 0.00007;
 const MAX_MULTIPLIER = 1000;
+// Hard server-side ceiling: ETB 100,000 per Keno ticket or Aviator bet.
+export const MAX_GAMES_HUB_PAYOUT_SANTIM = 10_000_000;
+export const capGamesHubPayout = (payout) => Math.min(MAX_GAMES_HUB_PAYOUT_SANTIM, Math.max(0, Math.floor(Number(payout) || 0)));
 const DEFAULT_SETTINGS = Object.freeze({
   kenoEnabled: true,
   aviatorEnabled: true,
@@ -148,7 +151,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
           betId: bet.id,
           hits: matchedNumbers.length,
           matchedNumbers,
-          payout: Math.floor((bet.stake * multiplierHundredths) / 100),
+          payout: capGamesHubPayout(Math.floor((bet.stake * multiplierHundredths) / 100)),
         };
       });
       round = await repo.settleKenoGameHubRound({
@@ -219,6 +222,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       myBets,
       minBetEtb: currentSettings.minBet / 100,
       maxBetEtb: currentSettings.maxBet / 100,
+      maxPayoutEtb: MAX_GAMES_HUB_PAYOUT_SANTIM / 100,
       mode: 'SIMULATION_ONLY',
       walletMode: round.walletMode === 'shared' ? 'shared' : 'legacy-demo',
       enabled: currentSettings[game + 'Enabled'] === true,
@@ -301,7 +305,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const bet = (round.bets ?? []).find((item) => item.id === String(betId) && item.userId === user.id);
     if (!bet) throw new HttpError(404, 'bet_not_found', 'Your bet was not found in this round.');
     const multiplier = Math.max(1, Math.floor(Math.exp((at - round.startedAt) * BETTING_GROWTH_PER_MS) * 100) / 100);
-    const payout = Math.floor((bet.stake * Math.round(multiplier * 100)) / 100);
+    const payout = capGamesHubPayout(Math.floor((bet.stake * Math.round(multiplier * 100)) / 100));
     try {
       const result = await repo.cashOutAviatorGameHubBet({
         roundId: round.roundId, betId: bet.id, userId: user.id,
@@ -404,6 +408,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
           ...currentSettings,
           minBetEtb: currentSettings.minBet / 100,
           maxBetEtb: currentSettings.maxBet / 100,
+          maxPayoutEtb: MAX_GAMES_HUB_PAYOUT_SANTIM / 100,
           minBet: undefined,
           maxBet: undefined,
         },
