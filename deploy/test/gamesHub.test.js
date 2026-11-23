@@ -2,8 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash, createHmac } from 'node:crypto';
 import { createMemoryRepo } from '../src/db/memoryRepo.js';
-import { createGamesHubService } from '../src/services/gamesHubService.js';
+import { createGamesHubService, capGamesHubPayout, MAX_GAMES_HUB_PAYOUT_SANTIM } from '../src/services/gamesHubService.js';
 import { HttpError } from '../src/util/errors.js';
+
+test('Keno and Aviator payouts are capped at ETB 100,000 per bet', () => {
+  assert.equal(MAX_GAMES_HUB_PAYOUT_SANTIM, 10_000_000);
+  assert.equal(capGamesHubPayout(25_000_000), 10_000_000);
+  assert.equal(capGamesHubPayout(9_999_999), 9_999_999);
+  assert.equal(capGamesHubPayout(-100), 0);
+});
 
 async function fixture() {
   let clock = Date.now();
