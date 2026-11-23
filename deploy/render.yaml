@@ -29,3 +29,4 @@ services:
       - { key: REAL_MONEY_ENABLED, value: "false" }
       - { key: LOTTERY_LICENSE_APPROVED, value: "false" }
       - { key: CHAPA_MERCHANT_APPROVED, value: "false" }
+      - { key: GAMES_HUB_SHARED_WALLET_ENABLED, value: "false" }
