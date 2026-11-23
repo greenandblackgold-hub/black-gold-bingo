@@ -62,6 +62,20 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   assert.equal((await f.repo.listGameHubRounds('keno', 1))[0].status, 'settled');
 });
 
+test('legacy Keno rounds finish on their original demo wallet without touching Bingo balance', async () => {
+  const f = await fixture();
+  await f.repo.createGameHubRound('keno', {
+    roundId: 'legacy-round-01', game: 'keno', status: 'betting', version: 1, bets: [],
+    serverSeed: 'a'.repeat(64), serverSeedHash: 'b'.repeat(64), createdAt: f.time(),
+    expireAt: new Date(f.time() + 30 * 24 * 60 * 60 * 1000), bettingEndsAt: f.time() + 20_000,
+  });
+  const state = await f.service.getState('keno', f.user);
+  assert.equal(state.walletMode, 'legacy-demo');
+  await f.service.placeKenoBet(f.user, { requestId: 'legacy_keno_request_01', amount: 10, selectedNumbers: [1] });
+  assert.equal((await f.repo.findUserById(f.user.id)).balance, 100000, 'legacy round cannot debit Bingo wallet');
+  assert.equal((await f.repo.getGameHubWallet(f.user.id, 'legacy-demo')).balance, 99000);
+});
+
 test('Keno rejects duplicate or out-of-range selections and insufficient balance', async () => {
   const f = await fixture();
   await f.service.getState('keno', f.user);
