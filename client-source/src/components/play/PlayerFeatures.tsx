@@ -11,7 +11,7 @@ import type { WinPattern } from '@/types/game';
 import { SERVER_MODE } from '@/lib/api';
 
 type PatternOption = { label: string; cells: number[]; pattern?: WinPattern };
-function getPatternOptions(pattern: WinPattern, labels: Record<string, string>): PatternOption[] {
+function getPatternOptions(pattern: WinPattern, labels: Partial<Record<WinPattern, string>>): PatternOption[] {
   const masks = pattern === 'half_house'
     ? [Array.from({length:25},(_,i)=>i).filter(i=>i!==12).slice(0,12).map(i=>[Math.floor(i/5),i%5] as [number,number])]
     : patternMasks(pattern);
@@ -23,7 +23,7 @@ function getPatternOptions(pattern: WinPattern, labels: Record<string, string>):
     cells: mask.map(([r,c])=>r*5+c),
   }));
 }
-function getAllPatternOptions(labels: Record<string, string>): PatternOption[] {
+function getAllPatternOptions(labels: Partial<Record<WinPattern, string>>): PatternOption[] {
   return WIN_PATTERN_OPTIONS.map((pattern) => {
     const masks = pattern === 'half_house'
       ? [Array.from({length:25},(_,i)=>i).filter(i=>i!==12).slice(0,12).map(i=>[Math.floor(i/5),i%5] as [number,number])]
