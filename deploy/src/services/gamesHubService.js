@@ -123,7 +123,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const round = {
       roundId: roundId(),
       game,
-      walletMode: config.prod && config.gamesHubSharedWalletEnabled !== true ? 'legacy-demo' : 'shared',
+      walletMode: config.gamesHubSharedWalletEnabled === true ? 'shared' : 'legacy-demo',
       status: 'betting',
       version: 1,
       bets: [],
@@ -197,10 +197,12 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   }
 
   function ensureSimulationMode() {
-    // New games are deliberately demo-credit-only. They cannot become real-money games
-    // merely because the legacy Bingo/payment feature flags are changed.
-    if (config.prod && config.realMoneyEnabled) {
-      throw new HttpError(503, 'games_hub_demo_only', 'Keno and Aviator remain in demo-credit mode pending separate legal and payment approval.');
+    // Keno and Aviator are still simulation-only. In production, fail closed if
+    // either real-money mode OR the shared Bingo wallet is switched on: otherwise
+    // demo-labelled rounds could debit real customer balances before their own
+    // approved real-money settlement/risk controls exist.
+    if (config.prod && (config.realMoneyEnabled || config.gamesHubSharedWalletEnabled === true)) {
+      throw new HttpError(503, 'games_hub_demo_only', 'Keno and Aviator remain demo-only in production. Keep GAMES_HUB_SHARED_WALLET_ENABLED=false until their approved real-money flow is ready.');
     }
   }
 
@@ -365,7 +367,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     async getPublicSettings(user) {
       ensureSimulationMode();
       const current = await settings();
-      const walletMode = config.prod && config.gamesHubSharedWalletEnabled !== true ? 'legacy-demo' : 'shared';
+      const walletMode = config.gamesHubSharedWalletEnabled === true ? 'shared' : 'legacy-demo';
       const wallet = await repo.getGameHubWallet(user.id, walletMode);
       return {
         kenoEnabled: current.kenoEnabled === true,
