@@ -57,17 +57,20 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
   useEffect(() => { if (state?.status === 'settled') void loadHistory(); }, [state?.status, state?.roundId, loadHistory]);
   const drawSequenceKey = (state?.drawnNumbers ?? []).slice(0, 20).join(',');
   const [visibleDrawCount, setVisibleDrawCount] = useState(0);
+  const revealRoundRef = useRef('');
   useEffect(() => {
-    setVisibleDrawCount(0);
-    if (!drawSequenceKey) return;
-    let count = 0;
+    if (!state) return;
+    if (revealRoundRef.current !== state.roundId) {
+      revealRoundRef.current = state.roundId;
+      setVisibleDrawCount(0);
+    }
+    const target = Math.min(20, state.drawnNumbers?.length ?? 0);
+    if (!target) return;
     const reveal = window.setInterval(() => {
-      count += 1;
-      setVisibleDrawCount(count);
-      if (count >= 20) window.clearInterval(reveal);
+      setVisibleDrawCount((current) => Math.min(target, current + 1));
     }, 110);
     return () => window.clearInterval(reveal);
-  }, [drawSequenceKey]);
+  }, [state?.roundId, drawSequenceKey]);
   const visibleDrawnNumbers = (state?.drawnNumbers ?? []).slice(0, visibleDrawCount);
 
 
@@ -185,7 +188,7 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
 
 function BetCard({ bet, labels }: { bet: KenoBet; labels: (typeof copy)['en'] | (typeof copy)['am'] | (typeof copy)['ti'] }) {
   return <article className={'overflow-hidden rounded-lg border p-1.5 '+(bet.payoutEtb>0?'border-emerald-400/40 bg-[#16432f]':'border-white/5 bg-[#172421]')}>
-    <div className="px-1 pb-1 text-[11px] font-black text-emerald-300">{bet.id.slice(-5)}</div>
+    <div className="px-1 pb-1 text-[11px] font-black text-emerald-300">Ticket #{bet.id.slice(-5)}</div>
     <div className="grid grid-cols-10 gap-1">{Array.from({length:10},(_,i)=>{const n=bet.selectedNumbers[i];return <div key={i} className={'grid aspect-square min-w-0 place-items-center rounded-sm border border-white/5 text-xs font-black tabular-nums '+(n===undefined?'bg-[#101b19]':bet.matchedNumbers.includes(n)?'bg-emerald-400 text-[#062014]':'bg-[#34484a] text-white')}>{n??''}</div>})}</div>
     <div className="mt-1 flex items-center justify-between gap-2 border-t border-white/5 px-1 pt-1 text-[10px]"><span className="font-bold text-slate-100">{labels.bet} {money(bet.stakeEtb)} ETB</span><span className="font-black text-emerald-300">{bet.payoutEtb>0?money(bet.payoutEtb):bet.hits+' '+labels.hits}</span></div>
   </article>;
