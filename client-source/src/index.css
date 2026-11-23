@@ -559,3 +559,70 @@ body { min-height: 100vh; min-height: 100dvh; }
 }
 
 /* Keep the requested yellow-orange flash active despite the global reduced-motion rule. */
+
+
+/* Keno-only Black Gold palette and premium draw emphasis. */
+.premium-ui .keno-reference-page {
+  --keno-gold: #d6ad45;
+  --keno-gold-bright: #f6d77a;
+  --keno-gold-soft: rgba(214, 173, 69, .22);
+  background-color: #070707 !important;
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(214,173,69,.11), transparent 28rem),
+    linear-gradient(180deg, #090909 0%, #050505 60%, #090806 100%) !important;
+  color: #f3dfad !important;
+}
+.premium-ui .keno-reference-page [class*="text-emerald-"] { color: var(--keno-gold-bright) !important; }
+.premium-ui .keno-reference-page [class*="border-emerald-"] { border-color: rgba(214,173,69,.38) !important; }
+.premium-ui .keno-reference-page [class*="bg-emerald-"] {
+  background-color: var(--keno-gold) !important;
+  color: #090806 !important;
+}
+.premium-ui .keno-reference-page [class*="bg-[#"] { background-color: #0b0a08 !important; }
+.premium-ui .keno-reference-page [class*="from-[#276b4b]"] {
+  --tw-gradient-from: #8e681d var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(142 104 29 / 0) var(--tw-gradient-to-position) !important;
+}
+.premium-ui .keno-reference-page [class*="to-[#17432f]"] {
+  --tw-gradient-to: #4b3510 var(--tw-gradient-to-position) !important;
+}
+.premium-ui .keno-reference-page [class*="bg-[#253532]"],
+.premium-ui .keno-reference-page [class*="bg-[#253330]"],
+.premium-ui .keno-reference-page [class*="bg-[#263b34]"] {
+  background: linear-gradient(145deg, #1c1911, #100e09) !important;
+  border-color: rgba(214,173,69,.22) !important;
+}
+.premium-ui .keno-reference-page [class*="bg-[linear-gradient(145deg,#394442"] {
+  background: linear-gradient(145deg, #332b19, #17130b) !important;
+  border-color: rgba(214,173,69,.2) !important;
+}
+.premium-ui .keno-reference-page [aria-pressed="true"] {
+  background: linear-gradient(145deg, #ffe69a, #d6ad45 58%, #8e681d) !important;
+  border-color: #fff0b8 !important;
+  color: #100c04 !important;
+  box-shadow: 0 0 10px rgba(246,215,122,.42), inset 0 1px 0 rgba(255,255,255,.7) !important;
+}
+.premium-ui .keno-reference-page .keno-drawn-ball:last-child {
+  animation: keno-latest-gold-flash 900ms ease-in-out infinite !important;
+  border-color: #fff0b8 !important;
+}
+.premium-ui .keno-reference-page .keno-live-ball {
+  border-color: #fff0b8 !important;
+  background: radial-gradient(circle at 32% 22%, #fff0b8, #d6ad45 48%, #5b3e0d 82%) !important;
+  color: #100c04 !important;
+  animation: keno-latest-gold-flash 900ms ease-in-out infinite !important;
+}
+@keyframes keno-latest-gold-flash {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow: 0 0 10px rgba(246,215,122,.78), 0 0 22px rgba(214,173,69,.5), inset 0 1px 5px rgba(255,255,255,.38);
+  }
+  50% {
+    filter: brightness(1.22);
+    box-shadow: 0 0 16px rgba(255,231,166,.95), 0 0 30px rgba(214,173,69,.75), inset 0 1px 8px rgba(255,255,255,.55);
+  }
+}
+.premium-ui .keno-reference-page button:focus-visible {
+  outline: 2px solid var(--keno-gold-bright) !important;
+  outline-offset: 2px;
+}
