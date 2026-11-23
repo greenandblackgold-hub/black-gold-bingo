@@ -7,8 +7,8 @@ const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumF
 
 type Props = { onOpenBingo: () => void; onOpenKeno: () => void; onOpenAviator: () => void; serverMode: boolean };
 
-function GameCard({ title, subtitle, detail, icon, onClick, featured = false, disabled = false, disabledLabel = '' }: {
-  title: string; subtitle: string; detail: string; icon: 'bingo' | 'keno' | 'aviator'; onClick: () => void; featured?: boolean; disabled?: boolean; disabledLabel?: string;
+function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured = false, disabled = false, disabledLabel = '' }: {
+  title: string; subtitle: string; detail: string; icon: 'bingo' | 'keno' | 'aviator'; onClick: () => void; openLabel: string; featured?: boolean; disabled?: boolean; disabledLabel?: string;
 }) {
   return (
     <button type="button" disabled={disabled} onClick={onClick} className={`group relative disabled:cursor-not-allowed disabled:opacity-55 flex min-h-64 w-full flex-col overflow-hidden rounded-3xl border text-left transition duration-300 hover:-translate-y-1 hover:border-amber-300/70 hover:shadow-[0_18px_55px_rgba(212,175,55,.16)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300 ${featured ? 'border-amber-300/50 bg-gradient-to-br from-[#28200d] via-[#100f0b] to-black' : 'border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black'} p-5 sm:p-6`}>
@@ -21,7 +21,7 @@ function GameCard({ title, subtitle, detail, icon, onClick, featured = false, di
       <span className="relative mt-6 text-[10px] font-black uppercase tracking-[.28em] text-amber-400">{subtitle}</span>
       <span className="relative mt-2 text-2xl font-black tracking-wide text-amber-50">{title}</span>
       <span className="relative mt-2 max-w-sm text-sm leading-6 text-amber-100/60">{detail}</span>
-      <span className="relative mt-auto flex items-center gap-2 pt-6 text-sm font-bold text-amber-300">{disabled ? disabledLabel : t.openGame} <span aria-hidden>{disabled ? '•' : '→'}</span></span>
+      <span className="relative mt-auto flex items-center gap-2 pt-6 text-sm font-bold text-amber-300">{disabled ? disabledLabel : openLabel} <span aria-hidden>{disabled ? '•' : '→'}</span></span>
     </button>
   );
 }
@@ -65,7 +65,7 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode
       <div className="grid gap-4 md:grid-cols-3">
         <GameCard title="Bingo PRO" subtitle={t.bingoSubtitle} detail={t.bingoDetail} icon="bingo" onClick={onOpenBingo} featured />
         <GameCard title="Keno" subtitle={t.kenoSubtitle} detail={t.kenoDetail} icon="keno" onClick={onOpenKeno} disabled={!serverMode || availability?.kenoEnabled !== true} disabledLabel={!serverMode ? t.serverOnly : availabilityError ? t.refreshUnavailable : availability ? t.temporarilyDisabled : t.loadingAvailability} />
-        <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} disabled={!serverMode || availability?.aviatorEnabled !== true} disabledLabel={!serverMode ? 'Available in server mode' : availabilityError ? 'Unavailable · refresh' : availability ? 'Temporarily disabled' : 'Loading availability…'} />
+        <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} disabled={!serverMode || availability?.aviatorEnabled !== true} openLabel={t.openGame} disabledLabel={!serverMode ? t.serverOnly : availabilityError ? t.refreshUnavailable : availability ? t.temporarilyDisabled : t.loadingAvailability} />
       </div>
       <p className="text-center text-[11px] leading-5 text-amber-100/40">{t.demoNotice}</p>
     </div>
