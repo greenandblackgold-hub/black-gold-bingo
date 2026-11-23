@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { api, ApiError } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import { gameUi } from '@/lib/gameUi';
 
