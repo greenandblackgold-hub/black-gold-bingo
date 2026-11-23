@@ -35,6 +35,7 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   assert.equal(initial.balanceEtb, 1000);
   assert.equal(initial.walletMode, 'shared');
   assert.equal(initial.minBetEtb, 2, 'Keno minimum stake defaults to ETB 2');
+  await assert.rejects(f.service.placeKenoBet(f.user, { requestId: 'keno_below_min_01', amount: 1.99, selectedNumbers: [1] }), (e) => e instanceof HttpError && e.code === 'invalid_bet_amount');
   assert.equal(initial.houseEdgePercent, 55);
   assert.equal(initial.maxPayoutEtb, 20000);
   assert.equal(initial.payoutTable['4']['4'], 4000, 'published Keno payout table is fixed and exposed');
@@ -108,6 +109,7 @@ test('Aviator commits a round before betting and reveals its seed only after cra
   const initial = await f.service.getState('aviator', f.user);
   assert.equal(initial.status, 'betting');
   assert.equal(initial.minBetEtb, 5, 'Aviator keeps its existing independent minimum bet');
+  await assert.rejects(f.service.placeAviatorBet(f.user, { requestId: 'aviator_below_min_01', amount: 2 }), (e) => e instanceof HttpError && e.code === 'invalid_bet_amount');
   assert.equal(initial.balanceEtb, 1000);
   assert.equal(initial.walletMode, 'shared');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
