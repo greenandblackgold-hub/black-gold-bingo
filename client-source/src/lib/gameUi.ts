@@ -1,5 +1,7 @@
 import type { Lang } from '@/types/game';
 
+// Shared UI copy for Amharic, Tigrinya, and English player/game screens.
+
 export const gameUi = {
   gamesCenter: {
     am: {
