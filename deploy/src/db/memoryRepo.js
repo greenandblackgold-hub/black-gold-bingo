@@ -493,26 +493,33 @@ export function createMemoryRepo() {
       Object.assign(round, { status: 'flying', startedAt, crashAt, crashMultiplier, version: round.version + 1 });
       return clone(round);
     },
-    async cashOutAviatorGameHubBet({ roundId, betId, userId, multiplier, payout, cashedOutAt, ref }) {
+    async cashOutAviatorGameHubBet({ roundId, betId, userId, multiplier, cashedOutAt }) {
       const round = gameHubRounds.get('aviator:' + roundId);
       if (!round || round.status !== 'flying' || cashedOutAt >= round.crashAt) throw new RepoError('BET_NOT_ACTIVE');
       const bet = round.bets.find((item) => item.id === betId && item.userId === userId);
       if (!bet) throw new RepoError('BET_NOT_ACTIVE');
       const walletMode = round.walletMode === 'shared' ? 'shared' : 'legacy-demo';
-      if (bet.status === 'cashed_out') return { bet: clone(bet), balance: (walletMode === 'shared' ? users.get(userId) : ensureGameHubWallet(userId)).balance, duplicate: true };
+      const wallet = walletMode === 'shared' ? users.get(userId) : ensureGameHubWallet(userId);
+      if (bet.status === 'cashout_pending' || bet.status === 'cashed_out') return { bet: clone(bet), balance: wallet.balance, duplicate: true };
       if (bet.status !== 'active') throw new RepoError('BET_NOT_ACTIVE');
-      const movement = moveGameHubCredits(userId, payout, 'game_prize', ref, { game: 'aviator', roundId, betId, multiplier }, walletMode);
-      Object.assign(bet, { status: 'cashed_out', multiplier, payout, cashedOutAt });
+      Object.assign(bet, { status: 'cashout_pending', multiplier, payout: 0, cashedOutAt });
       round.version += 1;
-      return { bet: clone(bet), balance: movement.balance, duplicate: false };
+      return { bet: clone(bet), balance: wallet.balance, duplicate: false };
     },
-    async crashAviatorGameHubRound({ roundId, crashedAt, nextRoundAt }) {
+    async crashAviatorGameHubRound({ roundId, crashedAt, nextRoundAt, settlements = [] }) {
       const round = gameHubRounds.get('aviator:' + roundId);
       if (!round) throw new RepoError('ROUND_NOT_OPEN');
       if (round.status === 'crashed') return clone(round);
       if (round.status !== 'flying') throw new RepoError('ROUND_NOT_OPEN');
-      for (const bet of round.bets) if (bet.status === 'active') bet.status = 'lost';
-      Object.assign(round, { status: 'crashed', crashedAt, nextRoundAt, version: round.version + 1 });
+      const payoutById = new Map(settlements.map((item) => [item.betId, item.payout]));
+      const bets = round.bets.map((bet) => {
+        if (bet.status === 'active') return { ...bet, status: 'lost', payout: 0 };
+        if (bet.status !== 'cashout_pending') return bet;
+        const payout = payoutById.get(bet.id) ?? 0;
+        if (payout > 0) moveGameHubCredits(bet.userId, payout, 'game_prize', 'games:aviator:pool-win:' + bet.id, { game: 'aviator', roundId, betId: bet.id, multiplier: bet.multiplier }, round.walletMode === 'shared' ? 'shared' : 'legacy-demo');
+        return { ...bet, status: 'cashed_out', payout, settledAt: crashedAt };
+      });
+      Object.assign(round, { status: 'crashed', crashedAt, nextRoundAt, bets, version: round.version + 1 });
       return clone(round);
     },
     async listGameHubRounds(game, limit = 10) {
