@@ -91,15 +91,21 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
     for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
     setSelected(pool.slice(0,10).sort((a,b)=>a-b));
   };
+  const betRequestInFlight = useRef(false);
   const submit = async () => {
-    if (!selected.length || !validAmount || !isBetting || busy) return;
+    if (!selected.length || !validAmount || !isBetting || busy || betRequestInFlight.current) return;
+    betRequestInFlight.current = true;
     setBusy(true); setError(''); setNotice('');
     try {
       await api.post('/api/games/keno/bets',{requestId:requestId(),amount:numericAmount,selectedNumbers:selected});
       setNotice(t.betConfirmed); setSelected([]);
-      await Promise.all([loadState(),loadHistory()]);
+      // Release the betting control as soon as the bet is accepted.
+      // Balance and ticket refreshes continue without blocking the next entry.
+      setBusy(false);
+      void loadState();
+      void loadHistory();
     } catch { setError(t.betError); }
-    finally { setBusy(false); }
+    finally { betRequestInFlight.current = false; setBusy(false); }
   };
   const adjustBet = (delta:number) => setAmount(old => {
     const current=Number(old); const next=(Number.isFinite(current)?current:minBet)+delta;
@@ -113,7 +119,7 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
   const previousBalls = visibleDrawnNumbers.slice(-8,-1);
 
   return (
-    <main className="keno-reference-page mx-auto min-h-screen w-full max-w-[480px] space-y-2 bg-[#101b19] px-2 pb-8 text-slate-100 sm:px-3">
+    <main className="keno-reference-page mx-auto min-h-screen w-full max-w-[480px] space-y-2 bg-[#070707] px-2 pb-8 text-[#f3dfad] sm:px-3">
       <header className="relative z-10 -mx-2 flex min-h-[42px] items-center justify-between gap-2 border-b border-emerald-400/15 bg-[#07110f] px-2 py-1 shadow-[0_4px_16px_rgba(0,0,0,.35)]">
         <div className="shrink-0 leading-[.82]"><span className="block text-[10px] font-black italic text-white">FAST</span><span className="block text-[17px] font-black italic tracking-tight text-emerald-300">KENO</span></div>
         <div className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full border border-emerald-400/20 bg-black/35 px-2 py-1">
