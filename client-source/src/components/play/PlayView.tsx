@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatAmount } from '@/lib/localization';
+import { gameUi } from '@/lib/gameUi';
 import { PlayerFeatures } from '@/components/play/PlayerFeatures';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
@@ -144,6 +145,7 @@ const getPatternCells = (pattern: WinPattern, variantIndex = 0) => {
 const orientationLabel = (index: number) => ['↑', '→', '↓', '←', '↗', '↘', '↙', '↖'][index] ?? '';
 
 type CardProps = {
+  labels: { card: string; locked: string; free: string; claim: string; claiming: string };
   card: BingoCard;
   index: number;
   marks: Set<number>;
@@ -155,7 +157,7 @@ type CardProps = {
   onToggle: (n: number) => void;
 };
 
-function BingoCardView({ card, index, marks, called, pattern, claimable, claiming, onClaim, onToggle }: CardProps) {
+function BingoCardView({ labels, card, index, marks, called, pattern, claimable, claiming, onClaim, onToggle }: CardProps) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
   const winning = useMemo(() => {
     const result = findWinningPattern(card.grid, new Set([...called].filter(n => marks.has(n))), pattern);
@@ -166,9 +168,9 @@ function BingoCardView({ card, index, marks, called, pattern, claimable, claimin
   return (
     <section className={`relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-1 shadow-xl ${accent.glow}`}>
       <div className={`flex items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-1 text-base font-black text-white sm:text-xl`}>
-        Card #{index + 1}
+        {labels.card} #{index + 1}
       </div>
-      {card.locked && <span className="absolute right-1 top-1 z-10 rounded bg-red-700 px-2 py-0.5 text-[9px] font-black text-white">LOCKED</span>}
+      {card.locked && <span className="absolute right-1 top-1 z-10 rounded bg-red-700 px-2 py-0.5 text-[9px] font-black text-white">{labels.locked}</span>}
       <div className="grid grid-cols-5 gap-px overflow-hidden rounded-b-lg bg-zinc-400">
         {LETTERS.map((letter, col) => (
           <div key={letter} className={`py-1 text-center text-base font-black text-white sm:text-2xl ${['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'][col]}`}>{letter}</div>
@@ -185,7 +187,7 @@ function BingoCardView({ card, index, marks, called, pattern, claimable, claimin
               disabled={free || !wasCalled || !!card.locked}
               onClick={() => { if (value !== null && wasCalled) onToggle(value); }}
               aria-pressed={marked}
-              aria-label={free ? 'FREE' : `${LETTERS[c]} ${value}`}
+              aria-label={free ? labels.free : `${LETTERS[c]} ${value}`}
               className={[
                 'relative grid aspect-square min-w-0 place-items-center rounded-[3px] text-[clamp(10px,2.1vw,22px)] font-black leading-none text-black transition',
                 free ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
@@ -195,14 +197,14 @@ function BingoCardView({ card, index, marks, called, pattern, claimable, claimin
                 wasCalled && !marked ? 'bg-blue-500 text-white' : '',
               ].join(' ')}
             >
-              {free ? 'FREE' : value}
+              {free ? labels.free : value}
             </button>
           );
         }))}
       </div>
       {claimable && !card.locked && (
         <button type="button" onClick={onClaim} disabled={claiming} className="mt-1 w-full rounded-lg bg-gradient-to-r from-yellow-200 to-amber-500 py-1 text-xs font-black text-black">
-          {claiming ? 'በመላክ ላይ…' : 'BINGO!'}
+          {claiming ? labels.claiming : labels.claim}
         </button>
       )}
     </section>
@@ -225,6 +227,7 @@ function CalledBall({ number, latest = false }: { number: number; latest?: boole
 
 export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: { onGoToWallet: () => void; settingsOpen: boolean; onSettingsOpenChange: (open: boolean) => void }) {
   const { lang } = useLanguage();
+  const t = gameUi.bingoScreen[lang];
   const { cards, markedByCard, toggleMark, balance, buyCards } = usePlayer();
   const {
     phase, bonusRound = false, winPattern, calledNumbers, claimBingo, winner, roundNumber,
@@ -368,18 +371,18 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       <div className="pointer-events-none absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_50%_12%,rgba(255,196,0,.17),transparent_36%),radial-gradient(ellipse_at_50%_100%,rgba(255,196,0,.13),transparent_38%)]" />
       <div className="relative z-10 space-y-2 sm:space-y-3">
 
-        <div className="flex justify-end px-1 -mt-1" aria-label={`ዙር ${roundNumber}`}>
+        <div className="flex justify-end px-1 -mt-1" aria-label={`${t.round} ${roundNumber}`}>
           <span className="rounded-full border border-yellow-500/15 bg-black/35 px-1.5 py-0.5 text-[8px] font-medium leading-none tracking-wide text-yellow-200/45 tabular-nums">
-            ዙር #{roundNumber}
+            {t.round} #{roundNumber}
           </span>
         </div>
 
         {settingsOpen && (
-          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-label="ሴቲንግ">
+          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-label={t.settings}>
             <section className="relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-amber-400/40 bg-[#090909] p-4 shadow-2xl sm:p-5">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="text-lg font-black text-amber-200">⚙ ሴቲንግ</h2>
-                <button type="button" onClick={() => onSettingsOpenChange(false)} aria-label="ዝጋ" className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold text-amber-100">ዝጋ ✕</button>
+                <h2 className="text-lg font-black text-amber-200">⚙ {t.settings}</h2>
+                <button type="button" onClick={() => onSettingsOpenChange(false)} aria-label={t.close} className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold text-amber-100">{t.close} ✕</button>
               </div>
               <PlayerFeatures onGoToWallet={onGoToWallet} settingsOnly />
             </section>
@@ -389,29 +392,29 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         {phase === 'waiting' && (
           <section
             role="region"
-            aria-label="የገቢ ማድረጊያ አካውንቶች"
+            aria-label={t.depositAccounts}
             className="rounded-2xl border border-yellow-400/80 bg-yellow-950/70 px-3 py-3 text-center shadow-[0_0_20px_rgba(250,204,21,.2)]"
           >
-            <span className="mb-2 block text-[11px] font-bold tracking-wide text-yellow-300">📢 የገቢ ማድረጊያ አካውንቶች</span>
-            <p className="mb-2 text-[10px] text-yellow-100/80">አካውንቱን ይንኩና የመክፈያ መንገድ ይምረጡ</p>
+            <span className="mb-2 block text-[11px] font-bold tracking-wide text-yellow-300">📢 {t.depositAccounts}</span>
+            <p className="mb-2 text-[10px] text-yellow-100/80">{t.choosePayment}</p>
             <div className="mx-auto grid max-w-md gap-2 text-left">
               {DEPOSIT_ACCOUNTS.map(account => (
                 <button
                   key={account.id}
                   type="button"
                   onClick={() => { setSelectedDepositAccount(account); setCopyStatus(''); }}
-                  aria-label={account.name + ' ' + account.number + ' የክፍያ አማራጮችን ክፈት'}
+                  aria-label={`${account.id === 'cbe' ? t.cbeBank : account.id === 'anbesa' ? t.anbesaBank : t.telebirr} ${account.number} ${t.paymentOptions}`}
                   className="w-full rounded-xl border border-yellow-400/50 bg-black/60 px-3 py-2 text-left transition hover:border-yellow-200 hover:bg-yellow-950/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-yellow-300">{account.name}</span>
-                    <span className="text-[10px] text-yellow-100/70">{account.kind}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-yellow-300">{account.id === 'cbe' ? t.cbeBank : account.id === 'anbesa' ? t.anbesaBank : t.telebirr}</span>
+                    <span className="text-[10px] text-yellow-100/70">{account.id === 'telebirr' ? t.phoneAccount : t.bankAccount}</span>
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-2">
                     <span className="text-base font-black tracking-wider text-white tabular-nums">{account.number}</span>
-                    <span className="text-[10px] font-bold text-yellow-300">ክፈት ›</span>
+                    <span className="text-[10px] font-bold text-yellow-300">{t.open} ›</span>
                   </div>
-                  <p className="mt-0.5 text-[11px] font-medium text-yellow-100">የአካውንት ባለቤት፦ {account.owner}</p>
+                  <p className="mt-0.5 text-[11px] font-medium text-yellow-100">{t.accountOwner}: {account.owner}</p>
                 </button>
               ))}
             </div>
@@ -428,17 +431,17 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               onClick={event => event.stopPropagation()}
             >
               <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 id="deposit-dialog-title" className="text-base font-black text-yellow-300">{selectedDepositAccount.name} · የክፍያ አማራጮች</h2>
-                <button type="button" onClick={() => setSelectedDepositAccount(null)} aria-label="ዝጋ" className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/50 text-xl text-white">×</button>
+                <h2 id="deposit-dialog-title" className="text-base font-black text-yellow-300">{selectedDepositAccount.id === 'cbe' ? t.cbeBank : selectedDepositAccount.id === 'anbesa' ? t.anbesaBank : t.telebirr} · {t.paymentOptions}</h2>
+                <button type="button" onClick={() => setSelectedDepositAccount(null)} aria-label={t.close} className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/50 text-xl text-white">×</button>
               </div>
-              <p className="text-xs text-yellow-100/80">የአካውንት ቁጥር</p>
+              <p className="text-xs text-yellow-100/80">{t.accountNumber}</p>
               <p className="mb-3 break-all text-xl font-black tracking-wider text-white tabular-nums">{selectedDepositAccount.number}</p>
               <div className="grid gap-2">
                 <a href={selectedDepositAccount.appUrl} target="_blank" rel="noreferrer" className="rounded-xl bg-yellow-400 px-4 py-3 text-center text-sm font-black text-black hover:bg-yellow-300">
-                  📱 {selectedDepositAccount.appLabel} ክፈት / አውርድ
+                  📱 {selectedDepositAccount.appLabel} {t.openDownload}
                 </a>
                 <a href={selectedDepositAccount.ussdHref} className="rounded-xl border border-emerald-400 bg-emerald-950/50 px-4 py-3 text-center text-sm font-black text-emerald-200 hover:bg-emerald-900">
-                  ☎ USSD {selectedDepositAccount.ussd} ደውል
+                  ☎ USSD {selectedDepositAccount.ussd} {t.callUssd}
                 </a>
                 <button
                   type="button"
@@ -447,19 +450,19 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                       try {
                         if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
                         await navigator.clipboard.writeText(selectedDepositAccount.number);
-                        setCopyStatus('የአካውንት ቁጥሩ ተቀድቷል።');
+                        setCopyStatus(t.copied);
                       } catch {
-                        setCopyStatus('መቅዳት አልተቻለም፤ ከላይ ያለውን ቁጥር በእጅ ይቅዱ።');
+                        setCopyStatus(t.copyFailed);
                       }
                     })();
                   }}
                   className="rounded-xl border border-yellow-400/60 bg-black px-4 py-3 text-center text-sm font-bold text-yellow-200 hover:bg-yellow-950/60"
                 >
-                  ▣ የአካውንት ቁጥር ቅዳ
+                  ▣ {t.copyAccount}
                 </button>
               </div>
               <p role="status" aria-live="polite" className="mt-3 min-h-5 text-center text-xs font-bold text-yellow-300">{copyStatus}</p>
-              <p className="mt-1 text-center text-[10px] leading-relaxed text-zinc-400">USSD በሞባይል ስልክ ላይ ብቻ ይሰራል። ክፍያውን ከማረጋገጥዎ በፊት የተቀባዩን ስምና ቁጥር ያረጋግጡ።</p>
+              <p className="mt-1 text-center text-[10px] leading-relaxed text-zinc-400">{t.ussdHelp}</p>
             </section>
           </div>
         )}
@@ -471,17 +474,17 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
             aria-atomic="true"
             className="rounded-2xl border border-yellow-400/80 bg-yellow-950/70 px-3 py-3 text-center shadow-[0_0_20px_rgba(250,204,21,.2)]"
           >
-            <span className="mb-1 block text-[11px] font-bold tracking-wide text-yellow-300">{phase === 'running' ? '📢 የዚህ ዙር የጨዋታ ማብራሪያ' : '📢 ቀጣይ ዙር የጨዋታ ማብራሪያ'}</span>
+            <span className="mb-1 block text-[11px] font-bold tracking-wide text-yellow-300">{phase === 'running' ? '📢 ' + t.roundHelp : '📢 ' + t.nextRoundHelp}</span>
             <h2 className="text-xs font-bold text-yellow-100">
-              የጨዋታው ዓይነት፦ {patternNames[lang][winPattern]}
+              {t.patternType}: {patternNames[lang][winPattern]}
             </h2>
             <p className="mt-1 text-[11px] font-medium leading-relaxed text-yellow-50">
               {getPatternDescription(lang, winPattern)}
             </p>
             <p className="mt-1 text-[10px] leading-relaxed text-yellow-300/90">
-              {lang === 'am' ? 'ለማሸነፍ ከላይ የተገለጸውን ቅርጽ በካርድዎ ላይ ያሟሉ።' : lang === 'ti' ? 'ንምዕዋት እቲ ኣብ ላዕሊ ዝተገልጸ ቅርጺ ኣብ ካርድኩም ምሉእ ግበሩ።' : 'To win, complete the pattern shown above on your card.'}
+              {t.winInstruction}
             </p>
-            <p className="mt-2 text-lg font-black text-yellow-300">{phase === 'waiting' ? '🏆 ቀጣይ ዙር የሚያሸንፉት ሽልማት፦' : '🏆 የዚህ ዙር ሽልማት፦'} {Number(roundPrizeEtb ?? 0).toFixed(2)} ብር</p>
+            <p className="mt-2 text-lg font-black text-yellow-300">{phase === 'waiting' ? '🏆 ' + t.nextPrize : '🏆 ' + t.currentPrize}: {Number(roundPrizeEtb ?? 0).toFixed(2)} ብር</p>
           </section>
         )}
 
@@ -494,7 +497,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               onClick={() => setPatternOpen(open => !open)}
               className="flex min-h-[3.4rem] w-full items-center justify-center gap-1 rounded-xl border border-yellow-400 bg-black px-1.5 text-center text-xs font-black leading-tight text-yellow-300 sm:text-base"
             >
-              አሸናፊ ቅርጽ <span aria-hidden="true">{patternOpen ? '▴' : '▾'}</span>
+              {t.winningPattern} <span aria-hidden="true">{patternOpen ? '▴' : '▾'}</span>
             </button>
             {patternOpen && (
               <div id="winning-pattern-options" className="absolute left-0 top-full z-40 mt-1 max-h-64 w-56 max-w-[75vw] overflow-y-auto rounded-xl border border-yellow-400 bg-black p-2 text-left shadow-[0_0_18px_rgba(250,204,21,.35)]">
@@ -547,18 +550,18 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
           </div>
         </section>
 
-        <section aria-label="BINGO number board" className="rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_18px_rgba(250,204,21,.22)] sm:p-3">
+        <section aria-label={t.numberBoard} className="rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_18px_rgba(250,204,21,.22)] sm:p-3">
           <div className="mb-2 flex flex-nowrap items-center justify-between gap-1">
-            <h2 className="shrink-0 text-[11px] font-black tracking-wide text-yellow-300 sm:text-base">BINGO ቁጥሮች</h2>
+            <h2 className="shrink-0 text-[11px] font-black tracking-wide text-yellow-300 sm:text-base">{t.numberBoard}</h2>
             <div className="flex shrink-0 items-center gap-1">
               {numberBoardExpanded && (
                 <>
-                  <span aria-label="የተጠሩ ቁጥሮች ብዛት" className="rounded-md border border-yellow-500/60 bg-yellow-400 px-2 py-1.5 text-[11px] font-black text-black shadow sm:px-3 sm:text-sm tabular-nums">{calledNumbers.length}/75</span>
-                  <button type="button" aria-pressed={numberBoardMode === 'called'} onClick={() => setNumberBoardMode(mode => mode === 'all' ? 'called' : 'all')} className={`rounded-md border border-yellow-500/60 px-2 py-1.5 text-[11px] font-black transition sm:px-3 sm:text-sm ${numberBoardMode === 'called' ? 'bg-yellow-400 text-black shadow' : 'bg-zinc-950 text-yellow-200 hover:bg-yellow-400/10'}`}>{numberBoardMode === 'called' ? 'ሙሉ ሰሌዳ' : 'የተጠሩ'}</button>
+                  <span aria-label={t.calledCount} className="rounded-md border border-yellow-500/60 bg-yellow-400 px-2 py-1.5 text-[11px] font-black text-black shadow sm:px-3 sm:text-sm tabular-nums">{calledNumbers.length}/75</span>
+                  <button type="button" aria-pressed={numberBoardMode === 'called'} onClick={() => setNumberBoardMode(mode => mode === 'all' ? 'called' : 'all')} className={`rounded-md border border-yellow-500/60 px-2 py-1.5 text-[11px] font-black transition sm:px-3 sm:text-sm ${numberBoardMode === 'called' ? 'bg-yellow-400 text-black shadow' : 'bg-zinc-950 text-yellow-200 hover:bg-yellow-400/10'}`}>{numberBoardMode === 'called' ? t.fullBoard : t.called}</button>
                 </>
               )}
               <button type="button" aria-expanded={numberBoardExpanded} aria-controls="bingo-number-board-grid" onClick={() => setNumberBoardExpanded(expanded => !expanded)} className="shrink-0 rounded-lg border border-yellow-400/70 bg-yellow-400/10 px-2 py-2 text-[11px] font-black text-yellow-200 hover:bg-yellow-400/20 sm:px-3 sm:text-xs">
-                {numberBoardExpanded ? 'ሰብስብ ▴' : 'ዘርጋ ▾'}
+                {numberBoardExpanded ? t.collapse + ' ▴' : t.expand + ' ▾'}
               </button>
             </div>
           </div>
@@ -590,6 +593,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
           <section className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))` }}>
             {cards.map((card, index) => (
               <BingoCardView
+                labels={t}
                 key={card.id}
                 card={card}
                 index={index}
@@ -608,37 +612,37 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:pb-3" role="presentation" onClick={() => !quickBuyBusy && setQuickBuyOpen(false)}>
             <section role="dialog" aria-modal="true" aria-labelledby="quick-buy-title" className="max-h-[calc(100dvh-7.5rem-env(safe-area-inset-bottom))] w-full max-w-md overflow-y-auto rounded-2xl border-2 border-yellow-400 bg-zinc-950 p-4 shadow-[0_0_30px_rgba(250,204,21,.3)] sm:max-h-[calc(100dvh-2rem)]" onClick={event => event.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 id="quick-buy-title" className="text-lg font-black text-yellow-300">የካርድ ፓኬጅ ይምረጡ</h2>
-                <button type="button" disabled={quickBuyBusy} onClick={() => setQuickBuyOpen(false)} aria-label="ዝጋ" className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/50 text-xl text-white disabled:opacity-40">×</button>
+                <h2 id="quick-buy-title" className="text-lg font-black text-yellow-300">{t.quickBuyTitle}</h2>
+                <button type="button" disabled={quickBuyBusy} onClick={() => setQuickBuyOpen(false)} aria-label={t.close} className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/50 text-xl text-white disabled:opacity-40">×</button>
               </div>
               {bonusRound ? (
-                <p className="mb-3 rounded-lg border border-emerald-400/40 bg-emerald-950/40 p-2 text-center text-sm font-bold text-emerald-300">🎁 የቦነስ ጨዋታ፦ እስከ 3 ካርዶች በነጻ ይውሰዱ።</p>
+                <p className="mb-3 rounded-lg border border-emerald-400/40 bg-emerald-950/40 p-2 text-center text-sm font-bold text-emerald-300">🎁 {t.bonusNotice}</p>
               ) : (
-                <p className="mb-3 text-xs text-yellow-100/80">የአንድ ካርድ ዋጋ፦ {formatAmount(lang, cardPrice)} ብር</p>
+                <p className="mb-3 text-xs text-yellow-100/80">{t.cardPrice}: {formatAmount(lang, cardPrice)} ብር</p>
               )}
               <div className="grid grid-cols-4 gap-2">
                 {quickBuyOptions.map(count => (
                   <button key={count} type="button" aria-pressed={quickBuyCount === count} onClick={() => setQuickBuyCount(count)} className={`rounded-xl border px-2 py-3 text-sm font-black transition ${quickBuyCount === count ? 'border-yellow-200 bg-yellow-400 text-black' : 'border-yellow-500/40 bg-black text-yellow-100 hover:bg-yellow-950'}`}>
-                    {count} {count === 1 ? 'ካርድ' : 'ካርዶች'}
+                    {count} {count === 1 ? t.card : t.cards}
                   </button>
                 ))}
               </div>
               {!bonusRound && (
                 <>
                   <div className="my-4 flex items-center justify-between border-t border-yellow-500/30 pt-3 text-sm">
-                    <span className="text-yellow-100/80">ጠቅላላ ዋጋ</span>
+                    <span className="text-yellow-100/80">{t.totalPrice}</span>
                     <strong className="text-xl font-black text-yellow-300">{formatAmount(lang, quickBuyTotal)} ብር</strong>
                   </div>
                   <div className="mb-3 flex items-center justify-between text-xs text-yellow-100/70">
-                    <span>ቀሪ ሂሳብ</span><strong className="text-yellow-200">{formatAmount(lang, balance)} ብር</strong>
+                    <span>{t.balance}</span><strong className="text-yellow-200">{formatAmount(lang, balance)} ብር</strong>
                   </div>
                 </>
               )}
-              {!quickBuyAllowed && <p role="status" className="mb-3 rounded-lg bg-amber-950/60 p-2 text-xs text-amber-200">አዲስ ካርድ መግዛት የሚቻለው ጨዋታው በመጠባበቅ ላይ ሲሆን ብቻ ነው። ዙሩ እስኪያበቃ ይጠብቁ።</p>}
-              {!bonusRound && quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">በቂ ቀሪ ሂሳብ የለዎትም። እባክዎ ቀሪ ሂሳብዎን ይሙሉ።</p>}
+              {!quickBuyAllowed && <p role="status" className="mb-3 rounded-lg bg-amber-950/60 p-2 text-xs text-amber-200">{t.buyOnlyWaiting}</p>}
+              {!bonusRound && quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">{t.insufficient}</p>}
               {quickBuyMessage && <p role="status" className="mb-3 text-xs font-bold text-yellow-300">{quickBuyMessage}</p>}
               <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="sticky bottom-0 z-10 mt-2 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
-                {quickBuyBusy ? 'በመግዛት ላይ…' : bonusRound ? 'ነጻ ካርዶቹን ውሰድ' : 'ካርዶቹን ግዛ'}
+                {quickBuyBusy ? t.buying : bonusRound ? t.getFreeCards : t.buyCards}
               </button>
             </section>
           </div>
@@ -651,30 +655,30 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               setAutoMark(next);
               try { localStorage.setItem('bgb.autoMark', next ? 'on' : 'off'); } catch { /* ignore */ }
             }} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
-              <span className="text-[10px] font-black text-white sm:text-xs">Auto-Mark</span>
+              <span className="text-[10px] font-black text-white sm:text-xs">{t.autoMark}</span>
               <span className={`relative h-6 w-10 shrink-0 rounded-full ${autoMark ? 'bg-green-500' : 'bg-zinc-600'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${autoMark ? 'translate-x-5' : 'translate-x-1'}`} /></span>
             </button>
             <button
               type="button"
               onClick={() => { setQuickBuyMessage(''); setQuickBuyOpen(true); }}
               disabled={!quickBuyAllowed}
-              aria-label="ፈጣን ካርድ ግዢ"
+              aria-label={t.quickBuy}
               className="player-quick-buy-footer-cta min-w-0 shrink-0 rounded-xl px-2 py-2 text-center disabled:opacity-40"
             >
               <span className="block text-lg font-black leading-none" aria-hidden="true">＋</span>
-              <span className="block text-[9px] font-black sm:text-xs">Quick Buy</span>
+              <span className="block text-[9px] font-black sm:text-xs">{t.quickBuy}</span>
             </button>
             <button type="button" onClick={onGoToWallet} className="min-w-0 shrink-0 border-l border-yellow-500/50 px-2 text-left">
-              <span className="flex items-center gap-1 text-lg leading-none text-yellow-400">▣ <span className="text-[9px] font-bold text-white sm:text-xs">ቀሪ ሂሳብ</span></span>
+              <span className="flex items-center gap-1 text-lg leading-none text-yellow-400">▣ <span className="text-[9px] font-bold text-white sm:text-xs">{t.balance}</span></span>
               <strong className="text-xs font-black tabular-nums text-yellow-300 sm:text-base">{formatAmount(lang, balance)} ብር</strong>
             </button>
             <button type="button" disabled={claimableCards.length === 0 || !!claimingCardId} onClick={() => void handleClaim(claimableCards[0]?.id)} className="min-w-[34%] rounded-full border-2 border-yellow-200 bg-gradient-to-b from-yellow-200 via-yellow-400 to-amber-600 px-3 py-3 text-base font-black text-black shadow-[0_0_20px_rgba(250,204,21,.5)] disabled:opacity-45 sm:min-w-[30%] sm:text-xl">
-              {claimingCardId ? '…' : '♛ BINGO!'}
+              {claimingCardId ? '…' : '♛ ' + t.claim}
             </button>
           </div>
         </footer>
       </div>
-      {winner && iWon && <div role="status" className="sr-only">BINGO! አሸንፈዋል።</div>}
+      {winner && iWon && <div role="status" className="sr-only">{t.winAnnouncement}</div>}
     </main>
   );
 }

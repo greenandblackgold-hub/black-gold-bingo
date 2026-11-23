@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { useLanguage } from '@/context/LanguageContext';
+import { gameUi } from '@/lib/gameUi';
 
 const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 type Props = { onOpenBingo: () => void; onOpenKeno: () => void; onOpenAviator: () => void; serverMode: boolean };
 
-function GameCard({ title, subtitle, detail, icon, onClick, featured = false, disabled = false, disabledLabel = 'Unavailable' }: {
-  title: string; subtitle: string; detail: string; icon: 'bingo' | 'keno' | 'aviator'; onClick: () => void; featured?: boolean; disabled?: boolean; disabledLabel?: string;
+function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured = false, disabled = false, disabledLabel = '' }: {
+  title: string; subtitle: string; detail: string; icon: 'bingo' | 'keno' | 'aviator'; onClick: () => void; openLabel: string; featured?: boolean; disabled?: boolean; disabledLabel?: string;
 }) {
   return (
     <button type="button" disabled={disabled} onClick={onClick} className={`group relative disabled:cursor-not-allowed disabled:opacity-55 flex min-h-64 w-full flex-col overflow-hidden rounded-3xl border text-left transition duration-300 hover:-translate-y-1 hover:border-amber-300/70 hover:shadow-[0_18px_55px_rgba(212,175,55,.16)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300 ${featured ? 'border-amber-300/50 bg-gradient-to-br from-[#28200d] via-[#100f0b] to-black' : 'border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black'} p-5 sm:p-6`}>
@@ -19,12 +21,14 @@ function GameCard({ title, subtitle, detail, icon, onClick, featured = false, di
       <span className="relative mt-6 text-[10px] font-black uppercase tracking-[.28em] text-amber-400">{subtitle}</span>
       <span className="relative mt-2 text-2xl font-black tracking-wide text-amber-50">{title}</span>
       <span className="relative mt-2 max-w-sm text-sm leading-6 text-amber-100/60">{detail}</span>
-      <span className="relative mt-auto flex items-center gap-2 pt-6 text-sm font-bold text-amber-300">{disabled ? disabledLabel : 'Open game'} <span aria-hidden>{disabled ? '•' : '→'}</span></span>
+      <span className="relative mt-auto flex items-center gap-2 pt-6 text-sm font-bold text-amber-300">{disabled ? disabledLabel : openLabel} <span aria-hidden>{disabled ? '•' : '→'}</span></span>
     </button>
   );
 }
 
 export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode }: Props) {
+  const { lang } = useLanguage();
+  const t = gameUi.gamesCenter[lang];
   const [availability, setAvailability] = useState<{ kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' } | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
   useEffect(() => {
@@ -32,17 +36,17 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode
     let active = true;
     api.get<{ kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings')
       .then((value) => { if (active) { setAvailability(value); setAvailabilityError(''); } })
-      .catch(() => { if (active) setAvailabilityError('Game availability could not be loaded. Please refresh.'); });
+      .catch(() => { if (active) setAvailabilityError(t.loadError); });
     return () => { active = false; };
-  }, [serverMode]);
+  }, [serverMode, t.loadError]);
   return (
     <div className="mx-auto w-full max-w-6xl space-y-7 pb-8">
       <header className="relative overflow-hidden rounded-3xl border border-amber-400/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.22),transparent_45%),linear-gradient(120deg,#17140c,#090909_58%,#151006)] px-5 py-8 shadow-[0_22px_65px_rgba(0,0,0,.4)] sm:px-8 sm:py-10">
         <div className="absolute -right-12 -top-16 h-64 w-64 rounded-full border border-amber-300/10" />
         <div className="absolute -right-2 -top-6 h-44 w-44 rounded-full border border-amber-300/10" />
         <p className="text-[10px] font-black uppercase tracking-[.34em] text-amber-400">BLACK GOLD PLC</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-amber-50 sm:text-5xl">GAMES CENTER</h1>
-        <p className="mt-3 max-w-xl text-sm leading-6 text-amber-100/65 sm:text-base">One destination. Three experiences. Choose your game and enjoy the Black Gold experience.</p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight text-amber-50 sm:text-5xl">{t.title}</h1>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-amber-100/65 sm:text-base">{t.intro}</p>
         <div className="mt-6 flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-amber-300/25 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">Bingo</span>
           <span className="rounded-full border border-amber-300/25 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">Keno</span>
@@ -50,20 +54,20 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode
         </div>
       </header>
       {serverMode && <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/20 bg-black/45 px-4 py-3">
-        <div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">{availability?.walletMode === 'shared' ? 'Unified Bingo + Keno + Aviator Wallet' : 'Games Demo Wallet'}</p><p className="mt-1 text-xl font-black text-amber-100">{availability ? money(availability.balanceEtb) + ' ETB' : 'Loading balance…'}</p></div>
-        <span className="rounded-full border border-amber-300/20 px-3 py-1.5 text-[9px] font-bold tracking-wider text-amber-300">{availability?.walletMode === 'shared' ? 'SHARED · SIMULATION ONLY' : 'SEPARATE · NON-WITHDRAWABLE'}</span>
+        <div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">{availability?.walletMode === 'shared' ? t.unifiedWallet : t.demoWallet}</p><p className="mt-1 text-xl font-black text-amber-100">{availability ? money(availability.balanceEtb) + ' ETB' : t.loadingBalance}</p></div>
+        <span className="rounded-full border border-amber-300/20 px-3 py-1.5 text-[9px] font-bold tracking-wider text-amber-300">{availability?.walletMode === 'shared' ? t.sharedSimulation : t.separateDemo}</span>
       </div>}
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><p className="text-[10px] font-bold uppercase tracking-[.25em] text-amber-500">Choose your experience</p><h2 className="mt-1 text-xl font-black text-amber-50 sm:text-2xl">Explore Games</h2></div>
-        <span className="rounded-full border border-amber-500/20 bg-amber-400/5 px-3 py-1.5 text-[10px] font-semibold tracking-wide text-amber-300">DEMO CREDITS ONLY</span>
+        <div><p className="text-[10px] font-bold uppercase tracking-[.25em] text-amber-500">{t.choose}</p><h2 className="mt-1 text-xl font-black text-amber-50 sm:text-2xl">{t.explore}</h2></div>
+        <span className="rounded-full border border-amber-500/20 bg-amber-400/5 px-3 py-1.5 text-[10px] font-semibold tracking-wide text-amber-300">{t.demoOnly}</span>
       </div>
       {availabilityError && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-950/30 p-3 text-sm text-red-200">{availabilityError}</p>}
       <div className="grid gap-4 md:grid-cols-3">
-        <GameCard title="Bingo PRO" subtitle="Classic favourite" detail="Your existing Bingo room, cards, live calls and player features remain here." icon="bingo" onClick={onOpenBingo} featured />
-        <GameCard title="Keno" subtitle="Pick your numbers" detail="Choose up to ten numbers, follow the draw and check your round results." icon="keno" onClick={onOpenKeno} disabled={!serverMode || availability?.kenoEnabled !== true} disabledLabel={!serverMode ? 'Available in server mode' : availabilityError ? 'Unavailable · refresh' : availability ? 'Temporarily disabled' : 'Loading availability…'} />
-        <GameCard title="Aviator" subtitle="Ride the multiplier" detail="Watch the multiplier climb and cash out before the plane flies away." icon="aviator" onClick={onOpenAviator} disabled={!serverMode || availability?.aviatorEnabled !== true} disabledLabel={!serverMode ? 'Available in server mode' : availabilityError ? 'Unavailable · refresh' : availability ? 'Temporarily disabled' : 'Loading availability…'} />
+        <GameCard title="Bingo PRO" subtitle={t.bingoSubtitle} detail={t.bingoDetail} icon="bingo" onClick={onOpenBingo} openLabel={t.openGame} featured />
+        <GameCard title="Keno" subtitle={t.kenoSubtitle} detail={t.kenoDetail} icon="keno" onClick={onOpenKeno} openLabel={t.openGame} disabled={!serverMode || availability?.kenoEnabled !== true} disabledLabel={!serverMode ? t.serverOnly : availabilityError ? t.refreshUnavailable : availability ? t.temporarilyDisabled : t.loadingAvailability} />
+        <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} disabled={!serverMode || availability?.aviatorEnabled !== true} openLabel={t.openGame} disabledLabel={!serverMode ? t.serverOnly : availabilityError ? t.refreshUnavailable : availability ? t.temporarilyDisabled : t.loadingAvailability} />
       </div>
-      <p className="text-center text-[11px] leading-5 text-amber-100/40">Keno and Aviator currently use non-redeemable simulation credits. No real-money betting or cash prizes are enabled.</p>
+      <p className="text-center text-[11px] leading-5 text-amber-100/40">{t.demoNotice}</p>
     </div>
   );
 }
