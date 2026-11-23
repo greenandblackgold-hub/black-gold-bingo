@@ -34,7 +34,7 @@ const ICONS: Record<TabId, ReactNode> = {
   ),
 };
 
-const ORDER: TabId[] = ['games', 'play', 'wallet', 'menu'];
+const ORDER: TabId[] = ['games', 'wallet', 'menu'];
 
 export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab: TabId) => void }) {
   const { lang } = useLanguage();
@@ -43,7 +43,7 @@ export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab:
       aria-label={LABELS[lang].main}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-gold-500/20 bg-darkbg/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.25)] backdrop-blur-xl"
     >
-      <ul className="mx-auto grid max-w-2xl grid-cols-4 px-2">
+      <ul className="mx-auto grid max-w-2xl grid-cols-3 px-2">
         {ORDER.map((id) => {
           const on = id === active;
           return (
@@ -59,7 +59,7 @@ export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab:
                 ].join(' ')}
               >
                 {ICONS[id]}
-                {id === 'menu' ? (lang === 'en' ? 'Menu' : 'ምናሌ') : id === 'games' ? (lang === 'en' ? 'Games' : lang === 'ti' ? 'ጸወታታት' : 'ጨዋታዎች') : id === 'play' ? 'Bingo' : LABELS[lang].wallet}
+                {id === 'menu' ? (lang === 'en' ? 'Menu' : 'ምናሌ') : id === 'games' ? (lang === 'en' ? 'Games' : lang === 'ti' ? 'ጸወታታት' : 'ጨዋታዎች') : LABELS[lang].wallet}
               </button>
             </li>
           );
