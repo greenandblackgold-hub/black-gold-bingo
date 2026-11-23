@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import { gameUi } from '@/lib/gameUi';
@@ -22,6 +22,7 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
   const t = gameUi.keno[lang];
   const c = copy[lang];
   const [state, setState] = useState<KenoState | null>(null);
+  const stateRequestInFlight = useRef(false);
   const [history, setHistory] = useState<HistoryRound[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
   const [amount, setAmount] = useState('10.00');
@@ -33,12 +34,15 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
   const [tab, setTab] = useState<Tab>('game');
 
   const loadState = useCallback(async () => {
+    if (stateRequestInFlight.current) return;
+    stateRequestInFlight.current = true;
     try {
       const next = await api.get<KenoState>('/api/games/keno/state');
       setState(next);
       setOffset(next.serverTime - Date.now());
       setError('');
     } catch { setError(t.loadError); }
+    finally { stateRequestInFlight.current = false; }
   }, [t.loadError]);
   const loadHistory = useCallback(async () => {
     try { setHistory(await api.get<HistoryRound[]>('/api/games/keno/history?limit=8')); } catch { /* history is optional */ }
@@ -119,7 +123,7 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
           <p className="text-[9px] font-black uppercase tracking-widest text-emerald-300/70">{c.recent}</p>
           <span className="shrink-0 font-mono text-[10px] font-bold text-amber-300">{state?.drawnNumbers?.length ?? 0} / 20</span>
         </div>
-        {state?.drawnNumbers?.length ? <div className="grid grid-cols-10 gap-1.5">{state.drawnNumbers.slice().reverse().map((n, i) => <span key={n} className={`grid aspect-square min-w-0 place-items-center rounded-lg border text-xs font-black tabular-nums sm:text-sm ${i === 0 ? 'border-amber-200 bg-amber-300 text-black shadow-[0_0_12px_rgba(250,204,21,.25)]' : 'border-emerald-400/50 bg-emerald-500/15 text-emerald-100'}`}>{n}</span>)}</div> : <p className="rounded-lg border border-dashed border-emerald-400/20 px-2 py-4 text-center text-[10px] text-slate-500">{t.waitingDraw}</p>}
+        {state?.drawnNumbers?.length ? <div className="grid grid-cols-10 gap-1.5">{state.drawnNumbers.slice().reverse().map((n, i) => <span key={n} className="grid aspect-square min-w-0 place-items-center rounded-lg border border-emerald-400/50 bg-emerald-500/15 text-xs font-black tabular-nums text-emerald-100 sm:text-sm">{n}</span>)}</div> : <p className="rounded-lg border border-dashed border-emerald-400/20 px-2 py-4 text-center text-[10px] text-slate-500">{t.waitingDraw}</p>}
         {latestBet && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-2 text-xs"><span className="font-bold text-emerald-200">{c.hits}: <b className="text-amber-300">{latestBet.hits}</b></span><span className="font-black text-amber-300">{c.payout}: {money(latestBet.payoutEtb)} ETB</span></div>}
       </section>
 
