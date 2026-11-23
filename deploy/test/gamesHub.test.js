@@ -28,6 +28,21 @@ async function fixture() {
   return { repo, user, service, advance: (ms) => { clock += ms; }, time: () => clock };
 }
 
+test('Keno minimum stake defaults to ETB 2 and migrates the former ETB 5 default', async () => {
+  const f = await fixture();
+  await f.repo.updateGameHubSettings({ minBet: 500 });
+  const state = await f.service.getState('keno', f.user);
+  assert.equal(state.minBetEtb, 2);
+  await assert.rejects(
+    f.service.placeKenoBet(f.user, { requestId: 'keno_min_bet_01', amount: 1.99, selectedNumbers: [1] }),
+    (e) => e instanceof HttpError && e.code === 'invalid_bet_amount',
+  );
+  const accepted = await f.service.placeKenoBet(f.user, {
+    requestId: 'keno_min_bet_02', amount: 2, selectedNumbers: [1],
+  });
+  assert.equal(accepted.bet.stakeEtb, 2);
+});
+
 test('Keno accepts a valid selection, debits once and settles a committed 20-number draw', async () => {
   const f = await fixture();
   const initial = await f.service.getState('keno', f.user);
