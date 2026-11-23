@@ -62,7 +62,7 @@ export function KenoGame({ onBack, onSwitchGame }: { onBack: () => void; onSwitc
       setNotice(t.betConfirmed);
       setSelected([]);
       await Promise.all([loadState(), loadHistory()]);
-    } catch (e) { setError(t.betError); }
+    } catch { setError(t.betError); }
     finally { setBusy(false); }
   };
 
