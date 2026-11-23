@@ -136,9 +136,20 @@ test('Aviator commits a round before betting and reveals its seed only after cra
     amount: 5,
   });
   assert.equal(duplicate.duplicate, true);
+  const secondBet = await f.service.placeAviatorBet(f.user, {
+    requestId: 'aviator_test_request_02',
+    amount: 5,
+  });
+  assert.equal(secondBet.balanceEtb, 990);
+  assert.equal(secondBet.duplicate, false);
+  const duplicateSecondBet = await f.service.placeAviatorBet(f.user, {
+    requestId: 'aviator_test_request_02',
+    amount: 5,
+  });
+  assert.equal(duplicateSecondBet.duplicate, true);
   await assert.rejects(
-    f.service.placeAviatorBet(f.user, { requestId: 'aviator_test_request_02', amount: 5 }),
-    (e) => e instanceof HttpError && e.code === 'aviator_bet_already_placed',
+    f.service.placeAviatorBet(f.user, { requestId: 'aviator_test_request_03', amount: 5 }),
+    (e) => e instanceof HttpError && e.code === 'aviator_bet_limit_reached',
   );
 
   f.advance(9_000);
