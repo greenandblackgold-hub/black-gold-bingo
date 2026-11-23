@@ -52,6 +52,8 @@ export function loadConfig(env = process.env) {
     realMoneyEnabled: bool(env.REAL_MONEY_ENABLED, !prod && bool(env.CHAPA_MOCK, false)),
     lotteryLicenseApproved: bool(env.LOTTERY_LICENSE_APPROVED, false),
     chapaMerchantApproved: bool(env.CHAPA_MERCHANT_APPROVED, false),
+    // Production shared-wallet use is opt-in and requires the relevant written approvals.
+    gamesHubSharedWalletEnabled: bool(env.GAMES_HUB_SHARED_WALLET_ENABLED, !prod),
     // Requests per minute per IP. Many mobile users can share one carrier IP, so keep these generous.
     rateLimits: { auth: num(env.RATE_LIMIT_AUTH, 20), money: num(env.RATE_LIMIT_MONEY, 40), default: num(env.RATE_LIMIT_DEFAULT, 240) },
     smsWebhookSecret: env.SMS_WEBHOOK_SECRET ?? '',
@@ -78,6 +80,7 @@ export function loadConfig(env = process.env) {
     if (cfg.storage !== 'mongo') problems.push('Production requires STORAGE=mongo with MONGODB_URI');
     if (cfg.chapa.mock) problems.push('CHAPA_MOCK must be false in production');
     if (cfg.realMoneyEnabled && !cfg.lotteryLicenseApproved) problems.push('LOTTERY_LICENSE_APPROVED is required before real-money play');
+    if (cfg.gamesHubSharedWalletEnabled && (!cfg.lotteryLicenseApproved || !cfg.chapaMerchantApproved)) problems.push('GAMES_HUB_SHARED_WALLET_ENABLED requires LOTTERY_LICENSE_APPROVED and CHAPA_MERCHANT_APPROVED');
     if (cfg.adminPhone && !/^\d{6}$/.test(cfg.adminPin)) problems.push('ADMIN_PIN must be exactly 6 digits');
   }
   if (problems.length) throw new Error('Invalid configuration:\n - ' + problems.join('\n - '));
