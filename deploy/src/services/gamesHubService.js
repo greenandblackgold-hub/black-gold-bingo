@@ -303,8 +303,12 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     if (!/^[A-Za-z0-9_-]{8,80}$/.test(requestId)) {
       throw new HttpError(400, 'invalid_request_id', 'Refresh the game and try again.');
     }
-    if (game === 'aviator' && (round.bets ?? []).some((item) => item.userId === user.id && item.requestId !== requestId)) {
-      throw new HttpError(409, 'aviator_bet_already_placed', 'You can place one Aviator bet per round.');
+    if (game === 'aviator') {
+      const playerBets = (round.bets ?? []).filter((item) => item.userId === user.id);
+      const isDuplicateRequest = playerBets.some((item) => item.requestId === requestId);
+      if (!isDuplicateRequest && playerBets.length >= 2) {
+        throw new HttpError(409, 'aviator_bet_limit_reached', 'You can place up to two Aviator bets per round.');
+      }
     }
     const stake = amountToSantim(input.amount, currentSettings);
     const bet = {
