@@ -140,7 +140,10 @@ test('Aviator commits a round before betting and reveals its seed only after cra
     assert.equal((await f.repo.findUserById(f.user.id)).balance, 99500, 'cash-out does not credit the wallet before the pool is settled');
   }
 
-  f.advance(120_000);
+  if (flyingOrCrashed.status === 'flying') {
+    const current = await f.repo.getCurrentGameHubRound('aviator');
+    f.advance(Math.max(1, current.crashAt - f.time() + 1));
+  }
   const completed = await f.service.getState('aviator', f.user);
   assert.equal(completed.status, 'crashed');
   assert.equal(completed.serverSeed.length, 64);
