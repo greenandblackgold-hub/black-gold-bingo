@@ -93,7 +93,7 @@ function assertVerifiedPlayer(user) {
 
 function mapRepoError(error) {
   if (error instanceof RepoError && error.code === 'INSUFFICIENT_FUNDS') {
-    throw new HttpError(402, 'insufficient_funds', 'Your available demo balance is not enough for this bet.');
+    throw new HttpError(402, 'insufficient_funds', 'Your available wallet balance is not enough for this bet.');
   }
   if (error instanceof RepoError && error.code === 'ROUND_NOT_OPEN') {
     throw new HttpError(409, 'betting_closed', 'Betting for this round has closed.');
@@ -120,6 +120,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const round = {
       roundId: roundId(),
       game,
+      walletMode: 'shared',
       status: 'betting',
       version: 1,
       bets: [],
@@ -207,7 +208,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const round = await tickGame(game);
     const serverTime = now();
     const myBets = (round.bets ?? []).filter((bet) => bet.userId === user.id).map(publicBet);
-    const wallet = await repo.getGameHubWallet(user.id);
+    const wallet = await repo.getGameHubWallet(user.id, round.walletMode === 'shared' ? 'shared' : 'legacy-demo');
     const state = {
       game,
       roundId: round.roundId,
@@ -248,7 +249,6 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   async function placeBet(game, user, input = {}) {
     ensureSimulationMode();
     assertVerifiedPlayer(user);
-    await repo.getGameHubWallet(user.id);
     const currentSettings = await settings();
     if (!currentSettings[game + 'Enabled']) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
     const round = await tickGame(game);
