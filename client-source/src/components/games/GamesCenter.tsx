@@ -25,12 +25,12 @@ function GameCard({ title, subtitle, detail, icon, onClick, featured = false, di
 }
 
 export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode }: Props) {
-  const [availability, setAvailability] = useState<{ kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number } | null>(null);
+  const [availability, setAvailability] = useState<{ kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' } | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
   useEffect(() => {
     if (!serverMode) return;
     let active = true;
-    api.get<{ kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number }>('/api/games/settings')
+    api.get<{ kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings')
       .then((value) => { if (active) { setAvailability(value); setAvailabilityError(''); } })
       .catch(() => { if (active) setAvailabilityError('Game availability could not be loaded. Please refresh.'); });
     return () => { active = false; };
@@ -50,8 +50,8 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode
         </div>
       </header>
       {serverMode && <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/20 bg-black/45 px-4 py-3">
-        <div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Unified Bingo + Keno + Aviator Wallet</p><p className="mt-1 text-xl font-black text-amber-100">{availability ? money(availability.balanceEtb) + ' ETB' : 'Loading balance…'}</p></div>
-        <span className="rounded-full border border-amber-300/20 px-3 py-1.5 text-[9px] font-bold tracking-wider text-amber-300">NON-WITHDRAWABLE DEMO CREDITS</span>
+        <div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">{availability?.walletMode === 'shared' ? 'Unified Bingo + Keno + Aviator Wallet' : 'Games Demo Wallet'}</p><p className="mt-1 text-xl font-black text-amber-100">{availability ? money(availability.balanceEtb) + ' ETB' : 'Loading balance…'}</p></div>
+        <span className="rounded-full border border-amber-300/20 px-3 py-1.5 text-[9px] font-bold tracking-wider text-amber-300">{availability?.walletMode === 'shared' ? 'SHARED · SIMULATION ONLY' : 'SEPARATE · NON-WITHDRAWABLE'}</span>
       </div>}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div><p className="text-[10px] font-bold uppercase tracking-[.25em] text-amber-500">Choose your experience</p><h2 className="mt-1 text-xl font-black text-amber-50 sm:text-2xl">Explore Games</h2></div>
