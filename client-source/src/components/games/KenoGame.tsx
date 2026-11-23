@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import { gameUi } from '@/lib/gameUi';
+import { useAuth } from '@/context/AuthContext';
 
 type KenoBet = { id: string; status: string; stakeEtb: number; selectedNumbers: number[]; matchedNumbers: number[]; hits: number; payoutEtb: number; createdAt: number; settledAt?: number | null };
 type KenoState = { payoutTable: Record<string, Record<string, number>>; enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; drawnNumbers?: number[]; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string };
@@ -17,15 +18,16 @@ const copy = {
   en: { title: 'BLACK GOLD KENO', rules: 'RULES', sound: 'SOUND', turbo: 'TURBO', draw: 'DRAWN NUMBERS', picks: 'PICKS', hits: 'HITS', bet: 'BET', total: 'TOTAL', game: 'GAME', history: 'HISTORY', results: 'RESULTS', stats: 'STATISTICS', live: 'MY TICKETS', clear: 'CLEAR', quick: 'QUICK PICK', selected: 'SELECTED NUMBERS', play: 'BET NOW', waiting: 'Waiting for draw', noTickets: 'No tickets in this round yet', noHistory: 'No completed rounds yet', rounds: 'Rounds', tickets: 'Tickets', wagered: 'Total wagered', won: 'Total returned', count: 'Count', status: 'Status', payout: 'Payout', noWin: 'No prize', minMax: 'Allowed', round: 'Round', drawComplete: 'DRAW COMPLETE', recent: 'RECENT RESULTS', poolNote: 'Final payouts may be adjusted by the round pool and the maximum payout cap.', simulation: 'DEMO CREDITS ONLY', boardClosed: 'All 20 numbers have been drawn. The board will return automatically when the next round opens.' },
 } as const;
 
-export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator') => void }) {
+export function KenoGame({ onBack: _onBack, onSwitchGame: _onSwitchGame, onOpenMenu }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator') => void; onOpenMenu: () => void }) {
   const { lang } = useLanguage();
+  const { user } = useAuth();
   const t = gameUi.keno[lang];
   const c = copy[lang];
   const [state, setState] = useState<KenoState | null>(null);
   const stateRequestInFlight = useRef(false);
   const [history, setHistory] = useState<HistoryRound[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
-  const [amount, setAmount] = useState('10.00');
+  const [amount, setAmount] = useState('2.00');
   const [clock, setClock] = useState(Date.now());
   const [offset, setOffset] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -50,11 +52,12 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
 
   useEffect(() => {
     void loadState(); void loadHistory();
-    const poll = window.setInterval(() => void loadState(), 1200);
-    const tick = window.setInterval(() => setClock(Date.now()), 200);
+    const poll = window.setInterval(() => void loadState(), 1000);
+    const tick = window.setInterval(() => setClock(Date.now()), 100);
     return () => { window.clearInterval(poll); window.clearInterval(tick); };
   }, [loadState, loadHistory]);
   useEffect(() => { if (state?.status === 'settled') void loadHistory(); }, [state?.status, state?.roundId, loadHistory]);
+
   const drawSequenceKey = (state?.drawnNumbers ?? []).slice(0, 20).join(',');
   const [visibleDrawCount, setVisibleDrawCount] = useState(0);
   const revealRoundRef = useRef('');
@@ -65,15 +68,12 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
       setVisibleDrawCount(0);
     }
     const target = Math.min(20, state.drawnNumbers?.length ?? 0);
-    if (!target) return;
-    const reveal = window.setInterval(() => {
-      setVisibleDrawCount((current) => Math.min(target, current + 1));
-    }, 110);
+    if (!target) { setVisibleDrawCount(0); return; }
+    const reveal = window.setInterval(() => setVisibleDrawCount(current => Math.min(target, current + 1)), 115);
     return () => window.clearInterval(reveal);
   }, [state?.roundId, drawSequenceKey]);
+
   const visibleDrawnNumbers = (state?.drawnNumbers ?? []).slice(0, visibleDrawCount);
-
-
   const secondsLeft = state?.status === 'betting' ? Math.max(0, Math.ceil((state.bettingEndsAt - (clock + offset)) / 1000)) : 0;
   const isBetting = state?.enabled === true && state.status === 'betting' && secondsLeft > 0;
   const drawSet = useMemo(() => new Set(state?.drawnNumbers ?? []), [state?.drawnNumbers]);
@@ -83,68 +83,110 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
   const maxBet = state?.maxBetEtb ?? 1000;
   const numericAmount = Number(amount);
   const validAmount = Number.isFinite(numericAmount) && numericAmount >= minBet && numericAmount <= maxBet;
-  const totalWager = numericAmount;
   const stats = useMemo(() => {
-    const bets = history.flatMap((round) => round.myBets ?? []);
-    return { rounds: history.length, tickets: bets.length, wagered: bets.reduce((s, b) => s + b.stakeEtb, 0), won: bets.reduce((s, b) => s + b.payoutEtb, 0), hits: bets.reduce((s, b) => s + b.hits, 0) };
+    const bets = history.flatMap(round => round.myBets ?? []);
+    return { rounds: history.length, tickets: bets.length, wagered: bets.reduce((sum,b) => sum+b.stakeEtb,0), won: bets.reduce((sum,b) => sum+b.payoutEtb,0), hits: bets.reduce((sum,b) => sum+b.hits,0) };
   }, [history]);
 
-  const toggle = (n: number) => setSelected((old) => old.includes(n) ? old.filter((v) => v !== n) : old.length >= 10 ? old : [...old, n].sort((a, b) => a - b));
+  const toggle = (n: number) => setSelected(old => old.includes(n) ? old.filter(v => v !== n) : old.length >= 10 ? old : [...old,n].sort((a,b)=>a-b));
   const quickPick = () => {
-    const pool = Array.from({ length: 80 }, (_, i) => i + 1);
-    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-    setSelected(pool.slice(0, 10).sort((a, b) => a - b));
+    const pool = Array.from({length:80},(_,i)=>i+1);
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    setSelected(pool.slice(0,10).sort((a,b)=>a-b));
   };
   const submit = async () => {
     if (!selected.length || !validAmount || !isBetting || busy) return;
     setBusy(true); setError(''); setNotice('');
     try {
-      await api.post('/api/games/keno/bets', { requestId: requestId(), amount: numericAmount, selectedNumbers: selected });
-      setNotice(t.betConfirmed);
-      setSelected([]);
-      await Promise.all([loadState(), loadHistory()]);
+      await api.post('/api/games/keno/bets',{requestId:requestId(),amount:numericAmount,selectedNumbers:selected});
+      setNotice(t.betConfirmed); setSelected([]);
+      await Promise.all([loadState(),loadHistory()]);
     } catch { setError(t.betError); }
     finally { setBusy(false); }
   };
-  const adjustBet = (delta: number) => setAmount((old) => {
-    const current = Number(old);
-    const next = (Number.isFinite(current) ? current : minBet) + delta;
-    return Math.min(maxBet, Math.max(minBet, next)).toFixed(2);
+  const adjustBet = (delta:number) => setAmount(old => {
+    const current=Number(old); const next=(Number.isFinite(current)?current:minBet)+delta;
+    return Math.min(maxBet,Math.max(minBet,next)).toFixed(2);
   });
-
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'game', label: c.game }, { id: 'history', label: c.history }, { id: 'results', label: c.results },
-    { id: 'statistics', label: c.stats }, { id: 'live', label: c.live },
+  const tabs: {id:Tab;label:string}[] = [
+    {id:'game',label:c.game},{id:'history',label:c.history},{id:'results',label:c.results},{id:'statistics',label:c.stats},{id:'live',label:c.live}
   ];
+  const inDrawPhase = !isBetting && visibleDrawnNumbers.length > 0;
+  const liveBall = visibleDrawnNumbers[visibleDrawnNumbers.length-1];
+  const previousBalls = visibleDrawnNumbers.slice(-8,-1);
 
   return (
-    <main className="keno-reference-page mx-auto w-full max-w-5xl space-y-2 px-2 pb-8 text-slate-100 sm:px-3">
-      <section className="relative isolate overflow-hidden rounded-xl border border-emerald-400/15 bg-[#07130f] px-2 pb-3 pt-2 shadow-[0_12px_35px_rgba(0,0,0,.45)]">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 -translate-y-1/3 rounded-full border border-emerald-300/10" />
-          <div className="absolute left-1/2 top-0 h-56 w-56 -translate-x-1/2 -translate-y-1/3 rounded-full border border-emerald-300/10" />
-          <div className="absolute left-1/2 top-0 h-40 w-40 -translate-x-1/2 -translate-y-1/3 rounded-full border border-emerald-300/10" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_8%,rgba(16,185,129,.14),transparent_58%)]" />
+    <main className="keno-reference-page mx-auto min-h-screen w-full max-w-5xl space-y-2 bg-[#101b19] px-2 pb-8 text-slate-100 sm:px-3">
+      <header className="relative z-10 -mx-2 flex min-h-[42px] items-center justify-between gap-2 border-b border-emerald-400/15 bg-[#07110f] px-2 py-1 shadow-[0_4px_16px_rgba(0,0,0,.35)]">
+        <div className="shrink-0 leading-[.82]"><span className="block text-[10px] font-black italic text-white">FAST</span><span className="block text-[17px] font-black italic tracking-tight text-emerald-300">KENO</span></div>
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full border border-emerald-400/20 bg-black/35 px-2 py-1">
+          <span className="truncate text-[10px] font-semibold text-emerald-100/80">{money(state?.balanceEtb ?? user?.balance ?? 0)} ETB</span>
+          <span className="h-3 w-px shrink-0 bg-emerald-200/20" />
+          <span className="truncate text-[10px] font-semibold text-white">ID: {user?.id ? user.id.slice(-9) : '—'}</span>
+          <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-emerald-400 text-[10px] font-black text-[#052016]">✓</span>
         </div>
-        <div className="relative flex items-start justify-between gap-2">
-          <div><p className="text-[10px] font-black italic leading-none text-white">FAST</p><h1 className="text-lg font-black italic leading-none text-emerald-300">KENO</h1></div>
-          <div className="rounded-full border border-emerald-400/20 bg-black/35 px-3 py-1 text-center"><p className="font-mono text-[10px] font-black text-emerald-100">{state ? money(state.balanceEtb) + ' ETB' : '—'}</p><p className="font-mono text-[9px] text-emerald-100/65">{isBetting ? "00:" + String(secondsLeft).padStart(2, '0') : c.drawComplete}</p></div>
-          <button type="button" onClick={() => document.getElementById('keno-rules')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} aria-label={c.rules} className="grid h-8 w-8 place-items-center rounded-lg border border-emerald-300/20 bg-black/30 text-base font-black text-emerald-300">☰</button>
-        </div>
-        <div className="relative mt-2 flex justify-end"><span className="font-mono text-xs font-black text-white">{visibleDrawnNumbers.length} <span className="text-emerald-300">/</span> 20</span></div>
-        <div aria-label="Drawn Keno numbers" aria-live="polite" className="relative mt-16 grid grid-cols-10 gap-1.5 sm:gap-2">
-          {visibleDrawnNumbers.map((n,i)=><span key={n} className="keno-drawn-ball grid aspect-square min-w-0 place-items-center rounded-full border border-slate-500/70 bg-[radial-gradient(circle_at_35%_25%,#536873,#1c303b_58%,#07141b)] text-[11px] font-black tabular-nums text-white shadow-[inset_0_2px_4px_rgba(255,255,255,.18),0_3px_8px_rgba(0,0,0,.45)] sm:text-sm" style={{animationDelay:(i%10)*18+'ms'}}>{n}</span>)}
-          {Array.from({length:Math.max(0,20-visibleDrawnNumbers.length)},(_,i)=><span key={'empty-'+i} aria-hidden="true" className="aspect-square min-w-0 rounded-full border border-emerald-300/5 bg-black/10"/>)}
-        </div>
-        {!visibleDrawnNumbers.length && <p className="relative mt-2 text-center text-[10px] text-emerald-100/45">{t.waitingDraw}</p>}
-      </section>
+        <button type="button" onClick={onOpenMenu} aria-label="Open player menu" className="grid h-8 w-8 shrink-0 place-items-center text-emerald-300"><span className="text-[28px] leading-none">≡</span></button>
+      </header>
 
-      <nav aria-label="Keno sections" className="flex items-center gap-4 overflow-x-auto border-b border-emerald-400/20 px-1 py-2 text-[11px] font-black uppercase tracking-wide [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {isBetting && <section className="overflow-hidden rounded-lg border border-emerald-300/10 bg-[#253532] shadow-inner">
+        <div className="relative flex min-h-[164px] items-center gap-3 overflow-hidden px-3 py-3">
+          <div aria-hidden="true" className="pointer-events-none absolute -left-8 top-[-100px] h-64 w-64 rounded-full border border-emerald-200/10 shadow-[0_0_0_22px_rgba(16,185,129,.025),0_0_0_44px_rgba(16,185,129,.02)]" />
+          <div className="relative flex w-[92px] shrink-0 flex-col items-center justify-center">
+            <div className="flex h-9 items-center gap-1">{selected.slice(-2).map(n=><span key={n} className="grid h-8 w-8 place-items-center rounded-full border border-slate-400/50 bg-[radial-gradient(circle_at_30%_25%,#71858c,#243943_65%,#101c22)] text-[11px] font-black shadow-lg">{n}</span>)}</div>
+            <span className="mt-1 grid h-[58px] w-[58px] place-items-center rounded-full border-2 border-emerald-200/80 bg-[radial-gradient(circle_at_30%_25%,#8fffd0,#16885e_55%,#063e30)] text-4xl font-black italic text-emerald-100 shadow-[0_0_18px_rgba(16,185,129,.25),inset_0_2px_8px_rgba(255,255,255,.35)]">{selected.length}</span>
+          </div>
+          <div className="relative min-w-0 flex-1">
+            <div className="absolute right-0 top-0 grid h-7 w-7 place-items-center rounded-full border border-emerald-300/15 bg-emerald-950/30 text-lg font-bold text-emerald-300/70">?</div>
+            <h2 className="pr-8 text-[20px] font-black leading-tight text-white">Choose 10 numbers</h2>
+            <p className="mt-1 text-[17px] font-black text-emerald-300">From 1 to 80</p>
+            <p className="mt-2 text-[10px] font-semibold text-emerald-100/55">{selected.length}/10 selected</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-10 gap-[3px] bg-[#111b1a] p-[3px]">
+          {Array.from({length:80},(_,i)=>i+1).map(n=>{
+            const chosen=selected.includes(n);
+            const previous=history[0]?.drawnNumbers?.includes(n) ?? false;
+            return <button key={n} type="button" disabled={!isBetting} onClick={()=>toggle(n)} aria-pressed={chosen} aria-label={'Number '+n+(chosen?', selected':'')} className={'relative grid aspect-square min-w-0 place-items-center border text-[clamp(11px,3.6vw,17px)] font-black tabular-nums shadow-[inset_0_1px_0_rgba(255,255,255,.05)] '+(chosen?'border-emerald-200 bg-emerald-400 text-[#061c14]':'border-[#35413f] bg-[linear-gradient(145deg,#394442,#242d2b)] text-slate-300 hover:bg-[#46524f]')}>
+              {n}{previous&&<span className="absolute right-[2px] top-[2px] h-[5px] w-[5px] rounded-full bg-sky-300 shadow-[0_0_5px_rgba(125,211,252,.6)]"/>}
+            </button>;
+          })}
+        </div>
+        <div className="grid grid-cols-[minmax(0,1fr)_66px_66px] items-stretch gap-[3px] bg-[#101a18] p-[3px]">
+          <div className="flex h-[58px] items-center justify-between rounded-sm bg-[#253330] px-3">
+            <button type="button" disabled={!isBetting||Number(amount)<=minBet} onClick={()=>adjustBet(-1)} aria-label="Decrease bet" className="text-3xl font-black text-slate-300 disabled:opacity-30">−</button>
+            <span className="text-[25px] font-black tabular-nums text-white">{Number(amount).toLocaleString(undefined,{maximumFractionDigits:2})}</span>
+            <button type="button" disabled={!isBetting||Number(amount)>=maxBet} onClick={()=>adjustBet(1)} aria-label="Increase bet" className="text-3xl font-black text-slate-300 disabled:opacity-30">+</button>
+          </div>
+          <button type="button" disabled={!isBetting} onClick={()=>adjustBet(numericAmount)} className="rounded-sm bg-[#263b34] text-[12px] font-black text-emerald-300 disabled:opacity-40">X2</button>
+          <button type="button" disabled={!isBetting} onClick={()=>setAmount(maxBet.toFixed(2))} className="rounded-sm bg-[#263b34] text-[12px] font-black text-emerald-300 disabled:opacity-40">MAX</button>
+        </div>
+        <button type="button" disabled={!isBetting||!selected.length||!validAmount||busy} onClick={()=>void submit()} className="w-full rounded-b-md border-t border-emerald-200/15 bg-gradient-to-b from-[#276b4b] to-[#17432f] py-3 text-[25px] font-black text-slate-200 shadow-inner disabled:opacity-45">{busy?t.confirming:'BET'}</button>
+        {(error||notice)&&<p role={error?'alert':'status'} className={'px-3 py-2 text-center text-xs '+(error?'bg-red-950/50 text-red-200':'bg-emerald-950/50 text-emerald-200')}>{error||notice}</p>}
+        <div className="flex justify-between px-2 py-1 text-[9px] text-emerald-100/50"><span>Minimum {money(minBet)} ETB</span><span>Maximum {money(maxBet)} ETB</span><button type="button" onClick={()=>document.getElementById('keno-rules')?.scrollIntoView({behavior:'smooth',block:'center'})}>RULES</button></div>
+      </section>}
+
+      {inDrawPhase && <section className="relative flex min-h-[188px] flex-col items-center justify-center overflow-hidden rounded-lg bg-[#101b19] px-2 py-2">
+        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/10 shadow-[0_0_0_18px_rgba(16,185,129,.025),0_0_0_38px_rgba(16,185,129,.02),0_0_0_58px_rgba(16,185,129,.015)]"/>
+        <div className="relative mb-1 flex h-[90px] w-full items-center justify-center"><span key={liveBall} className="keno-live-ball grid h-[88px] w-[88px] place-items-center rounded-full border border-slate-500/70 bg-[radial-gradient(circle_at_32%_22%,#84949a,#304550_48%,#0b1720_76%)] text-[42px] font-black text-white shadow-[inset_0_3px_8px_rgba(255,255,255,.3),0_8px_25px_rgba(0,0,0,.65)]">{liveBall}</span><span className="absolute right-2 top-0 font-mono text-xs font-black text-white">{visibleDrawnNumbers.length} <i className="text-emerald-300">/</i> 20</span></div>
+        <div className="relative flex min-h-9 max-w-full items-center justify-center gap-1.5 overflow-hidden">{previousBalls.map((n,i)=><span key={n} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-slate-500/60 bg-[radial-gradient(circle_at_35%_25%,#536873,#1c303b_58%,#07141b)] text-[11px] font-black text-white">{n}</span>)}</div>
+      </section>}
+
+      {!isBetting && state?.status === 'settled' && <section className="relative overflow-hidden rounded-lg bg-[#101b19] px-1 py-3">
+        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-110px] h-64 w-64 -translate-x-1/2 rounded-full border border-emerald-300/10 shadow-[0_0_0_22px_rgba(16,185,129,.025),0_0_0_44px_rgba(16,185,129,.02)]"/>
+        <div className="relative mb-2 flex justify-end pr-2 font-mono text-xs font-black text-white">{visibleDrawnNumbers.length} <span className="px-1 text-emerald-300">/</span> 20</div>
+        <div aria-label="Drawn Keno numbers" aria-live="polite" className="relative grid grid-cols-10 gap-1.5 sm:gap-2">
+          {visibleDrawnNumbers.map((n,i)=><span key={n} className="keno-drawn-ball grid aspect-square min-w-0 place-items-center rounded-full border border-slate-500/70 bg-[radial-gradient(circle_at_35%_25%,#536873,#1c303b_58%,#07141b)] text-[11px] font-black tabular-nums text-white shadow-[inset_0_2px_4px_rgba(255,255,255,.18),0_3px_8px_rgba(0,0,0,.45)] sm:text-sm" style={{animationDelay:(i%10)*18+'ms'}}>{n}</span>)}
+        </div>
+      </section>}
+
+      {!isBetting && !inDrawPhase && state?.status !== 'settled' && <section className="grid min-h-[120px] place-items-center rounded-lg bg-[#101b19] text-sm text-emerald-100/60">{t.waitingDraw}</section>}
+
+      <nav aria-label="Keno sections" className="flex items-center gap-4 overflow-x-auto border-b border-emerald-400/20 bg-[#101b19] px-1 py-2 text-[11px] font-black uppercase tracking-wide [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map(item=><button key={item.id} type="button" onClick={()=>setTab(item.id)} aria-current={tab===item.id?'page':undefined} className={'flex shrink-0 items-center gap-1 whitespace-nowrap border-b-2 pb-1 '+(tab===item.id?'border-emerald-300 text-emerald-300':'border-transparent text-emerald-100/55')}><span aria-hidden="true">{item.id==='game'?'▶':item.id==='history'?'◴':item.id==='results'?'✓':item.id==='statistics'?'▥':'♛'}</span>{item.label}</button>)}
       </nav>
 
-      <div className="grid grid-cols-3 items-center px-2 py-1 text-[10px] text-emerald-100/65">
-        <div><span className="block text-[9px]">All rounds</span><b className="font-mono text-emerald-300">{history.length}</b></div>
+      <div className="grid grid-cols-3 items-center bg-[#101b19] px-2 py-1 text-[10px] text-emerald-100/65">
+        <div><span className="block text-[9px]">All</span><b className="font-mono text-emerald-300">{history.length}</b></div>
         <div className="text-center"><span className="block text-[9px]">My Tickets</span><b className="font-mono text-emerald-300">{state?.myBets.length??0}</b></div>
         <div className="text-right"><span className="block text-[9px]">My Bets</span><b className="font-mono text-emerald-300">{state?.myBets.length??0}</b></div>
       </div>
@@ -155,29 +197,10 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
       {tab==='results' && <section className="space-y-2">{history.filter(round=>round.drawnNumbers?.length).length?history.filter(round=>round.drawnNumbers?.length).map(round=><article key={round.roundId} className="rounded-lg border border-emerald-400/15 bg-[#0b1915] p-3"><p className="font-mono text-[10px] text-emerald-300">{round.roundId}</p><div className="mt-2 grid grid-cols-10 gap-1">{(round.drawnNumbers??[]).slice(0,20).map(n=><span key={n} className="grid aspect-square place-items-center rounded-full bg-[#1c3430] text-[10px] font-bold text-emerald-100">{n}</span>)}</div></article>):<p className="rounded-lg bg-[#0b1915] p-5 text-center text-xs text-slate-500">{c.noHistory}</p>}</section>}
       {tab==='statistics' && <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">{[[c.rounds,stats.rounds],[c.tickets,stats.tickets],[c.wagered,money(stats.wagered)+' ETB'],[c.won,money(stats.won)+' ETB'],[c.hits,stats.hits]].map(([label,value])=><div key={String(label)} className="rounded-lg border border-emerald-400/15 bg-[#0b1915] p-3"><p className="text-[10px] text-slate-400">{label}</p><p className="mt-1 text-lg font-black text-emerald-300">{value}</p></div>)}</section>}
 
-      <details className="rounded-lg border border-emerald-400/20 bg-[#0b1915]">
-        <summary className="cursor-pointer px-3 py-3 text-xs font-black text-emerald-300">{c.selected} · {selected.length}/10 <span className="float-right text-emerald-100/50">＋</span></summary>
-        <div className="space-y-3 border-t border-emerald-400/10 p-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-[10px] text-slate-400">{lang==='am'?'ከ1 እስከ 80 ያሉ 10 ቁጥሮችን ይምረጡ':lang==='ti'?'ካብ 1 ክሳብ 80 ዘለዉ 10 ቁጽሪታት ምረጹ':'Choose up to 10 numbers from 1–80'}</p><button type="button" disabled={!isBetting} onClick={quickPick} className="rounded-md border border-emerald-300/30 bg-emerald-950/50 px-3 py-1.5 text-[10px] font-black text-emerald-200 disabled:opacity-40">{c.quick}</button></div>
-          {state?.status !== 'settled' && <div className="grid grid-cols-10 gap-1">{Array.from({length:80},(_,i)=>i+1).map(n=>{const chosen=selected.includes(n)||(!isBetting&&(latestBet?.selectedNumbers.includes(n)??false));const drawn=drawSet.has(n);const hit=hitSet.has(n)||(chosen&&drawn);return <button key={n} type="button" disabled={!isBetting||!!drawSet.size} onClick={()=>toggle(n)} aria-pressed={chosen} aria-label={'Number '+n+(hit?', hit':drawn?', drawn':chosen?', selected':'')} className={'relative grid aspect-square min-w-0 place-items-center rounded-md border text-[10px] font-black tabular-nums '+(hit?'border-emerald-100 bg-emerald-400 text-[#04120b]':drawn?'border-sky-300/70 bg-sky-500/25 text-sky-100':chosen?'border-amber-100 bg-amber-400 text-[#171307]':'border-slate-600/70 bg-[#17231f] text-slate-100')}>{n}{hit&&<span className="absolute -right-0.5 -top-1 text-[8px] text-white">★</span>}</button>})}</div>}
-          <div className="grid grid-cols-[40px_minmax(66px,1fr)_40px_54px_58px] items-center gap-1.5">
-            <button type="button" disabled={!isBetting||Number(amount)<=minBet} onClick={()=>adjustBet(-1)} aria-label="Decrease bet" className="rounded-lg border border-emerald-400/20 bg-[#172923] py-2 text-xl font-black text-emerald-200 disabled:opacity-35">−</button>
-            <div className="min-w-0 text-center"><label htmlFor="keno-bet" className="block text-[8px] font-bold uppercase tracking-widest text-slate-500">{c.bet} (ETB)</label><input id="keno-bet" type="number" inputMode="decimal" min={minBet} max={maxBet} step="0.01" value={amount} onChange={e=>setAmount(e.target.value)} className="w-full bg-transparent text-center text-base font-black tabular-nums text-white outline-none"/></div>
-            <button type="button" disabled={!isBetting||Number(amount)>=maxBet} onClick={()=>adjustBet(1)} aria-label="Increase bet" className="rounded-lg border border-emerald-400/20 bg-[#172923] py-2 text-xl font-black text-emerald-200 disabled:opacity-35">+</button>
-            <button type="button" disabled={!isBetting} onClick={()=>adjustBet(numericAmount)} className="rounded-lg border border-emerald-300/40 bg-emerald-950/60 py-2 text-xs font-black text-emerald-200 disabled:opacity-35">X2</button>
-            <button type="button" disabled={!isBetting} onClick={()=>setAmount(maxBet.toFixed(2))} className="rounded-lg border border-amber-300/40 bg-amber-300/10 py-2 text-[10px] font-black text-amber-200 disabled:opacity-35">MAX</button>
-          </div>
-          <p className="text-center text-[9px] text-slate-500">{c.minMax}: {money(minBet)} – {money(maxBet)} ETB</p>
-          <button type="button" disabled={!isBetting||!selected.length||!validAmount||busy} onClick={()=>void submit()} className="w-full rounded-lg border border-emerald-200/70 bg-gradient-to-r from-emerald-600 to-emerald-400 py-3 text-base font-black tracking-widest text-[#04120b] disabled:opacity-40">{busy?t.confirming:c.play}</button>
-          {(error||notice)&&<p role={error?'alert':'status'} className={'rounded-lg px-3 py-2 text-center text-xs '+(error?'bg-red-950/40 text-red-200':'bg-emerald-950/40 text-emerald-200')}>{error||notice}</p>}
-          <div className="rounded-lg border border-amber-300/10 bg-[#101d18] p-2"><p className="mb-2 text-[9px] font-black uppercase tracking-wide text-amber-300">{t.payoutTable}</p>{selected.length&&state?.payoutTable[String(selected.length)]?<div className="flex gap-2 overflow-x-auto pb-1">{Object.entries(state.payoutTable[String(selected.length)]).sort(([a],[b])=>Number(a)-Number(b)).map(([matches,multiplier])=><div key={matches} className="min-w-[60px] rounded-md border border-amber-300/10 bg-[#18271e] px-2 py-1.5 text-center"><p className="text-[9px] text-slate-400">{matches} {c.hits}</p><p className="text-sm font-black text-amber-300">{(multiplier/100).toFixed(2)}×</p></div>)}</div>:<p className="text-[10px] text-slate-500">{c.selected} · {t.intro}</p>}</div>
-        </div>
-      </details>
-
-      <details id="keno-rules" className="rounded-lg border border-amber-400/20 bg-[#0b1915] p-3 text-xs text-slate-300">
-        <summary className="cursor-pointer font-black text-amber-300">{c.rules} · {t.payoutTable}</summary>
-        <div className="mt-3 space-y-2"><p>{t.intro}</p><p>{t.drawInfo}</p><p>{t.multiplierInfo}</p><p className="text-amber-200/80">{c.poolNote}</p><p className="text-emerald-300">{c.simulation}</p></div>
-        {state?.payoutTable&&<div className="mt-3 max-h-64 overflow-auto"><table className="w-full border-collapse text-left"><thead className="sticky top-0 bg-[#0b1915] text-emerald-300"><tr><th className="p-2">{t.numbersPicked}</th><th className="p-2">{t.matchesHeader}</th><th className="p-2">{t.returnMultiplier}</th></tr></thead><tbody>{Object.entries(state.payoutTable).flatMap(([picked,hits])=>Object.entries(hits).map(([matched,multiplier])=><tr key={picked+'-'+matched} className="border-t border-white/5"><td className="p-2">{picked}</td><td className="p-2">{matched}</td><td className="p-2 font-bold text-amber-200">{(multiplier/100).toFixed(2)}×</td></tr>))}</tbody></table></div>}
+      <details id="keno-rules" className="rounded-lg border border-emerald-400/15 bg-[#0b1915] p-3 text-xs text-slate-300">
+        <summary className="cursor-pointer font-black text-emerald-300">{c.rules} · {t.payoutTable}</summary>
+        <div className="mt-3 space-y-2"><p>{t.intro}</p><p>{t.drawInfo}</p><p>{t.multiplierInfo}</p><p className="text-emerald-300/80">{c.poolNote}</p><p className="text-emerald-300">{c.simulation}</p></div>
+        {state?.payoutTable&&<div className="mt-3 max-h-64 overflow-auto"><table className="w-full border-collapse text-left"><thead className="sticky top-0 bg-[#0b1915] text-emerald-300"><tr><th className="p-2">{t.numbersPicked}</th><th className="p-2">{t.matchesHeader}</th><th className="p-2">{t.returnMultiplier}</th></tr></thead><tbody>{Object.entries(state.payoutTable).flatMap(([picked,hits])=>Object.entries(hits).map(([matched,multiplier])=><tr key={picked+'-'+matched} className="border-t border-white/5"><td className="p-2">{picked}</td><td className="p-2">{matched}</td><td className="p-2 font-bold text-emerald-200">{(multiplier/100).toFixed(2)}×</td></tr>))}</tbody></table></div>}
         <p className="mt-2 text-[10px] text-slate-500">{t.allowed}: {money(minBet)}–{money(maxBet)} ETB · {t.maxPayout}: {money(state?.maxPayoutEtb??20000)} ETB</p>
       </details>
       {state?.serverSeedHash&&<details className="rounded-lg border border-emerald-400/10 bg-[#0b1915] p-3 text-xs text-slate-400"><summary className="cursor-pointer font-bold text-emerald-300">{t.fairness}</summary><p className="mt-2 break-all">{t.commitment}: {state.serverSeedHash}</p>{state.serverSeed?<><p className="mt-1 break-all">{t.revealedSeed}: {state.serverSeed}</p><p className="mt-2">{t.reproducible}</p></>:<p className="mt-2">{t.seedAfter}</p>}</details>}
@@ -190,6 +213,6 @@ function BetCard({ bet, labels }: { bet: KenoBet; labels: (typeof copy)['en'] | 
   return <article className={'overflow-hidden rounded-lg border p-1.5 '+(bet.payoutEtb>0?'border-emerald-400/40 bg-[#16432f]':'border-white/5 bg-[#172421]')}>
     <div className="px-1 pb-1 text-[11px] font-black text-emerald-300">Ticket #{bet.id.slice(-5)}</div>
     <div className="grid grid-cols-10 gap-1">{Array.from({length:10},(_,i)=>{const n=bet.selectedNumbers[i];return <div key={i} className={'grid aspect-square min-w-0 place-items-center rounded-sm border border-white/5 text-xs font-black tabular-nums '+(n===undefined?'bg-[#101b19]':bet.matchedNumbers.includes(n)?'bg-emerald-400 text-[#062014]':'bg-[#34484a] text-white')}>{n??''}</div>})}</div>
-    <div className="mt-1 flex items-center justify-between gap-2 border-t border-white/5 px-1 pt-1 text-[10px]"><span className="font-bold text-slate-100">{labels.bet} {money(bet.stakeEtb)} ETB</span><span className="font-black text-emerald-300">{bet.payoutEtb>0?money(bet.payoutEtb):bet.hits+' '+labels.hits}</span></div>
+    <div className="mt-1 flex items-center justify-between gap-2 border-t border-white/5 px-1 pt-1 text-[10px]"><span className="font-bold text-slate-100">{labels.bet} {money(bet.stakeEtb)} ETB</span><span className="font-black text-emerald-300">{bet.payoutEtb>0?money(bet.payoutEtb):['active','pending','waiting'].includes(bet.status.toLowerCase())?'Waiting':bet.hits+' '+labels.hits}</span></div>
   </article>;
 }
