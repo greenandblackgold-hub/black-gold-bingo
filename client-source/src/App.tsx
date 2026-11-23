@@ -47,15 +47,26 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
   const [tab, setTab] = useState<PlayerScreen>(() => (window.location.hash === '#wallet' ? 'wallet' : 'games'));
   const [menuOpen, setMenuOpen] = useState(false);
   const [playerSettingsOpen, setPlayerSettingsOpen] = useState(false);
-  const [generalEnabled, setGeneralEnabled] = useState(!SERVER_MODE);
+  const [generalEnabled, setGeneralEnabled] = useState(true);
   useEffect(() => {
     if (!SERVER_MODE) return;
     let active = true;
-    const refresh = () => api.get<{ generalEnabled: boolean }>('/api/games/settings')
-      .then(value => { if (active) setGeneralEnabled(value.generalEnabled !== false); })
-      .catch(() => { if (active) setGeneralEnabled(false); });
-    refresh();
-    const poll = window.setInterval(refresh, 4000);
+    let pending = false;
+    const refresh = async () => {
+      if (pending) return;
+      pending = true;
+      try {
+        const value = await api.get<{ generalEnabled: boolean }>('/api/games/settings');
+        if (active) setGeneralEnabled(value.generalEnabled !== false);
+      } catch {
+        // A transient network failure must not kick a player out of the selected game.
+        // Keep the last confirmed maintenance state until the server responds again.
+      } finally {
+        pending = false;
+      }
+    };
+    void refresh();
+    const poll = window.setInterval(() => void refresh(), 4000);
     return () => { active = false; window.clearInterval(poll); };
   }, []);
   useEffect(() => {
