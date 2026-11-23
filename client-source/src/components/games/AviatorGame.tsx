@@ -63,10 +63,15 @@ export function AviatorGame({ onBack, onSwitchGame }: { onBack: () => void; onSw
     const panel = panels[index];
     if (panel.busy || !isBetting || (automatic && !panel.autoBet)) return false;
     const id = panel.requestId || makeRequestId();
+    const autoCashOutText = panel.autoCashOutMultiplier.trim();
+    const autoCashOutMultiplier = Number(autoCashOutText);
+    if (autoCashOutText && (!Number.isFinite(autoCashOutMultiplier) || autoCashOutMultiplier < 1.01 || autoCashOutMultiplier > 1000 || Math.abs(autoCashOutMultiplier * 100 - Math.round(autoCashOutMultiplier * 100)) > 1e-7)) {
+      setError('Auto Cash Out must be between 1.01× and 1,000× (maximum 2 decimals).');
+      return false;
+    }
     updatePanel(index, { busy: true, requestId: id });
     setError(''); setNotice('');
     try {
-      const autoCashOutMultiplier = Number(panel.autoCashOutMultiplier);
       const result = await api.post<{ bet: AviatorBet }>('/api/games/aviator/bets', { requestId: id, amount: Number(panel.amount), ...(Number.isFinite(autoCashOutMultiplier) && autoCashOutMultiplier >= 1.01 ? { autoCashOutMultiplier } : {}) });
       updatePanel(index, { requestId: '', betId: result.bet.id });
       setNotice(t.betConfirmed);
@@ -167,7 +172,7 @@ export function AviatorGame({ onBack, onSwitchGame }: { onBack: () => void; onSw
             <div className="aviator-bet-heading"><div><span>BET {index + 1}</span><h2>{index === 0 ? 'MAIN BET' : 'SECOND BET'}</h2></div><div className="aviator-tabs"><button type="button" className={panel.mode === 'manual' ? 'selected' : ''} onClick={() => updatePanel(index, { mode: 'manual' })}>BET</button><button type="button" className={panel.mode === 'auto' ? 'selected' : ''} onClick={() => updatePanel(index, { mode: 'auto' })}>AUTO</button></div></div>
             <label htmlFor={'aviator-stake-' + index}>{t.stake}</label>
             <div className="aviator-amount-row"><button onClick={() => updatePanel(index, { amount: String(Math.max(state?.minBetEtb ?? 2, Number(panel.amount || 0) - 1).toFixed(2)) })} disabled={placed}>−</button><input id={'aviator-stake-' + index} type="number" min={state?.minBetEtb ?? 2} max={state?.maxBetEtb ?? 1000} step="0.01" value={panel.amount} disabled={placed} onChange={(e) => updatePanel(index, { amount: e.target.value })}/><button onClick={() => updatePanel(index, { amount: String(Math.min(state?.maxBetEtb ?? 1000, Number(panel.amount || 0) + 1).toFixed(2)) })} disabled={placed}>+</button></div>
-            <div className="aviator-quick"><button disabled={placed} onClick={() => updatePanel(index, { amount: String((Number(panel.amount) * 2).toFixed(2)) })}>×2</button>{[10, 50, 100, 500].map((n) => <button key={n} disabled={placed} onClick={() => updatePanel(index, { amount: String(n.toFixed(2)) })}>{n}</button>)}</div>
+            <div className="aviator-quick"><button disabled={placed} onClick={() => updatePanel(index, { amount: String((Number(panel.amount) * 2).toFixed(2)) })}>×2</button>{[10, 50, 100, 500].map((n) => <button key={n} disabled={placed || n < (state?.minBetEtb ?? 2) || n > (state?.maxBetEtb ?? 1000)} onClick={() => updatePanel(index, { amount: String(n.toFixed(2)) })}>{n}</button>)}</div>
             {panel.mode === 'auto' && <div className="aviator-auto-settings"><label htmlFor={'aviator-auto-cashout-' + index}>AUTO CASH OUT AT (×) · optional</label><input id={'aviator-auto-cashout-' + index} type="number" min="1.01" max="1000" step="0.01" placeholder="e.g. 2.00" value={panel.autoCashOutMultiplier} disabled={placed} onChange={(e) => updatePanel(index, { autoCashOutMultiplier: e.target.value })}/><button type="button" className={panel.autoBet ? 'selected' : ''} disabled={placed} onClick={() => updatePanel(index, { autoBet: !panel.autoBet })}>{panel.autoBet ? 'AUTO BET ON · STOP' : 'START AUTO BET'}</button><p>Repeats this stake each new round while this game stays open. Auto Cash Out is executed by the server.</p></div>}
             <p className="aviator-limits">{t.allowed}: {money(state?.minBetEtb ?? 2)}–{money(state?.maxBetEtb ?? 1000)} ETB · {t.demoCredits}</p>
             {active && state?.status === 'flying'
