@@ -61,8 +61,12 @@ export async function createMongoRepo({ uri, dbName }) {
 
   const balanceOf = async (userId) => (await users.findOne({ _id: userId }, { projection: { balance: 1 } }))?.balance ?? 0;
 
-  /** Separate non-withdrawable simulation credits for Keno and Aviator. */
-  async function moveGameHubCredits(session, { userId, amount, kind, ref, meta }) {
+  /** New rounds share Bingo's users.balance + ledger. Legacy demo rounds keep their original wallet until settlement. */
+  async function moveGameHubCredits(session, { userId, amount, kind, ref, meta, walletMode = 'shared' }) {
+    if (walletMode === 'shared') {
+      await moveMoney(session, { userId, amount, kind, ref, meta });
+      return;
+    }
     const filter = amount < 0 ? { _id: userId, balance: { $gte: -amount } } : { _id: userId };
     const r = await gameHubWallets.updateOne(filter, { $inc: { balance: amount } }, { session });
     if (!r.matchedCount) {
@@ -594,8 +598,10 @@ export async function createMongoRepo({ uri, dbName }) {
       const { _id, ...settings } = saved;
       return settings;
     },
-    async getGameHubWallet(userId) {
-      if (!(await users.findOne({ _id: userId }, { projection: { _id: 1 } }))) throw new RepoError('USER_NOT_FOUND');
+    async getGameHubWallet(userId, walletMode = 'shared') {
+      const user = await users.findOne({ _id: userId }, { projection: { _id: 1, balance: 1 } });
+      if (!user) throw new RepoError('USER_NOT_FOUND');
+      if (walletMode === 'shared') return { userId, balance: user.balance ?? 0, currency: 'ETB', balanceType: 'SHARED_BINGO_WALLET' };
       const shape = (wallet) => ({ userId: wallet._id, balance: wallet.balance, currency: wallet.currency, balanceType: wallet.balanceType, createdAt: wallet.createdAt });
       const existing = await gameHubWallets.findOne({ _id: userId });
       if (existing) return shape(existing);
@@ -661,25 +667,32 @@ export async function createMongoRepo({ uri, dbName }) {
         const key = game + ':' + roundId;
         const round = await gameHubRounds.findOne({ _id: key }, { session });
         if (!round) throw new RepoError('ROUND_NOT_OPEN');
-        await gameHubWallets.updateOne(
-          { _id: bet.userId },
-          { $setOnInsert: { balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt: new Date() } },
-          { upsert: true, session },
-        );
+        const walletMode = round.walletMode === 'shared' ? 'shared' : 'legacy-demo';
+        if (walletMode === 'legacy-demo') {
+          await gameHubWallets.updateOne(
+            { _id: bet.userId },
+            { $setOnInsert: { balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt: new Date() } },
+            { upsert: true, session },
+          );
+        }
         const existing = (round.bets ?? []).find((item) => item.userId === bet.userId && item.requestId === bet.requestId);
         if (existing) {
-          const wallet = await gameHubWallets.findOne({ _id: bet.userId }, { session, projection: { balance: 1 } });
+          const wallet = walletMode === 'shared'
+            ? await users.findOne({ _id: bet.userId }, { session, projection: { balance: 1 } })
+            : await gameHubWallets.findOne({ _id: bet.userId }, { session, projection: { balance: 1 } });
           return { bet: existing, balance: wallet?.balance ?? 0, duplicate: true };
         }
         if (round.status !== 'betting' || round.bettingEndsAt <= acceptedAt) throw new RepoError('ROUND_NOT_OPEN');
-        await moveGameHubCredits(session, { userId: bet.userId, amount: -amount, kind: 'game_bet', ref, meta: { game, roundId, betId: bet.id } });
+        await moveGameHubCredits(session, { userId: bet.userId, amount: -amount, kind: 'game_bet', ref, meta: { game, roundId, betId: bet.id }, walletMode });
         const updated = await gameHubRounds.findOneAndUpdate(
           { _id: key, version: round.version, status: 'betting' },
           { $push: { bets: bet }, $inc: { version: 1 } },
           { returnDocument: 'after', session },
         );
         if (!updated) throw new RepoError('ROUND_NOT_OPEN');
-        const wallet = await gameHubWallets.findOne({ _id: bet.userId }, { session, projection: { balance: 1 } });
+        const wallet = walletMode === 'shared'
+          ? await users.findOne({ _id: bet.userId }, { session, projection: { balance: 1 } })
+          : await gameHubWallets.findOne({ _id: bet.userId }, { session, projection: { balance: 1 } });
         return { bet, balance: wallet?.balance ?? 0, duplicate: false };
       });
     },
@@ -698,7 +711,7 @@ export async function createMongoRepo({ uri, dbName }) {
         for (const bet of bets) {
           if (bet.payout > 0) await moveGameHubCredits(session, {
             userId: bet.userId, amount: bet.payout, kind: 'game_prize',
-            ref: 'games:keno:win:' + bet.id, meta: { game: 'keno', roundId, betId: bet.id },
+            ref: 'games:keno:win:' + bet.id, meta: { game: 'keno', roundId, betId: bet.id }, walletMode: round.walletMode === 'shared' ? 'shared' : 'legacy-demo',
           });
         }
         const updated = await gameHubRounds.findOneAndUpdate(
@@ -729,11 +742,13 @@ export async function createMongoRepo({ uri, dbName }) {
         const bet = (round.bets ?? []).find((item) => item.id === betId && item.userId === userId);
         if (!bet) throw new RepoError('BET_NOT_ACTIVE');
         if (bet.status === 'cashed_out') {
-          const wallet = await gameHubWallets.findOne({ _id: userId }, { session, projection: { balance: 1 } });
+          const wallet = round.walletMode === 'shared'
+            ? await users.findOne({ _id: userId }, { session, projection: { balance: 1 } })
+            : await gameHubWallets.findOne({ _id: userId }, { session, projection: { balance: 1 } });
           return { bet, balance: wallet?.balance ?? 0, duplicate: true };
         }
         if (bet.status !== 'active') throw new RepoError('BET_NOT_ACTIVE');
-        await moveGameHubCredits(session, { userId, amount: payout, kind: 'game_prize', ref, meta: { game: 'aviator', roundId, betId, multiplier } });
+        await moveGameHubCredits(session, { userId, amount: payout, kind: 'game_prize', ref, meta: { game: 'aviator', roundId, betId, multiplier }, walletMode: round.walletMode === 'shared' ? 'shared' : 'legacy-demo' });
         const bets = round.bets.map((item) => item.id === betId
           ? { ...item, status: 'cashed_out', multiplier, payout, cashedOutAt }
           : item);
@@ -743,7 +758,9 @@ export async function createMongoRepo({ uri, dbName }) {
           { returnDocument: 'after', session },
         );
         if (!updated) throw new RepoError('BET_NOT_ACTIVE');
-        const wallet = await gameHubWallets.findOne({ _id: userId }, { session, projection: { balance: 1 } });
+        const wallet = round.walletMode === 'shared'
+          ? await users.findOne({ _id: userId }, { session, projection: { balance: 1 } })
+          : await gameHubWallets.findOne({ _id: userId }, { session, projection: { balance: 1 } });
         return { bet: bets.find((item) => item.id === betId), balance: wallet?.balance ?? 0, duplicate: false };
       });
     },
