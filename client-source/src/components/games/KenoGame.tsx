@@ -2,13 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 
 type KenoBet = { id: string; status: string; stakeEtb: number; selectedNumbers: number[]; matchedNumbers: number[]; hits: number; payoutEtb: number; createdAt: number; settledAt?: number | null };
-type KenoState = { payoutTable: Record<string, Record<string, number>>; enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; drawnNumbers?: number[]; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; mode: string };
+type KenoState = { payoutTable: Record<string, Record<string, number>>; enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; drawnNumbers?: number[]; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string };
 type HistoryRound = { roundId: string; status: string; drawnNumbers?: number[]; serverSeedHash: string; serverSeed?: string; myBets: KenoBet[] };
 
 const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const requestId = () => 'keno_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
 
-export function KenoGame({ onBack }: { onBack: () => void }) {
+export function KenoGame({ onBack, onSwitchGame }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator') => void }) {
   const [state, setState] = useState<KenoState | null>(null);
   const [history, setHistory] = useState<HistoryRound[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
@@ -68,7 +68,7 @@ export function KenoGame({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5 pb-8">
-      <div className="flex items-center justify-between gap-3"><button onClick={onBack} className="rounded-xl border border-amber-400/25 px-3 py-2 text-sm font-bold text-amber-200">← Games Center</button><span className="rounded-full border border-amber-400/25 bg-amber-400/5 px-3 py-1.5 text-[10px] font-bold tracking-widest text-amber-300">SIMULATION ONLY</span></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex flex-wrap gap-2"><button onClick={() => onSwitchGame('bingo')} className="rounded-xl border border-amber-400/20 px-3 py-2 text-xs font-bold text-amber-100/70">Bingo</button><button onClick={() => onSwitchGame('keno')} aria-current="page" className="rounded-xl border border-amber-300/50 bg-amber-300/10 px-3 py-2 text-xs font-bold text-amber-200">Keno</button><button onClick={() => onSwitchGame('aviator')} className="rounded-xl border border-amber-400/20 px-3 py-2 text-xs font-bold text-amber-100/70">Aviator</button></div><span className="rounded-full border border-amber-400/25 bg-amber-400/5 px-3 py-1.5 text-[10px] font-bold tracking-widest text-amber-300">SIMULATION ONLY</span></div>
       <header className="rounded-3xl border border-amber-400/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.2),transparent_45%),linear-gradient(135deg,#17140c,#080808)] p-5 sm:p-7">
         <p className="text-[10px] font-black uppercase tracking-[.3em] text-amber-400">BLACK GOLD · NUMBER GAME</p><div className="mt-2 flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-black text-amber-50 sm:text-4xl">KENO</h1><p className="mt-2 text-sm text-amber-100/60">Pick 1–10 numbers from 1 to 80. Twenty numbers are drawn each round.</p></div><div className="text-right"><p className="text-[10px] uppercase tracking-wider text-amber-500">{state?.walletMode === 'shared' ? 'Shared wallet balance' : 'Demo wallet balance'}</p><p className="text-xl font-black text-amber-200">{money(state?.balanceEtb ?? 0)} ETB</p></div></div>
       </header>
@@ -87,7 +87,7 @@ export function KenoGame({ onBack }: { onBack: () => void }) {
       <section className="grid gap-4 md:grid-cols-[1fr_1.2fr]">
         <div className="rounded-2xl border border-amber-400/20 bg-[#0c0c0a] p-4 sm:p-5">
           <h2 className="font-bold text-amber-100">Your entry</h2><label className="mt-4 block text-xs text-amber-100/60">Stake (ETB)</label><input type="number" min={state?.minBetEtb ?? 5} max={state?.maxBetEtb ?? 1000} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-2 w-full rounded-xl border border-amber-400/25 bg-black px-3 py-3 text-lg font-bold text-amber-100 outline-none focus:border-amber-300"/>
-          <p className="mt-2 text-[11px] text-amber-100/45">Allowed: {money(state?.minBetEtb ?? 5)}–{money(state?.maxBetEtb ?? 1000)} ETB · demo credits only</p>
+          <p className="mt-2 text-[11px] text-amber-100/45">Allowed: {money(state?.minBetEtb ?? 5)}–{money(state?.maxBetEtb ?? 1000)} ETB · demo credits only · max payout {money(state?.maxPayoutEtb ?? 100000)} ETB</p>
           <button disabled={!isBetting || !selected.length || busy} onClick={() => void submit()} className="mt-4 w-full rounded-xl bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-600 px-4 py-3 font-black text-black shadow-lg disabled:cursor-not-allowed disabled:opacity-40">{busy ? 'Confirming…' : 'Place Keno Entry'}</button>
         </div>
         <div className="rounded-2xl border border-amber-400/20 bg-[#0c0c0a] p-4 sm:p-5"><h2 className="font-bold text-amber-100">Draw results</h2><p className="mt-1 text-xs text-amber-100/50">20 numbers · server-seeded draw</p>
