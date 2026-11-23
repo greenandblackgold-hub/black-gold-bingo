@@ -63,7 +63,7 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode
       </div>
       {availabilityError && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-950/30 p-3 text-sm text-red-200">{availabilityError}</p>}
       <div className="grid gap-4 md:grid-cols-3">
-        <GameCard title="Bingo PRO" subtitle={t.bingoSubtitle} detail={t.bingoDetail} icon="bingo" onClick={onOpenBingo} featured />
+        <GameCard title="Bingo PRO" subtitle={t.bingoSubtitle} detail={t.bingoDetail} icon="bingo" onClick={onOpenBingo} openLabel={t.openGame} featured />
         <GameCard title="Keno" subtitle={t.kenoSubtitle} detail={t.kenoDetail} icon="keno" onClick={onOpenKeno} disabled={!serverMode || availability?.kenoEnabled !== true} disabledLabel={!serverMode ? t.serverOnly : availabilityError ? t.refreshUnavailable : availability ? t.temporarilyDisabled : t.loadingAvailability} />
         <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} disabled={!serverMode || availability?.aviatorEnabled !== true} openLabel={t.openGame} disabledLabel={!serverMode ? t.serverOnly : availabilityError ? t.refreshUnavailable : availability ? t.temporarilyDisabled : t.loadingAvailability} />
       </div>
