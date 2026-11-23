@@ -123,7 +123,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const round = {
       roundId: roundId(),
       game,
-      walletMode: config.gamesHubSharedWalletEnabled === true ? 'shared' : 'legacy-demo',
+      walletMode: !config.prod && config.gamesHubSharedWalletEnabled === true ? 'shared' : 'legacy-demo',
       status: 'betting',
       version: 1,
       bets: [],
@@ -367,7 +367,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     async getPublicSettings(user) {
       ensureSimulationMode();
       const current = await settings();
-      const walletMode = config.gamesHubSharedWalletEnabled === true ? 'shared' : 'legacy-demo';
+      const walletMode = !config.prod && config.gamesHubSharedWalletEnabled === true ? 'shared' : 'legacy-demo';
       const wallet = await repo.getGameHubWallet(user.id, walletMode);
       return {
         kenoEnabled: current.kenoEnabled === true,
