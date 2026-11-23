@@ -34,11 +34,15 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   assert.equal(initial.status, 'betting');
   assert.equal(initial.balanceEtb, 1000);
   assert.equal(initial.walletMode, 'shared');
+  assert.equal(initial.minBetEtb, 2, 'Keno minimum stake defaults to ETB 2');
   assert.equal(initial.houseEdgePercent, 55);
   assert.equal(initial.maxPayoutEtb, 20000);
   assert.equal(initial.payoutTable['4']['4'], 4000, 'published Keno payout table is fixed and exposed');
   assert.equal((await f.repo.listGameHubLedger(f.user.id)).length, 0, 'new rounds do not create separate demo-wallet credits');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
+
+  const minimumPlaced = await f.service.placeKenoBet(f.user, { requestId: 'keno_minimum_request_01', amount: 2, selectedNumbers: [1] });
+  assert.equal(minimumPlaced.bet.stakeEtb, 2, 'Keno accepts the new ETB 2 minimum');
 
   const placed = await f.service.placeKenoBet(f.user, {
     requestId: 'keno_test_request_01',
@@ -103,6 +107,7 @@ test('Aviator commits a round before betting and reveals its seed only after cra
   const f = await fixture();
   const initial = await f.service.getState('aviator', f.user);
   assert.equal(initial.status, 'betting');
+  assert.equal(initial.minBetEtb, 5, 'Aviator keeps its existing independent minimum bet');
   assert.equal(initial.balanceEtb, 1000);
   assert.equal(initial.walletMode, 'shared');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
@@ -168,6 +173,11 @@ test('Admin settings are validated and persist independently of Bingo settings',
   assert.equal(settings.minBet, 800);
   assert.equal(settings.maxBet, 20000);
   assert.equal(settings.kenoBettingSeconds, 30);
+  const kenoMinSettings = await f.service.updateSettings({ kenoMinBetEtb: 2 });
+  assert.equal(kenoMinSettings.kenoMinBet, 200, 'Keno minimum bet is stored independently');
+  const aviatorLongWindow = await f.service.updateSettings({ aviatorBettingSeconds: 60 });
+  assert.equal(aviatorLongWindow.aviatorBettingSeconds, 60, 'Aviator supports the 60-second betting window');
+  await assert.rejects(f.service.updateSettings({ aviatorBettingSeconds: 61 }), (e) => e instanceof HttpError && e.code === 'invalid_aviator_timer');
   const twoMinuteSettings = await f.service.updateSettings({ kenoBettingSeconds: 120 });
   assert.equal(twoMinuteSettings.kenoBettingSeconds, 120, 'Keno accepts minute-based betting windows');
   const tenMinuteSettings = await f.service.updateSettings({ kenoBettingSeconds: 600 });
@@ -175,6 +185,7 @@ test('Admin settings are validated and persist independently of Bingo settings',
   await assert.rejects(f.service.updateSettings({ kenoBettingSeconds: 601 }), (e) => e instanceof HttpError && e.code === 'invalid_keno_timer');
   assert.equal(settings.houseEdgePercent, 60);
   await assert.rejects(f.service.updateSettings({ houseEdgePercent: 49 }), (e) => e instanceof HttpError && e.code === 'invalid_house_edge');
+  await assert.rejects(f.service.updateSettings({ kenoMinBetEtb: 1 }), (e) => e instanceof HttpError && e.code === 'invalid_keno_min_bet');
   await assert.rejects(
     f.service.updateSettings({ minBetEtb: 500, maxBetEtb: 10 }),
     (e) => e instanceof HttpError && e.code === 'invalid_bet_range',
