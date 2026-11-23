@@ -47,22 +47,36 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
   const [tab, setTab] = useState<PlayerScreen>(() => (window.location.hash === '#wallet' ? 'wallet' : 'games'));
   const [menuOpen, setMenuOpen] = useState(false);
   const [playerSettingsOpen, setPlayerSettingsOpen] = useState(false);
+  const [generalEnabled, setGeneralEnabled] = useState(!SERVER_MODE);
+  useEffect(() => {
+    if (!SERVER_MODE) return;
+    let active = true;
+    const refresh = () => api.get<{ generalEnabled: boolean }>('/api/games/settings')
+      .then(value => { if (active) setGeneralEnabled(value.generalEnabled !== false); })
+      .catch(() => { if (active) setGeneralEnabled(false); });
+    refresh();
+    const poll = window.setInterval(refresh, 4000);
+    return () => { active = false; window.clearInterval(poll); };
+  }, []);
+  useEffect(() => {
+    if (!generalEnabled) { setTab('games'); setMenuOpen(false); setPlayerSettingsOpen(false); }
+  }, [generalEnabled]);
   const handleNavChange = (next: TabId) => {
     if (next === 'menu') { setMenuOpen(true); return; }
     setMenuOpen(false);
     setTab(next);
   };
   return (
-    <div className="premium-ui min-h-screen pb-28">
-      <Suspense fallback={<RouteLoading />}><AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} onLogout={onLogout} onOpenMenu={() => setMenuOpen(true)} onOpenSettings={() => setPlayerSettingsOpen(true)} hideControls={tab === 'play'} /></Suspense>
-      <main className={tab === 'play' ? 'mx-auto w-full max-w-none px-2 pt-2 sm:px-4 sm:pt-4' : 'mx-auto max-w-6xl px-4 pt-5 sm:pt-8'}>
-        {tab === 'games' && <GamesCenter serverMode={SERVER_MODE} onOpenBingo={() => setTab('play')} onOpenKeno={() => setTab('keno')} onOpenAviator={() => setTab('aviator')} />}
-        {tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} settingsOpen={playerSettingsOpen} onSettingsOpenChange={setPlayerSettingsOpen} /></Suspense>}
-        {tab === 'keno' && <KenoGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} />}
-        {tab === 'aviator' && <AviatorGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} />}
-        {tab === 'wallet' && <Suspense fallback={<RouteLoading />}><WalletView onGoToPlay={() => setTab('play')} /></Suspense>}
+    <div className={generalEnabled ? 'premium-ui min-h-screen pb-28' : 'premium-ui min-h-screen'}>
+      {generalEnabled && <Suspense fallback={<RouteLoading />}><AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} onLogout={onLogout} onOpenMenu={() => setMenuOpen(true)} onOpenSettings={() => setPlayerSettingsOpen(true)} hideControls={tab === 'play'} /></Suspense>}
+      <main className={!generalEnabled ? 'mx-auto w-full max-w-6xl px-4 pt-4' : tab === 'play' ? 'mx-auto w-full max-w-none px-2 pt-2 sm:px-4 sm:pt-4' : 'mx-auto max-w-6xl px-4 pt-5 sm:pt-8'}>
+        {(!generalEnabled || tab === 'games') && <GamesCenter serverMode={SERVER_MODE} onOpenBingo={() => setTab('play')} onOpenKeno={() => setTab('keno')} onOpenAviator={() => setTab('aviator')} />}
+        {generalEnabled && tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} settingsOpen={playerSettingsOpen} onSettingsOpenChange={setPlayerSettingsOpen} /></Suspense>}
+        {generalEnabled && tab === 'keno' && <KenoGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} />}
+        {generalEnabled && tab === 'aviator' && <AviatorGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} />}
+        {generalEnabled && tab === 'wallet' && <Suspense fallback={<RouteLoading />}><WalletView onGoToPlay={() => setTab('play')} /></Suspense>}
       </main>
-      {menuOpen && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Menu">
+      {generalEnabled && menuOpen && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Menu">
         <section className="relative flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-amber-400/35 bg-[#090909] shadow-[0_24px_90px_rgba(0,0,0,.8)] sm:rounded-3xl">
           <header className="flex shrink-0 items-center justify-between border-b border-amber-400/20 bg-gradient-to-r from-zinc-950 via-zinc-900 to-amber-950 px-5 py-4">
             <div><p className="text-[10px] font-bold uppercase tracking-[.28em] text-amber-400">BLACK GOLD PLC · GAMES CENTER</p><h2 className="mt-1 text-lg font-black text-amber-100">Menu</h2></div>
@@ -71,7 +85,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
           <div className="overflow-y-auto overscroll-contain px-4 pb-6"><PlayerFeatures onGoToWallet={() => { setMenuOpen(false); setTab('wallet'); }} menuOnly /></div>
         </section>
       </div>}
-      <Suspense fallback={null}><BottomNav active={menuOpen ? 'menu' : tab === 'keno' || tab === 'aviator' ? 'games' : tab} onChange={handleNavChange} /></Suspense>
+      {generalEnabled && <Suspense fallback={null}><BottomNav active={menuOpen ? 'menu' : tab === 'keno' || tab === 'aviator' ? 'games' : tab} onChange={handleNavChange} /></Suspense>}
     </div>
   );
 }

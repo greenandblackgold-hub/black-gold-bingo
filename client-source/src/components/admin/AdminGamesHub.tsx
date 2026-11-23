@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 
 type Overview = {
-  settings: { bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; houseEdgePercent: number; kenoBettingSeconds: number; aviatorBettingSeconds: number };
+  settings: { generalEnabled: boolean; announcementText: string; announcementVisible: boolean; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; houseEdgePercent: number; kenoBettingSeconds: number; aviatorBettingSeconds: number };
   games: { keno: { roundId: string | null; status: string; bets: number }; aviator: { roundId: string | null; status: string; bets: number } };
   mode: string;
 };
@@ -14,6 +14,7 @@ export function AdminGamesHub() {
   const [houseEdge, setHouseEdge] = useState('55');
   const [kenoSeconds, setKenoSeconds] = useState('20');
   const [aviatorSeconds, setAviatorSeconds] = useState('8');
+  const [announcementText, setAnnouncementText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -26,6 +27,7 @@ export function AdminGamesHub() {
       setHouseEdge(String(next.settings.houseEdgePercent ?? 55));
       setKenoSeconds(String(next.settings.kenoBettingSeconds));
       setAviatorSeconds(String(next.settings.aviatorBettingSeconds));
+      setAnnouncementText(next.settings.announcementText ?? '');
       setError('');
     } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not load game settings.'); }
   }, []);
@@ -51,7 +53,15 @@ export function AdminGamesHub() {
       <p className="mt-3 text-xs leading-5 text-amber-100/55">Keno and Aviator pay from the round pool only. Cash Out multipliers are recorded immediately; Aviator wallet credits are settled after the crash. The configured commission is reserved before player payouts.</p>
       <p className="mt-2 text-xs leading-5 text-amber-300/80">Round-level pool cap: enabled server-side; total prizes cannot exceed the configured 40%–50% player share of collected stakes.</p>
     </div>
+    <div className={card + ' mt-4'}>
+      <p className="font-bold text-amber-100">Admin announcement message</p>
+      <p className="mt-1 text-xs text-amber-100/50">Write the maintenance/update/security notice here. Players only see it when Host turns announcement display ON.</p>
+      <textarea maxLength={500} rows={3} value={announcementText} onChange={e => setAnnouncementText(e.target.value)} className={input + ' resize-y'} placeholder="Games Center is temporarily unavailable for scheduled maintenance." />
+      <button disabled={busy || !overview} onClick={() => void save({ announcementText })} className="mt-2 rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">Save announcement</button>
+    </div>
     <p className="mt-4 text-xs font-semibold text-amber-100/60">Host controls · Games shown in Player Game Center</p>
+    <div className={card + ' mt-2'}><div className="flex items-center justify-between gap-3"><div><p className="font-bold text-amber-100">General Games Center</p><p className="text-xs text-amber-100/45">{overview?.settings.generalEnabled ? 'All games center services ON' : 'All player game pages OFF'}</p></div><button disabled={busy || !overview} onClick={() => { if (!overview) return; if (overview.settings.generalEnabled && !window.confirm('እርግጠኛ ነህ መላውን ጌም ማዕከል መዝጋት ትፈልጋለህ?')) return; void save({ generalEnabled: !overview.settings.generalEnabled }); }} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.generalEnabled ? 'GENERAL OFF' : 'GENERAL ON'}</button></div></div>
+    <div className={card + ' mt-2'}><div className="flex items-center justify-between gap-3"><div><p className="font-bold text-amber-100">Show announcement to Players</p><p className="text-xs text-amber-100/45">{overview?.settings.announcementVisible ? 'Visible when General is OFF' : 'Hidden from players'}</p></div><button disabled={busy || !overview} onClick={() => void save({ announcementVisible: !overview?.settings.announcementVisible })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.announcementVisible ? 'HIDE MESSAGE' : 'SHOW MESSAGE'}</button></div></div>
     <div className="mt-2 grid gap-3 sm:grid-cols-3">
       <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Bingo PRO</p><p className="text-xs text-amber-100/45">{overview?.settings.bingoEnabled ? 'Visible to players' : 'Hidden from players'}</p></div><button disabled={busy || !overview} onClick={() => void save({ bingoEnabled: !overview?.settings.bingoEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.bingoEnabled ? 'Turn OFF' : 'Turn ON'}</button></div></div>
       <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Keno</p><p className="text-xs text-amber-100/45">{overview?.games.keno.status ?? 'Loading'} · {overview?.games.keno.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ kenoEnabled: !overview?.settings.kenoEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.kenoEnabled ? 'Turn OFF' : 'Turn ON'}</button></div></div>

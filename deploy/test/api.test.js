@@ -90,6 +90,33 @@ test('directional winning patterns accept all rotated and mirrored orientations'
   assert.equal(patternMasks('l').length, 4, 'L has four distinct board orientations');
 });
 
+test('General Games Center OFF hides the player center, blocks new entries, and preserves announcement opt-in', async () => {
+  const p = await newPlayer('General maintenance player', 100);
+  const saved = await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { announcementText: 'Scheduled maintenance. Please return shortly.', announcementVisible: false } });
+  assert.equal(saved.status, 200);
+  const hiddenMessage = await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: false } });
+  assert.equal(hiddenMessage.status, 200);
+  let settings = await api('GET', '/api/games/settings', { token: p.token });
+  assert.equal(settings.json.generalEnabled, false);
+  assert.equal(settings.json.announcement, null);
+  const blockedCard = await api('POST', '/api/cards/buy', { token: p.token, body: { count: 1 } });
+  assert.equal(blockedCard.status, 503);
+  assert.equal(blockedCard.json.error, 'games_center_disabled');
+  const blockedKeno = await api('POST', '/api/games/keno/bets', { token: p.token, body: { requestId: 'maintenance_keno_01', amount: 2, selectedNumbers: [1] } });
+  assert.equal(blockedKeno.status, 503);
+  assert.equal(blockedKeno.json.error, 'games_center_disabled');
+  const blockedAviator = await api('POST', '/api/games/aviator/bets', { token: p.token, body: { requestId: 'maintenance_av_01', amount: 5 } });
+  assert.equal(blockedAviator.status, 503);
+  assert.equal(blockedAviator.json.error, 'games_center_disabled');
+  await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { announcementVisible: true } });
+  settings = await api('GET', '/api/games/settings', { token: p.token });
+  assert.equal(settings.json.announcement, 'Scheduled maintenance. Please return shortly.');
+  await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: true, announcementVisible: false, announcementText: '' } });
+  settings = await api('GET', '/api/games/settings', { token: p.token });
+  assert.equal(settings.json.generalEnabled, true);
+  assert.equal(settings.json.announcement, null);
+});
+
 test('Host can hide Bingo, Keno and Aviator from player access while keeping the existing game engines intact', async () => {
   const p = await newPlayer('Game availability player', 100);
   const before = await api('GET', '/api/games/settings', { token: p.token });
