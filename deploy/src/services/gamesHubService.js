@@ -32,7 +32,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   bingoEnabled: true,
   kenoEnabled: true,
   aviatorEnabled: true,
-  minBet: 500,
+  minBet: 200,
   maxBet: 100000,
   kenoBettingSeconds: 20,
   aviatorBettingSeconds: 8,
@@ -136,7 +136,12 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   const settingsDefaults = { ...DEFAULT_SETTINGS };
 
   async function settings() {
-    return { ...settingsDefaults, ...(await repo.getGameHubSettings()) };
+    const stored = await repo.getGameHubSettings();
+    const merged = { ...settingsDefaults, ...stored };
+    // The former default was ETB 5. Move that untouched default to ETB 2;
+    // explicitly configured minimums remain unchanged.
+    if (Number(stored?.minBet) === 500) merged.minBet = 200;
+    return merged;
   }
 
   async function createRound(game, currentSettings) {

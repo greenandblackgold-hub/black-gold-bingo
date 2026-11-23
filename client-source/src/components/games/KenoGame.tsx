@@ -57,7 +57,7 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
   const drawSet = useMemo(() => new Set(state?.drawnNumbers ?? []), [state?.drawnNumbers]);
   const latestBet = state?.myBets?.[state.myBets.length - 1];
   const hitSet = useMemo(() => new Set(latestBet?.matchedNumbers ?? []), [latestBet?.id, latestBet?.matchedNumbers]);
-  const minBet = state?.minBetEtb ?? 5;
+  const minBet = state?.minBetEtb ?? 2;
   const maxBet = state?.maxBetEtb ?? 1000;
   const numericAmount = Number(amount);
   const validAmount = Number.isFinite(numericAmount) && numericAmount >= minBet && numericAmount <= maxBet;
@@ -115,20 +115,15 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
       </section>
 
       <section className="rounded-2xl border border-emerald-400/25 bg-[#081712] p-3 shadow-[inset_0_0_24px_rgba(16,185,129,.06)]">
-        <div className="grid grid-cols-[minmax(88px,.72fr)_minmax(0,2fr)] items-center gap-3">
-          <div className="flex flex-col items-center">
-            <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-emerald-300/70">{c.draw}</p>
-            <div className="grid aspect-square w-full max-w-[116px] place-items-center rounded-full border-[3px] border-amber-300 bg-[radial-gradient(circle_at_35%_28%,#fff3b0,#eab308_38%,#78350f_78%)] text-4xl font-black tabular-nums text-[#11150c] shadow-[0_0_24px_rgba(250,204,21,.32),inset_0_2px_10px_rgba(255,255,255,.65)] sm:text-5xl">{state?.drawnNumbers?.length ? state.drawnNumbers[state.drawnNumbers.length - 1] : '—'}</div>
-          </div>
-          <div className="min-w-0">
-            <div className="mb-2 flex items-center justify-between gap-2"><p className="text-[9px] font-black uppercase tracking-widest text-emerald-300/70">{c.recent}</p><span className="shrink-0 font-mono text-[10px] font-bold text-amber-300">{state?.drawnNumbers?.length ?? 0} / 20</span></div>
-            {state?.drawnNumbers?.length ? <div className="flex flex-wrap gap-1.5">{state.drawnNumbers.slice().reverse().map((n, i) => <span key={n} className={`grid h-8 w-8 place-items-center rounded-full border text-xs font-black tabular-nums sm:h-9 sm:w-9 ${i === 0 ? 'border-amber-200 bg-amber-300 text-black shadow-[0_0_12px_rgba(250,204,21,.35)]' : 'border-emerald-400/50 bg-emerald-500/15 text-emerald-100'}`}>{n}</span>)}</div> : <p className="rounded-lg border border-dashed border-emerald-400/20 px-2 py-4 text-center text-[10px] text-slate-500">{t.waitingDraw}</p>}
-          </div>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-[9px] font-black uppercase tracking-widest text-emerald-300/70">{c.recent}</p>
+          <span className="shrink-0 font-mono text-[10px] font-bold text-amber-300">{state?.drawnNumbers?.length ?? 0} / 20</span>
         </div>
+        {state?.drawnNumbers?.length ? <div className="grid grid-cols-10 gap-1.5">{state.drawnNumbers.slice().reverse().map((n, i) => <span key={n} className={`grid aspect-square min-w-0 place-items-center rounded-lg border text-xs font-black tabular-nums sm:text-sm ${i === 0 ? 'border-amber-200 bg-amber-300 text-black shadow-[0_0_12px_rgba(250,204,21,.25)]' : 'border-emerald-400/50 bg-emerald-500/15 text-emerald-100'}`}>{n}</span>)}</div> : <p className="rounded-lg border border-dashed border-emerald-400/20 px-2 py-4 text-center text-[10px] text-slate-500">{t.waitingDraw}</p>}
         {latestBet && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-2 text-xs"><span className="font-bold text-emerald-200">{c.hits}: <b className="text-amber-300">{latestBet.hits}</b></span><span className="font-black text-amber-300">{c.payout}: {money(latestBet.payoutEtb)} ETB</span></div>}
       </section>
 
-      <section className="rounded-2xl border border-emerald-400/25 bg-[#081410] p-2 shadow-[0_8px_24px_rgba(0,0,0,.22)] sm:p-3">
+      {state?.status !== 'settled' ? <section className="rounded-2xl border border-emerald-400/25 bg-[#081410] p-2 shadow-[0_8px_24px_rgba(0,0,0,.22)] sm:p-3">
         <div className="mb-2 flex items-center justify-between px-1"><h2 className="text-[10px] font-black uppercase tracking-[.2em] text-emerald-300">01 — 80</h2><span className="rounded-full bg-amber-300/10 px-2.5 py-1 text-[10px] font-black text-amber-300">{selected.length} / 10</span></div>
         <div className="grid grid-cols-10 gap-1 sm:gap-1.5">
           {Array.from({ length: 80 }, (_, i) => i + 1).map((n) => {
@@ -139,7 +134,7 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
           })}
         </div>
         <div className="mt-2 flex items-center justify-between gap-2 text-[9px] text-slate-400"><span>● <span className="text-amber-300">{lang === 'am' ? 'የተመረጠ' : 'Selected'}</span>　● <span className="text-sky-300">{lang === 'am' ? 'የወጣ' : 'Drawn'}</span>　★ <span className="text-emerald-300">{c.hits}</span></span><span className="font-bold text-emerald-300/70">{isBetting ? t.bettingCloses : c.drawComplete}</span></div>
-      </section>
+      </section> : <section className="rounded-2xl border border-amber-300/30 bg-[#081712] p-3 shadow-[0_8px_24px_rgba(0,0,0,.22)]"><div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-black text-amber-200">{c.recent}</h2><span className="font-mono text-xs font-bold text-emerald-300">20 / 20</span></div><div className="grid grid-cols-10 gap-1.5">{(state?.drawnNumbers ?? []).slice(0, 20).map((n, i) => <span key={n} className={`grid aspect-square min-w-0 place-items-center rounded-lg border text-xs font-black tabular-nums sm:text-sm ${i < 10 ? 'border-amber-300/50 bg-amber-300/15 text-amber-100' : 'border-emerald-400/40 bg-emerald-500/15 text-emerald-100'}`}>{n}</span>)}</div></section>}
 
       <section className="rounded-xl border border-emerald-400/20 bg-[#0b1915] p-2.5">
         <div className="mb-2 flex items-center justify-between"><p className="text-[9px] font-black uppercase tracking-[.2em] text-amber-300">{t.payoutTable}</p><span className="text-[9px] text-slate-500">{selected.length}/10</span></div>
