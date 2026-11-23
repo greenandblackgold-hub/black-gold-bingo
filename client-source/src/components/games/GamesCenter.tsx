@@ -34,10 +34,14 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, serverMode
   useEffect(() => {
     if (!serverMode) return;
     let active = true;
-    api.get<{ bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings')
-      .then((value) => { if (active) { setAvailability(value); setAvailabilityError(''); } })
-      .catch(() => { if (active) setAvailabilityError(t.loadError); });
-    return () => { active = false; };
+    const refreshAvailability = () => {
+      api.get<{ bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings')
+        .then((value) => { if (active) { setAvailability(value); setAvailabilityError(''); } })
+        .catch(() => { if (active) setAvailabilityError(t.loadError); });
+    };
+    refreshAvailability();
+    const poll = window.setInterval(refreshAvailability, 5000);
+    return () => { active = false; window.clearInterval(poll); };
   }, [serverMode, t.loadError]);
   return (
     <div className="mx-auto w-full max-w-6xl space-y-7 pb-8">
