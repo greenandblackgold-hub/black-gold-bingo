@@ -8,6 +8,13 @@ Rounds created before the shared-wallet change have no `walletMode` field. To av
 
 The existing Bingo round engine, card collection, card signing, and settlement rules remain unchanged. Games Center round and settings records remain in `gameHubRounds`, `gameHubState`, and `gameHubSettings`. Shared-wallet money movements are recorded in the existing `ledger`; legacy `gameHubWallets` and `gameHubLedger` remain available for old rounds and production demo mode until safe activation. The in-memory repository mirrors the same behavior for tests. Completed game rounds are retained for 30 days in MongoDB and then removed automatically by a TTL index.
 
+## Profit and payout controls across the three games
+
+- **Bingo:** the existing default `PRIZE_PERCENT=80` allocates 80% of the eligible round pot to the prize calculation; the remaining nominal 20% is the operator share before operating costs and any other liabilities. The existing Bingo Admin prize-schedule controls support revenue-percent, fixed-prize and per-player modes, plus a prize cap. Bonus/fixed prize arrangements can differ from the 80/20 default. This PR does not change those rules.
+- **Keno:** the payout table is fixed in server code. Its expected return varies substantially by how many numbers the player selects; the calculated house-edge range is shown below. The Admin Games panel reports the range and the payout ceiling but does not let an admin secretly alter odds.
+- **Aviator:** the existing crash formula uses a 0.99 factor (about 1% theoretical house edge before the maximum-payout ceiling). The crash formula remains fixed and is not adjustable in the Admin panel.
+- **Important:** house edge is a long-run mathematical expectation, not guaranteed company profit. Actual results, payment costs, fraud, bonus funding and legal obligations affect operating profit.
+
 ## Keno
 
 - Numbers available: 1–80.
