@@ -163,7 +163,7 @@ test('Aviator commits a round before betting and reveals its seed only after cra
     assert.ok(cashed.multiplier >= 1);
     assert.equal(cashed.bet.status, 'cashout_pending', 'Cash Out multiplier is recorded immediately but payout is deferred');
     assert.equal(cashed.bet.payoutEtb, 0, 'no wallet payout occurs before round settlement');
-    assert.equal((await f.repo.findUserById(f.user.id)).balance, 99500, 'cash-out does not credit the wallet before the pool is settled');
+    assert.equal((await f.repo.findUserById(f.user.id)).balance, 99000, 'cash-out does not credit the wallet before the pool is settled');
   }
 
   if (flyingOrCrashed.status === 'flying') {
@@ -181,9 +181,9 @@ test('Aviator commits a round before betting and reveals its seed only after cra
   assert.equal(completed.crashMultiplier >= 1, true);
   if (flyingOrCrashed.status === 'flying') {
     assert.equal(completed.myBets[0].status, 'cashed_out');
-    assert.ok(completed.myBets[0].payoutEtb <= 2.25, 'Aviator round payouts stay within 45% of the collected 5 ETB stake');
+    assert.ok(completed.myBets[0].payoutEtb <= 4.5, 'Aviator round payouts stay within 45% of the collected 10 ETB stake');
     assert.ok((await f.repo.listLedger(f.user.id)).some((entry) => entry.ref === `games:aviator:pool-win:${placed.bet.id}`), 'pool settlement is recorded in the common ledger');
-    assert.equal((await f.repo.findUserById(f.user.id)).balance, 99500 + Math.round(completed.myBets[0].payoutEtb * 100));
+    assert.equal((await f.repo.findUserById(f.user.id)).balance, 99000 + Math.round(completed.myBets[0].payoutEtb * 100));
   }
 });
 
