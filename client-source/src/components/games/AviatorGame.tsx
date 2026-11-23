@@ -63,7 +63,7 @@ export function AviatorGame({ onBack, onSwitchGame }: { onBack: () => void; onSw
     const panel = panels[index];
     if (panel.busy || !isBetting || (automatic && !panel.autoBet)) return false;
     const id = panel.requestId || makeRequestId();
-    const autoCashOutText = panel.autoCashOutMultiplier.trim();
+    const autoCashOutText = panel.mode === 'auto' ? panel.autoCashOutMultiplier.trim() : '';
     const autoCashOutMultiplier = Number(autoCashOutText);
     if (autoCashOutText && (!Number.isFinite(autoCashOutMultiplier) || autoCashOutMultiplier < 1.01 || autoCashOutMultiplier > 1000 || Math.abs(autoCashOutMultiplier * 100 - Math.round(autoCashOutMultiplier * 100)) > 1e-7)) {
       setError('Auto Cash Out must be between 1.01× and 1,000× (maximum 2 decimals).');
@@ -83,7 +83,7 @@ export function AviatorGame({ onBack, onSwitchGame }: { onBack: () => void; onSw
   useEffect(() => {
     if (!isBetting || !state?.roundId) return;
     panels.forEach((panel, index) => {
-      if (!panel.autoBet || panel.busy || lastAutoRound.current[index] === state.roundId) return;
+      if (panel.mode !== 'auto' || !panel.autoBet || panel.busy || lastAutoRound.current[index] === state.roundId) return;
       if ((state.myBets?.length ?? 0) >= 2) return;
       lastAutoRound.current[index] = state.roundId;
       void placeBet(index, true);
