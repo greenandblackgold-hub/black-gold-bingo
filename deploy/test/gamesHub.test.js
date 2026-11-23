@@ -29,21 +29,23 @@ async function fixture() {
 }
 
 test('Keno accepts a valid selection, debits once and settles a committed 20-number draw', async () => {
+  const minimumFixture = await fixture();
+  const minimumState = await minimumFixture.service.getState('keno', minimumFixture.user);
+  assert.equal(minimumState.minBetEtb, 2, 'Keno minimum stake defaults to ETB 2');
+  await assert.rejects(minimumFixture.service.placeKenoBet(minimumFixture.user, { requestId: 'keno_below_min_01', amount: 1.99, selectedNumbers: [1] }), (e) => e instanceof HttpError && e.code === 'invalid_bet_amount');
+  const minimumPlaced = await minimumFixture.service.placeKenoBet(minimumFixture.user, { requestId: 'keno_minimum_request_01', amount: 2, selectedNumbers: [1] });
+  assert.equal(minimumPlaced.bet.stakeEtb, 2, 'Keno accepts the new ETB 2 minimum');
+
   const f = await fixture();
   const initial = await f.service.getState('keno', f.user);
   assert.equal(initial.status, 'betting');
   assert.equal(initial.balanceEtb, 1000);
   assert.equal(initial.walletMode, 'shared');
-  assert.equal(initial.minBetEtb, 2, 'Keno minimum stake defaults to ETB 2');
-  await assert.rejects(f.service.placeKenoBet(f.user, { requestId: 'keno_below_min_01', amount: 1.99, selectedNumbers: [1] }), (e) => e instanceof HttpError && e.code === 'invalid_bet_amount');
   assert.equal(initial.houseEdgePercent, 55);
   assert.equal(initial.maxPayoutEtb, 20000);
   assert.equal(initial.payoutTable['4']['4'], 4000, 'published Keno payout table is fixed and exposed');
   assert.equal((await f.repo.listGameHubLedger(f.user.id)).length, 0, 'new rounds do not create separate demo-wallet credits');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
-
-  const minimumPlaced = await f.service.placeKenoBet(f.user, { requestId: 'keno_minimum_request_01', amount: 2, selectedNumbers: [1] });
-  assert.equal(minimumPlaced.bet.stakeEtb, 2, 'Keno accepts the new ETB 2 minimum');
 
   const placed = await f.service.placeKenoBet(f.user, {
     requestId: 'keno_test_request_01',
