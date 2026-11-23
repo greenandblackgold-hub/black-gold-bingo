@@ -432,7 +432,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
             >
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 id="deposit-dialog-title" className="text-base font-black text-yellow-300">{selectedDepositAccount.id === 'cbe' ? t.cbeBank : selectedDepositAccount.id === 'anbesa' ? t.anbesaBank : t.telebirr} · {t.paymentOptions}</h2>
-                <button type="button" onClick={() => setSelectedDepositAccount(null)} aria-label="ዝጋ" className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/50 text-xl text-white">×</button>
+                <button type="button" onClick={() => setSelectedDepositAccount(null)} aria-label={t.close} className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/50 text-xl text-white">×</button>
               </div>
               <p className="text-xs text-yellow-100/80">{t.accountNumber}</p>
               <p className="mb-3 break-all text-xl font-black tracking-wider text-white tabular-nums">{selectedDepositAccount.number}</p>
@@ -474,7 +474,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
             aria-atomic="true"
             className="rounded-2xl border border-yellow-400/80 bg-yellow-950/70 px-3 py-3 text-center shadow-[0_0_20px_rgba(250,204,21,.2)]"
           >
-            <span className="mb-1 block text-[11px] font-bold tracking-wide text-yellow-300">{phase === 'running' ? phase === 'running' ? '📢 ' + t.roundHelp : '📢 ' + t.nextRoundHelp}</span>
+            <span className="mb-1 block text-[11px] font-bold tracking-wide text-yellow-300">{phase === 'running' ? '📢 ' + t.roundHelp : '📢 ' + t.nextRoundHelp}</span>
             <h2 className="text-xs font-bold text-yellow-100">
               {t.patternType}: {patternNames[lang][winPattern]}
             </h2>
@@ -613,7 +613,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
             <section role="dialog" aria-modal="true" aria-labelledby="quick-buy-title" className="max-h-[calc(100dvh-7.5rem-env(safe-area-inset-bottom))] w-full max-w-md overflow-y-auto rounded-2xl border-2 border-yellow-400 bg-zinc-950 p-4 shadow-[0_0_30px_rgba(250,204,21,.3)] sm:max-h-[calc(100dvh-2rem)]" onClick={event => event.stopPropagation()}>
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 id="quick-buy-title" className="text-lg font-black text-yellow-300">{t.quickBuyTitle}</h2>
-                <button type="button" disabled={quickBuyBusy} onClick={() => setQuickBuyOpen(false)} aria-label="ዝጋ" className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/50 text-xl text-white disabled:opacity-40">×</button>
+                <button type="button" disabled={quickBuyBusy} onClick={() => setQuickBuyOpen(false)} aria-label={t.close} className="grid h-9 w-9 place-items-center rounded-full border border-yellow-500/50 text-xl text-white disabled:opacity-40">×</button>
               </div>
               {bonusRound ? (
                 <p className="mb-3 rounded-lg border border-emerald-400/40 bg-emerald-950/40 p-2 text-center text-sm font-bold text-emerald-300">🎁 {t.bonusNotice}</p>
