@@ -168,6 +168,11 @@ test('Admin settings are validated and persist independently of Bingo settings',
   assert.equal(settings.minBet, 800);
   assert.equal(settings.maxBet, 20000);
   assert.equal(settings.kenoBettingSeconds, 30);
+  const twoMinuteSettings = await f.service.updateSettings({ kenoBettingSeconds: 120 });
+  assert.equal(twoMinuteSettings.kenoBettingSeconds, 120, 'Keno accepts minute-based betting windows');
+  const tenMinuteSettings = await f.service.updateSettings({ kenoBettingSeconds: 600 });
+  assert.equal(tenMinuteSettings.kenoBettingSeconds, 600, 'Keno supports the longest offered duration');
+  await assert.rejects(f.service.updateSettings({ kenoBettingSeconds: 601 }), (e) => e instanceof HttpError && e.code === 'invalid_keno_timer');
   assert.equal(settings.houseEdgePercent, 60);
   await assert.rejects(f.service.updateSettings({ houseEdgePercent: 49 }), (e) => e instanceof HttpError && e.code === 'invalid_house_edge');
   await assert.rejects(
