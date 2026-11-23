@@ -95,6 +95,7 @@ function publicBet(bet) {
     payoutEtb: (bet.payout ?? 0) / 100,
     createdAt: bet.createdAt,
     settledAt: bet.settledAt ?? bet.cashedOutAt ?? null,
+    autoCashOutMultiplier: bet.autoCashOutMultiplier ?? null,
   };
 }
 
