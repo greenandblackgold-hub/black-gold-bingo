@@ -123,6 +123,9 @@ function mapRepoError(error) {
   if (error instanceof RepoError && error.code === 'ROUND_NOT_OPEN') {
     throw new HttpError(409, 'betting_closed', 'Betting for this round has closed.');
   }
+  if (error instanceof RepoError && error.code === 'AVIATOR_BET_LIMIT') {
+    throw new HttpError(409, 'aviator_bet_limit_reached', 'You can place up to two Aviator bets per round.');
+  }
   if (error instanceof RepoError && error.code === 'BET_NOT_ACTIVE') {
     throw new HttpError(409, 'bet_not_active', 'This bet is no longer available to cash out.');
   }
@@ -200,6 +203,29 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       round = await repo.startAviatorGameHubRound({
         roundId: round.roundId, startedAt, crashAt, crashMultiplier,
       });
+    }
+    if (game === 'aviator' && round.status === 'flying') {
+      // Auto Cash Out is evaluated by the server scheduler, not by client polling.
+      // Record the exact threshold-crossing time so scheduler jitter cannot lose a
+      // valid auto cash-out merely because the next tick arrived after the crash.
+      const dueAutoCashouts = (round.bets ?? []).filter((bet) =>
+        bet.status === 'active' && Number.isFinite(bet.autoCashOutMultiplier) &&
+        bet.autoCashOutMultiplier > 1 && bet.autoCashOutMultiplier <= round.crashMultiplier
+      );
+      for (const bet of dueAutoCashouts) {
+        const thresholdAt = round.startedAt + Math.ceil(Math.log(bet.autoCashOutMultiplier) / BETTING_GROWTH_PER_MS);
+        if (thresholdAt >= round.crashAt || thresholdAt > now()) continue;
+        const reachedMultiplier = Math.floor(Math.exp((thresholdAt - round.startedAt) * BETTING_GROWTH_PER_MS) * 100) / 100;
+        try {
+          await repo.cashOutAviatorGameHubBet({
+            roundId: round.roundId, betId: bet.id, userId: bet.userId,
+            multiplier: reachedMultiplier, cashedOutAt: thresholdAt,
+          });
+        } catch (error) {
+          if (!(error instanceof RepoError && error.code === 'BET_NOT_ACTIVE')) throw error;
+        }
+      }
+      round = await repo.getCurrentGameHubRound('aviator');
     }
     if (game === 'aviator' && round.status === 'flying' && now() >= round.crashAt) {
       const settlements = allocateProportionalPool(round.bets ?? [], currentSettings.houseEdgePercent ?? DEFAULT_HOUSE_EDGE_PERCENT);
@@ -314,6 +340,14 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       }
     }
     const stake = amountToSantim(input.amount, currentSettings);
+    let autoCashOutMultiplier;
+    if (game === 'aviator' && input.autoCashOutMultiplier !== undefined && input.autoCashOutMultiplier !== null && input.autoCashOutMultiplier !== '') {
+      const target = Number(input.autoCashOutMultiplier);
+      if (!Number.isFinite(target) || target < 1.01 || target > MAX_MULTIPLIER || Math.abs(target * 100 - Math.round(target * 100)) > 1e-7) {
+        throw new HttpError(400, 'invalid_auto_cashout', 'Auto Cash Out must be between 1.01× and 1,000× with up to two decimal places.');
+      }
+      autoCashOutMultiplier = Math.round(target * 100) / 100;
+    }
     const bet = {
       id: randomBytes(12).toString('hex'),
       requestId,
@@ -322,6 +356,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       stake,
       status: 'active',
       createdAt: now(),
+      ...(autoCashOutMultiplier ? { autoCashOutMultiplier } : {}),
     };
     if (game === 'keno') {
       const selected = input.selectedNumbers;
