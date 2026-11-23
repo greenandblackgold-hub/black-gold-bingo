@@ -27,7 +27,7 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   assert.equal(initial.status, 'betting');
   assert.equal(initial.balanceEtb, 1000);
   assert.equal(initial.payoutTable['4']['4'], 4000, 'published Keno payout table is fixed and exposed');
-  assert.equal((await f.repo.listGameHubLedger(f.user.id)).length, 1, 'initial demo credit is ledgered');
+  assert.equal((await f.repo.listGameHubLedger(f.user.id)).length, 0, 'new rounds do not create separate demo-wallet credits');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
 
   const placed = await f.service.placeKenoBet(f.user, {
@@ -37,8 +37,9 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   });
   assert.equal(placed.balanceEtb, 990);
   assert.equal(placed.bet.stakeEtb, 10);
-  assert.equal((await f.repo.findUserById(f.user.id)).balance, 100000, 'Bingo wallet remains untouched');
-  assert.equal((await f.repo.getGameHubWallet(f.user.id)).balance, 99000, 'Keno debits only the Games Demo Wallet');
+  assert.equal((await f.repo.findUserById(f.user.id)).balance, 99000, 'Keno debits the shared balance used by Bingo');
+  assert.equal((await f.repo.getGameHubWallet(f.user.id)).balance, 99000, 'Games Center reads the shared Bingo wallet');
+  assert.ok((await f.repo.listLedger(f.user.id)).some((entry) => entry.ref.startsWith('games:keno:bet:')), 'Keno debit is recorded in the common ledger');
 
   const duplicate = await f.service.placeKenoBet(f.user, {
     requestId: 'keno_test_request_01',
@@ -86,8 +87,9 @@ test('Aviator commits a round before betting and reveals its seed only after cra
     amount: 5,
   });
   assert.equal(placed.balanceEtb, 995);
-  assert.equal((await f.repo.findUserById(f.user.id)).balance, 100000, 'Bingo wallet remains untouched');
-  assert.equal((await f.repo.getGameHubWallet(f.user.id)).balance, 99500, 'Aviator debits only the Games Demo Wallet');
+  assert.equal((await f.repo.findUserById(f.user.id)).balance, 99500, 'Aviator debits the shared balance used by Bingo');
+  assert.equal((await f.repo.getGameHubWallet(f.user.id)).balance, 99500, 'Aviator reads the shared Bingo wallet');
+  assert.ok((await f.repo.listLedger(f.user.id)).some((entry) => entry.ref.startsWith('games:aviator:bet:')), 'Aviator debit is recorded in the common ledger');
   const duplicate = await f.service.placeAviatorBet(f.user, {
     requestId: 'aviator_test_request_01',
     amount: 5,
@@ -108,6 +110,8 @@ test('Aviator commits a round before betting and reveals its seed only after cra
     const cashed = await f.service.cashOutAviator(f.user, placed.bet.id);
     assert.ok(cashed.multiplier >= 1);
     assert.ok(cashed.bet.payoutEtb >= 5);
+    assert.ok((await f.repo.findUserById(f.user.id)).balance >= 100000, 'cash-out credits the same Bingo wallet');
+    assert.ok((await f.repo.listLedger(f.user.id)).some((entry) => entry.ref === `games:aviator:cashout:${placed.bet.id}`), 'cash-out is recorded in the common ledger');
   }
 
   f.advance(120_000);
