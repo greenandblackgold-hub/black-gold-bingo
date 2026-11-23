@@ -26,7 +26,7 @@ export function AviatorGame({ onBack, onSwitchGame }: { onBack: () => void; onSw
     try {
       const next = await api.get<AviatorState>('/api/games/aviator/state');
       setState(next); setOffset(next.serverTime - Date.now()); setError('');
-    } catch (e) { setError(t.loadError); }
+    } catch { setError(t.loadError); }
   }, [t.loadError]);
   const loadHistory = useCallback(async () => {
     try { setHistory(await api.get<HistoryRound[]>('/api/games/aviator/history?limit=8')); } catch { /* optional */ }
@@ -61,7 +61,7 @@ export function AviatorGame({ onBack, onSwitchGame }: { onBack: () => void; onSw
       setNotice(t.betConfirmed);
       setBetRequestId('');
       await loadState();
-    } catch (e) { setError(t.betError); }
+    } catch { setError(t.betError); }
     finally { setBusy(false); }
   };
 
@@ -72,7 +72,7 @@ export function AviatorGame({ onBack, onSwitchGame }: { onBack: () => void; onSw
       const result = await api.post<{ multiplier: number; bet: AviatorBet }>('/api/games/aviator/cashout', { betId: activeBet.id });
       setNotice(t.cashOutRecorded.replace('{multiplier}', result.multiplier.toFixed(2)));
       await loadState();
-    } catch (e) { setError(t.betError); }
+    } catch { setError(t.betError); }
     finally { setBusy(false); }
   };
 
