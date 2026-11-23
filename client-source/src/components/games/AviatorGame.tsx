@@ -81,9 +81,7 @@ export function AviatorGame({ onBack, onSwitchGame }: { onBack: () => void; onSw
       if (!panel.autoBet || panel.busy || lastAutoRound.current[index] === state.roundId) return;
       if ((state.myBets?.length ?? 0) >= 2) return;
       lastAutoRound.current[index] = state.roundId;
-      void placeBet(index, true).then((accepted) => {
-        if (!accepted && lastAutoRound.current[index] === state.roundId) lastAutoRound.current[index] = '';
-      });
+      void placeBet(index, true);
     });
   }, [isBetting, state?.roundId, state?.myBets?.length, panels, placeBet]);
 
