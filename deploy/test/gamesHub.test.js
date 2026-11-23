@@ -163,8 +163,12 @@ test('Aviator commits a round before betting and reveals its seed only after cra
 
 test('Admin settings are validated and persist independently of Bingo settings', async () => {
   const f = await fixture();
-  const settings = await f.service.updateSettings({ kenoEnabled: false, minBetEtb: 8, maxBetEtb: 200, houseEdgePercent: 60, kenoBettingSeconds: 30 });
+  const settings = await f.service.updateSettings({ bingoEnabled: false, kenoEnabled: false, minBetEtb: 8, maxBetEtb: 200, houseEdgePercent: 60, kenoBettingSeconds: 30 });
+  assert.equal(settings.bingoEnabled, false);
   assert.equal(settings.kenoEnabled, false);
+  await assert.rejects(f.service.assertGameEnabled('bingo'), (e) => e instanceof HttpError && e.code === 'game_disabled');
+  await f.service.updateSettings({ bingoEnabled: true });
+  await f.service.assertGameEnabled('bingo');
   assert.equal(settings.minBet, 800);
   assert.equal(settings.maxBet, 20000);
   assert.equal(settings.kenoBettingSeconds, 30);
