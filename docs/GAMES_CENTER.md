@@ -2,9 +2,11 @@
 
 ## Scope and safety
 
-Keno and Aviator are separate game modules. They use the existing authenticated player account and a separate **Games Demo Wallet** shared by Keno and Aviator. This wallet starts with 1,000 demo ETB credits per player and is stored separately from the existing Bingo wallet and withdrawal ledger. It is non-withdrawable, cannot be transferred, and cannot be converted to cash. This separation is intentional because the existing manual withdrawal workflow can pay the main wallet; simulation credits must never enter that balance. The service also rejects these games in production if the legacy real-money flag is enabled. This does not approve, activate, or implement real-money gambling, deposits, withdrawals, or cash prizes.
+Keno and Aviator are separate game modules that use the same authenticated player account and the existing Bingo `users.balance` wallet. New Keno and Aviator rounds debit stakes and credit prizes through the existing atomic `ledger` collection, using unique `games:*` references. The same balance is visible to Bingo, Keno, Aviator, and the existing wallet screen. These balances remain simulation ETB credits while real-money activity is disabled; this change does not authorize, activate, or implement real-money gambling, deposits, withdrawals, or cash prizes.
 
-The existing Bingo engine, Bingo round document, card collection, card signing, Bingo wallet, and Bingo settlement paths are not changed by the Games Center. New game records live in the separate `gameHubRounds`, `gameHubState`, `gameHubSettings`, `gameHubWallets`, and `gameHubLedger` MongoDB collections. The in-memory repository implements the same additive methods for tests. Completed game rounds are retained for 30 days in MongoDB and then removed automatically by a TTL index.
+Rounds created before the shared-wallet change have no `walletMode` field. To avoid changing an already-open round or converting free demo credits into the Bingo balance, those legacy rounds finish against their original `gameHubWallets` / `gameHubLedger` records. Every newly created round is marked `walletMode: shared` and uses the common Bingo wallet. Existing demo-wallet records are retained; they are not transferred or deleted.
+
+The existing Bingo round engine, card collection, card signing, and settlement rules remain unchanged. Games Center round and settings records remain in `gameHubRounds`, `gameHubState`, and `gameHubSettings`. New game money movements are recorded in the existing shared `ledger`; the legacy `gameHubWallets` and `gameHubLedger` collections remain only to finish pre-existing demo rounds safely. The in-memory repository mirrors the same behavior for tests. Completed game rounds are retained for 30 days in MongoDB and then removed automatically by a TTL index.
 
 ## Keno
 
@@ -20,7 +22,7 @@ The draw uses a deterministic Fisher–Yates selection. For counter values 0, 1,
 
 ## Aviator
 
-- Players place one simulation-credit bet during the betting window (default 8 seconds).
+- Players place one simulation-credit bet during the betting window (default 8 seconds), using the same shared wallet as Bingo and Keno.
 - The round changes to flight on the server.
 - The displayed multiplier is an animation derived from the server start time; the server remains authoritative for Cash Out.
 - Cash Out is accepted only while the round is flying and the server timestamp is strictly earlier than the server crash timestamp.
@@ -42,8 +44,8 @@ The Admin Games panel can enable/disable each game and set the minimum/maximum d
 ## Verification
 
 The automated suite includes service tests for:
-- Keno selection validation, idempotent entry requests, wallet debit, deterministic draw length and settlement.
-- Aviator seed commitment, server-side round transition, cash-out and crash reveal.
+- Keno selection validation, idempotent entry requests, shared-wallet debit/credit, common ledger references, deterministic draw length and settlement.
+- Aviator seed commitment, server-side round transition, shared-wallet debit/cash-out credit and crash reveal.
 - Admin setting validation.
 - The production real-money guard.
 
