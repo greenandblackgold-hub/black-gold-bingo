@@ -3,7 +3,7 @@ import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import { gameUi } from '@/lib/gameUi';
 
-type AviatorBet = { id: string; status: string; stakeEtb: number; multiplier: number | null; payoutEtb: number; createdAt: number; autoCashOutMultiplier?: number };
+type AviatorBet = { id: string; requestId?: string | null; status: string; stakeEtb: number; multiplier: number | null; payoutEtb: number; createdAt: number; autoCashOutMultiplier?: number };
 type AviatorState = { enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'aviator'; roundId: string; status: 'betting' | 'flying' | 'crashed'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; startedAt?: number; growthPerMs?: number; crashMultiplier?: number; serverSeed?: string; myBets: AviatorBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string; liveBets?: { player: string; stakeEtb: number; status: string; multiplier: number | null; payoutEtb: number }[]; playerCount?: number };
 type HistoryRound = { roundId: string; status: string; crashMultiplier?: number; serverSeedHash: string; serverSeed?: string; myBets: AviatorBet[] };
 type BetPanel = { amount: string; requestId: string; betId: string; busy: boolean; mode: 'manual' | 'auto'; autoBet: boolean; autoCashOutMultiplier: string };
@@ -165,7 +165,7 @@ export function AviatorGame({ onBack, onSwitchGame }: { onBack: () => void; onSw
       <section className="grid gap-3 lg:grid-cols-2">
         {[0, 1].map((index) => {
           const panel = panels[index];
-          const bet = state?.myBets.find((item) => item.id === panel.betId) ?? (!panel.betId ? state?.myBets[index] : undefined);
+          const bet = state?.myBets.find((item) => item.id === panel.betId || Boolean(panel.requestId && item.requestId === panel.requestId)) ?? (!panel.betId && !panel.requestId ? state?.myBets[index] : undefined);
           const active = bet?.status === 'active';
           const placed = Boolean(bet);
           return <div key={index} className="aviator-bet-card">
