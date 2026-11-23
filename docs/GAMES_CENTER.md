@@ -11,8 +11,8 @@ The existing Bingo round engine, card collection, card signing, and settlement r
 ## Profit and payout controls across the three games
 
 - **Bingo:** the existing default `PRIZE_PERCENT=80` allocates 80% of the eligible round pot to the prize calculation; the remaining nominal 20% is the operator share before operating costs and any other liabilities. The existing Bingo Admin prize-schedule controls support revenue-percent, fixed-prize and per-player modes, plus a prize cap. Bonus/fixed prize arrangements can differ from the 80/20 default. This PR does not change those rules.
-- **Keno:** the payout table is fixed in server code. Its expected return varies substantially by how many numbers the player selects; the calculated house-edge range is shown below. The Admin Games panel reports the range and the payout ceiling but does not let an admin secretly alter odds.
-- **Aviator:** the existing crash formula uses a 0.99 factor (about 1% theoretical house edge before the maximum-payout ceiling). The crash formula remains fixed and is not adjustable in the Admin panel.
+- **Keno:** the existing payout table determines relative ticket weights, but a round-level pool settlement scales aggregate payouts down when needed so the total never exceeds the configured 40%–50% player pool. Admin Games controls the company commission from 50% to 60%.
+- **Aviator:** the existing crash-point formula remains unchanged. Cash Out records the server-accepted multiplier immediately; wallet credits are deferred until the round crashes, then the available 40%–50% player pool is allocated proportionally by stake × recorded multiplier. Each bet is capped at ETB 20,000.
 - **Important:** house edge is a long-run mathematical expectation, not guaranteed company profit. Actual results, payment costs, fraud, bonus funding and legal obligations affect operating profit.
 
 ## Keno
@@ -23,7 +23,7 @@ The existing Bingo round engine, card collection, card signing, and settlement r
 - Exactly 20 unique numbers are drawn.
 - Stake and prize values are stored in integer santim.
 - A fixed payout table is defined in `deploy/src/services/gamesHubService.js`; the table is not editable from the Admin UI.
-- Every Keno ticket payout is capped server-side at ETB 100,000, even when the raw table multiplier would produce more.
+- Every Keno ticket payout is capped server-side at ETB 20,000. Total Keno payouts in a round are also limited to the configured player-pool share of collected stakes.
 - The round stores the seed commitment before betting and reveals the seed after settlement.
 
 The draw uses a deterministic Fisher–Yates selection. For counter values 0, 1, 2, …, it computes HMAC-SHA256 with the revealed seed as the key and the message `keno:<counter>`. The first 32-bit unsigned word is rejection-sampled to avoid modulo bias, then used to select and swap an element from the remaining 1–80 pool. The first 20 selected values are the draw.
@@ -36,7 +36,7 @@ The draw uses a deterministic Fisher–Yates selection. For counter values 0, 1,
 - Cash Out is accepted only while the round is flying and the server timestamp is strictly earlier than the server crash timestamp.
 - Remaining active bets are marked lost when the round crashes.
 - A bet can be paid only once; the cash-out ledger reference is unique and the bet transition is guarded by a database transaction.
-- Every Aviator bet payout is capped server-side at ETB 100,000; the cap is also shown in the player UI and Admin Games panel.
+- Every Aviator bet payout is capped server-side at ETB 20,000. Cash Out only records the multiplier; the round pool is distributed after crash, within the configured player-pool share of collected stakes.
 
 Fairness commitment:
 1. The server creates a cryptographically random 32-byte seed and publishes its SHA-256 hash before betting.
@@ -48,15 +48,15 @@ The flight multiplier grows as `exp(elapsedMilliseconds * 0.00007)`, rounded dow
 
 ## Admin controls
 
-The Admin Games panel can enable/disable each game and set the minimum/maximum demo stake and betting windows. It displays the enforced ETB 100,000 maximum payout per Keno ticket/Aviator bet. The payout ceiling is fixed in server code for this pilot; it is not editable from the panel. The panel cannot alter the payout table, crash formula, or a running round's committed result.
+The Admin Games panel can enable/disable each game, set stake limits and betting windows, and choose a whole-number company commission/house edge from 50% to 60%. The ETB 20,000 per-ticket/per-bet payout ceiling is enforced server-side. The payout schedule and fairness algorithms remain fixed.
 
 The player can switch directly between Bingo, Keno and Aviator from the in-game quick navigation; the existing bottom navigation and Games Center remain available too.
 
 ### Keno payout-table return audit
 
-The following theoretical house-edge percentages use the current fixed table, 20 draws from 80, and a ETB 5,000 stake with the ETB 100,000 per-ticket payout ceiling applied. These are mathematical expectations, not guaranteed daily profit:
+Keno's existing table is used only to determine relative prize weights. If aggregate raw prizes exceed the round pool budget, all ticket prizes are proportionally scaled so that total paid never exceeds 40%–50% of collected stakes. The configured company share is therefore protected at 50%–60% before operating costs:
 
-| Numbers picked | House edge |
+| Admin commission | Maximum player pool |
 |---:|---:|
 | 1 | 12.50% |
 | 2 | 13.92% |
@@ -69,17 +69,17 @@ The following theoretical house-edge percentages use the current fixed table, 20
 | 9 | 35.88% |
 | 10 | 41.48% |
 
-The wide spread means the current Keno table is not a uniform 15–25% house-edge schedule. No payout multipliers were silently changed in this PR. A separate transparent payout-table decision and full regression test are needed before calling the Keno returns balanced.
+The commission setting is visible in Admin. If raw table payouts are lower than the player-pool ceiling, the unused amount remains undistributed, so actual operator retention may exceed the configured minimum.
 
 ### Risk-cap boundary
 
-The ETB 100,000 ceiling is per ticket/bet. It is not an aggregate per-round or company-wide exposure cap. An aggregate cap requires an approved numeric liability budget and atomic exposure reservation across concurrent bets/cash-outs; that is not guessed or represented as implemented here.
+The round pool itself is the aggregate cap: Keno and Aviator payouts cannot exceed the player-pool percentage of that round's collected stakes. Each individual Keno ticket/Aviator bet is additionally capped at ETB 20,000.
 
 ## Verification
 
 The automated suite includes service tests for:
 - Keno selection validation, idempotent entry requests, shared-wallet debit/credit, common ledger references, deterministic draw length and settlement.
-- Aviator seed commitment, server-side round transition, shared-wallet debit/cash-out credit and crash reveal.
+- Aviator seed commitment, server-side round transition, shared-wallet debit, deferred Cash Out recording, atomic pool settlement credit and crash reveal.
 - Admin setting validation.
 - The production real-money guard.
 
