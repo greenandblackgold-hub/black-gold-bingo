@@ -464,6 +464,9 @@ export function createMemoryRepo() {
       const walletMode = round.walletMode === 'shared' ? 'shared' : 'legacy-demo';
       const wallet = walletMode === 'shared' ? users.get(bet.userId) : ensureGameHubWallet(bet.userId);
       if (existing) return { bet: clone(existing), balance: wallet.balance, duplicate: true };
+      if (game === 'aviator' && (round.bets ?? []).filter((item) => item.userId === bet.userId).length >= 2) {
+        throw new RepoError('AVIATOR_BET_LIMIT');
+      }
       if (round.status !== 'betting' || round.bettingEndsAt <= acceptedAt) throw new RepoError('ROUND_NOT_OPEN');
       const movement = moveGameHubCredits(bet.userId, -amount, 'game_bet', ref, { game, roundId, betId: bet.id }, walletMode);
       round.bets.push(clone(bet));
