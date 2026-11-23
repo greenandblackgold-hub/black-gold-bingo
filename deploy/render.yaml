@@ -23,7 +23,7 @@ services:
       - { key: ROOM_ID, value: BINGO-99 }
       - { key: CARD_PRICE_ETB, value: "10" }
       - { key: MAX_CARDS_PER_PURCHASE, value: "50" }
-      - { key: PRIZE_PERCENT, value: "80" }
+      - { key: PRIZE_PERCENT, value: "45" }
       - { key: AUTO_PAYOUT, value: "false" }
       - { key: REGISTRATION_ENABLED, value: "true" }
       - { key: REAL_MONEY_ENABLED, value: "false" }
