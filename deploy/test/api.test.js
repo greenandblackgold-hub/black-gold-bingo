@@ -90,6 +90,39 @@ test('directional winning patterns accept all rotated and mirrored orientations'
   assert.equal(patternMasks('l').length, 4, 'L has four distinct board orientations');
 });
 
+
+test('Host can hide Bingo, Keno and Aviator from player access while keeping the existing game engines intact', async () => {
+  const p = await newPlayer('Game availability player', 100);
+  const before = await api('GET', '/api/games/settings', { token: p.token });
+  assert.equal(before.status, 200);
+  assert.equal(before.json.bingoEnabled, true);
+  assert.equal(before.json.kenoEnabled, true);
+  assert.equal(before.json.aviatorEnabled, true);
+
+  const disabled = await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { bingoEnabled: false, kenoEnabled: false, aviatorEnabled: false } });
+  assert.equal(disabled.status, 200);
+  const after = await api('GET', '/api/games/settings', { token: p.token });
+  assert.equal(after.json.bingoEnabled, false);
+  assert.equal(after.json.kenoEnabled, false);
+  assert.equal(after.json.aviatorEnabled, false);
+  const blockedBingoPurchase = await api('POST', '/api/cards/buy', { token: p.token, body: { count: 1 } });
+  assert.equal(blockedBingoPurchase.status, 503);
+  assert.equal(blockedBingoPurchase.json.error, 'game_disabled');
+  const blockedKenoBet = await api('POST', '/api/games/keno/bets', { token: p.token, body: { requestId: 'keno_closed_001', amount: 2, selectedNumbers: [1] } });
+  assert.equal(blockedKenoBet.status, 503);
+  assert.equal(blockedKenoBet.json.error, 'game_disabled');
+  const blockedAviatorBet = await api('POST', '/api/games/aviator/bets', { token: p.token, body: { requestId: 'aviator_closed_001', amount: 5 } });
+  assert.equal(blockedAviatorBet.status, 503);
+  assert.equal(blockedAviatorBet.json.error, 'game_disabled');
+
+  const enabled = await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { bingoEnabled: true, kenoEnabled: true, aviatorEnabled: true } });
+  assert.equal(enabled.status, 200);
+  const restored = await api('GET', '/api/games/settings', { token: p.token });
+  assert.equal(restored.json.bingoEnabled, true);
+  assert.equal(restored.json.kenoEnabled, true);
+  assert.equal(restored.json.aviatorEnabled, true);
+});
+
 test('register, login, wrong PIN, lockout after 5 failures', async () => {
   const phone = newPhone();
   assert.equal((await api('POST', '/api/auth/register', { body: { phone, name: 'A', pin: '123456', pinConfirm: '123456' } })).json.error, 'invalid_name');
