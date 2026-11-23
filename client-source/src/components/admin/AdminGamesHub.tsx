@@ -59,7 +59,17 @@ export function AdminGamesHub() {
       <label className={label}>Minimum bet (ETB)<input className={input} type="number" min="1" max="1000" step=".01" value={minBet} onChange={e=>setMinBet(e.target.value)}/></label>
       <label className={label}>Maximum bet (ETB)<input className={input} type="number" min="1" max="5000" step=".01" value={maxBet} onChange={e=>setMaxBet(e.target.value)}/></label>
       <label className={label}>Company commission / House Edge (%)<input className={input} type="number" min="50" max="60" step="1" value={houseEdge} onChange={e=>setHouseEdge(e.target.value)}/></label>
-      <label className={label}>Keno betting window (seconds)<input className={input} type="number" min="10" max="60" value={kenoSeconds} onChange={e=>setKenoSeconds(e.target.value)}/></label>
+      <label className={label}>Keno round / betting duration
+          <select className={input} value={kenoSeconds} onChange={e=>setKenoSeconds(e.target.value)}>
+            <optgroup label="Seconds">
+              <option value="10">10 seconds</option><option value="15">15 seconds</option><option value="20">20 seconds</option><option value="30">30 seconds</option><option value="45">45 seconds</option>
+            </optgroup>
+            <optgroup label="Minutes">
+              <option value="60">1 minute</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option><option value="600">10 minutes</option>
+            </optgroup>
+          </select>
+          <span className="mt-1 block text-[10px] font-normal text-amber-100/40">Applies to the next Keno round.</span>
+        </label>
       <label className={label}>Aviator betting window (seconds)<input className={input} type="number" min="5" max="20" value={aviatorSeconds} onChange={e=>setAviatorSeconds(e.target.value)}/></label>
     </div>
     <button disabled={busy} onClick={() => void save({ minBetEtb: Number(minBet), maxBetEtb: Number(maxBet), houseEdgePercent: Number(houseEdge), kenoBettingSeconds: Number(kenoSeconds), aviatorBettingSeconds: Number(aviatorSeconds) })} className="mt-4 rounded-xl bg-gradient-to-r from-amber-200 to-amber-500 px-5 py-3 text-sm font-black text-black disabled:opacity-50">{busy ? 'Saving…' : 'Save game settings'}</button>

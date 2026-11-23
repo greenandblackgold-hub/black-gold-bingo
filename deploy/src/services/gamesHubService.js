@@ -365,7 +365,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     if (next.minBet > next.maxBet) throw new HttpError(400, 'invalid_bet_range', 'Minimum bet cannot exceed maximum bet.');
     if (input.kenoBettingSeconds !== undefined) {
       const n = Number(input.kenoBettingSeconds);
-      if (!Number.isInteger(n) || n < 10 || n > 60) throw new HttpError(400, 'invalid_keno_timer', 'Keno betting time must be 10–60 seconds.');
+      if (!Number.isInteger(n) || n < 10 || n > 600) throw new HttpError(400, 'invalid_keno_timer', 'Keno round duration must be 10–600 seconds (up to 10 minutes).');
       next.kenoBettingSeconds = n;
     }
     if (input.houseEdgePercent !== undefined) {
