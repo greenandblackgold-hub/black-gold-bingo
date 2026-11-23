@@ -181,10 +181,15 @@ test('Production keeps the separate demo wallet until the shared-wallet flag and
 test('Production shared-wallet flag fails closed while Keno and Aviator are demo-only', async () => {
   const repo = createMemoryRepo();
   const user = await repo.createUser({ phone: '0913333333', name: 'Shared Wallet Gate', pinHash: 'x', role: 'player', phoneVerified: true });
+  const service = createGamesHubService({ repo, config: { prod: true, realMoneyEnabled: false, gamesHubSharedWalletEnabled: true } });
   await assert.rejects(
-    createGamesHubService({ repo, config: { prod: true, realMoneyEnabled: false, gamesHubSharedWalletEnabled: true } }).getState('keno', user),
+    service.getState('keno', user),
     (e) => e instanceof HttpError && e.code === 'games_hub_demo_only',
   );
+  await service.resume();
+  const round = await repo.getCurrentGameHubRound('keno');
+  assert.equal(round.walletMode, 'legacy-demo', 'production scheduler never creates shared-wallet demo rounds');
+  service.stop();
   assert.equal((await repo.findUserById(user.id)).balance, 0, 'production demo-mode games cannot touch the Bingo wallet');
 });
 
