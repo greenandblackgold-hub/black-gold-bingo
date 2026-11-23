@@ -3,25 +3,15 @@ import { useAppSettings } from '@/context/AppSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
-import { formatAmount, formatDateTime } from '@/lib/localization';
+import { formatAmount, formatDateTime, patternNames as localizedPatternNames } from '@/lib/localization';
+import { gameUi } from '@/lib/gameUi';
 import { patternMasks } from '@/lib/bingo';
 import { WIN_PATTERN_OPTIONS } from '@/lib/patternCatalog';
 import type { WinPattern } from '@/types/game';
 import { SERVER_MODE } from '@/lib/api';
 
 type PatternOption = { label: string; cells: number[]; pattern?: WinPattern };
-const PATTERN_LABELS: Record<string,string> = {
-  any_line:'አንድ መስመር', horizontal_line:'አግድም መስመር', vertical_line:'ቁመት መስመር',
-  diagonal:'ዲያጎናል', two_lines:'ሁለት መስመሮች', two_horizontal_lines:'ሁለት አግድም መስመሮች',
-  four_corners:'አራቱ ማዕዘኖች', rectangle:'2×2 ሬክታንግል', two_rectangles:'ሁለት ሬክታንግሎች',
-  half_house:'ግማሽ ቤት (12 ቁጥሮች)', full_house:'ሙሉ ካርድ', x:'X ቅርጽ',
-  t:'T ቅርጽ', l:'L ቅርጽ', plus:'ፕላስ (+)', diamond:'ዳይመንድ',
-  picture_frame:'ውጫዊ ፍሬም', six_pack:'Six-pack', postage_stamp:'Postage stamp',
-  three_lines:'ሶስት መስመሮች', four_lines:'አራት መስመሮች',
-  top_bottom:'ላይኛውና ታችኛው መስመር', left_right:'ግራና ቀኝ መስመሮች',
-  checkerboard:'ቼከርቦርድ', center_cross:'መካከለኛ መስቀል', coverall:'ሙሉ ካርድ',
-};
-function getPatternOptions(pattern: WinPattern): PatternOption[] {
+function getPatternOptions(pattern: WinPattern, labels: Record<string, string>): PatternOption[] {
   const masks = pattern === 'half_house'
     ? [Array.from({length:25},(_,i)=>i).filter(i=>i!==12).slice(0,12).map(i=>[Math.floor(i/5),i%5] as [number,number])]
     : patternMasks(pattern);
@@ -29,11 +19,11 @@ function getPatternOptions(pattern: WinPattern): PatternOption[] {
   const stride = Math.max(1, Math.ceil(masks.length / 12));
   const samples = masks.filter((_,i)=>i%stride===0).slice(0,12);
   return samples.map((mask,index)=>({
-    label: masks.length===1 ? (PATTERN_LABELS[pattern] ?? pattern.replace(/_/g, ' ')) : `${PATTERN_LABELS[pattern] ?? pattern.replace(/_/g, ' ')} · ${index+1}`,
+    label: masks.length===1 ? (labels[pattern] ?? pattern.replace(/_/g, ' ')) : `${labels[pattern] ?? pattern.replace(/_/g, ' ')} · ${index+1}`,
     cells: mask.map(([r,c])=>r*5+c),
   }));
 }
-function getAllPatternOptions(): PatternOption[] {
+function getAllPatternOptions(labels: Record<string, string>): PatternOption[] {
   return WIN_PATTERN_OPTIONS.map((pattern) => {
     const masks = pattern === 'half_house'
       ? [Array.from({length:25},(_,i)=>i).filter(i=>i!==12).slice(0,12).map(i=>[Math.floor(i/5),i%5] as [number,number])]
@@ -41,20 +31,16 @@ function getAllPatternOptions(): PatternOption[] {
     const mask = masks[0] ?? [];
     return {
       pattern,
-      label: PATTERN_LABELS[pattern] ?? pattern.replace(/_/g, ' '),
+      label: labels[pattern] ?? pattern.replace(/_/g, ' '),
       cells: mask.map(([r,c]) => r*5+c),
     };
   });
 }
-const RULES = [
-  'ካርቴላ ለመግዛት በአካውንትዎ በቂ ቀሪ ሂሳብ ሊኖር ይገባል።',
-  'የጨዋታ ቁጥሮችን በጥንቃቄ ይከታተሉ፤ የወጣ ቁጥር ብቻ በካርቴላዎ ላይ ምልክት ያድርጉ።',
-  'BINGO ሲሞላ የBINGO ጥያቄ ያቅርቡ፤ የአሸናፊነት ማረጋገጫ በስርዓቱ ይከናወናል።',
-  'የገንዘብ ግብይት ማስረጃዎን ሙሉ በሙሉ ያስገቡ።',
-];
+
 
 export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = false }: { onGoToWallet: () => void; settingsOnly?: boolean; menuOnly?: boolean }) {
   const { lang, setLang } = useLanguage();
+  const t = gameUi.playerFeatures[lang];
   const { balance, cards, transactions, clearMarks, removeCards, buyCards } = usePlayer();
   const { cardPrice, audioVolume, setAudioVolume } = useAppSettings();
   const { calledNumbers, roundNumber, phase, winner, winPattern, roundPrizeEtb, roundCardCount, verifyCard } = useRound();
@@ -74,9 +60,9 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const [showPatternOptions, setShowPatternOptions] = useState(false);
   const [selectedPatternOption, setSelectedPatternOption] = useState(0);
   const light = theme === 'light';
-  const patternNames = PATTERN_LABELS;
-  const patternOptions = getPatternOptions(winPattern);
-  const allPatternOptions = getAllPatternOptions();
+  const patternNames = localizedPatternNames[lang];
+  const patternOptions = getPatternOptions(winPattern, patternNames);
+  const allPatternOptions = getAllPatternOptions(patternNames);
   const activePatternOption = patternOptions[selectedPatternOption % patternOptions.length] ?? patternOptions[0];
   const panel = light ? 'border-amber-300 bg-amber-50 text-zinc-900' : 'border-gold-700/40 bg-zinc-950/70 text-gold-100';
   const muted = light ? 'text-zinc-600' : 'text-gold-600';
@@ -86,7 +72,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
     if (purchaseBusy || phase !== 'waiting') return;
     const total = purchaseCount * cardPrice;
     if (total > balance) {
-      setPurchaseMessage({ kind: 'err', text: 'የመረጡትን ካርድ ለመግዛት ቀሪ ሂሳብዎ በቂ አይደለም።' });
+      setPurchaseMessage({ kind: 'err', text: t.purchaseInsufficient });
       return;
     }
     setPurchaseBusy(true);
@@ -94,13 +80,13 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
     try {
       const result = await buyCards(purchaseCount);
       if (result.ok) {
-        setPurchaseMessage({ kind: 'ok', text: `${purchaseCount} ካርድ በተሳካ ሁኔታ ተገዝተዋል።` });
+        setPurchaseMessage({ kind: 'ok', text: `${purchaseCount} ${t.cards} ${t.purchaseSuccess}` });
         setPurchaseCount(5);
       } else {
-        setPurchaseMessage({ kind: 'err', text: result.error ?? 'ግዢው አልተሳካም። ቀሪ ሂሳብዎን ወይም የዙሩን ሁኔታ ያረጋግጡ።' });
+        setPurchaseMessage({ kind: 'err', text: t.purchaseError });
       }
     } catch {
-      setPurchaseMessage({ kind: 'err', text: 'ግዢው አልተሳካም። እባክዎ እንደገና ይሞክሩ።' });
+      setPurchaseMessage({ kind: 'err', text: t.purchaseRetry });
     } finally {
       setPurchaseBusy(false);
     }
@@ -123,39 +109,39 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   };
 
   const rows = [
-    { id: 'messages', label: 'መልዕክቶች', icon: '✉' },
-    { id: 'settings', label: 'ሴቲንግ', icon: '⚙' },
-    { id: 'rules', label: 'የጨዋታ ደንቦችና ሕጎች', icon: '▤' },
-    { id: 'app', label: 'መተግበሪያ', icon: '▣' },
-    { id: 'history', label: 'የግብይትና የጨዋታ ታሪክ', icon: '◷' },
-    { id: 'contact', label: 'ያግኙን', icon: '☎' },
-    { id: 'info', label: 'መረጃ (ⓘ)', icon: 'ⓘ' },
+    { id: 'messages', label: t.messages, icon: '✉' },
+    { id: 'settings', label: t.settings, icon: '⚙' },
+    { id: 'rules', label: t.rules, icon: '▤' },
+    { id: 'app', label: t.app, icon: '▣' },
+    { id: 'history', label: t.history, icon: '◷' },
+    { id: 'contact', label: t.contact, icon: '☎' },
+    { id: 'info', label: t.info, icon: 'ⓘ' },
   ];
 
   return (
-    <section className="mt-6 space-y-4" aria-label="Player information and settings">
+    <section className="mt-6 space-y-4" aria-label={t.ariaLabel}>
       {!settingsOnly && !menuOnly && <div className={`overflow-hidden rounded-2xl border ${panel} shadow-xl`}>
         <div className="relative overflow-hidden bg-gradient-to-r from-zinc-950 via-zinc-900 to-amber-950 px-4 py-5 sm:px-6">
           <div className="pointer-events-none absolute -right-8 -top-12 h-40 w-40 rounded-full border-[18px] border-amber-300/10" />
           <div className="relative flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[.28em] text-amber-300">BLACK GOLD BINGO</p>
-              <h2 className="mt-1 text-xl font-black text-amber-100 sm:text-2xl">የአሁኑ ዙር የBingo ዓይነት</h2>
+              <h2 className="mt-1 text-xl font-black text-amber-100 sm:text-2xl">{t.currentGameType}</h2>
               <p className="mt-1 text-base font-extrabold text-amber-300">{patternNames[winPattern] ?? winPattern.replace(/_/g, ' ')}</p>
-              <p className="mt-1 text-xs text-amber-200/70">ዙር #{roundNumber} · {phase === 'running' ? 'በጨዋታ ላይ' : phase === 'waiting' ? 'በመጠባበቅ ላይ' : 'ተጠናቋል'}</p>
+              <p className="mt-1 text-xs text-amber-200/70">ዙር #{roundNumber} · {phase === 'running' ? t.running : phase === 'waiting' ? t.waiting : t.ended}</p>
             </div>
-            <button type="button" onClick={() => setShowPatternOptions(true)} aria-label="የሚቻሉ የአሸናፊነት ቅርጾችን አሳይ" className="group shrink-0 rounded-2xl border border-amber-300/50 bg-black/40 p-2 text-left shadow-lg shadow-amber-900/30 focus:outline-none focus:ring-2 focus:ring-amber-300">
+            <button type="button" onClick={() => setShowPatternOptions(true)} aria-label={t.showPatterns} className="group shrink-0 rounded-2xl border border-amber-300/50 bg-black/40 p-2 text-left shadow-lg shadow-amber-900/30 focus:outline-none focus:ring-2 focus:ring-amber-300">
               <span className="grid h-16 w-16 grid-cols-5 gap-1 sm:h-20 sm:w-20" aria-hidden="true">{Array.from({length:25},(_,i)=><span key={i} className={`rounded-[2px] ${activePatternOption.cells.includes(i)?'bg-sky-400 ring-1 ring-white/80':'bg-white/10'}`}/>)}</span>
-              <span className="mt-1 block text-center text-[9px] font-bold text-amber-200">ሊነካ ይችላል · ዝርዝር</span>
+              <span className="mt-1 block text-center text-[9px] font-bold text-amber-200">{t.showPatterns}</span>
             </button>
           </div>
         </div>
-        {showPatternOptions && <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="የBingo አሸናፊነት ቅርጾች">
+        {showPatternOptions && <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label={t.patternList}>
           <div className="max-h-[82vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-amber-400/50 bg-zinc-950 p-4 text-amber-50 shadow-2xl">
-            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-base font-black text-amber-200">የሚቻሉ የአሸናፊነት ቅርጾች</h3><p className="mt-1 text-xs text-amber-100/60">{patternNames[winPattern] ?? winPattern.replace(/_/g, ' ')} · {allPatternOptions.length} የአሸናፊነት ቅርጾች</p></div><button type="button" onClick={() => setShowPatternOptions(false)} className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold">ዝጋ ✕</button></div>
+            <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-base font-black text-amber-200">{t.possiblePatterns}</h3><p className="mt-1 text-xs text-amber-100/60">{patternNames[winPattern] ?? winPattern.replace(/_/g, ' ')} · {allPatternOptions.length} {t.patternCount}</p></div><button type="button" onClick={() => setShowPatternOptions(false)} className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold">{t.close} ✕</button></div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{allPatternOptions.map((option)=><div key={option.pattern} className={`flex items-center gap-3 rounded-xl border p-3 text-left ${option.pattern===winPattern?'border-sky-300 bg-sky-950/60':'border-amber-900 bg-black/30'}`}>
-              <span className="grid h-14 w-14 shrink-0 grid-cols-5 gap-0.5 rounded-lg bg-black p-1">{Array.from({length:25},(_,i)=><span key={i} className={`rounded-[1px] ${option.cells.includes(i)?'bg-sky-400':'bg-white/10'}`}/>)}</span><span className="text-xs font-bold leading-5">{option.label}{option.pattern===winPattern&&<span className="mt-1 block text-[10px] text-sky-300">የአሁኑ ዙር ቅርጽ</span>}</span>
-            </div>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-100/60">FREE የመካከለኛው ሳጥን በራሱ ተሟልቶ ይቆጠራል። እዚህ የሚታዩት ሁሉም ቅርጾች ምሳሌዎች ናቸው፤ በዚህ ዙር የሚሰራው ሆስቱ የመረጠው ቅርጽ ብቻ ነው።</p>
+              <span className="grid h-14 w-14 shrink-0 grid-cols-5 gap-0.5 rounded-lg bg-black p-1">{Array.from({length:25},(_,i)=><span key={i} className={`rounded-[1px] ${option.cells.includes(i)?'bg-sky-400':'bg-white/10'}`}/>)}</span><span className="text-xs font-bold leading-5">{option.label}{option.pattern===winPattern&&<span className="mt-1 block text-[10px] text-sky-300">{t.currentPattern}</span>}</span>
+            </div>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-100/60">{t.freeExplanation}</p>
           </div></div>}
         <div className="space-y-2 p-3 sm:p-4">
           <div className="mx-auto w-full max-w-3xl rounded-xl border border-gold-700/30 bg-black/20 p-2 sm:p-2.5">
@@ -168,8 +154,8 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
             ].map(([label, value]) => (
               label === 'ካርድ ግዛ' ? (
                 <button key={label} type="button" onClick={() => { setPurchaseMessage(null); setShowCardPurchase(true); }} className={`min-w-0 rounded-md border p-1.5 text-left transition hover:border-amber-400 ${light ? 'border-amber-300 bg-amber-100' : 'border-amber-400/50 bg-amber-400/10'}`}>
-                  <p className="text-[9px] leading-3 text-amber-600">ካርድ ግዛ</p>
-                  <p className="mt-0.5 flex items-center gap-0.5 text-[11px] font-black leading-4 text-amber-400"><span aria-hidden="true" className="text-base font-black leading-none text-red-500">＋</span>ካርድ ይጨምሩ</p>
+                  <p className="text-[9px] leading-3 text-amber-600">{t.buyCard}</p>
+                  <p className="mt-0.5 flex items-center gap-0.5 text-[11px] font-black leading-4 text-amber-400"><span aria-hidden="true" className="text-base font-black leading-none text-red-500">＋</span>{t.addCard}</p>
                 </button>
               ) : (
                 <div key={label} className={`min-w-0 rounded-md border p-1.5 ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
@@ -180,38 +166,38 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
             </div>
           </div>
           {showCardPurchase && (
-            <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-3" role="dialog" aria-modal="true" aria-label="የካርድ ግዢ">
+            <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-3" role="dialog" aria-modal="true" aria-label={t.cardPurchase}>
               <div className="w-full max-w-md space-y-4 rounded-2xl border border-amber-400/50 bg-zinc-950 p-4 text-amber-50 shadow-2xl sm:p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <div><p className="text-xs font-bold text-amber-400">BLACK GOLD BINGO</p><h3 className="text-lg font-black text-amber-200">የካርድ ግዢ</h3></div>
-                  <button type="button" onClick={() => setShowCardPurchase(false)} aria-label="ዝጋ" className="rounded-lg border border-amber-400/40 px-3 py-2">✕</button>
+                  <div><p className="text-xs font-bold text-amber-400">BLACK GOLD BINGO</p><h3 className="text-lg font-black text-amber-200">{t.cardPurchase}</h3></div>
+                  <button type="button" onClick={() => setShowCardPurchase(false)} aria-label={t.close} className="rounded-lg border border-amber-400/40 px-3 py-2">✕</button>
                 </div>
                 <div className="rounded-xl border border-amber-400/20 bg-black/40 p-3">
-                  <p className="text-xs text-amber-200/70">ያለዎት ቀሪ ሂሳብ</p>
+                  <p className="text-xs text-amber-200/70">{t.currentBalance}</p>
                   <p className="text-xl font-black tabular-nums text-amber-300">{formatAmount(lang, balance)} ETB</p>
                 </div>
                 <div className="space-y-3 rounded-xl border border-amber-400/20 p-3">
-                  <p className="text-sm font-semibold">የሚፈልጉትን የካርድ ብዛት ይምረጡ</p>
+                  <p className="text-sm font-semibold">{t.chooseCardCount}</p>
                   <div className="grid grid-cols-3 gap-2">
                     {[5, 10, 20, 30, 40, 50].map((count) => (
                       <button key={count} type="button" disabled={purchaseBusy} onClick={() => setPurchaseCount(count)} aria-pressed={purchaseCount === count} className={`rounded-lg border px-2 py-3 text-sm font-black transition disabled:opacity-50 ${purchaseCount === count ? 'border-amber-300 bg-amber-400 text-zinc-950' : 'border-amber-400/40 bg-black/30 text-amber-200 hover:border-amber-300'}`}>
-                        {count} ካርድ
+                        {count} {t.card}
                       </button>
                     ))}
                   </div>
-                  <div className="flex justify-between text-sm"><span className="text-amber-100/60">የአንድ ካርድ ዋጋ</span><strong>{formatAmount(lang, cardPrice)} ETB</strong></div>
-                  <div className="flex justify-between border-t border-amber-400/20 pt-3"><span className="font-bold">የሚከፈለው</span><strong className="text-lg text-amber-300">{formatAmount(lang, purchaseCount * cardPrice)} ETB</strong></div>
+                  <div className="flex justify-between text-sm"><span className="text-amber-100/60">{t.pricePerCard}</span><strong>{formatAmount(lang, cardPrice)} ETB</strong></div>
+                  <div className="flex justify-between border-t border-amber-400/20 pt-3"><span className="font-bold">{t.payable}</span><strong className="text-lg text-amber-300">{formatAmount(lang, purchaseCount * cardPrice)} ETB</strong></div>
                 </div>
-                {phase !== 'waiting' && <p className="rounded-lg bg-red-950/60 p-2 text-sm text-red-200">ካርድ መግዛት የሚቻለው አዲስ ዙር ከመጀመሩ በፊት ብቻ ነው።</p>}
+                {phase !== 'waiting' && <p className="rounded-lg bg-red-950/60 p-2 text-sm text-red-200">{t.purchaseOnlyWaiting}</p>}
                 {purchaseMessage && <p role="status" className={`rounded-lg p-2 text-sm ${purchaseMessage.kind === 'ok' ? 'bg-emerald-950 text-emerald-200' : 'bg-red-950 text-red-200'}`}>{purchaseMessage.text}</p>}
-                <button type="button" disabled={purchaseBusy || phase !== 'waiting' || purchaseCount * cardPrice > balance} onClick={() => void submitCardPurchase()} className="w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-600 px-4 py-3 font-black text-zinc-950 disabled:cursor-not-allowed disabled:opacity-50">{purchaseBusy ? 'በመግዛት ላይ…' : 'ካርዶችን ግዛ'}</button>
-                <p className="text-center text-[11px] leading-5 text-amber-100/50">ካርዶቹ በራስ-ሰር ይመነጫሉ፤ ክፍያው ከተሳካ በኋላ በጨዋታ ገጽዎ ላይ ይታያሉ።</p>
+                <button type="button" disabled={purchaseBusy || phase !== 'waiting' || purchaseCount * cardPrice > balance} onClick={() => void submitCardPurchase()} className="w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-600 px-4 py-3 font-black text-zinc-950 disabled:cursor-not-allowed disabled:opacity-50">{purchaseBusy ? t.buying : t.buyCards}</button>
+                <p className="text-center text-[11px] leading-5 text-amber-100/50">{t.autoGenerated}</p>
               </div>
             </div>
           )}
           <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm ${light ? 'border-amber-200 bg-white' : 'border-gold-700/30 bg-black/25'}`}>
-            <span className={muted}>የዙሩ ሁኔታ</span>
-            <strong className={title}>{calledNumbers.length} / 75 ኳሶች</strong>
+            <span className={muted}>{t.roundStatus}</span>
+            <strong className={title}>{calledNumbers.length} / 75 {t.balls}</strong>
           </div>
           <div className="space-y-1.5">
             {['B','I','N','G','O'].map((letter, i) => (
@@ -232,44 +218,44 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
             </button>}
             {expanded === row.id && (
               <div className="space-y-3 px-4 pb-4">
-                {row.id === 'messages' && <p className={`text-sm ${muted}`}>የአስተዳዳሪ መልዕክቶች የሚታዩበት ክፍል።</p>}
-                {row.id === 'info' && <p className={`text-sm leading-6 ${muted}`}>በቴሌብር (0978202822 — ኣሊክሳንደር ደጀን) ወይም በንግድ ባንክ (1000737138686 — ቤተሊሄም ፍጹም) ሙሉ ደረሰኝ በማስገባት ገቢ (Deposit) ማድረግ ትችላላችሁ። iPhone የምትጠቀሙ ደንበኞች Google Chrome ላይ www.blackgoldbingo.com በመፈለግ መጠቀም ትችላላችሁ።</p>}
-                {row.id === 'contact' && <p className={`text-sm ${muted}`}>ተጨማሪ መረጃ ከፈለጉ 0978202822 ወይም 0998974422 ይደዉሉ።</p>}
-                {row.id === 'history' && <div className="space-y-2 rounded-xl border border-amber-400/25 bg-black/25 p-3"><div className="space-y-2 px-2 py-1">{(transactions ?? []).length === 0 ? <p className="py-3 text-center text-xs text-gold-600">ገና የግብይት ታሪክ የለም።</p> : (transactions ?? []).slice().sort((a,b)=>b.at-a.at).map(tx => <div key={tx.id} className="flex items-center justify-between gap-3 border-b border-gold-700/20 py-2 text-xs"><div className="min-w-0"><p className="font-semibold text-gold-200">{tx.label ?? (tx.kind === 'deposit' ? 'ማስገባት' : 'ካርድ ግዢ')}</p><p className="text-[10px] text-gold-700">{formatDateTime(lang, tx.at)}</p></div><strong className={tx.amount >= 0 ? 'shrink-0 text-emerald-300' : 'shrink-0 text-amber-300'}>{tx.amount >= 0 ? '+' : '−'}{formatAmount(lang, Math.abs(tx.amount))} ETB</strong></div>)}</div><p className="px-3 py-3 text-xs leading-5 text-gold-600">የቀደሙ ዙሮች ዝርዝር በBackend ላይ ስላልተቀመጠ አሁን ማሳየት አይቻልም።</p><button type="button" onClick={onGoToWallet} className="w-full rounded-lg bg-amber-400/10 px-3 py-2 text-xs font-bold text-amber-200">ወደ ቦርሳ ዝርዝር ሂድ</button></div>}
-                {row.id === 'wallet' && <button type="button" onClick={onGoToWallet} className="w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-600 px-4 py-3 font-bold text-zinc-950">ወደ አካውንት ሂድ — ማስገባት / ማውጣት</button>}
-                {row.id === 'gameHistory' && <p className={`text-sm ${muted}`}>የቀደሙ ዙሮች ታሪክ በBackend ላይ ስላልተቀመጠ አሁን ማሳየት አይቻልም።</p>}
+                {row.id === 'messages' && <p className={`text-sm ${muted}`}>{t.adminMessages}</p>}
+                {row.id === 'info' && <p className={`text-sm leading-6 ${muted}`}>{t.infoText}</p>}
+                {row.id === 'contact' && <p className={`text-sm ${muted}`}>{t.contactText}</p>}
+                {row.id === 'history' && <div className="space-y-2 rounded-xl border border-amber-400/25 bg-black/25 p-3"><div className="space-y-2 px-2 py-1">{(transactions ?? []).length === 0 ? <p className="py-3 text-center text-xs text-gold-600">{t.noTransactions}</p> : (transactions ?? []).slice().sort((a,b)=>b.at-a.at).map(tx => <div key={tx.id} className="flex items-center justify-between gap-3 border-b border-gold-700/20 py-2 text-xs"><div className="min-w-0"><p className="font-semibold text-gold-200">{tx.label ?? (tx.kind === 'deposit' ? t.deposit : t.cardPurchaseLabel)}</p><p className="text-[10px] text-gold-700">{formatDateTime(lang, tx.at)}</p></div><strong className={tx.amount >= 0 ? 'shrink-0 text-emerald-300' : 'shrink-0 text-amber-300'}>{tx.amount >= 0 ? '+' : '−'}{formatAmount(lang, Math.abs(tx.amount))} ETB</strong></div>)}</div><p className="px-3 py-3 text-xs leading-5 text-gold-600">{t.noPreviousRounds}</p><button type="button" onClick={onGoToWallet} className="w-full rounded-lg bg-amber-400/10 px-3 py-2 text-xs font-bold text-amber-200">{t.goWalletHistory}</button></div>}
+                {row.id === 'wallet' && <button type="button" onClick={onGoToWallet} className="w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-600 px-4 py-3 font-bold text-zinc-950">{t.goWallet}</button>}
+                {row.id === 'gameHistory' && <p className={`text-sm ${muted}`}>{t.gameHistoryUnavailable}</p>}
                 {row.id === 'settings' && (
                   <div className="space-y-4 text-sm">
                     <div className="rounded-xl border border-amber-400/25 bg-black/20 p-3">
-                      <h4 className="mb-3 font-black text-amber-300">የጨዋታ ቅንብሮች</h4>
+                      <h4 className="mb-3 font-black text-amber-300">{t.gameSettings}</h4>
                       <div className="space-y-4">
-                        <div><p className="mb-2 font-semibold text-amber-200">ስሌዳ — ካርዶችን ጎን ለጎን አሳይ</p><div className="grid grid-cols-3 gap-2">{[2,3,4].map(n=><button key={n} type="button" onClick={()=>{try{localStorage.setItem('bgb.cardsPerRow',String(n));window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className="rounded-lg border border-amber-400/40 px-3 py-2 font-bold">{n} ካርድ</button>)}</div></div>
-                        <div><p className="mb-2 font-semibold text-amber-200">የካርቴላዎች አደራደር</p><div className="flex flex-wrap gap-2"><button type="button" onClick={()=>{try{localStorage.setItem('bgb.cardOrder','oldest');window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className="rounded-lg border border-amber-400/40 px-3 py-2">ከመጀመሪያ</button><button type="button" onClick={()=>{try{localStorage.setItem('bgb.cardOrder','newest');window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className="rounded-lg border border-amber-400/40 px-3 py-2">አዲሶቹን መጀመሪያ</button></div></div>
+                        <div><p className="mb-2 font-semibold text-amber-200">{t.layout}</p><div className="grid grid-cols-3 gap-2">{[2,3,4].map(n=><button key={n} type="button" onClick={()=>{try{localStorage.setItem('bgb.cardsPerRow',String(n));window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className="rounded-lg border border-amber-400/40 px-3 py-2 font-bold">{n} ካርድ</button>)}</div></div>
+                        <div><p className="mb-2 font-semibold text-amber-200">{t.cardOrder}</p><div className="flex flex-wrap gap-2"><button type="button" onClick={()=>{try{localStorage.setItem('bgb.cardOrder','oldest');window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className="rounded-lg border border-amber-400/40 px-3 py-2">{t.oldestFirst}</button><button type="button" onClick={()=>{try{localStorage.setItem('bgb.cardOrder','newest');window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className="rounded-lg border border-amber-400/40 px-3 py-2">{t.newestFirst}</button></div></div>
 
-                        <label className="flex items-center justify-between gap-3"><span>ያልተመዘገቡ ካርቴላዎችን አስወግድ</span><input type="checkbox" defaultChecked={localStorage.getItem('bgb.removeUnregistered')==='on'} onChange={async e=>{localStorage.setItem('bgb.removeUnregistered',e.target.checked?'on':'off');if(e.target.checked){const results=await Promise.all(cards.map(async c=>({id:c.id,result:await verifyCard(c.id)})));removeCards(results.filter(x=>x.result.status!=='valid').map(x=>x.id));}}}/></label>
-                        <div><p className="mb-2 font-semibold text-amber-200">ማጥቆርያ ቀለም ምረጥ</p><div className="flex flex-wrap gap-3">{['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'].map(color=><button key={color} type="button" aria-label={color} onClick={()=>{localStorage.setItem('bgb.markColor',color);window.dispatchEvent(new Event('bgb-player-settings'));}} className="h-9 w-9 rounded-full border-2 border-white/50" style={{backgroundColor:color}}/>)}</div></div>
-                        <div><p className="mb-2 font-semibold text-amber-200">ብዙ ካርቴላዎች ምረጥ</p><div className="mb-2 flex gap-2"><button type="button" onClick={()=>{localStorage.setItem('bgb.selectedCards',JSON.stringify(cards.map(c=>c.id)));window.dispatchEvent(new Event('bgb-player-settings'));}} className="rounded-lg border border-amber-400/40 px-3 py-2">ሁሉን ምረጥ</button><button type="button" onClick={()=>{localStorage.setItem('bgb.selectedCards','[]');window.dispatchEvent(new Event('bgb-player-settings'));}} className="rounded-lg border border-current/20 px-3 py-2">ምርጫ አጥፋ</button></div><div className="grid grid-cols-2 gap-2">{cards.map(c=><label key={c.id} className="flex items-center gap-2 rounded-lg border border-current/15 p-2"><input type="checkbox" defaultChecked={JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]').includes(c.id)} onChange={e=>{const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]');localStorage.setItem('bgb.selectedCards',JSON.stringify(e.target.checked?[...ids,c.id]:ids.filter((id:string)=>id!==c.id)));window.dispatchEvent(new Event('bgb-player-settings'));}}/><span>ካርድ #{c.serial}</span></label>)}</div></div>
-                        <button type="button" onClick={()=>{clearMarks();localStorage.setItem('bgb.selectedCards','[]');window.dispatchEvent(new Event('bgb-player-settings'));}} className="w-full rounded-lg border border-amber-400/40 px-3 py-2 font-bold text-amber-200">ምልክት ምልክት የተደረጉት ቁልፎች አጥፋ (Reset)</button>
+                        <label className="flex items-center justify-between gap-3"><span>{t.removeUnregistered}</span><input type="checkbox" defaultChecked={localStorage.getItem('bgb.removeUnregistered')==='on'} onChange={async e=>{localStorage.setItem('bgb.removeUnregistered',e.target.checked?'on':'off');if(e.target.checked){const results=await Promise.all(cards.map(async c=>({id:c.id,result:await verifyCard(c.id)})));removeCards(results.filter(x=>x.result.status!=='valid').map(x=>x.id));}}}/></label>
+                        <div><p className="mb-2 font-semibold text-amber-200">{t.markColor}</p><div className="flex flex-wrap gap-3">{['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'].map(color=><button key={color} type="button" aria-label={color} onClick={()=>{localStorage.setItem('bgb.markColor',color);window.dispatchEvent(new Event('bgb-player-settings'));}} className="h-9 w-9 rounded-full border-2 border-white/50" style={{backgroundColor:color}}/>)}</div></div>
+                        <div><p className="mb-2 font-semibold text-amber-200">{t.chooseMultipleCards}</p><div className="mb-2 flex gap-2"><button type="button" onClick={()=>{localStorage.setItem('bgb.selectedCards',JSON.stringify(cards.map(c=>c.id)));window.dispatchEvent(new Event('bgb-player-settings'));}} className="rounded-lg border border-amber-400/40 px-3 py-2">{t.selectAll}</button><button type="button" onClick={()=>{localStorage.setItem('bgb.selectedCards','[]');window.dispatchEvent(new Event('bgb-player-settings'));}} className="rounded-lg border border-current/20 px-3 py-2">{t.clearSelection}</button></div><div className="grid grid-cols-2 gap-2">{cards.map(c=><label key={c.id} className="flex items-center gap-2 rounded-lg border border-current/15 p-2"><input type="checkbox" defaultChecked={JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]').includes(c.id)} onChange={e=>{const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]');localStorage.setItem('bgb.selectedCards',JSON.stringify(e.target.checked?[...ids,c.id]:ids.filter((id:string)=>id!==c.id)));window.dispatchEvent(new Event('bgb-player-settings'));}}/><span>{t.card} #{c.serial}</span></label>)}</div></div>
+                        <button type="button" onClick={()=>{clearMarks();localStorage.setItem('bgb.selectedCards','[]');window.dispatchEvent(new Event('bgb-player-settings'));}} className="w-full rounded-lg border border-amber-400/40 px-3 py-2 font-bold text-amber-200">{t.clearMarks}</button>
                       </div>
                     </div>
-                    <div><p className={`mb-2 font-semibold ${title}`}>ገጽታ</p><div className="flex gap-2"><button type="button" onClick={() => setPlayerTheme('light')} aria-pressed={light} className={`rounded-lg border px-4 py-2 ${light ? 'border-amber-500 bg-amber-100 text-amber-900' : 'border-current/20'}`}>ብርሃን</button><button type="button" onClick={() => setPlayerTheme('dark')} aria-pressed={!light} className={`rounded-lg border px-4 py-2 ${!light ? 'border-amber-400 bg-zinc-900 text-amber-200' : 'border-current/20'}`}>ጨለማ</button></div></div>
-                    <label className="flex items-center justify-between gap-3"><span>ድምጽ ውጤቶች</span><input type="checkbox" checked={soundEnabled} onChange={(e) => setSoundEnabled(e.target.checked)} /></label>
-                    <label className="flex items-center justify-between gap-3"><span>የቁጥር ድምጽ</span><input type="checkbox" checked={voiceEnabled} onChange={(e) => setVoiceEnabled(e.target.checked)} /></label>
-                    <label className="block"><span className="mb-2 block">የድምጽ መጠን</span><input type="range" min="0" max="1" step="0.05" value={audioVolume} onChange={(e) => setAudioVolume(Number(e.target.value))} className="w-full accent-yellow-500" /></label>
-                    <div><p className={`mb-2 font-semibold ${title}`}>ቋንቋ</p><div className="flex flex-wrap gap-2">{[['am','አማርኛ'],['ti','ትግርኛ'],['en','English']].map(([id,label]) => <button key={id} type="button" onClick={() => setLang(id as 'am'|'ti'|'en')} aria-pressed={lang === id} className={`rounded-lg border px-3 py-2 ${lang === id ? 'border-amber-400 bg-amber-400/15' : 'border-current/20'}`}>{label}</button>)}</div></div>
-                    <label className="flex items-center justify-between gap-3"><span>ማሳወቂያዎች</span><input type="checkbox" checked={notifications} onChange={(e) => void enableNotifications(e.target.checked)} /></label>
-                    {'Notification' in window && Notification.permission === 'denied' && <p className="text-xs text-amber-600">ማሳወቂያ በbrowser ቅንብርዎ ተዘግቷል። በጣቢያ ቅንብሮች ውስጥ ይፍቀዱ።</p>}
-                    <p className={`text-xs ${muted}`}>ካርቴላ ካስመዘገቡ ብቻ ማሳወቂያ ለማግኘት የbrowser ፈቃድ ያስፈልጋል።</p>
+                    <div><p className={`mb-2 font-semibold ${title}`}>{t.theme}</p><div className="flex gap-2"><button type="button" onClick={() => setPlayerTheme('light')} aria-pressed={light} className={`rounded-lg border px-4 py-2 ${light ? 'border-amber-500 bg-amber-100 text-amber-900' : 'border-current/20'}`}>{t.light}</button><button type="button" onClick={() => setPlayerTheme('dark')} aria-pressed={!light} className={`rounded-lg border px-4 py-2 ${!light ? 'border-amber-400 bg-zinc-900 text-amber-200' : 'border-current/20'}`}>{t.dark}</button></div></div>
+                    <label className="flex items-center justify-between gap-3"><span>{t.soundEffects}</span><input type="checkbox" checked={soundEnabled} onChange={(e) => setSoundEnabled(e.target.checked)} /></label>
+                    <label className="flex items-center justify-between gap-3"><span>{t.numberVoice}</span><input type="checkbox" checked={voiceEnabled} onChange={(e) => setVoiceEnabled(e.target.checked)} /></label>
+                    <label className="block"><span className="mb-2 block">{t.volume}</span><input type="range" min="0" max="1" step="0.05" value={audioVolume} onChange={(e) => setAudioVolume(Number(e.target.value))} className="w-full accent-yellow-500" /></label>
+                    <div><p className={`mb-2 font-semibold ${title}`}>{t.language}</p><div className="flex flex-wrap gap-2">{[['am','አማርኛ'],['ti','ትግርኛ'],['en','English']].map(([id,label]) => <button key={id} type="button" onClick={() => setLang(id as 'am'|'ti'|'en')} aria-pressed={lang === id} className={`rounded-lg border px-3 py-2 ${lang === id ? 'border-amber-400 bg-amber-400/15' : 'border-current/20'}`}>{label}</button>)}</div></div>
+                    <label className="flex items-center justify-between gap-3"><span>{t.notifications}</span><input type="checkbox" checked={notifications} onChange={(e) => void enableNotifications(e.target.checked)} /></label>
+                    {'Notification' in window && Notification.permission === 'denied' && <p className="text-xs text-amber-600">{t.notificationBlocked}</p>}
+                    <p className={`text-xs ${muted}`}>{t.notificationPermission}</p>
                   </div>
                 )}
-                {row.id === 'rules' && <ol className={`list-decimal space-y-2 pl-5 text-sm leading-6 ${muted}`}>{RULES.map((rule) => <li key={rule}>{rule}</li>)}</ol>}
+                {row.id === 'rules' && <ol className={`list-decimal space-y-2 pl-5 text-sm leading-6 ${muted}`}>{t.rulesList.map((rule) => <li key={rule}>{rule}</li>)}</ol>}
                 
               </div>
             )}
           </div>
         ))}
       </div>}
-      {!settingsOnly && !menuOnly && <p className="pb-2 text-center text-xs text-gold-700">Black Gold Bingo · ደንበኛ አገልግሎት</p>}
+      {!settingsOnly && !menuOnly && <p className="pb-2 text-center text-xs text-gold-700">{t.customerService}</p>}
     </section>
   );
 }
