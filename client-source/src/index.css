@@ -756,3 +756,12 @@ body { min-height: 100vh; min-height: 100dvh; }
 .aviator-recent article span { color:#bca875; }.aviator-recent article b { color:#f4d47c; }
 @media(max-width:640px){.aviator-flight{min-height:285px}.aviator-round-info{grid-template-columns:1fr}.aviator-header{padding:1.1rem}.aviator-tabs{width:100%}.aviator-tabs button{flex:1}}
 @media(prefers-reduced-motion:reduce){.aviator-flight.flying .aviator-plane{animation:none}}
+
+
+/* Aviator automatic betting controls */
+.aviator-auto-settings{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center;margin:.7rem 0;padding:.7rem;border:1px solid rgba(214,173,69,.22);border-radius:.8rem;background:rgba(214,173,69,.045)}
+.aviator-auto-settings label{grid-column:1/-1;margin:0!important;color:#d9bc73!important;font-size:.62rem!important;font-weight:900;letter-spacing:.12em}
+.aviator-auto-settings input{min-width:0;width:100%;border:1px solid rgba(214,173,69,.3);border-radius:.6rem;padding:.55rem;color:#fff0c8;background:#080808;font-weight:800}
+.aviator-auto-settings button{border:1px solid rgba(214,173,69,.45);border-radius:.6rem;padding:.55rem .7rem;color:#ffe7a0;background:#211a0b;font-size:.65rem;font-weight:900;white-space:nowrap}
+.aviator-auto-settings button.selected{border-color:#8fe0a3;color:#a8f0b8;background:rgba(28,104,48,.22)}
+.aviator-auto-settings p{grid-column:1/-1;margin:0;color:rgba(236,218,174,.55);font-size:.62rem}
