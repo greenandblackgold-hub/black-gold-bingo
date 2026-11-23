@@ -113,7 +113,7 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
   const previousBalls = visibleDrawnNumbers.slice(-8,-1);
 
   return (
-    <main className="keno-reference-page mx-auto min-h-screen w-full max-w-5xl space-y-2 bg-[#101b19] px-2 pb-8 text-slate-100 sm:px-3">
+    <main className="keno-reference-page mx-auto min-h-screen w-full max-w-[480px] space-y-2 bg-[#101b19] px-2 pb-8 text-slate-100 sm:px-3">
       <header className="relative z-10 -mx-2 flex min-h-[42px] items-center justify-between gap-2 border-b border-emerald-400/15 bg-[#07110f] px-2 py-1 shadow-[0_4px_16px_rgba(0,0,0,.35)]">
         <div className="shrink-0 leading-[.82]"><span className="block text-[10px] font-black italic text-white">FAST</span><span className="block text-[17px] font-black italic tracking-tight text-emerald-300">KENO</span></div>
         <div className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full border border-emerald-400/20 bg-black/35 px-2 py-1">
@@ -124,6 +124,8 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
         </div>
         <button type="button" onClick={onOpenMenu} aria-label="Open player menu" className="grid h-8 w-8 shrink-0 place-items-center text-emerald-300"><span className="text-[28px] leading-none">≡</span></button>
       </header>
+
+      {isBetting && <div aria-label="Time remaining in this round" className="h-5 text-center font-mono text-[17px] font-black leading-5 tracking-wider text-emerald-100">{'00:' + String(secondsLeft).padStart(2, '0')}</div>}
 
       {isBetting && <section className="overflow-hidden rounded-lg border border-emerald-300/10 bg-[#253532] shadow-inner">
         <div className="relative flex min-h-[164px] items-center gap-3 overflow-hidden px-3 py-3">
