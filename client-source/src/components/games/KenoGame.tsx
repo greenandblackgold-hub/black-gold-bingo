@@ -24,7 +24,7 @@ export function KenoGame({ onBack, onSwitchGame }: { onBack: () => void; onSwitc
   const [state, setState] = useState<KenoState | null>(null);
   const [history, setHistory] = useState<HistoryRound[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
-  const [amount, setAmount] = useState('10.00');
+  const [amount, setAmount] = useState('2.00');
   const [clock, setClock] = useState(Date.now());
   const [offset, setOffset] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -57,7 +57,7 @@ export function KenoGame({ onBack, onSwitchGame }: { onBack: () => void; onSwitc
   const drawSet = useMemo(() => new Set(state?.drawnNumbers ?? []), [state?.drawnNumbers]);
   const latestBet = state?.myBets?.[state.myBets.length - 1];
   const hitSet = useMemo(() => new Set(latestBet?.matchedNumbers ?? []), [latestBet?.id, latestBet?.matchedNumbers]);
-  const minBet = state?.minBetEtb ?? 5;
+  const minBet = state?.minBetEtb ?? 2;
   const maxBet = state?.maxBetEtb ?? 1000;
   const numericAmount = Number(amount);
   const validAmount = Number.isFinite(numericAmount) && numericAmount >= minBet && numericAmount <= maxBet;
