@@ -128,7 +128,7 @@ export function KenoGame({}: { onBack: () => void; onSwitchGame: (game: 'bingo' 
         </div>
         <div className="relative flex items-start justify-between gap-2">
           <div><p className="text-[10px] font-black italic leading-none text-white">FAST</p><h1 className="text-lg font-black italic leading-none text-emerald-300">KENO</h1></div>
-          <div className="rounded-full border border-emerald-400/20 bg-black/35 px-3 py-1 text-center"><p className="font-mono text-[10px] font-bold text-emerald-100">{isBetting ? "00:" + String(secondsLeft).padStart(2, '0') : c.drawComplete}</p></div>
+          <div className="rounded-full border border-emerald-400/20 bg-black/35 px-3 py-1 text-center"><p className="font-mono text-[10px] font-black text-emerald-100">{state ? money(state.balanceEtb) + ' ETB' : '—'}</p><p className="font-mono text-[9px] text-emerald-100/65">{isBetting ? "00:" + String(secondsLeft).padStart(2, '0') : c.drawComplete}</p></div>
           <button type="button" onClick={() => document.getElementById('keno-rules')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} aria-label={c.rules} className="grid h-8 w-8 place-items-center rounded-lg border border-emerald-300/20 bg-black/30 text-base font-black text-emerald-300">☰</button>
         </div>
         <div className="relative mt-2 flex justify-end"><span className="font-mono text-xs font-black text-white">{visibleDrawnNumbers.length} <span className="text-emerald-300">/</span> 20</span></div>
