@@ -70,7 +70,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
     return () => { active = false; window.clearInterval(poll); };
   }, []);
   useEffect(() => {
-    if (!generalEnabled) { setTab('games'); setMenuOpen(false); setPlayerSettingsOpen(false); }
+    if (!generalEnabled) { setMenuOpen(false); setPlayerSettingsOpen(false); }
   }, [generalEnabled]);
   const handleNavChange = (next: TabId) => {
     if (next === 'menu') { setMenuOpen(true); return; }

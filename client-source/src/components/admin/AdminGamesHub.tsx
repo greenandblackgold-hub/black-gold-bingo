@@ -9,7 +9,7 @@ type Overview = {
 
 export function AdminGamesHub() {
   const [overview, setOverview] = useState<Overview | null>(null);
-  const [minBet, setMinBet] = useState('5');
+  const [minBet, setMinBet] = useState('2');
   const [maxBet, setMaxBet] = useState('1000');
   const [houseEdge, setHouseEdge] = useState('55');
   const [kenoSeconds, setKenoSeconds] = useState('20');
@@ -68,7 +68,7 @@ export function AdminGamesHub() {
       <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Aviator</p><p className="text-xs text-amber-100/45">{overview?.games.aviator.status ?? 'Loading'} · {overview?.games.aviator.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ aviatorEnabled: !overview?.settings.aviatorEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.aviatorEnabled ? 'Turn OFF' : 'Turn ON'}</button></div></div>
     </div>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-      <label className={label}>Minimum bet (ETB)<input className={input} type="number" min="1" max="1000" step=".01" value={minBet} onChange={e=>setMinBet(e.target.value)}/></label>
+      <label className={label}>Minimum bet (ETB)<input className={input} type="number" min="2" max="1000" step=".01" value={minBet} onChange={e=>setMinBet(e.target.value)}/></label>
       <label className={label}>Maximum bet (ETB)<input className={input} type="number" min="1" max="5000" step=".01" value={maxBet} onChange={e=>setMaxBet(e.target.value)}/></label>
       <label className={label}>Company commission / House Edge (%)<input className={input} type="number" min="50" max="60" step="1" value={houseEdge} onChange={e=>setHouseEdge(e.target.value)}/></label>
       <label className={label}>Keno round / betting duration
