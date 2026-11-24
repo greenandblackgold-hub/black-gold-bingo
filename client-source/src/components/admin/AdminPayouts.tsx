@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { api, ApiError } from '@/lib/api';
+import { api } from '@/lib/api';
 
 const TEXT = {
   am: { title: 'የገንዘብ ማውጫ ጥያቄዎች', empty: 'ምንም ጥያቄ የለም', approve: 'ክፍያ ፈጽም', reject: 'ውድቅ አድርግ', refresh: 'ሁኔታ አድስ', reload: 'አድስ', stats: 'ማጠቃለያ', users: 'ተጫዋቾች', cards: 'የዚህ ዙር ካርዶች', pot: 'ድምር (ብር)', pending: 'በመጠባበቅ ላይ', processing: 'በመላክ ላይ', paid: 'ተከፍሏል', rejected: 'ውድቅ ተደርጓል', failed: 'አልተሳካም', bank: 'ባንክ', currency: 'ብር', err: 'አልተሳካም' },
@@ -53,8 +53,8 @@ export function AdminPayouts() {
     setError(null);
     try {
       await api.post(`/api/admin/withdrawals/${id}/${action}`, {});
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : t.err);
+    } catch {
+      setError(t.err);
     }
     await load();
   };
