@@ -253,6 +253,10 @@ export async function createMongoRepo({ uri, dbName }) {
     async cardSerialExists(serial) {
       return Boolean(await cards.findOne({ serial }, { projection: { _id: 1 } }));
     },
+    async listUsedCardSerials() {
+      const rows = await cards.find({ serial: { $gte: '10000', $lte: '24999' } }, { projection: { serial: 1, _id: 0 } }).toArray();
+      return rows.map((row) => String(row.serial));
+    },
     async reserveCardSerials(round, count, requestedSerial) {
       if (!Number.isInteger(count) || count < 1) throw new RepoError('CARD_POOL_FULL');
       if (requestedSerial !== undefined && requestedSerial !== null) {
