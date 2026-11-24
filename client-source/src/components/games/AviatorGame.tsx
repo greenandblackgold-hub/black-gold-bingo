@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import { gameUi } from '@/lib/gameUi';
@@ -23,6 +23,19 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
   const [notice, setNotice] = useState('');
   const [tab, setTab] = useState<'all' | 'mine' | 'top'>('all');
   const [soundOn, setSoundOn] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const getAudioContext = () => {
+    const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return null;
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') audioContextRef.current = new AudioContextClass();
+    return audioContextRef.current;
+  };
+  const toggleSound = () => {
+    if (!soundOn) {
+      try { const ctx = getAudioContext(); if (ctx?.state === 'suspended') void ctx.resume(); } catch { /* browser audio may be unavailable */ }
+      setSoundOn(true);
+    } else setSoundOn(false);
+  };
 
   const loadState = useCallback(async () => {
     try {
@@ -107,21 +120,48 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
   const playSound = (kind: 'takeoff' | 'crash') => {
     if (!soundOn) return;
     try {
-      const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const ctx = new AudioContextClass();
-      const oscillator = ctx.createOscillator();
-      const gain = ctx.createGain();
-      oscillator.type = 'sawtooth';
-      oscillator.frequency.setValueAtTime(kind === 'takeoff' ? 240 : 180, ctx.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(kind === 'takeoff' ? 720 : 55, ctx.currentTime + 0.35);
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      const soundDuration = kind === 'crash' ? 1.05 : 0.55;
-      gain.gain.exponentialRampToValueAtTime(kind === 'crash' ? 0.28 : 0.14, ctx.currentTime + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + soundDuration);
-      oscillator.connect(gain); gain.connect(ctx.destination);
-      oscillator.start(); oscillator.stop(ctx.currentTime + soundDuration + 0.04);
-      oscillator.onended = () => { void ctx.close(); };
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') void ctx.resume();
+      const now = ctx.currentTime;
+      const master = ctx.createGain();
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.setValueAtTime(-18, now);
+      compressor.knee.setValueAtTime(18, now);
+      compressor.ratio.setValueAtTime(5, now);
+      compressor.attack.setValueAtTime(0.004, now);
+      compressor.release.setValueAtTime(0.18, now);
+      master.gain.setValueAtTime(kind === 'crash' ? 0.82 : 0.68, now);
+      master.connect(compressor);
+      compressor.connect(ctx.destination);
+      const duration = kind === 'crash' ? 1.35 : 1.15;
+      const frequencies = kind === 'crash' ? [150, 92, 48] : [95, 145, 220];
+      frequencies.forEach((frequency, index) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = index === 2 ? 'triangle' : 'sawtooth';
+        osc.frequency.setValueAtTime(frequency, now);
+        osc.frequency.exponentialRampToValueAtTime(kind === 'crash' ? Math.max(24, frequency * 0.24) : frequency * 2.8, now + duration * 0.78);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(index === 0 ? 0.42 : 0.22, now + 0.055);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        osc.connect(gain); gain.connect(master);
+        osc.start(now); osc.stop(now + duration + 0.03);
+      });
+      const noiseBuffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
+      const channel = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < channel.length; i++) channel[i] = (Math.random() * 2 - 1) * (1 - i / channel.length);
+      const noise = ctx.createBufferSource();
+      const noiseFilter = ctx.createBiquadFilter();
+      const noiseGain = ctx.createGain();
+      noise.buffer = noiseBuffer;
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.setValueAtTime(kind === 'crash' ? 850 : 1250, now);
+      noiseGain.gain.setValueAtTime(kind === 'crash' ? 0.34 : 0.2, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(master);
+      noise.start(now); noise.stop(now + duration);
+      window.setTimeout(() => { try { master.disconnect(); compressor.disconnect(); } catch { /* already disconnected */ } }, duration * 1000 + 100);
     } catch { /* audio is optional and browser-controlled */ }
   };
   const [previousStatus, setPreviousStatus] = useState<string | undefined>();
@@ -131,44 +171,75 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
       if (state.status === 'crashed') playSound('crash');
     }
     if (state?.status) setPreviousStatus(state.status);
-  }, [state?.status]);
+  }, [state?.status, soundOn]);
 
-  // A continuous, low-pass-filtered turbine sound runs only while the aircraft is flying.
+  // A powerful layered propeller/turbine roar runs only while the aircraft is flying.
   useEffect(() => {
     if (!soundOn || state?.status !== 'flying') return;
-    const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    const turbine = ctx.createOscillator();
-    const lowRumble = ctx.createOscillator();
-    const filter = ctx.createBiquadFilter();
-    const engineGain = ctx.createGain();
-    turbine.type = 'sawtooth';
-    turbine.frequency.setValueAtTime(92, ctx.currentTime);
-    turbine.frequency.linearRampToValueAtTime(138, ctx.currentTime + 2);
-    lowRumble.type = 'triangle';
-    lowRumble.frequency.setValueAtTime(48, ctx.currentTime);
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(320, ctx.currentTime);
-    engineGain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    engineGain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.35);
-    turbine.connect(filter);
-    lowRumble.connect(filter);
-    filter.connect(engineGain);
-    engineGain.connect(ctx.destination);
-    turbine.start();
-    lowRumble.start();
+    const ctx = getAudioContext();
+    if (!ctx) return;
     if (ctx.state === 'suspended') void ctx.resume();
+    const now = ctx.currentTime;
+    const engineBus = ctx.createGain();
+    const compressor = ctx.createDynamicsCompressor();
+    const engineFilter = ctx.createBiquadFilter();
+    compressor.threshold.setValueAtTime(-22, now);
+    compressor.knee.setValueAtTime(24, now);
+    compressor.ratio.setValueAtTime(6, now);
+    compressor.attack.setValueAtTime(0.006, now);
+    compressor.release.setValueAtTime(0.22, now);
+    engineFilter.type = 'lowpass';
+    engineFilter.frequency.setValueAtTime(1050, now);
+    engineBus.gain.setValueAtTime(0.0001, now);
+    engineBus.gain.linearRampToValueAtTime(0.72, now + 0.45);
+    engineFilter.connect(engineBus);
+    engineBus.connect(compressor);
+    compressor.connect(ctx.destination);
+
+    const layers = [
+      { type: 'sawtooth' as OscillatorType, start: 72, end: 118, gain: 0.34 },
+      { type: 'sawtooth' as OscillatorType, start: 109, end: 174, gain: 0.2 },
+      { type: 'triangle' as OscillatorType, start: 43, end: 57, gain: 0.38 },
+      { type: 'square' as OscillatorType, start: 216, end: 292, gain: 0.055 },
+    ];
+    const oscillators = layers.map((layer) => {
+      const oscillator = ctx.createOscillator();
+      const layerGain = ctx.createGain();
+      oscillator.type = layer.type;
+      oscillator.frequency.setValueAtTime(layer.start, now);
+      oscillator.frequency.linearRampToValueAtTime(layer.end, now + 4);
+      layerGain.gain.setValueAtTime(layer.gain, now);
+      oscillator.connect(layerGain); layerGain.connect(engineFilter);
+      oscillator.start(now);
+      return oscillator;
+    });
+
+    // Broad filtered airflow adds a convincing continuous aircraft roar.
+    const buffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    const samples = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) samples[i] = (Math.random() * 2 - 1) * 0.55;
+    const airflow = ctx.createBufferSource();
+    const airflowFilter = ctx.createBiquadFilter();
+    const airflowGain = ctx.createGain();
+    airflow.buffer = buffer;
+    airflow.loop = true;
+    airflowFilter.type = 'lowpass';
+    airflowFilter.frequency.setValueAtTime(620, now);
+    airflowGain.gain.setValueAtTime(0.14, now);
+    airflow.connect(airflowFilter); airflowFilter.connect(airflowGain); airflowGain.connect(engineBus);
+    airflow.start(now);
+
     return () => {
-      const stopAt = ctx.currentTime + 0.12;
-      engineGain.gain.cancelScheduledValues(ctx.currentTime);
-      engineGain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.035);
-      turbine.stop(stopAt);
-      lowRumble.stop(stopAt);
-      window.setTimeout(() => { void ctx.close(); }, 180);
+      const stopAt = ctx.currentTime + 0.16;
+      engineBus.gain.cancelScheduledValues(ctx.currentTime);
+      engineBus.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.045);
+      oscillators.forEach((oscillator) => { try { oscillator.stop(stopAt); } catch { /* already stopped */ } });
+      try { airflow.stop(stopAt); } catch { /* already stopped */ }
+      window.setTimeout(() => {
+        try { engineFilter.disconnect(); engineBus.disconnect(); compressor.disconnect(); airflowFilter.disconnect(); airflowGain.disconnect(); } catch { /* already disconnected */ }
+      }, 220);
     };
   }, [soundOn, state?.status]);
-
   const statusLabel = (status: string) => status === 'cashed_out' ? t.cashedOut : status === 'lost' ? t.lost : status === 'active' ? t.active : t.settling;
   const displayedBets = tab === 'mine'
     ? (state?.myBets ?? []).map((bet) => ({ player: t.you, stakeEtb: bet.stakeEtb, status: bet.status, multiplier: bet.multiplier, payoutEtb: bet.payoutEtb }))
@@ -182,7 +253,7 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
         <div><p className="aviator-eyebrow">{t.brand}</p><h1>AVIATOR <span>✦</span></h1><p>{t.intro}</p></div>
         <div className="aviator-history-strip"><span>{t.recentFlights}</span>{history.slice(0, 7).map((round) => <b key={round.roundId} className={(round.crashMultiplier ?? 0) >= 2 ? 'good' : 'low'}>{round.crashMultiplier ? round.crashMultiplier.toFixed(2) + '×' : '—'}</b>)}</div>
       </header>
-      <div className="flex justify-end"><button className="aviator-sound" onClick={() => setSoundOn((v) => !v)} aria-pressed={soundOn}>{soundOn ? '♫ ' + t.soundOn : '♫ ' + t.soundOff}</button></div>
+      <div className="flex justify-end"><button className="aviator-sound" onClick={toggleSound} aria-pressed={soundOn}>{soundOn ? '♫ ' + t.soundOn : '♫ ' + t.soundOff}</button></div>
 
       {error && <p role="alert" className="aviator-alert">{error}</p>}
       {notice && <p role="status" className="aviator-notice">{notice}</p>}
