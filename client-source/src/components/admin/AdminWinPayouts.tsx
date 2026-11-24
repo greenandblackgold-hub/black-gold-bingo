@@ -59,7 +59,7 @@ export function AdminWinPayouts() {
           {rows.map((w) => (
             <li key={w.id} className="rounded-xl bg-white/[0.04] p-3">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-lg font-black tabular-nums text-gold-400">{formatAmount(lang, w.amount)} ETB</span>
+                <span className="text-lg font-black tabular-nums text-gold-400">{formatAmount(lang, w.amount)} {t.currency}</span>
                 <span className="text-xs text-gold-500">{t.pending}</span>
               </div>
               <p className="mt-1 text-sm text-gold-300">{t.player}: {w.userName} · {w.userPhone}</p>
