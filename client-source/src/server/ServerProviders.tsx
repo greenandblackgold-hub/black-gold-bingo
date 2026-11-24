@@ -34,6 +34,15 @@ function loadHiddenCards(userId?: string): string[] {
     return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
   } catch { return []; }
 }
+function sameCardList(previous: BingoCard[], next: BingoCard[]): boolean {
+  return previous.length === next.length && previous.every((card, index) => {
+    const other = next[index];
+    return !!other && card.id === other.id && card.serial === other.serial &&
+      !!card.locked === !!other.locked && card.grid.length === other.grid.length &&
+      card.grid.every((row, r) => row.length === other.grid[r]?.length &&
+        row.every((value, c) => value === other.grid[r][c]));
+  });
+}
 const NOOP_BACKEND = (canHost: boolean): GameBackend => ({
   kind: 'server',
   canHost,
@@ -68,11 +77,13 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   const [cards, setCards] = useState<BingoCard[]>(() => loadCardCache(user?.id));
   const [transactions, setTransactions] = useState<Tx[]>([]);
   const [hiddenCardIds, setHiddenCardIds] = useState<string[]>(() => loadHiddenCards(user?.id));
+  const [hiddenCardsLoadedFor, setHiddenCardsLoadedFor] = useState<string | null>(user?.id ?? null);
   const hiddenCardIdsRef = useRef(hiddenCardIds);
   hiddenCardIdsRef.current = hiddenCardIds;
   const currentUserIdRef = useRef(user?.id);
   currentUserIdRef.current = user?.id;
   const [markedByCard, setMarks] = useState<Record<string, number[]>>(() => loadMarks(user?.id));
+  const [marksLoadedFor, setMarksLoadedFor] = useState<string | null>(user?.id ?? null);
   const cardsRequestInFlight = useRef(false);
   const cardsReloadQueued = useRef(false);
   const marksStorageKey = user?.id ? marksKeyFor(user.id) : LEGACY_MARKS_KEY;
@@ -89,7 +100,8 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
       if (requestedUserId !== currentUserIdRef.current || !Array.isArray(latest) || cardsReloadQueued.current) return;
       try { if (requestedUserId) localStorage.setItem(cardsCacheKeyFor(requestedUserId), JSON.stringify(latest)); } catch { /* server remains authoritative */ }
       const hidden = new Set(hiddenCardIdsRef.current);
-      setCards(latest.filter(card => !hidden.has(card.id)));
+      const visibleCards = latest.filter(card => !hidden.has(card.id));
+      setCards(current => sameCardList(current, visibleCards) ? current : visibleCards);
     } catch {
       // Preserve the cached/last confirmed cards. Focus/online polling below retries automatically.
     } finally {
@@ -112,17 +124,22 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
     const hidden = loadHiddenCards(user?.id);
     hiddenCardIdsRef.current = hidden;
     setHiddenCardIds(hidden);
+    setHiddenCardsLoadedFor(user?.id ?? null);
     const cached = loadCardCache(user?.id);
     const hiddenSet = new Set(hidden);
     setCards(cached.filter(card => !hiddenSet.has(card.id)));
-    setMarks(loadMarks(user?.id));
+    const savedMarks = loadMarks(user?.id);
+    marksRef.current = savedMarks;
+    setMarks(savedMarks);
+    setMarksLoadedFor(user?.id ?? null);
     void reloadCards();
     void reloadLedger();
   }, [user?.id, reloadCards, reloadLedger]);
 
   useEffect(() => {
-    try { if (user?.id) localStorage.setItem(hiddenCardsKeyFor(user.id), JSON.stringify(hiddenCardIds)); } catch { /* keep cards available in memory */ }
-  }, [hiddenCardIds, user?.id]);
+    if (!user?.id || hiddenCardsLoadedFor !== user.id) return;
+    try { localStorage.setItem(hiddenCardsKeyFor(user.id), JSON.stringify(hiddenCardIds)); } catch { /* keep cards available in memory */ }
+  }, [hiddenCardIds, hiddenCardsLoadedFor, user?.id]);
 
   // Recover card lists after refreshes and transient API failures without ever replacing
   // a previously confirmed list with an empty/error response.
@@ -177,12 +194,14 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   }, [refresh, reloadLedger]);
 
   useEffect(() => {
+    // Do not persist the pre-auth/previous-user state under a newly selected account key.
+    if (!user?.id || marksLoadedFor !== user.id) return;
     try {
       localStorage.setItem(marksStorageKey, JSON.stringify(markedByCard));
     } catch {
       /* ignore */
     }
-  }, [markedByCard, marksStorageKey]);
+  }, [markedByCard, marksLoadedFor, marksStorageKey, user?.id]);
 
   // Marks are only a convenience on this device: the server decides wins from its own record.
   const toggleMark = useCallback((cardId: string, n: number) => {
@@ -267,6 +286,9 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
   // update briefly reports zero while the round snapshot is being propagated.
   const prizeSnapshot = useRef<{ roundNumber: number; amountEtb: number } | null>(null);
   const latestServerTime = useRef(0);
+  const gameSnapshotKey = useRef<string | null>(null);
+  const offsetSnapshot = useRef<number | null>(null);
+  const appliedGameSettings = useRef<{ cardPrice: number; roomId: string } | null>(null);
 
   const apply = useCallback((incoming: ServerGameState) => {
     if (!incoming || !Number.isFinite(incoming.serverTime) || incoming.serverTime < latestServerTime.current) return;
@@ -287,9 +309,26 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
       ? { ...incoming, roundPrizeEtb: snapshot.amountEtb }
       : incoming;
 
-    setGame(stableGame);
-    setOffset(incoming.serverTime - Date.now());
-    setGameSettings({ cardPrice: incoming.cardPrice, roomId: incoming.roomId });
+    // Ignore server heartbeat-only snapshots. They used to replace the whole game
+    // object every 15 seconds (and on each SSE event), forcing the Bingo screen to
+    // reconcile its complete card grid even when no game-visible value had changed.
+    const { serverTime: _serverTime, ...visibleGameState } = stableGame;
+    const nextGameKey = JSON.stringify(visibleGameState);
+    if (gameSnapshotKey.current !== nextGameKey) {
+      gameSnapshotKey.current = nextGameKey;
+      setGame(stableGame);
+    }
+    const nextOffset = incoming.serverTime - Date.now();
+    if (offsetSnapshot.current === null || Math.abs(nextOffset - offsetSnapshot.current) > 250) {
+      offsetSnapshot.current = nextOffset;
+      setOffset(nextOffset);
+    }
+    const nextSettings = { cardPrice: incoming.cardPrice, roomId: incoming.roomId };
+    if (appliedGameSettings.current?.cardPrice !== nextSettings.cardPrice ||
+        appliedGameSettings.current?.roomId !== nextSettings.roomId) {
+      appliedGameSettings.current = nextSettings;
+      setGameSettings(nextSettings);
+    }
   }, [setGameSettings]);
 
   useEffect(() => {
