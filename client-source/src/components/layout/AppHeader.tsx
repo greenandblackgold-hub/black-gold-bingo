@@ -71,20 +71,20 @@ export function AppHeader({ onOpenWallet, onOpenAdmin, onLogout, onOpenMenu, onO
           <div className="flex min-w-0 items-center justify-center gap-1 border-x border-yellow-500/70 px-2 text-yellow-200 sm:gap-2 sm:px-3">
             <span className="text-3xl leading-none drop-shadow-[0_0_16px_rgba(255,215,0,1)] sm:text-5xl">🏆</span>
             <strong className="whitespace-nowrap text-base font-black tracking-tight text-yellow-200 drop-shadow-[0_0_16px_rgba(255,215,0,1)] sm:text-3xl">
-              {roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} ብር
+              {roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} {l.currency}
             </strong>
           </div>
           <div className="flex min-w-0 items-center justify-self-end gap-1 sm:gap-2">
-            <button type="button" onClick={() => window.location.reload()} aria-label="ገጹን እንደገና ጫን" title="Refresh" className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
+            <button type="button" onClick={() => window.location.reload()} aria-label={l.refresh} title={l.refresh} className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 7v5h-5"/><path d="M20 12a8 8 0 1 1-2.34-5.66L20 9"/></svg>
             </button>
-            <button type="button" onClick={onOpenSettings} aria-label="ሴቲንግ ክፈት" title="Settings" className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
+            <button type="button" onClick={onOpenSettings} aria-label={l.settings} title={l.settings} className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
               <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1a1.8 1.8 0 0 1-2.5 2.5l-.1-.1a1.8 1.8 0 0 0-3 .9v.2a1.8 1.8 0 0 1-3.6 0v-.2a1.8 1.8 0 0 0-3-.9l-.1.1a1.8 1.8 0 0 1-2.5-2.5l.1-.1a1.8 1.8 0 0 0-.9-3h-.2a1.8 1.8 0 0 1 0-3.6h.2a1.8 1.8 0 0 0 .9-3l-.1-.1a1.8 1.8 0 0 1 2.5-2.5l.1.1a1.8 1.8 0 0 0 3-.9v-.2a1.8 1.8 0 0 1 3.6 0v.2a1.8 1.8 0 0 0 3 .9l.1-.1a1.8 1.8 0 0 1 2.5 2.5l-.1.1a1.8 1.8 0 0 0 .9 3h.2a1.8 1.8 0 0 1 0 3.6h-.2a1.8 1.8 0 0 0-.9 3Z"/></svg>
             </button>
-            <button type="button" onClick={onLogout} aria-label="ውጣ" title="Logout" className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-amber-300 transition hover:bg-white/10 hover:text-amber-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
+            <button type="button" onClick={onLogout} aria-label={l.logout} title={l.logout} className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-amber-300 transition hover:bg-white/10 hover:text-amber-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="14" cy="4" r="1.6"/><path d="m12 7-3 4 3 2 1 5m-4-7-3 3-2 4m8-6 4 2 2 4m-8-2-3 5m7-5 3 4"/></svg>
             </button>
-            <button type="button" onClick={onOpenMenu} aria-label="የተጫዋቾች ሜኑ ክፈት" title="Players" className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
+            <button type="button" onClick={onOpenMenu} aria-label={l.players} title={l.players} className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
               <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1H3Z"/><path d="M16 5.5a3 3 0 0 1 0 5.8M18 14a5 5 0 0 1 3 4.6V20h-4"/></svg>
             </button>
           </div>
