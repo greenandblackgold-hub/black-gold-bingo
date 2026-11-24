@@ -310,6 +310,13 @@ export function createGameService({ repo, config, now = Date.now }) {
       return previews;
     },
 
+    async removePreview(user, serial) {
+      const value = String(serial ?? '');
+      if (!/^\d{5}$/.test(value)) throw new HttpError(400, 'invalid_card_number', 'Invalid prepared card number');
+      pendingCardPreviews.delete(user.id + ':' + value);
+      return { ok: true };
+    },
+
     async myPreviews(user) {
       const g = await repo.getGame();
       return [...pendingCardPreviews.entries()]
