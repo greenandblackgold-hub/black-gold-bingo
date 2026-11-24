@@ -31,6 +31,9 @@ export function createGameService({ repo, config, now = Date.now }) {
   };
   const ROUND_DURATION_MS = 8 * 60 * 1000;
   const AUTO_CALL_SECONDS = 8;
+  // Host's per-round sales ceiling is intentionally process-local. It resets to
+  // the full pool after a Render restart; no database schema or persistent state is added.
+  let roundCardLimit = 15000;
 
   /** What every connected browser may see. Never includes anyone's card grid or user id. */
   const publicState = (g) => ({
@@ -59,6 +62,8 @@ export function createGameService({ repo, config, now = Date.now }) {
         ) / 100
       : calculatePrize(g) / 100,
     roundCardCount: config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0,
+    roundCardLimit,
+    availableCardCount: Math.max(0, roundCardLimit - (config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0)),
     roundPlayerCount: g.roundPlayerIds?.length ?? 0,
     prizeMode: g.prizeMode ?? 'revenue_percent',
     fixedPrizeEtb: (g.fixedPrize ?? 0) / 100,
@@ -198,6 +203,17 @@ export function createGameService({ repo, config, now = Date.now }) {
       return mutate(null, () => ({ announcement: clean ? { message: clean, at: now() } : null }));
     },
 
+    setRoundCardLimit(count) {
+      const limit = Number(count);
+      if (!Number.isInteger(limit) || limit < 1 || limit > 15000) throw new HttpError(400, 'invalid_card_limit', 'Card limit must be between 1 and 15000');
+      return mutate('waiting', (g) => {
+        const sold = config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0;
+        if (limit < sold) throw new HttpError(409, 'below_sold_cards', 'Card limit cannot be lower than the number of cards already sold');
+        roundCardLimit = limit;
+        return {};
+      });
+    },
+
     setWinPattern(pattern) {
       if (!isWinPattern(pattern)) throw new HttpError(400, 'invalid_pattern', 'Choose a supported bingo pattern');
       return mutate('waiting', () => ({ winPattern: pattern }));
@@ -288,6 +304,8 @@ export function createGameService({ repo, config, now = Date.now }) {
         };
       }
       if (g.phase !== 'waiting') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
+      const sold = config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0;
+      if (sold + n > roundCardLimit) throw new HttpError(409, 'card_pool_full', 'All available Bingo cards for this round have been taken.');
       if (requestedSerial !== undefined && requestedSerial !== null && (n !== 1 || !/^\d{5}$/.test(String(requestedSerial)))) {
         throw new HttpError(400, 'invalid_card_number', 'Enter one unique five-digit card number and buy one card at a time');
       }
