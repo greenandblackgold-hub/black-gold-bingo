@@ -30,6 +30,7 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
   const [history, setHistory] = useState<HistoryRound[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
   const [queuedTickets, setQueuedTickets] = useState<KenoTicketDraft[]>([]);
+  const queuedRoundId = useRef<string | null>(null);
   const [displayedDrawnNumbers, setDisplayedDrawnNumbers] = useState<number[]>([]);
   const [drawQueue, setDrawQueue] = useState<number[]>([]);
   const activeDrawRound = useRef<string | null>(null);
@@ -54,6 +55,15 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
     } catch { setError(t.loadError); }
     finally { stateRequestInFlight.current = false; }
   }, [t.loadError]);
+  useEffect(() => {
+    if (!state) return;
+    if (queuedRoundId.current === null) queuedRoundId.current = state.roundId;
+    else if (queuedRoundId.current !== state.roundId) {
+      queuedRoundId.current = state.roundId;
+      setQueuedTickets([]);
+    }
+  }, [state?.roundId]);
+
   const loadHistory = useCallback(async () => {
     try { setHistory(await api.get<HistoryRound[]>('/api/games/keno/history?limit=8')); } catch { /* history is optional */ }
   }, []);
@@ -87,6 +97,7 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
     setDrawQueue(current => {
       const known = new Set([...(roundChanged ? [] : displayedDrawnNumbers), ...(roundChanged ? [] : current)]);
       const additions = (state.drawnNumbers ?? []).filter(number => !known.has(number));
+      if (!additions.length) return current;
       return roundChanged ? additions : [...current, ...additions];
     });
   }, [state?.roundId, state?.status, state?.drawnNumbers, state?.serverTime, state?.settledAt, displayedDrawnNumbers]);
