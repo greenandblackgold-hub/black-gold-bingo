@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { formatAmount } from '@/lib/localization';
 import { gameUi } from '@/lib/gameUi';
 import { PlayerFeatures } from '@/components/play/PlayerFeatures';
@@ -164,6 +164,38 @@ type CardProps = {
   onRegister?: () => void;
 };
 
+function sameCardGrid(a: BingoCard, b: BingoCard): boolean {
+  return a.grid.length === b.grid.length && a.grid.every((row, r) =>
+    row.length === b.grid[r]?.length && row.every((value, c) => value === b.grid[r][c]));
+}
+
+function sameCardNumbersOnGrid(previous: Set<number>, next: Set<number>, grid: BingoCard['grid']): boolean {
+  for (const row of grid) for (const value of row) {
+    if (value !== null && previous.has(value) !== next.has(value)) return false;
+  }
+  return true;
+}
+
+function sameBingoCardProps(previous: CardProps, next: CardProps): boolean {
+  if (previous.labels !== next.labels || previous.index !== next.index ||
+      previous.markColor !== next.markColor || previous.pattern !== next.pattern ||
+      previous.claimable !== next.claimable || previous.claiming !== next.claiming ||
+      previous.draft !== next.draft || previous.registering !== next.registering) return false;
+  if (previous.card.id !== next.card.id || previous.card.serial !== next.card.serial ||
+      !!previous.card.locked !== !!next.card.locked || !sameCardGrid(previous.card, next.card)) return false;
+  return sameCardNumbersOnGrid(previous.marks, next.marks, previous.card.grid) &&
+    sameCardNumbersOnGrid(previous.called, next.called, previous.card.grid);
+}
+
+function readableMarkText(hexColor: string): string {
+  const hex = hexColor.replace('#', '');
+  if (!/^[0-9a-f]{6}$/i.test(hex)) return '#111827';
+  const channels = [0, 2, 4].map(offset => parseInt(hex.slice(offset, offset + 2), 16) / 255);
+  const linear = (value: number) => value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+  const luminance = 0.2126 * linear(channels[0]) + 0.7152 * linear(channels[1]) + 0.0722 * linear(channels[2]);
+  return luminance > 0.42 ? '#111827' : '#ffffff';
+}
+
 const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, called, markColor, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister }: CardProps) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
   const winning = useMemo(() => {
@@ -173,7 +205,7 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
   const winningCells = useMemo(() => new Set((winning ?? []).map(([r, c]) => r + '-' + c)), [winning]);
 
   return (
-    <section className={`bingo-card-surface relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-1 shadow-xl ${accent.glow}`}>
+    <section className={`bingo-card-surface relative min-w-0 rounded-[1.2rem] border-2 ${accent.border} bg-black p-1 shadow-xl ${accent.glow}`}>
       {draft ? (
         <button type="button" onClick={onRegister} disabled={registering} className={`flex w-full items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-1 text-base font-black text-white sm:text-xl disabled:opacity-60`}>
           {registering ? '…' : 'REGISTER'} · #{String(card.serial).padStart(5, '0')}
@@ -202,19 +234,11 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
               onClick={() => { if (value !== null && wasCalled) onToggle(value); }}
               aria-pressed={marked}
               aria-label={free ? labels.free : `${LETTERS[c]} ${value}`}
-              style={marked && !free ? {
-                backgroundColor: markColor,
-                color: (() => {
-                  const hex = markColor.replace('#', '');
-                  if (!/^[0-9a-f]{6}$/i.test(hex)) return '#111827';
-                  const r = parseInt(hex.slice(0, 2), 16) / 255;
-                  const g = parseInt(hex.slice(2, 4), 16) / 255;
-                  const b = parseInt(hex.slice(4, 6), 16) / 255;
-                  const linear = (v: number) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-                  return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b) > 0.42 ? '#111827' : '#ffffff';
-                })(),
-                boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.18), inset 0 0 9px rgba(255,255,255,.22)',
-              } : undefined}
+              data-marked={marked && !free ? 'true' : undefined}
+              style={marked && !free ? ({
+                '--bingo-mark-color': markColor,
+                '--bingo-mark-text-color': readableMarkText(markColor),
+              } as CSSProperties) : undefined}
               className={[
                 'relative grid aspect-square min-w-0 place-items-center rounded-[3px] text-[clamp(10px,2.1vw,22px)] font-black leading-none text-black transition',
                 free ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
@@ -236,7 +260,7 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
       )}
     </section>
   );
-}, (previous, next) => previous.labels === next.labels && previous.card === next.card && previous.index === next.index && previous.marks === next.marks && previous.called === next.called && previous.markColor === next.markColor && previous.pattern === next.pattern && previous.claimable === next.claimable && previous.claiming === next.claiming && previous.draft === next.draft && previous.registering === next.registering);
+}, sameBingoCardProps);
 
 function CalledBall({ number, latest = false }: { number: number; latest?: boolean }) {
   const letter = letterFor(number);
@@ -283,6 +307,9 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       const saved = localStorage.getItem('bgb.markColor');
       return ['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'].includes(saved ?? '') ? saved! : '#d4af37';
     } catch { return '#d4af37'; }
+  });
+  const [playerTheme, setPlayerTheme] = useState<'dark' | 'light'>(() => {
+    try { return localStorage.getItem('bgb.playerTheme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
   });
   const [cardOrder, setCardOrder] = useState<'oldest' | 'newest'>(() => {
     try { return localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest'; } catch { return 'oldest'; }
@@ -398,6 +425,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         const color = localStorage.getItem('bgb.markColor');
         setMarkColor(['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'].includes(color ?? '') ? color! : '#d4af37');
         setCardOrder(localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest');
+        setPlayerTheme(localStorage.getItem('bgb.playerTheme') === 'light' ? 'light' : 'dark');
       } catch { /* Keep the current settings if storage is unavailable. */ }
     };
     window.addEventListener('bgb-player-settings', syncCardSettings);
@@ -409,7 +437,11 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     };
   }, []);
 
-  const called = useMemo(() => new Set(calledNumbers), [calledNumbers]);
+  // SSE snapshots frequently contain fresh arrays even when no called number changed.
+  // Keep the lookup Set stable until the actual call sequence changes.
+  const calledKey = calledNumbers.join(',');
+  const called = useMemo(() => new Set(calledNumbers), [calledKey]);
+  const previousCalled = useMemo(() => new Set(calledNumbers.slice(0, -1)), [calledKey]);
   const orderedCards = useMemo(() => [...cards].sort((a, b) => {
     const difference = Number(a.serial) - Number(b.serial);
     return cardOrder === 'newest' ? -difference : difference;
@@ -426,14 +458,13 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
 
   const active = phase === 'running';
   const claimableCards = useMemo(() => {
-    if (!active || calledNumbers.length === 0) return [];
-    const previous = new Set(calledNumbers.slice(0, -1));
+    if (!active || calledKey.length === 0) return [];
     return cards.filter(card =>
       !card.locked &&
       findWinningPattern(card.grid, called, winPattern).missing === 0 &&
-      findWinningPattern(card.grid, previous, winPattern).missing > 0
+      findWinningPattern(card.grid, previousCalled, winPattern).missing > 0
     );
-  }, [active, cards, calledNumbers, called, winPattern]);
+  }, [active, cards, called, previousCalled, winPattern]);
 
   useEffect(() => {
     if (!active || !autoMark || calledNumbers.length === 0) return;
@@ -446,7 +477,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         }
       }
     }
-  }, [active, autoMark, calledNumbers, cards, markedByCard, toggleMark]);
+  }, [active, autoMark, calledKey, cards, markedByCard, toggleMark]);
 
   const celebrated = useRef<number | null>(null);
   const iWon = !!winner && cards.some(card => card.id === winner.cardId);
@@ -551,7 +582,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         : '0:00';
 
   return (
-    <main className="player-play-view relative mx-auto min-h-full w-full max-w-[1100px] overflow-x-clip rounded-[2rem] border-2 border-zinc-500/80 bg-[#030303] px-2 pb-32 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
+    <main data-player-theme={playerTheme} className="player-play-view relative mx-auto min-h-full w-full max-w-[1100px] overflow-visible rounded-[2rem] border-2 border-zinc-500/80 bg-[#030303] px-2 pb-32 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
       <div className="pointer-events-none absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_50%_12%,rgba(255,196,0,.17),transparent_36%),radial-gradient(ellipse_at_50%_100%,rgba(255,196,0,.13),transparent_38%)]" />
       <div className="relative z-10 space-y-2 sm:space-y-3">
 
@@ -867,7 +898,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         )}
 
         <footer className="fixed inset-x-0 bottom-[calc(4.6rem+env(safe-area-inset-bottom))] z-30 px-2 sm:px-4">
-          <div className="mx-auto flex max-w-[1100px] items-center gap-2 rounded-2xl border border-yellow-400 bg-black/95 p-2 shadow-[0_0_25px_rgba(250,204,21,.35)] backdrop-blur-xl">
+          <div className="mx-auto flex max-w-[1100px] items-center gap-2 rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_25px_rgba(250,204,21,.35)]">
             <button type="button" role="switch" aria-checked={autoMark} onClick={() => {
               const next = !autoMark;
               setAutoMark(next);
