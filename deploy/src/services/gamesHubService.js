@@ -87,6 +87,7 @@ function deterministicCrashPoint(seed) {
 function publicBet(bet) {
   return {
     id: bet.id,
+    requestId: bet.requestId ?? null,
     status: bet.status,
     stakeEtb: bet.stake / 100,
     selectedNumbers: bet.selectedNumbers,
@@ -96,6 +97,7 @@ function publicBet(bet) {
     payoutEtb: (bet.payout ?? 0) / 100,
     createdAt: bet.createdAt,
     settledAt: bet.settledAt ?? bet.cashedOutAt ?? null,
+    autoCashOutMultiplier: bet.autoCashOutMultiplier ?? null,
   };
 }
 
@@ -123,6 +125,9 @@ function mapRepoError(error) {
   }
   if (error instanceof RepoError && error.code === 'ROUND_NOT_OPEN') {
     throw new HttpError(409, 'betting_closed', 'Betting for this round has closed.');
+  }
+  if (error instanceof RepoError && error.code === 'AVIATOR_BET_LIMIT') {
+    throw new HttpError(409, 'aviator_bet_limit_reached', 'You can place up to two Aviator bets per round.');
   }
   if (error instanceof RepoError && error.code === 'BET_NOT_ACTIVE') {
     throw new HttpError(409, 'bet_not_active', 'This bet is no longer available to cash out.');
@@ -199,6 +204,29 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
         roundId: round.roundId, startedAt, crashAt, crashMultiplier,
       });
     }
+    if (game === 'aviator' && round.status === 'flying') {
+      // Auto Cash Out is evaluated by the server scheduler, not by client polling.
+      // Record the exact threshold-crossing time so scheduler jitter cannot lose a
+      // valid auto cash-out merely because the next tick arrived after the crash.
+      const dueAutoCashouts = (round.bets ?? []).filter((bet) =>
+        bet.status === 'active' && Number.isFinite(bet.autoCashOutMultiplier) &&
+        bet.autoCashOutMultiplier > 1 && bet.autoCashOutMultiplier <= round.crashMultiplier
+      );
+      for (const bet of dueAutoCashouts) {
+        const thresholdAt = round.startedAt + Math.ceil(Math.log(bet.autoCashOutMultiplier) / BETTING_GROWTH_PER_MS);
+        if (thresholdAt >= round.crashAt || thresholdAt > now()) continue;
+        const reachedMultiplier = Math.floor(Math.exp((thresholdAt - round.startedAt) * BETTING_GROWTH_PER_MS) * 100) / 100;
+        try {
+          await repo.cashOutAviatorGameHubBet({
+            roundId: round.roundId, betId: bet.id, userId: bet.userId,
+            multiplier: reachedMultiplier, cashedOutAt: thresholdAt,
+          });
+        } catch (error) {
+          if (!(error instanceof RepoError && error.code === 'BET_NOT_ACTIVE')) throw error;
+        }
+      }
+      round = await repo.getCurrentGameHubRound('aviator');
+    }
     if (game === 'aviator' && round.status === 'flying' && now() >= round.crashAt) {
       const settlements = allocateProportionalPool(round.bets ?? [], currentSettings.houseEdgePercent ?? DEFAULT_HOUSE_EDGE_PERCENT);
       round = await repo.crashAviatorGameHubRound({
@@ -246,6 +274,8 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const round = await tickGame(game);
     const serverTime = now();
     const myBets = (round.bets ?? []).filter((bet) => bet.userId === user.id).map(publicBet);
+    const liveBets = game === 'aviator' ? (round.bets ?? []).map((bet) => ({ player: String(bet.username || 'Player').slice(0, 32), stakeEtb: bet.stake / 100, status: bet.status, multiplier: bet.multiplier ?? null, payoutEtb: (bet.payout ?? 0) / 100 })) : undefined;
+    const playerCount = game === 'aviator' ? new Set((round.bets ?? []).map((bet) => bet.userId)).size : undefined;
     const wallet = await repo.getGameHubWallet(user.id, round.walletMode === 'shared' ? 'shared' : 'legacy-demo');
     const state = {
       game,
@@ -255,6 +285,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       serverTime,
       serverSeedHash: round.serverSeedHash,
       myBets,
+      ...(game === 'aviator' ? { liveBets, playerCount } : {}),
       minBetEtb: (game === 'keno' ? currentSettings.kenoMinBet : currentSettings.minBet) / 100,
       maxBetEtb: currentSettings.maxBet / 100,
       maxPayoutEtb: MAX_GAMES_HUB_PAYOUT_SANTIM / 100,
@@ -301,10 +332,22 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     if (!/^[A-Za-z0-9_-]{8,80}$/.test(requestId)) {
       throw new HttpError(400, 'invalid_request_id', 'Refresh the game and try again.');
     }
-    if (game === 'aviator' && (round.bets ?? []).some((item) => item.userId === user.id && item.requestId !== requestId)) {
-      throw new HttpError(409, 'aviator_bet_already_placed', 'You can place one Aviator bet per round.');
+    if (game === 'aviator') {
+      const playerBets = (round.bets ?? []).filter((item) => item.userId === user.id);
+      const isDuplicateRequest = playerBets.some((item) => item.requestId === requestId);
+      if (!isDuplicateRequest && playerBets.length >= 2) {
+        throw new HttpError(409, 'aviator_bet_limit_reached', 'You can place up to two Aviator bets per round.');
+      }
     }
     const stake = amountToSantim(input.amount, { ...currentSettings, minBet: game === 'keno' ? currentSettings.kenoMinBet : currentSettings.minBet });
+    let autoCashOutMultiplier;
+    if (game === 'aviator' && input.autoCashOutMultiplier !== undefined && input.autoCashOutMultiplier !== null && input.autoCashOutMultiplier !== '') {
+      const target = Number(input.autoCashOutMultiplier);
+      if (!Number.isFinite(target) || target < 1.01 || target > MAX_MULTIPLIER || Math.abs(target * 100 - Math.round(target * 100)) > 1e-7) {
+        throw new HttpError(400, 'invalid_auto_cashout', 'Auto Cash Out must be between 1.01× and 1,000× with up to two decimal places.');
+      }
+      autoCashOutMultiplier = Math.round(target * 100) / 100;
+    }
     const bet = {
       id: randomBytes(12).toString('hex'),
       requestId,
@@ -313,6 +356,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       stake,
       status: 'active',
       createdAt: now(),
+      ...(autoCashOutMultiplier ? { autoCashOutMultiplier } : {}),
     };
     if (game === 'keno') {
       const selected = input.selectedNumbers;

@@ -30,7 +30,7 @@ The draw uses a deterministic Fisher–Yates selection. For counter values 0, 1,
 
 ## Aviator
 
-- Players place one simulation-credit bet during the betting window (default 8 seconds), using the same shared wallet as Bingo and Keno.
+- Players may place up to two independent simulation-credit bets per round, each with its own stake and optional server-executed Auto Cash Out target. The server enforces the two-bet limit atomically. The existing crash-point generation and settlement formula are unchanged.
 - The round changes to flight on the server.
 - The displayed multiplier is an animation derived from the server start time; the server remains authoritative for Cash Out.
 - Cash Out is accepted only while the round is flying and the server timestamp is strictly earlier than the server crash timestamp.

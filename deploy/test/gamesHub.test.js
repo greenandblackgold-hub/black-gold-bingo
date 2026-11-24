@@ -146,9 +146,20 @@ test('Aviator commits a round before betting and reveals its seed only after cra
     amount: 5,
   });
   assert.equal(duplicate.duplicate, true);
+  const secondBet = await f.service.placeAviatorBet(f.user, {
+    requestId: 'aviator_test_request_02',
+    amount: 5,
+  });
+  assert.equal(secondBet.balanceEtb, 990);
+  assert.equal(secondBet.duplicate, false);
+  const duplicateSecondBet = await f.service.placeAviatorBet(f.user, {
+    requestId: 'aviator_test_request_02',
+    amount: 5,
+  });
+  assert.equal(duplicateSecondBet.duplicate, true);
   await assert.rejects(
-    f.service.placeAviatorBet(f.user, { requestId: 'aviator_test_request_02', amount: 5 }),
-    (e) => e instanceof HttpError && e.code === 'aviator_bet_already_placed',
+    f.service.placeAviatorBet(f.user, { requestId: 'aviator_test_request_03', amount: 5 }),
+    (e) => e instanceof HttpError && e.code === 'aviator_bet_limit_reached',
   );
 
   f.advance(9_000);
@@ -162,7 +173,7 @@ test('Aviator commits a round before betting and reveals its seed only after cra
     assert.ok(cashed.multiplier >= 1);
     assert.equal(cashed.bet.status, 'cashout_pending', 'Cash Out multiplier is recorded immediately but payout is deferred');
     assert.equal(cashed.bet.payoutEtb, 0, 'no wallet payout occurs before round settlement');
-    assert.equal((await f.repo.findUserById(f.user.id)).balance, 99500, 'cash-out does not credit the wallet before the pool is settled');
+    assert.equal((await f.repo.findUserById(f.user.id)).balance, 99000, 'cash-out does not credit the wallet before the pool is settled');
   }
 
   if (flyingOrCrashed.status === 'flying') {
@@ -180,9 +191,9 @@ test('Aviator commits a round before betting and reveals its seed only after cra
   assert.equal(completed.crashMultiplier >= 1, true);
   if (flyingOrCrashed.status === 'flying') {
     assert.equal(completed.myBets[0].status, 'cashed_out');
-    assert.ok(completed.myBets[0].payoutEtb <= 2.25, 'Aviator round payouts stay within 45% of the collected 5 ETB stake');
+    assert.ok(completed.myBets[0].payoutEtb <= 4.5, 'Aviator round payouts stay within 45% of the collected 10 ETB stake');
     assert.ok((await f.repo.listLedger(f.user.id)).some((entry) => entry.ref === `games:aviator:pool-win:${placed.bet.id}`), 'pool settlement is recorded in the common ledger');
-    assert.equal((await f.repo.findUserById(f.user.id)).balance, 99500 + Math.round(completed.myBets[0].payoutEtb * 100));
+    assert.equal((await f.repo.findUserById(f.user.id)).balance, 99000 + Math.round(completed.myBets[0].payoutEtb * 100));
   }
 });
 
@@ -259,4 +270,60 @@ test('Keno and Aviator remain blocked if production real-money mode is enabled',
     service.getState('keno', user),
     (e) => e instanceof HttpError && e.code === 'games_hub_demo_only',
   );
+});
+
+
+test('Aviator Auto Cash Out is executed by the server at the configured threshold before crash', async () => {
+  const f = await fixture();
+  const initial = await f.service.getState('aviator', f.user);
+  const round = await f.repo.getCurrentGameHubRound('aviator');
+  let seed = '';
+  let crashMultiplier = 1;
+  for (let i = 1; i < 10000 && crashMultiplier < 2; i++) {
+    seed = i.toString(16).padStart(64, '0');
+    const digest = createHmac('sha256', Buffer.from(seed, 'hex')).update('aviator-crash-v1').digest('hex');
+    const fraction = Number(BigInt('0x' + digest.slice(0, 13))) / 0x1_0000_0000_0000_0;
+    crashMultiplier = Math.min(1000, Math.max(1, Math.floor((0.99 / Math.max(1e-12, 1 - fraction)) * 100) / 100));
+  }
+  assert.ok(crashMultiplier >= 2, 'test seed must produce a crash point above the auto-cashout target');
+  await f.repo.updateGameHubRound('aviator', round.roundId, round.version, {
+    serverSeed: seed, serverSeedHash: createHash('sha256').update(seed).digest('hex'),
+  });
+  const accepted = await f.service.placeAviatorBet(f.user, {
+    requestId: 'aviator_auto_cash_01', amount: 5, autoCashOutMultiplier: 1.5,
+  });
+  assert.equal(accepted.bet.autoCashOutMultiplier, 1.5);
+  f.advance(9_000);
+  const flying = await f.service.getState('aviator', f.user);
+  assert.equal(flying.status, 'flying');
+  const targetDelay = Math.ceil(Math.log(1.5) / 0.00007);
+  f.advance(targetDelay);
+  const autoCashed = await f.service.getState('aviator', f.user);
+  const bet = autoCashed.myBets.find((item) => item.id === accepted.bet.id);
+  assert.equal(autoCashed.status, 'flying');
+  assert.equal(bet.status, 'cashout_pending');
+  assert.ok(bet.multiplier >= 1.5);
+  assert.equal(bet.autoCashOutMultiplier, 1.5);
+  const current = await f.repo.getCurrentGameHubRound('aviator');
+  f.advance(Math.max(1, current.crashAt - f.time() + 1));
+  const completed = await f.service.getState('aviator', f.user);
+  const settled = completed.myBets.find((item) => item.id === accepted.bet.id);
+  assert.equal(completed.status, 'crashed');
+  assert.equal(settled.status, 'cashed_out');
+  assert.ok(settled.payoutEtb > 0);
+});
+
+test('Aviator enforces the two-bet limit in persistence while keeping request retries idempotent', async () => {
+  const f = await fixture();
+  await f.service.getState('aviator', f.user);
+  const requests = await Promise.allSettled([
+    f.service.placeAviatorBet(f.user, { requestId: 'aviator_race_request_01', amount: 5 }),
+    f.service.placeAviatorBet(f.user, { requestId: 'aviator_race_request_02', amount: 5 }),
+    f.service.placeAviatorBet(f.user, { requestId: 'aviator_race_request_03', amount: 5 }),
+  ]);
+  assert.equal(requests.filter((item) => item.status === 'fulfilled').length, 2);
+  assert.equal(requests.filter((item) => item.status === 'rejected' && item.reason.code === 'aviator_bet_limit_reached').length, 1);
+  const duplicate = await f.service.placeAviatorBet(f.user, { requestId: 'aviator_race_request_01', amount: 5 });
+  assert.equal(duplicate.duplicate, true);
+  assert.equal((await f.repo.getCurrentGameHubRound('aviator')).bets.length, 2);
 });
