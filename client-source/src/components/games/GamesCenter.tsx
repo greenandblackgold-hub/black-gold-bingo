@@ -12,22 +12,22 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
   title: string; subtitle: string; detail: string; icon: 'bingo' | 'keno' | 'aviator' | 'mines' | 'virtual' | 'live'; onClick: () => void; openLabel: string; featured?: boolean; disabled?: boolean; disabledLabel?: string;
 }) {
   return (
-    <button type="button" disabled={disabled} onClick={onClick} className={`games-center-card group relative disabled:cursor-not-allowed disabled:opacity-100 flex min-h-64 w-full flex-col overflow-hidden rounded-3xl border text-left ${featured ? 'border-amber-300/50 bg-gradient-to-br from-[#28200d] via-[#100f0b] to-black' : 'border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black'} p-5 sm:p-6`}>
+    <button type="button" disabled={disabled} onClick={onClick} className={`games-center-card group relative disabled:cursor-not-allowed disabled:opacity-100 flex min-h-64 w-full flex-col overflow-hidden rounded-3xl border text-left ${featured ? 'border-amber-300/50 bg-gradient-to-br from-[#28200d] via-[#100f0b] to-black' : 'border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black'} p-4 sm:p-5`}>
       <span className="absolute -right-8 -top-12 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl transition group-hover:bg-amber-300/20" />
       {icon === 'aviator' || icon === 'bingo' || icon === 'virtual' || icon === 'live' || icon === 'mines' ? (
-        <span className={`games-center-artwork relative mt-1 flex ${icon === 'mines' ? 'h-48 sm:h-56 p-0' : 'h-36 sm:h-40 p-1'} w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl ${icon === 'bingo' ? 'bg-[#12052b] shadow-[0_0_24px_rgba(168,85,247,.28)]' : icon === 'aviator' ? 'bg-[#050606] shadow-[0_0_24px_rgba(132,204,22,.24)]' : icon === 'live' ? 'bg-[#08132a] shadow-[0_0_24px_rgba(250,190,55,.24)]' : icon === 'mines' ? 'bg-[#090b18] shadow-[0_0_24px_rgba(59,130,246,.28)]' : 'bg-[#09072c] shadow-[0_0_24px_rgba(34,211,238,.24)]'}`} aria-label={icon === 'bingo' ? 'Bingo PRO premium emblem' : icon === 'aviator' ? 'Aviator Antonov aircraft game artwork' : icon === 'live' ? 'Live Sports floodlit stadium and football artwork' : icon === 'mines' ? 'Selected premium MINES cave, diamond and gold artwork' : 'Virtual Sports holographic arena artwork'}>
-          <img loading="eager" decoding="async" draggable={false} src={icon === 'bingo' ? '/images/bingo-pro-premium-emblem.svg?v=2' : icon === 'aviator' ? '/images/aviator-antonov-card.webp' : icon === 'live' ? '/images/live-sports-premium.svg?v=3' : icon === 'mines' ? '/images/mines-premium-selected.jpg?v=1' : '/images/virtual-sports-premium.svg?v=4'} alt={icon === 'bingo' ? 'Bingo PRO premium crown and numbered balls emblem' : icon === 'aviator' ? 'Red Antonov aircraft with Aviator and SPRIBE branding' : icon === 'live' ? 'Live sports football in a floodlit stadium' : icon === 'mines' ? 'MINES premium cave artwork with gold title and glowing blue diamond' : 'Virtual sports glowing holographic football in a futuristic arena'} className={icon === 'mines' ? 'block h-full w-full min-h-0 min-w-0 object-cover object-center' : 'block h-full w-full min-h-0 min-w-0 object-contain'} />
+        <span className={`games-center-artwork relative mt-1 flex ${icon === 'mines' ? 'h-52 sm:h-60 p-0' : 'h-52 sm:h-60 p-1'} w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl ${icon === 'bingo' ? 'bg-[#12052b] shadow-[0_0_24px_rgba(168,85,247,.28)]' : icon === 'aviator' ? 'bg-[#050606] shadow-[0_0_24px_rgba(132,204,22,.24)]' : icon === 'live' ? 'bg-[#08132a] shadow-[0_0_24px_rgba(250,190,55,.24)]' : icon === 'mines' ? 'bg-[#090b18] shadow-[0_0_24px_rgba(59,130,246,.28)]' : 'bg-[#09072c] shadow-[0_0_24px_rgba(34,211,238,.24)]'}`} aria-label={icon === 'bingo' ? 'Bingo PRO premium emblem' : icon === 'aviator' ? 'Aviator Antonov aircraft game artwork' : icon === 'live' ? 'Live Sports floodlit stadium and football artwork' : icon === 'mines' ? 'Selected premium MINES cave, diamond and gold artwork' : 'Virtual Sports holographic arena artwork'}>
+          <img loading="eager" decoding="async" draggable={false} src={icon === 'bingo' ? '/images/bingo-pro-premium-emblem.svg?v=2' : icon === 'aviator' ? '/images/aviator-antonov-card.webp' : icon === 'live' ? '/images/live-sports-premium.svg?v=3' : icon === 'mines' ? '/images/mines-premium-selected.jpg?v=1' : '/images/virtual-sports-premium.svg?v=4'} alt={icon === 'bingo' ? 'Bingo PRO premium crown and numbered balls emblem' : icon === 'aviator' ? 'Red Antonov aircraft with Aviator and SPRIBE branding' : icon === 'live' ? 'Live sports football in a floodlit stadium' : icon === 'mines' ? 'MINES premium cave artwork with gold title and glowing blue diamond' : 'Virtual sports glowing holographic football in a futuristic arena'} className={'block h-full w-full min-h-0 min-w-0 object-contain object-center'} />
         </span>
       ) : (
-        <span className={icon === 'keno' ? 'games-center-artwork relative mt-1 block h-36 w-full shrink-0 overflow-hidden rounded-2xl border border-lime-400/35 bg-[#00110f] p-1 shadow-[inset_0_1px_rgba(255,255,255,.08)] sm:h-40' : 'relative mt-1 grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]'}>
-          {icon === 'keno' && <img loading="eager" decoding="async" draggable={false} src="/images/fast-keno-card-v4.jpg" alt="FAST KENO — Kiza.bet" className="block h-full w-full min-h-0 min-w-0 object-contain" />}
+        <span className={icon === 'keno' ? 'games-center-artwork relative mt-1 block h-52 w-full shrink-0 overflow-hidden rounded-2xl border border-lime-400/35 bg-[#00110f] p-1 shadow-[inset_0_1px_rgba(255,255,255,.08)] sm:h-60' : 'relative mt-1 grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]'}>
+          {icon === 'keno' && <img loading="eager" decoding="async" draggable={false} src="/images/fast-keno-card-v4.jpg" alt="FAST KENO — Kiza.bet" className="block h-full w-full min-h-0 min-w-0 object-contain object-center" />}
         </span>
       )}
       {disabled && <span className="relative mt-3 self-start rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-amber-200">{disabledLabel}</span>}
-      <span className="relative mt-3 text-[10px] font-black uppercase tracking-[.28em] text-amber-400">{subtitle}</span>
-      <span className="relative mt-2 text-2xl font-black tracking-wide text-amber-50">{title}</span>
-      <span className="relative mt-2 max-w-sm text-sm leading-6 text-amber-100/60">{detail}</span>
-      {!disabled && <span className="relative mt-auto flex items-center gap-2 pt-6 text-sm font-bold text-amber-300">{openLabel} <span aria-hidden>→</span></span>}
+      <span className="relative mt-2 text-[9px] font-black uppercase tracking-[.22em] text-amber-400">{subtitle}</span>
+      <span className="relative mt-1.5 text-xl font-black tracking-wide text-amber-50">{title}</span>
+      <span className="relative mt-1.5 max-w-sm text-xs leading-5 text-amber-100/60">{detail}</span>
+      {!disabled && <span className="relative mt-auto flex items-center gap-2 pt-4 text-xs font-bold text-amber-300">{openLabel} <span aria-hidden>→</span></span>}
     </button>
   );
 }
@@ -105,7 +105,7 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
       </div>
       {availabilityError && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-950/30 p-3 text-sm text-red-200">{availabilityError}</p>}
       {(!serverMode || availability !== null) ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {(!serverMode || availability?.bingoEnabled === true) && <GameCard title="Bingo PRO" subtitle={t.bingoSubtitle} detail={t.bingoDetail} icon="bingo" onClick={onOpenBingo} openLabel={t.openGame} featured />}
         {(!serverMode || availability?.kenoEnabled === true) && <GameCard title="Keno" subtitle={t.kenoSubtitle} detail={t.kenoDetail} icon="keno" onClick={onOpenKeno} openLabel={t.openGame} />}
         {(!serverMode || availability?.aviatorEnabled === true) && <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} openLabel={t.openGame} />}
@@ -116,8 +116,8 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" role="status" aria-busy="true" aria-label={t.loadingBalance}>
           {Array.from({ length: 6 }, (_, index) => (
-            <div key={index} className="min-h-64 w-full overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black p-5 sm:p-6">
-              <div className="h-36 w-full rounded-2xl bg-amber-100/[0.045] sm:h-40" />
+            <div key={index} className="min-h-64 w-full overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black p-4 sm:p-5">
+              <div className="h-52 w-full rounded-2xl bg-amber-100/[0.045] sm:h-60" />
               <div className="mt-5 h-3 w-1/3 rounded bg-amber-100/[0.07]" />
               <div className="mt-3 h-7 w-2/3 rounded bg-amber-100/[0.07]" />
               <div className="mt-3 h-3 w-5/6 rounded bg-amber-100/[0.045]" />
