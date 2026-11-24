@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
@@ -51,6 +51,42 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const [notifications, setNotifications] = useState(() => {
     try { return localStorage.getItem('bgb.playerNotifications') === 'on'; } catch { return false; }
   });
+  const [cardsPerRow, setCardsPerRow] = useState(() => {
+    try { const n = Number(localStorage.getItem('bgb.cardsPerRow')); return Number.isInteger(n) && n >= 2 && n <= 4 ? n : 2; } catch { return 2; }
+  });
+  const [cardOrder, setCardOrder] = useState<'oldest' | 'newest'>(() => {
+    try { return localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest'; } catch { return 'oldest'; }
+  });
+  const markColors = ['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'];
+  const [markColor, setMarkColor] = useState(() => {
+    try { const value = localStorage.getItem('bgb.markColor'); return markColors.includes(value ?? '') ? value! : '#d4af37'; } catch { return '#d4af37'; }
+  });
+  const [removeUnregistered, setRemoveUnregistered] = useState(() => {
+    try { return localStorage.getItem('bgb.removeUnregistered') === 'on'; } catch { return false; }
+  });
+  const [selectedCards, setSelectedCards] = useState<string[]>(() => {
+    try { const value: unknown = JSON.parse(localStorage.getItem('bgb.selectedCards') || '[]'); return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : []; } catch { return []; }
+  });
+  useEffect(() => {
+    const syncSettings = () => {
+      try {
+        const layout = Number(localStorage.getItem('bgb.cardsPerRow'));
+        setCardsPerRow(Number.isInteger(layout) && layout >= 2 && layout <= 4 ? layout : 2);
+        setCardOrder(localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest');
+        const color = localStorage.getItem('bgb.markColor');
+        setMarkColor(markColors.includes(color ?? '') ? color! : '#d4af37');
+        setRemoveUnregistered(localStorage.getItem('bgb.removeUnregistered') === 'on');
+        const selected: unknown = JSON.parse(localStorage.getItem('bgb.selectedCards') || '[]');
+        setSelectedCards(Array.isArray(selected) ? selected.filter((id): id is string => typeof id === 'string') : []);
+      } catch { /* Keep the current visible settings if storage is unavailable. */ }
+    };
+    window.addEventListener('bgb-player-settings', syncSettings);
+    window.addEventListener('storage', syncSettings);
+    return () => {
+      window.removeEventListener('bgb-player-settings', syncSettings);
+      window.removeEventListener('storage', syncSettings);
+    };
+  }, []);
   const [expanded, setExpanded] = useState<string | null>(settingsOnly ? 'settings' : null);
   const [inlineMenuOpen, setInlineMenuOpen] = useState(false);
   const [showCardPurchase, setShowCardPurchase] = useState(false);
@@ -229,12 +265,12 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                     <div className="rounded-xl border border-amber-400/25 bg-black/20 p-3">
                       <h4 className="mb-3 font-black text-amber-300">{t.gameSettings}</h4>
                       <div className="space-y-4">
-                        <div><p className="mb-2 font-semibold text-amber-200">{t.layout}</p><div className="grid grid-cols-3 gap-2">{[2,3,4].map(n=><button key={n} type="button" onClick={()=>{try{localStorage.setItem('bgb.cardsPerRow',String(n));window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className="rounded-lg border border-amber-400/40 px-3 py-2 font-bold">{n} {t.card}</button>)}</div></div>
-                        <div><p className="mb-2 font-semibold text-amber-200">{t.cardOrder}</p><div className="flex flex-wrap gap-2"><button type="button" onClick={()=>{try{localStorage.setItem('bgb.cardOrder','oldest');window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className="rounded-lg border border-amber-400/40 px-3 py-2">{t.oldestFirst}</button><button type="button" onClick={()=>{try{localStorage.setItem('bgb.cardOrder','newest');window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className="rounded-lg border border-amber-400/40 px-3 py-2">{t.newestFirst}</button></div></div>
+                        <div><p className="mb-2 font-semibold text-amber-200">{t.layout}</p><div className="grid grid-cols-3 gap-2">{[2,3,4].map(n=><button key={n} type="button" aria-pressed={cardsPerRow===n} onClick={()=>{setCardsPerRow(n);try{localStorage.setItem('bgb.cardsPerRow',String(n));window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className={`rounded-lg border px-3 py-2 font-bold ${cardsPerRow===n?'border-amber-200 bg-amber-400/20 text-amber-100':'border-amber-400/40'}`}>{n} {t.card}</button>)}</div></div>
+                        <div><p className="mb-2 font-semibold text-amber-200">{t.cardOrder}</p><div className="flex flex-wrap gap-2"><button type="button" aria-pressed={cardOrder==='oldest'} onClick={()=>{setCardOrder('oldest');try{localStorage.setItem('bgb.cardOrder','oldest');window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className={`rounded-lg border px-3 py-2 ${cardOrder==='oldest'?'border-amber-200 bg-amber-400/20 text-amber-100':'border-amber-400/40'}`}>{t.oldestFirst}</button><button type="button" aria-pressed={cardOrder==='newest'} onClick={()=>{setCardOrder('newest');try{localStorage.setItem('bgb.cardOrder','newest');window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className={`rounded-lg border px-3 py-2 ${cardOrder==='newest'?'border-amber-200 bg-amber-400/20 text-amber-100':'border-amber-400/40'}`}>{t.newestFirst}</button></div></div>
 
-                        <label className="flex items-center justify-between gap-3"><span>{t.removeUnregistered}</span><input type="checkbox" defaultChecked={localStorage.getItem('bgb.removeUnregistered')==='on'} onChange={async e=>{localStorage.setItem('bgb.removeUnregistered',e.target.checked?'on':'off');if(e.target.checked){const results=await Promise.all(cards.map(async c=>({id:c.id,result:await verifyCard(c.id)})));removeCards(results.filter(x=>x.result.status!=='valid').map(x=>x.id));}}}/></label>
-                        <div><p className="mb-2 font-semibold text-amber-200">{t.markColor}</p><div className="flex flex-wrap gap-3">{['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'].map(color=><button key={color} type="button" aria-label={`${t.markColor}: ${color}`} onClick={()=>{localStorage.setItem('bgb.markColor',color);window.dispatchEvent(new Event('bgb-player-settings'));}} className="h-9 w-9 rounded-full border-2 border-white/50" style={{backgroundColor:color}}/>)}</div></div>
-                        <div><p className="mb-2 font-semibold text-amber-200">{t.chooseMultipleCards}</p><div className="mb-2 flex gap-2"><button type="button" onClick={()=>{localStorage.setItem('bgb.selectedCards',JSON.stringify(cards.map(c=>c.id)));window.dispatchEvent(new Event('bgb-player-settings'));}} className="rounded-lg border border-amber-400/40 px-3 py-2">{t.selectAll}</button><button type="button" onClick={()=>{localStorage.setItem('bgb.selectedCards','[]');window.dispatchEvent(new Event('bgb-player-settings'));}} className="rounded-lg border border-current/20 px-3 py-2">{t.clearSelection}</button></div><div className="grid grid-cols-2 gap-2">{cards.map(c=><label key={c.id} className="flex items-center gap-2 rounded-lg border border-current/15 p-2"><input type="checkbox" defaultChecked={JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]').includes(c.id)} onChange={e=>{const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]');localStorage.setItem('bgb.selectedCards',JSON.stringify(e.target.checked?[...ids,c.id]:ids.filter((id:string)=>id!==c.id)));window.dispatchEvent(new Event('bgb-player-settings'));}}/><span>{t.card} #{c.serial}</span></label>)}</div></div>
+                        <label className="flex items-center justify-between gap-3"><span>{t.removeUnregistered}</span><input type="checkbox" checked={removeUnregistered} onChange={async e=>{const enabled=e.target.checked;setRemoveUnregistered(enabled);localStorage.setItem('bgb.removeUnregistered',enabled?'on':'off');window.dispatchEvent(new Event('bgb-player-settings'));if(enabled){const results=await Promise.all(cards.map(async c=>({id:c.id,result:await verifyCard(c.id)})));removeCards(results.filter(x=>x.result.status!=='valid').map(x=>x.id));}}}/></label>
+                        <div><p className="mb-2 font-semibold text-amber-200">{t.markColor}</p><div className="flex flex-wrap gap-3">{markColors.map(color=><button key={color} type="button" aria-label={`${t.markColor}: ${color}`} aria-pressed={markColor===color} onClick={()=>{setMarkColor(color);localStorage.setItem('bgb.markColor',color);window.dispatchEvent(new Event('bgb-player-settings'));}} className={`h-9 w-9 rounded-full border-2 ${markColor===color?'border-amber-300 ring-2 ring-amber-300 ring-offset-2 ring-offset-zinc-950':'border-white/50'}`} style={{backgroundColor:color}}/>)}</div></div>
+                        <div><p className="mb-2 font-semibold text-amber-200">{t.chooseMultipleCards}</p><div className="mb-2 flex gap-2"><button type="button" onClick={()=>{const ids=cards.map(c=>c.id);setSelectedCards(ids);localStorage.setItem('bgb.selectedCards',JSON.stringify(ids));window.dispatchEvent(new Event('bgb-player-settings'));}} className="rounded-lg border border-amber-400/40 px-3 py-2">{t.selectAll}</button><button type="button" onClick={()=>{setSelectedCards([]);localStorage.setItem('bgb.selectedCards','[]');window.dispatchEvent(new Event('bgb-player-settings'));}} className="rounded-lg border border-current/20 px-3 py-2">{t.clearSelection}</button></div><div className="grid grid-cols-2 gap-2">{cards.map(c=><label key={c.id} className="flex items-center gap-2 rounded-lg border border-current/15 p-2"><input type="checkbox" checked={selectedCards.includes(c.id)} onChange={e=>{const ids=e.target.checked?[...selectedCards.filter(id=>id!==c.id),c.id]:selectedCards.filter(id=>id!==c.id);setSelectedCards(ids);localStorage.setItem('bgb.selectedCards',JSON.stringify(ids));window.dispatchEvent(new Event('bgb-player-settings'));}}/><span>{t.card} #{c.serial}</span></label>)}</div></div>
                         <button type="button" onClick={()=>{clearMarks();localStorage.setItem('bgb.selectedCards','[]');window.dispatchEvent(new Event('bgb-player-settings'));}} className="w-full rounded-lg border border-amber-400/40 px-3 py-2 font-bold text-amber-200">{t.clearMarks}</button>
                       </div>
                     </div>
