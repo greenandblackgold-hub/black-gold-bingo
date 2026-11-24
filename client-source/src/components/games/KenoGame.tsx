@@ -18,7 +18,7 @@ const copy = {
   en: { title: 'BLACK GOLD KENO', rules: 'RULES', sound: 'SOUND', turbo: 'TURBO', draw: 'DRAWN NUMBERS', picks: 'PICKS', hits: 'HITS', bet: 'BET', total: 'TOTAL', game: 'GAME', history: 'HISTORY', results: 'RESULTS', stats: 'STATISTICS', live: 'MY TICKETS', clear: 'CLEAR', quick: 'QUICK PICK', selected: 'SELECTED NUMBERS', play: 'BET NOW', waiting: 'Waiting for draw', noTickets: 'No tickets in this round yet', noHistory: 'No completed rounds yet', rounds: 'Rounds', tickets: 'Tickets', wagered: 'Total wagered', won: 'Total returned', count: 'Count', status: 'Status', payout: 'Payout', noWin: 'No prize', minMax: 'Allowed', round: 'Round', drawComplete: 'DRAW COMPLETE', recent: 'RECENT RESULTS', poolNote: 'Final payouts may be adjusted by the round pool and the maximum payout cap.', simulation: 'DEMO CREDITS ONLY', boardClosed: 'All 20 numbers have been drawn. The board will return automatically when the next round opens.', fast:'FAST', chooseTen:'Choose 10 numbers', fromTo:'From 1 to 80', selectedCount:'selected', decreaseBet:'Decrease bet', increaseBet:'Increase bet', openMenu:'Open player menu', timeRemaining:'Time remaining in this round', drawnNumbersAria:'Drawn Keno numbers', number:'Number', selectedState:'selected', betButton:'BET', all:'All', myTickets:'My Tickets', myBets:'My Bets', ticket:'Ticket', waitingBet:'Waiting' },
 } as const;
 
-export function KenoGame({ onBack, onSwitchGame, onOpenMenu }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator' | 'mines') => void; onOpenMenu: () => void }) {
+export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator' | 'mines') => void; onOpenMenu: () => void }) {
   const { lang } = useLanguage();
   const { user } = useAuth();
   const t = gameUi.keno[lang];
@@ -119,23 +119,21 @@ export function KenoGame({ onBack, onSwitchGame, onOpenMenu }: { onBack: () => v
   const previousBalls = visibleDrawnNumbers.slice(-8,-1);
 
   return (
-    <main className="keno-reference-page mx-auto min-h-[100dvh] w-full max-w-4xl space-y-3 bg-[#070707] px-2 text-[#f3dfad] sm:px-4">
-      <header className="relative z-10 -mx-2 flex min-h-[42px] items-center justify-between gap-2 border-b border-emerald-400/15 bg-[#07110f] px-2 py-1 shadow-[0_4px_16px_rgba(0,0,0,.35)]">
-        <div className="flex shrink-0 items-center gap-2"><button type="button" onClick={onBack} aria-label={lang === 'en' ? 'Back to games' : lang === 'ti' ? 'ናብ ጸወታታት ተመለስ' : 'ወደ ጨዋታዎች ተመለስ'} className="grid h-8 w-8 place-items-center rounded-lg border border-emerald-300/20 bg-black/40 text-base text-emerald-200">←</button><span className="leading-[.82]"><span className="block text-[10px] font-black italic text-white">{c.fast}</span><span className="block text-[17px] font-black italic tracking-tight text-emerald-300">KENO</span></span></div>
-        <div className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full border border-emerald-400/20 bg-black/35 px-2 py-1">
-          <span className="truncate text-[10px] font-semibold text-emerald-100/80">{money(state?.balanceEtb ?? user?.balance ?? 0)} ETB</span>
-          <span className="h-3 w-px shrink-0 bg-emerald-200/20" />
-          <span className="truncate text-[10px] font-semibold text-white">ID: {user?.id ? user.id.slice(-9) : '—'}</span>
-          <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-emerald-400 text-[10px] font-black text-[#052016]">✓</span>
+    <main className="keno-reference-page mx-auto min-h-[100dvh] w-full max-w-[480px] space-y-2 bg-[#050505] px-2 text-[#f3dfad] sm:px-3">
+      <header className="keno-topbar">
+        <div className="keno-brand"><span>{c.fast}</span><strong>KENO</strong></div>
+        <div className="keno-account">
+          <span>{money(state?.balanceEtb ?? user?.balance ?? 0)} ETB</span>
+          <i />
+          <span>ID: {user?.id ? user.id.slice(-9) : '—'}</span>
+          <b aria-label="Verified">✓</b>
         </div>
-        <button type="button" onClick={onOpenMenu} aria-label={c.openMenu} className="grid h-8 w-8 shrink-0 place-items-center text-emerald-300"><span className="text-[28px] leading-none">≡</span></button>
+        <button type="button" onClick={onOpenMenu} aria-label={c.openMenu} className="keno-menu">☰</button>
       </header>
-
-      <nav aria-label={lang === 'en' ? 'Switch game' : lang === 'ti' ? 'ቀይር ጸወታ' : 'ጨዋታ ቀይር'} className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-400/15 bg-[#0b1513] p-2">{[{id:'bingo',label:lang==='en'?'Bingo':lang==='ti'?'ቢንጎ':'ቢንጎ'},{id:'keno',label:'Keno'},{id:'aviator',label:'Aviator'},{id:'mines',label:'Mines'}].map(item=><button key={item.id} type="button" onClick={()=>onSwitchGame(item.id as 'bingo'|'keno'|'aviator'|'mines')} aria-current={item.id==='keno'?'page':undefined} className={'rounded-lg border px-3 py-2 text-[11px] font-black '+(item.id==='keno'?'border-emerald-300/50 bg-emerald-300/15 text-emerald-200':'border-emerald-300/10 bg-black/30 text-emerald-100/65 hover:border-emerald-300/35')}>{item.label}</button>)}</nav>
 
       {isBetting && <div aria-label={c.timeRemaining} className="h-5 text-center font-mono text-[17px] font-black leading-5 tracking-wider text-emerald-100">{'00:' + String(secondsLeft).padStart(2, '0')}</div>}
 
-      {isBetting && <section className="overflow-hidden rounded-lg border border-emerald-300/10 bg-[#253532] shadow-inner">
+      {isBetting && <section className="keno-bet-panel overflow-hidden rounded-lg border border-emerald-300/10 bg-[#11100c] shadow-inner">
         <div className="relative flex min-h-[164px] items-center gap-3 overflow-hidden px-3 py-3">
           <div aria-hidden="true" className="pointer-events-none absolute -left-8 top-[-100px] h-64 w-64 rounded-full border border-emerald-200/10 shadow-[0_0_0_22px_rgba(16,185,129,.025),0_0_0_44px_rgba(16,185,129,.02)]" />
           <div className="relative flex w-[92px] shrink-0 flex-col items-center justify-center">
@@ -149,7 +147,7 @@ export function KenoGame({ onBack, onSwitchGame, onOpenMenu }: { onBack: () => v
             <p className="mt-2 text-[10px] font-semibold text-emerald-100/55">{selected.length}/10 {c.selectedCount}</p>
           </div>
         </div>
-        <div className="grid grid-cols-10 gap-[3px] bg-[#111b1a] p-[3px]">
+        <div className="keno-number-grid grid grid-cols-10 gap-[3px] bg-[#090909] p-[3px]">
           {Array.from({length:80},(_,i)=>i+1).map(n=>{
             const chosen=selected.includes(n);
             const previous=history[0]?.drawnNumbers?.includes(n) ?? false;
@@ -158,7 +156,7 @@ export function KenoGame({ onBack, onSwitchGame, onOpenMenu }: { onBack: () => v
             </button>;
           })}
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr)_66px_66px] items-stretch gap-[3px] bg-[#101a18] p-[3px]">
+        <div className="keno-stake-controls grid grid-cols-[minmax(0,1fr)_66px_66px] items-stretch gap-[3px] bg-[#090909] p-[3px]">
           <div className="flex h-[58px] items-center justify-between rounded-sm bg-[#253330] px-3">
             <button type="button" disabled={!isBetting||Number(amount)<=minBet} onClick={()=>adjustBet(-1)} aria-label={c.decreaseBet} className="text-3xl font-black text-slate-300 disabled:opacity-30">−</button>
             <span className="text-[25px] font-black tabular-nums text-white">{Number(amount).toLocaleString(undefined,{maximumFractionDigits:2})}</span>
@@ -167,18 +165,18 @@ export function KenoGame({ onBack, onSwitchGame, onOpenMenu }: { onBack: () => v
           <button type="button" disabled={!isBetting} onClick={()=>adjustBet(numericAmount)} className="rounded-sm bg-[#263b34] text-[12px] font-black text-emerald-300 disabled:opacity-40">X2</button>
           <button type="button" disabled={!isBetting} onClick={()=>setAmount(maxBet.toFixed(2))} className="rounded-sm bg-[#263b34] text-[12px] font-black text-emerald-300 disabled:opacity-40">MAX</button>
         </div>
-        <button type="button" disabled={!isBetting||!selected.length||!validAmount||busy} onClick={()=>void submit()} className="w-full rounded-b-md border-t border-emerald-200/15 bg-gradient-to-b from-[#276b4b] to-[#17432f] py-3 text-[25px] font-black text-slate-200 shadow-inner disabled:opacity-45">{busy?t.confirming:c.betButton}</button>
+        <button type="button" disabled={!isBetting||!selected.length||!validAmount||busy} onClick={()=>void submit()} className="keno-bet-submit w-full rounded-b-md border-t border-emerald-200/15 bg-gradient-to-b from-[#276b4b] to-[#17432f] py-3 text-[25px] font-black text-slate-200 shadow-inner disabled:opacity-45">{busy?t.confirming:c.betButton}</button>
         {(error||notice)&&<p role={error?'alert':'status'} className={'px-3 py-2 text-center text-xs '+(error?'bg-red-950/50 text-red-200':'bg-emerald-950/50 text-emerald-200')}>{error||notice}</p>}
         <div className="flex justify-between px-2 py-1 text-[9px] text-emerald-100/50"><span>Minimum {money(minBet)} ETB</span><span>Maximum {money(maxBet)} ETB</span><button type="button" onClick={()=>document.getElementById('keno-rules')?.scrollIntoView({behavior:'smooth',block:'center'})}>{c.rules}</button></div>
       </section>}
 
-      {inDrawPhase && <section className="relative flex min-h-[188px] flex-col items-center justify-center overflow-hidden rounded-lg bg-[#101b19] px-2 py-2">
+      {inDrawPhase && <section className="keno-draw-stage relative flex min-h-[188px] flex-col items-center justify-center overflow-hidden rounded-lg bg-[#101b19] px-2 py-2">
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/10 shadow-[0_0_0_18px_rgba(16,185,129,.025),0_0_0_38px_rgba(16,185,129,.02),0_0_0_58px_rgba(16,185,129,.015)]"/>
         <div className="relative mb-1 flex h-[90px] w-full items-center justify-center"><span key={liveBall} className="keno-live-ball grid h-[88px] w-[88px] place-items-center rounded-full border border-slate-500/70 bg-[radial-gradient(circle_at_32%_22%,#84949a,#304550_48%,#0b1720_76%)] text-[42px] font-black text-white shadow-[inset_0_3px_8px_rgba(255,255,255,.3),0_8px_25px_rgba(0,0,0,.65)]">{liveBall}</span><span className="absolute right-2 top-0 font-mono text-xs font-black text-white">{visibleDrawnNumbers.length} <i className="text-emerald-300">/</i> 20</span></div>
         <div className="relative flex min-h-9 max-w-full items-center justify-center gap-1.5 overflow-hidden">{previousBalls.map((n,i)=><span key={n} className="keno-drawn-preview-ball grid h-9 w-9 shrink-0 place-items-center rounded-full border border-slate-500/60 bg-[radial-gradient(circle_at_35%_25%,#536873,#1c303b_58%,#07141b)] text-[11px] font-black text-white">{n}</span>)}</div>
       </section>}
 
-      {!isBetting && state?.status === 'settled' && <section className="relative overflow-hidden rounded-lg bg-[#101b19] px-1 py-3">
+      {!isBetting && state?.status === 'settled' && <section className="keno-draw-stage relative overflow-hidden rounded-lg bg-[#101b19] px-1 py-3">
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-110px] h-64 w-64 -translate-x-1/2 rounded-full border border-emerald-300/10 shadow-[0_0_0_22px_rgba(16,185,129,.025),0_0_0_44px_rgba(16,185,129,.02)]"/>
         <div className="relative mb-2 flex justify-end pr-2 font-mono text-xs font-black text-white">{visibleDrawnNumbers.length} <span className="px-1 text-emerald-300">/</span> 20</div>
         <div aria-label={c.drawnNumbersAria} aria-live="polite" className="relative grid grid-cols-10 gap-1.5 sm:gap-2">
@@ -188,11 +186,11 @@ export function KenoGame({ onBack, onSwitchGame, onOpenMenu }: { onBack: () => v
 
       {!isBetting && !inDrawPhase && state?.status !== 'settled' && <section className="grid min-h-[120px] place-items-center rounded-lg bg-[#101b19] text-sm text-emerald-100/60">{t.waitingDraw}</section>}
 
-      <nav aria-label="Keno sections" className="flex items-center gap-4 overflow-x-auto border-b border-emerald-400/20 bg-[#101b19] px-1 py-2 text-[11px] font-black uppercase tracking-wide [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav aria-label="Keno sections" className="keno-tabs flex items-center gap-4 overflow-x-auto border-b border-emerald-400/20 bg-[#101b19] px-1 py-2 text-[11px] font-black uppercase tracking-wide [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map(item=><button key={item.id} type="button" onClick={()=>setTab(item.id)} aria-current={tab===item.id?'page':undefined} className={'flex shrink-0 items-center gap-1 whitespace-nowrap border-b-2 pb-1 '+(tab===item.id?'border-emerald-300 text-emerald-300':'border-transparent text-emerald-100/55')}><span aria-hidden="true">{item.id==='game'?'▶':item.id==='history'?'◴':item.id==='results'?'✓':item.id==='statistics'?'▥':'♛'}</span>{item.label}</button>)}
       </nav>
 
-      <div className="grid grid-cols-3 items-center bg-[#101b19] px-2 py-1 text-[10px] text-emerald-100/65">
+      <div className="keno-counts grid grid-cols-3 items-center bg-[#101b19] px-2 py-1 text-[10px] text-emerald-100/65">
         <div><span className="block text-[9px]">{c.all}</span><b className="font-mono text-emerald-300">{history.length}</b></div>
         <div className="text-center"><span className="block text-[9px]">{c.myTickets}</span><b className="font-mono text-emerald-300">{state?.myBets.length??0}</b></div>
         <div className="text-right"><span className="block text-[9px]">{c.myBets}</span><b className="font-mono text-emerald-300">{state?.myBets.length??0}</b></div>
@@ -218,7 +216,7 @@ export function KenoGame({ onBack, onSwitchGame, onOpenMenu }: { onBack: () => v
 
 function BetCard({ bet, labels }: { bet: KenoBet; labels: (typeof copy)['en'] | (typeof copy)['am'] | (typeof copy)['ti'] }) {
   return <article className={'overflow-hidden rounded-lg border p-1.5 '+(bet.payoutEtb>0?'border-emerald-400/40 bg-[#16432f]':'border-white/5 bg-[#172421]')}>
-    <div className="px-1 pb-1 text-[11px] font-black text-emerald-300">{labels.ticket} #{bet.id.slice(-5)}</div>
+    <div className="px-1 pb-1 text-[11px] font-black text-emerald-300">{labels.ticket} {bet.id.slice(0,1)}***{bet.id.slice(-1)}</div>
     <div className="grid grid-cols-10 gap-1">{Array.from({length:10},(_,i)=>{const n=bet.selectedNumbers[i];return <div key={i} className={'grid aspect-square min-w-0 place-items-center rounded-sm border border-white/5 text-xs font-black tabular-nums '+(n===undefined?'bg-[#101b19]':bet.matchedNumbers.includes(n)?'bg-emerald-400 text-[#062014]':'bg-[#34484a] text-white')}>{n??''}</div>})}</div>
     <div className="mt-1 flex items-center justify-between gap-2 border-t border-white/5 px-1 pt-1 text-[10px]"><span className="font-bold text-slate-100">{labels.bet} {money(bet.stakeEtb)} ETB</span><span className="font-black text-emerald-300">{bet.payoutEtb>0?money(bet.payoutEtb):['active','pending','waiting'].includes(bet.status.toLowerCase())?labels.waitingBet:bet.hits+' '+labels.hits}</span></div>
   </article>;
