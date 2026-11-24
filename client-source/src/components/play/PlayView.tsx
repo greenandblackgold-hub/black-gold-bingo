@@ -252,8 +252,12 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   const [autoMark, setAutoMark] = useState(true);
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
   const [patternOpen, setPatternOpen] = useState(false);
-  const [numberBoardMode, setNumberBoardMode] = useState<'all' | 'called'>('all');
-  const [numberBoardExpanded, setNumberBoardExpanded] = useState(true);
+  const [numberBoardMode, setNumberBoardMode] = useState<'all' | 'called'>(() => {
+    try { return localStorage.getItem('bgb.numberBoardMode') === 'called' ? 'called' : 'all'; } catch { return 'all'; }
+  });
+  const [numberBoardExpanded, setNumberBoardExpanded] = useState(() => {
+    try { return localStorage.getItem('bgb.numberBoardExpanded') !== 'off'; } catch { return true; }
+  });
   const [cardsPerRow, setCardsPerRow] = useState(() => {
     try {
       const saved = Number(localStorage.getItem('bgb.cardsPerRow'));
@@ -315,6 +319,13 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   }, [draftCards, draftCardsLoadedFor, draftCardsStorageKey]);
 
   useEffect(() => { setDraftMessage(''); }, [roundNumber]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('bgb.numberBoardMode', numberBoardMode);
+      localStorage.setItem('bgb.numberBoardExpanded', numberBoardExpanded ? 'on' : 'off');
+    } catch { /* keep the live board usable when storage is unavailable */ }
+  }, [numberBoardMode, numberBoardExpanded]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
