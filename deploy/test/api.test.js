@@ -899,3 +899,38 @@ test('fixed prize is announced, frozen at round start, capped by gross revenue, 
   const balance = await api('GET', '/api/me', { token: player.token });
   assert.equal(balance.json.balance, 100 - 30 + 15);
 });
+
+
+test('Bingo card previews are free, registration requires funds, preserves the preview grid, and host cap is enforced', async () => {
+  await freshRound();
+  const player = await newPlayer('Card Preview Player', 0);
+  const previewResponse = await api('POST', '/api/cards/preview', { token: player.token, body: { count: 1 } });
+  assert.equal(previewResponse.status, 200, JSON.stringify(previewResponse.json));
+  const [preview] = previewResponse.json;
+  assert.match(String(preview.serial), /^(1[0-9]{4}|2[0-4][0-9]{3})$/);
+  assert.equal((await api('GET', '/api/cards', { token: player.token })).json.length, 0, 'preview must not register a card');
+
+  const unpaid = await api('POST', '/api/cards/buy', { token: player.token, body: { count: 1, serial: preview.serial } });
+  assert.equal(unpaid.status, 402, 'a player without balance cannot register a preview');
+  assert.equal((await api('GET', '/api/cards', { token: player.token })).json.length, 0);
+
+  await ctx.repo.applyLedger({ userId: player.user.id, amount: 1000, kind: 'deposit', ref: 'preview-fund:' + player.user.id });
+  const registered = await api('POST', '/api/cards/buy', { token: player.token, body: { count: 1, serial: preview.serial } });
+  assert.equal(registered.status, 200, JSON.stringify(registered.json));
+  assert.equal(registered.json.cards[0].serial, preview.serial);
+  assert.deepEqual(registered.json.cards[0].grid, preview.grid, 'registration must keep the exact previewed card grid');
+  assert.equal((await api('GET', '/api/cards', { token: player.token })).json.length, 1);
+
+  const limited = await api('POST', '/api/admin/card-limit', { token: ctx.adminToken, body: { count: 1 } });
+  assert.equal(limited.status, 200, JSON.stringify(limited.json));
+  assert.equal(limited.json.roundCardLimit, 1);
+  assert.equal(limited.json.availableCardCount, 0);
+  const nextPlayer = await newPlayer('Card Limit Player', 100);
+  const blockedPreview = await api('POST', '/api/cards/preview', { token: nextPlayer.token, body: { count: 1 } });
+  assert.equal(blockedPreview.status, 409);
+  assert.equal(blockedPreview.json.error, 'card_pool_full');
+
+  const restored = await api('POST', '/api/admin/card-limit', { token: ctx.adminToken, body: { count: 15000 } });
+  assert.equal(restored.status, 200);
+  assert.equal(restored.json.roundCardLimit, 15000);
+});
