@@ -55,8 +55,8 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
   const crashed = state?.status === 'crashed';
   // Drive the aircraft position from the live round clock, not a short CSS animation.
   // This keeps it visible and moving for the entire flight, even when a round is brief.
-  const flightProgress = state?.startedAt
-    ? Math.min(0.9, Math.max(0, (clock + offset - state.startedAt) / 8500))
+  const flightProgress = state?.status === 'flying' || state?.status === 'crashed'
+    ? Math.min(0.9, Math.max(0, Math.log(Math.max(1, multiplier)) / Math.log(20) * 0.9))
     : 0;
   const planeTravel = typeof window !== 'undefined' && window.innerWidth <= 640 ? 85 : 185;
   const planeX = flightProgress * planeTravel;
