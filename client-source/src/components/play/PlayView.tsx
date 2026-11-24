@@ -155,9 +155,10 @@ type CardProps = {
   claiming: boolean;
   onClaim: () => void;
   onToggle: (n: number) => void;
+  onRemove: () => void;
 };
 
-function BingoCardView({ labels, card, index, marks, called, pattern, claimable, claiming, onClaim, onToggle }: CardProps) {
+function BingoCardView({ labels, card, index, marks, called, pattern, claimable, claiming, onClaim, onToggle, onRemove }: CardProps) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
   const winning = useMemo(() => {
     const result = findWinningPattern(card.grid, new Set([...called].filter(n => marks.has(n))), pattern);
@@ -168,9 +169,10 @@ function BingoCardView({ labels, card, index, marks, called, pattern, claimable,
   return (
     <section className={`relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-1 shadow-xl ${accent.glow}`}>
       <div className={`flex items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-1 text-base font-black text-white sm:text-xl`}>
-        {labels.card} #{index + 1}
+        {labels.card} #{String(card.serial).padStart(5, '0')}
       </div>
-      {card.locked && <span className="absolute right-1 top-1 z-10 rounded bg-red-700 px-2 py-0.5 text-[9px] font-black text-white">{labels.locked}</span>}
+      {card.locked && <span className="absolute left-1 top-1 z-10 rounded bg-red-700 px-2 py-0.5 text-[9px] font-black text-white">{labels.locked}</span>}
+      <button type="button" aria-label={`Remove card #${card.serial}`} onClick={(event) => { event.stopPropagation(); onRemove(); }} className="absolute right-1 top-1 z-20 grid h-6 w-6 place-items-center rounded-full border border-white/70 bg-red-700 text-sm font-black leading-none text-white shadow">×</button>
       <div className="grid grid-cols-5 gap-px overflow-hidden rounded-b-lg bg-zinc-400">
         {LETTERS.map((letter, col) => (
           <div key={letter} className={`py-1 text-center text-base font-black text-white sm:text-2xl ${['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'][col]}`}>{letter}</div>
@@ -197,14 +199,14 @@ function BingoCardView({ labels, card, index, marks, called, pattern, claimable,
                 wasCalled && !marked ? 'bg-blue-500 text-white' : '',
               ].join(' ')}
             >
-              {free ? labels.free : value}
+              {free ? (claimable ? <span className="animate-pulse rounded px-1 text-[clamp(7px,1.4vw,13px)] font-black text-yellow-100">BINGO</span> : labels.free) : value}
             </button>
           );
         }))}
       </div>
       {claimable && !card.locked && (
         <button type="button" onClick={onClaim} disabled={claiming} className="mt-1 w-full rounded-lg bg-gradient-to-r from-yellow-200 to-amber-500 py-1 text-xs font-black text-black">
-          {claiming ? labels.claiming : labels.claim}
+          {claiming ? labels.claiming : 'BINGO'}
         </button>
       )}
     </section>
@@ -228,7 +230,7 @@ function CalledBall({ number, latest = false }: { number: number; latest?: boole
 export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: { onGoToWallet: () => void; settingsOpen: boolean; onSettingsOpenChange: (open: boolean) => void }) {
   const { lang } = useLanguage();
   const t = gameUi.bingoScreen[lang];
-  const { cards, markedByCard, toggleMark, balance, buyCards } = usePlayer();
+  const { cards, markedByCard, toggleMark, removeCards, balance, buyCards } = usePlayer();
   const {
     phase, bonusRound = false, winPattern, calledNumbers, claimBingo, winner, roundNumber,
     nextCallAt, roundPrizeEtb, nextRoundAt, firstCallAt, endedAt,
@@ -604,6 +606,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 claiming={claimingCardId === card.id}
                 onClaim={() => void handleClaim(card.id)}
                 onToggle={number => toggleMark(card.id, number)}
+                onRemove={() => removeCards([card.id])}
               />
             ))}
           </section>
