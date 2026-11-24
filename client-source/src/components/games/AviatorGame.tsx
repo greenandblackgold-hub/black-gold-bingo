@@ -101,7 +101,6 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
       oscillator.frequency.setValueAtTime(kind === 'takeoff' ? 240 : 180, ctx.currentTime);
       oscillator.frequency.exponentialRampToValueAtTime(kind === 'takeoff' ? 720 : 55, ctx.currentTime + 0.35);
       gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.04);
       const soundDuration = kind === 'crash' ? 0.62 : 0.38;
       gain.gain.exponentialRampToValueAtTime(kind === 'crash' ? 0.18 : 0.08, ctx.currentTime + 0.04);
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + soundDuration);
