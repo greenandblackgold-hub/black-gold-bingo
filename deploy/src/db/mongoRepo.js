@@ -244,6 +244,13 @@ export async function createMongoRepo({ uri, dbName }) {
     },
 
     /* cards */
+    async peekNextCardSerial() {
+      const game = await games.findOne({ _id: 'state' }, { projection: { nextCardSerial: 1 } });
+      return Math.max(10000, Number(game?.nextCardSerial) || 10000);
+    },
+    async cardSerialExists(serial) {
+      return Boolean(await cards.findOne({ serial }, { projection: { _id: 1 } }));
+    },
     async reserveCardSerials(round, count, requestedSerial) {
       if (!Number.isInteger(count) || count < 1) throw new RepoError('CARD_POOL_FULL');
       if (requestedSerial !== undefined && requestedSerial !== null) {
