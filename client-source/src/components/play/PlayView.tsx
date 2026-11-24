@@ -310,9 +310,15 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       try {
         const serverPreviews = await api.get<BingoCard[]>('/api/cards/previews');
         if (!active || !Array.isArray(serverPreviews)) return;
+        let removedNow = removedSerials;
+        try {
+          const rawRemoved = localStorage.getItem(removedDraftsStorageKey);
+          const parsedRemoved: unknown = rawRemoved ? JSON.parse(rawRemoved) : [];
+          if (Array.isArray(parsedRemoved)) removedNow = new Set([...removedSerials, ...parsedRemoved.filter((serial): serial is string => typeof serial === 'string')]);
+        } catch { /* keep the already loaded removal set */ }
         setDraftCards(current => {
-          const bySerial = new Map(current.map(card => [String(card.serial), card]));
-          for (const card of serverPreviews) if (!removedSerials.has(String(card.serial))) bySerial.set(String(card.serial), { ...bySerial.get(String(card.serial)), ...card });
+          const bySerial = new Map(current.filter(card => !removedNow.has(String(card.serial))).map(card => [String(card.serial), card]));
+          for (const card of serverPreviews) if (!removedNow.has(String(card.serial))) bySerial.set(String(card.serial), { ...bySerial.get(String(card.serial)), ...card });
           return [...bySerial.values()].sort((a, b) => Number(a.serial) - Number(b.serial));
         });
       } catch {
