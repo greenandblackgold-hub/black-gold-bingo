@@ -15,9 +15,9 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
     <button type="button" disabled={disabled} onClick={onClick} className={`group relative disabled:cursor-not-allowed disabled:opacity-55 flex min-h-64 w-full flex-col overflow-hidden rounded-3xl border text-left transition duration-300 hover:-translate-y-1 hover:border-amber-300/70 hover:shadow-[0_18px_55px_rgba(212,175,55,.16)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300 ${featured ? 'border-amber-300/50 bg-gradient-to-br from-[#28200d] via-[#100f0b] to-black' : 'border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black'} p-5 sm:p-6`}>
       <span className="absolute -right-8 -top-12 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl transition group-hover:bg-amber-300/20" />
       {disabled && <span className="absolute right-4 top-4 z-10 rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-amber-200">{disabledLabel}</span>}
-      {icon === 'aviator' ? (
-        <span className="relative mt-1 block h-36 w-full overflow-hidden rounded-2xl bg-[#050606] shadow-[0_0_24px_rgba(132,204,22,.24)]" aria-label="Aviator Antonov aircraft game artwork">
-          <img src="/images/aviator-antonov-card.webp" alt="Red Antonov aircraft with Aviator and SPRIBE branding" className="h-full w-full object-fill" />
+      {icon === 'aviator' || icon === 'bingo' ? (
+        <span className={`relative mt-1 block h-36 w-full overflow-hidden rounded-2xl ${icon === 'bingo' ? 'bg-[#12052b] shadow-[0_0_24px_rgba(168,85,247,.28)]' : 'bg-[#050606] shadow-[0_0_24px_rgba(132,204,22,.24)]'}`} aria-label={icon === 'bingo' ? 'Bingo PRO crown, numbered balls and PLAY & WIN emblem' : 'Aviator Antonov aircraft game artwork'}>
+          <img src={icon === 'bingo' ? '/images/bingo-pro-main-card.webp' : '/images/aviator-antonov-card.webp'} alt={icon === 'bingo' ? 'Bingo PRO gold crown, red gold and blue balls, BINGO PLAY & WIN emblem' : 'Red Antonov aircraft with Aviator and SPRIBE branding'} className={`h-full w-full ${icon === 'bingo' ? 'object-contain' : 'object-fill'}`} />
         </span>
       ) : (
         <span className={icon === 'keno' ? 'relative block h-36 w-full overflow-hidden rounded-2xl border border-lime-400/35 bg-[#00110f] shadow-[inset_0_1px_rgba(255,255,255,.08)]' : 'relative grid h-14 w-14 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]'}>
