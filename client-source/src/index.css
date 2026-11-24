@@ -687,3 +687,57 @@ body { min-height: 100vh; min-height: 100dvh; }
 .premium-ui .keno-reference-page [class*="bg-red-950"] {
   border: 1px solid rgba(214,173,69,.22);
 }
+
+
+/* Unified player shell and game viewport safeguards. */
+html, body, #root {
+  width: 100%;
+  min-width: 320px;
+  overflow-x: clip;
+}
+body, #root { min-height: 100dvh; }
+.premium-ui {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+.premium-ui main {
+  width: 100%;
+  min-width: 0;
+}
+.premium-ui :is(button, a, input, select, textarea) {
+  min-width: 0;
+}
+.premium-ui :is(img, svg, video, canvas) {
+  max-width: 100%;
+}
+.premium-ui [role="dialog"] {
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.premium-ui nav[aria-label*="Switch game"],
+.premium-ui nav[aria-label*="ቀይር"] {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.premium-ui nav[aria-label*="Switch game"]::-webkit-scrollbar,
+.premium-ui nav[aria-label*="ቀይር"]::-webkit-scrollbar {
+  display: none;
+}
+@media (max-width: 420px) {
+  .premium-ui main {
+    padding-inline: max(.625rem, env(safe-area-inset-left));
+  }
+  .premium-ui nav[aria-label*="Switch game"] button,
+  .premium-ui nav[aria-label*="ቀይር"] button {
+    flex: 0 0 auto;
+    padding-inline: .65rem;
+  }
+}
+@media (min-width: 768px) {
+  .premium-ui main {
+    margin-inline: auto;
+  }
+}

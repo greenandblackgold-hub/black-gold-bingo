@@ -18,7 +18,7 @@ const copy = {
   en: { title: 'BLACK GOLD KENO', rules: 'RULES', sound: 'SOUND', turbo: 'TURBO', draw: 'DRAWN NUMBERS', picks: 'PICKS', hits: 'HITS', bet: 'BET', total: 'TOTAL', game: 'GAME', history: 'HISTORY', results: 'RESULTS', stats: 'STATISTICS', live: 'MY TICKETS', clear: 'CLEAR', quick: 'QUICK PICK', selected: 'SELECTED NUMBERS', play: 'BET NOW', waiting: 'Waiting for draw', noTickets: 'No tickets in this round yet', noHistory: 'No completed rounds yet', rounds: 'Rounds', tickets: 'Tickets', wagered: 'Total wagered', won: 'Total returned', count: 'Count', status: 'Status', payout: 'Payout', noWin: 'No prize', minMax: 'Allowed', round: 'Round', drawComplete: 'DRAW COMPLETE', recent: 'RECENT RESULTS', poolNote: 'Final payouts may be adjusted by the round pool and the maximum payout cap.', simulation: 'DEMO CREDITS ONLY', boardClosed: 'All 20 numbers have been drawn. The board will return automatically when the next round opens.' },
 } as const;
 
-export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator') => void; onOpenMenu: () => void }) {
+export function KenoGame({ onBack, onSwitchGame, onOpenMenu }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator' | 'mines') => void; onOpenMenu: () => void }) {
   const { lang } = useLanguage();
   const { user } = useAuth();
   const t = gameUi.keno[lang];
@@ -119,9 +119,9 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
   const previousBalls = visibleDrawnNumbers.slice(-8,-1);
 
   return (
-    <main className="keno-reference-page mx-auto min-h-screen w-full max-w-[480px] space-y-2 bg-[#070707] px-2 pb-8 text-[#f3dfad] sm:px-3">
+    <main className="keno-reference-page mx-auto min-h-[100dvh] w-full max-w-2xl space-y-3 bg-[#070707] px-2 text-[#f3dfad] sm:px-4">
       <header className="relative z-10 -mx-2 flex min-h-[42px] items-center justify-between gap-2 border-b border-emerald-400/15 bg-[#07110f] px-2 py-1 shadow-[0_4px_16px_rgba(0,0,0,.35)]">
-        <div className="shrink-0 leading-[.82]"><span className="block text-[10px] font-black italic text-white">FAST</span><span className="block text-[17px] font-black italic tracking-tight text-emerald-300">KENO</span></div>
+        <div className="flex shrink-0 items-center gap-2"><button type="button" onClick={onBack} aria-label={lang === 'en' ? 'Back to games' : lang === 'ti' ? 'ናብ ጸወታታት ተመለስ' : 'ወደ ጨዋታዎች ተመለስ'} className="grid h-8 w-8 place-items-center rounded-lg border border-emerald-300/20 bg-black/40 text-base text-emerald-200">←</button><span className="leading-[.82]"><span className="block text-[10px] font-black italic text-white">FAST</span><span className="block text-[17px] font-black italic tracking-tight text-emerald-300">KENO</span></span></div>
         <div className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full border border-emerald-400/20 bg-black/35 px-2 py-1">
           <span className="truncate text-[10px] font-semibold text-emerald-100/80">{money(state?.balanceEtb ?? user?.balance ?? 0)} ETB</span>
           <span className="h-3 w-px shrink-0 bg-emerald-200/20" />
@@ -130,6 +130,8 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
         </div>
         <button type="button" onClick={onOpenMenu} aria-label="Open player menu" className="grid h-8 w-8 shrink-0 place-items-center text-emerald-300"><span className="text-[28px] leading-none">≡</span></button>
       </header>
+
+      <nav aria-label={lang === 'en' ? 'Switch game' : lang === 'ti' ? 'ቀይር ጸወታ' : 'ጨዋታ ቀይር'} className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-400/15 bg-[#0b1513] p-2">{[{id:'bingo',label:lang==='en'?'Bingo':lang==='ti'?'ቢንጎ':'ቢንጎ'},{id:'keno',label:'Keno'},{id:'aviator',label:'Aviator'},{id:'mines',label:'Mines'}].map(item=><button key={item.id} type="button" onClick={()=>onSwitchGame(item.id as 'bingo'|'keno'|'aviator'|'mines')} aria-current={item.id==='keno'?'page':undefined} className={'rounded-lg border px-3 py-2 text-[11px] font-black '+(item.id==='keno'?'border-emerald-300/50 bg-emerald-300/15 text-emerald-200':'border-emerald-300/10 bg-black/30 text-emerald-100/65 hover:border-emerald-300/35')}>{item.label}</button>)}</nav>
 
       {isBetting && <div aria-label="Time remaining in this round" className="h-5 text-center font-mono text-[17px] font-black leading-5 tracking-wider text-emerald-100">{'00:' + String(secondsLeft).padStart(2, '0')}</div>}
 

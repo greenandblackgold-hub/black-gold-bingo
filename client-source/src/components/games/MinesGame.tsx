@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 
 const STORAGE_KEY = 'black-gold-mines-demo-v1';
 const STARTING_CREDITS = 10000;
@@ -54,7 +55,8 @@ function makeRecord(round: Round, result: 'won' | 'lost', payout: number): Round
   return { id: round.id, date: Date.now(), bet: round.bet, mines: round.mines, safe: round.safe, multiplier: round.multiplier, payout, result };
 }
 
-export function MinesGame() {
+export function MinesGame({ onBack, onSwitchGame }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator' | 'mines') => void }) {
+  const { lang } = useLanguage();
   const [saved, setSaved] = useState(readSaved);
   const [round, setRound] = useState<Round | null>(null);
   const [tab, setTab] = useState<Tab>('game');
@@ -147,7 +149,7 @@ export function MinesGame() {
   ];
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-xl space-y-3 bg-[#070707] px-3 pb-8 pt-3 text-[#f3dfad] sm:px-4">
+    <main className="mx-auto min-h-[100dvh] w-full max-w-3xl space-y-3 bg-[#070707] px-3 pt-3 text-[#f3dfad] sm:px-4 sm:pt-5">
       <header className="rounded-2xl border border-amber-400/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.2),transparent_50%),linear-gradient(120deg,#17140c,#090909_65%,#151006)] px-4 py-3">
         <div className="flex items-center justify-between gap-2">
           <div><p className="text-[10px] font-black uppercase tracking-[.3em] text-amber-500">BLACK GOLD · DEMO</p><h1 className="text-2xl font-black tracking-wider text-amber-100">MINES</h1></div>
@@ -159,6 +161,13 @@ export function MinesGame() {
         </div>
       </header>
 
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-300/15 bg-black/50 p-2">
+        <button type="button" onClick={onBack} className="rounded-lg border border-amber-300/25 px-3 py-2 text-[11px] font-black text-amber-200">{lang === 'en' ? '← GAMES' : lang === 'ti' ? '← ጸወታታት' : '← ጨዋታዎች'}</button>
+        <button type="button" onClick={() => onSwitchGame('bingo')} className="rounded-lg border border-amber-300/15 px-3 py-2 text-[11px] font-black text-amber-100/70">{lang === 'en' ? 'BINGO' : 'ቢንጎ'}</button>
+        <button type="button" onClick={() => onSwitchGame('keno')} className="rounded-lg border border-amber-300/15 px-3 py-2 text-[11px] font-black text-amber-100/70">KENO</button>
+        <button type="button" onClick={() => onSwitchGame('aviator')} className="rounded-lg border border-amber-300/15 px-3 py-2 text-[11px] font-black text-amber-100/70">AVIATOR</button>
+        <span aria-current="page" className="rounded-lg border border-amber-300/45 bg-amber-300/10 px-3 py-2 text-[11px] font-black text-amber-200">MINES</span>
+      </div>
       <section className="rounded-2xl border border-amber-300/20 bg-[#100e0a] p-3">
         <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">የአሁኑ ሽልማት</p><p className="text-2xl font-black tabular-nums text-amber-100">{money(currentWin)} <span className="text-xs text-amber-400">Demo Credit</span></p></div><div className="text-right"><p className="text-[10px] text-amber-500">የተገኙ አልማዞች</p><p className="text-xl font-black text-amber-200">{round?.safe ?? 0} 💎</p></div></div>
         {round && <p className="mt-1 text-[10px] text-amber-100/40">Bet {money(round.bet)} · {currentMultiplier.toFixed(2)}×</p>}
