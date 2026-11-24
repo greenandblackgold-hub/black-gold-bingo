@@ -797,9 +797,20 @@ test('production safety gates block real-money routes while simulation deposits 
     assert.equal(simulationDeposit.status, 200, JSON.stringify(simulationDeposit.json));
     assert.equal(simulationDeposit.json.status, 'pending');
     assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 10);
+    const approvedDeposit = await api('POST', '/api/admin/deposits/TXN-LICENSE-BLOCK-01/approve', { token: ctx.adminToken });
+    assert.equal(approvedDeposit.status, 200, JSON.stringify(approvedDeposit.json));
+    assert.equal(approvedDeposit.json.credited, true);
+    assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 110);
     assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 1 } })).status, 200);
     assert.equal((await api('POST', '/api/claim', { token: p.token, body: { cardId: 'BG-TEST22' } })).status, 409);
     assert.equal((await api('POST', '/api/withdrawals', { token: p.token, body: { amount: 50, accountName: 'Test Name', accountNumber: '0911000111', bankCode: '1' } })).status, 503);
+    assert.equal((await api('POST', '/api/manual/withdrawals', { token: p.token, body: { amount: 10, method: 'bank', destination: '0911000111' } })).status, 503);
+    const simulationWithdrawal = await api('POST', '/api/simulation/withdrawals', { token: p.token, body: { amount: 10, method: 'bank', destination: '0911000111' } });
+    assert.equal(simulationWithdrawal.status, 503);
+    assert.equal(simulationWithdrawal.json.error, 'cashouts_disabled');
+    assert.equal((await api('POST', '/api/admin/withdrawals/simulation/fake-id/approve', { token: ctx.adminToken })).status, 503);
+    assert.equal((await api('POST', '/api/admin/manual-withdrawals/fake-id/start', { token: ctx.adminToken })).status, 503);
+    assert.equal((await api('POST', '/api/admin/manual-withdrawals/fake-id/confirm', { token: ctx.adminToken, body: { externalReference: 'EXT-123456', method: 'bank' } })).status, 503);
     assert.equal((await api('POST', '/api/admin/withdrawals/fake-id/approve', { token: ctx.adminToken })).status, 503);
     assert.equal((await api('POST', '/api/payments/manual', { token: p.token, body: { txnId: 'FAKE-123', amount: 100 } })).status, 404);
   } finally {
