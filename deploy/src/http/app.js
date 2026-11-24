@@ -9,6 +9,7 @@ import { HttpError } from '../util/errors.js';
 import { verifyJwt } from '../util/crypto.js';
 import { publicUser } from '../services/authService.js';
 import { parseBankSms } from '../payments/bankSmsParser.js';
+import { log } from '../util/log.js';
 
 const MAX_BODY = 64 * 1024;
 
@@ -455,6 +456,11 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
 
   /* ───────────── request pipeline ───────────── */
   async function handle(req, res) {
+    const requestStartedAt = Date.now();
+    let kenoBatchRequest = false;
+    let kenoAuthMs = 0;
+    let kenoBodyMs = 0;
+    let kenoHandlerMs = 0;
     try {
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('Referrer-Policy', 'no-referrer');
@@ -466,6 +472,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
       }
 
       const url = new URL(req.url ?? '/', 'http://localhost');
+      kenoBatchRequest = req.method === 'POST' && url.pathname === '/api/games/keno/bets/batch';
       const ip = clientIp(req);
 
       if (req.method === 'GET' && url.pathname === '/api/stream') {
@@ -485,17 +492,31 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
 
       let user = null;
       if (r.access !== 'public') {
+        const authStartedAt = Date.now();
         const header = String(req.headers.authorization ?? '');
         user = await auth.authenticate(header.startsWith('Bearer ') ? header.slice(7) : '');
+        if (kenoBatchRequest) kenoAuthMs = Date.now() - authStartedAt;
         if (!user) throw new HttpError(401, 'unauthorized', 'Please sign in');
         if (r.access === 'admin' && user.role !== 'admin') throw new HttpError(403, 'forbidden', 'Admins only');
         if (r.access === 'user' && user.role === 'player' && user.phoneVerified !== true && url.pathname !== '/api/me' && url.pathname !== '/api/auth/phone-otp/verify') throw new HttpError(403, 'phone_verification_required', 'Verify your phone number before using this feature');
       }
 
+      const bodyStartedAt = Date.now();
       const rawBody = req.method === 'POST' ? await readBody(req) : '';
       const body = req.method === 'POST' && !url.pathname.endsWith('/webhook') ? parseJson(rawBody) : {};
+      if (kenoBatchRequest) kenoBodyMs = Date.now() - bodyStartedAt;
       const params = Object.fromEntries(r.keys.map((k, i) => [k, m[i + 1]]));
+      const handlerStartedAt = Date.now();
       const out = await r.handler({ req, user, body, rawBody, params, query: url.searchParams });
+      if (kenoBatchRequest) {
+        kenoHandlerMs = Date.now() - handlerStartedAt;
+        res.once('finish', () => {
+          const totalMs = Date.now() - requestStartedAt;
+          if (totalMs >= 250) log('games_hub_keno_http_timing', {
+            authMs: kenoAuthMs, bodyMs: kenoBodyMs, handlerMs: kenoHandlerMs, totalMs,
+          });
+        });
+      }
 
       if (out && out.__html) {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -507,6 +528,12 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
       }
       return send(res, 200, out ?? { ok: true });
     } catch (e) {
+      if (kenoBatchRequest) {
+        const totalMs = Date.now() - requestStartedAt;
+        if (totalMs >= 250) log('games_hub_keno_http_timing', {
+          authMs: kenoAuthMs, bodyMs: kenoBodyMs, handlerMs: kenoHandlerMs, totalMs, failed: true,
+        });
+      }
       if (res.headersSent) return res.end();
       if (e instanceof HttpError) return send(res, e.status, { error: e.code, message: e.message });
       console.error('Unhandled error:', e);
