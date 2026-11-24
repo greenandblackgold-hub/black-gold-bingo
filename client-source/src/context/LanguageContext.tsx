@@ -29,6 +29,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       /* ignore */
     }
     document.documentElement.lang = lang;
+    // All supported scripts use left-to-right layout; keep direction explicit when switching locales.
+    document.documentElement.dir = 'ltr';
   }, [lang]);
 
   const value = useMemo<LanguageValue>(() => ({ lang, setLang }), [lang]);
