@@ -17,7 +17,7 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
       {disabled && <span className="absolute right-4 top-4 z-10 rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-amber-200">{disabledLabel}</span>}
       {icon === 'aviator' ? (
         <span className="relative mt-1 block h-36 w-full overflow-hidden rounded-2xl bg-[#050606] shadow-[0_0_24px_rgba(132,204,22,.24)]" aria-label="Aviator Antonov aircraft game artwork">
-          <img src="/images/aviator-antonov-card.jpg" alt="Red Antonov aircraft with Aviator and SPRIBE branding" className="h-full w-full object-fill" />
+          <img src="/images/aviator-antonov-card.webp" alt="Red Antonov aircraft with Aviator and SPRIBE branding" className="h-full w-full object-fill" />
         </span>
       ) : (
         <span className={icon === 'keno' ? 'relative block h-28 w-full overflow-hidden rounded-2xl border border-lime-400/35 bg-black/60 shadow-[inset_0_1px_rgba(255,255,255,.08)]' : 'relative grid h-14 w-14 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]'}>
