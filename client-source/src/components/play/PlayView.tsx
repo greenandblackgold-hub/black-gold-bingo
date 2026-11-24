@@ -262,7 +262,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   const [draftCards, setDraftCards] = useState<BingoCard[]>([]);
   const [registeringDraftId, setRegisteringDraftId] = useState<string | null>(null);
   const [draftMessage, setDraftMessage] = useState('');
-  const [quickBuyCount, setQuickBuyCount] = useState(1);
+  const [quickBuyCount, setQuickBuyCount] = useState(15);
   const [quickBuyBusy, setQuickBuyBusy] = useState(false);
   const [quickBuyMessage, setQuickBuyMessage] = useState('');
   const [selectedDepositAccount, setSelectedDepositAccount] = useState<DepositAccount | null>(null);
@@ -354,7 +354,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   const quickBuyOptions = bonusRound ? [1, 2, 3] : [15, 25];
 
   useEffect(() => {
-    if (bonusRound) setQuickBuyCount(count => Math.min(count, 3));
+    setQuickBuyCount(bonusRound ? 1 : 15);
   }, [bonusRound]);
   const addPreviewCards = async (count: number) => {
     if (quickBuyBusy) return;
