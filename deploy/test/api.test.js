@@ -635,8 +635,8 @@ test('a full round: a valid BINGO claim automatically credits the winner wallet 
   const winnerCard = g.winner.cardId;
   const winnerToken = aWon ? a.token : b.token;
   const loserToken = aWon ? b.token : a.token;
-  assert.equal((await api('GET', '/api/me', { token: a.token })).json.balance, aWon ? 100 - 20 + 40 : 100 - 20);
-  assert.equal((await api('GET', '/api/me', { token: b.token })).json.balance, aWon ? 100 - 30 : 100 - 30 + 40);
+  assert.equal((await api('GET', '/api/me', { token: a.token })).json.balance, aWon ? 100 - 20 + 22.5 : 100 - 20);
+  assert.equal((await api('GET', '/api/me', { token: b.token })).json.balance, aWon ? 100 - 30 : 100 - 30 + 22.5);
   assert.equal((await api('GET', '/api/admin/win-payouts', { token: a.token })).status, 403);
   const queue = await api('GET', '/api/admin/win-payouts?status=pending', { token: ctx.adminToken });
   assert.equal(queue.status, 200);
@@ -646,9 +646,9 @@ test('a full round: a valid BINGO claim automatically credits the winner wallet 
   assert.equal(duplicateClaim.status, 409);
   assert.equal(duplicateClaim.json.error, 'wrong_phase');
   const winnerBalance = (await api('GET', '/api/me', { token: winnerToken })).json.balance;
-  assert.equal(winnerBalance, aWon ? 100 - 20 + 40 : 100 - 30 + 40);
+  assert.equal(winnerBalance, aWon ? 100 - 20 + 22.5 : 100 - 30 + 22.5);
   const prizeLedger = await api('GET', '/api/ledger', { token: winnerToken });
-  assert.equal(prizeLedger.json.filter((row) => row.label === 'Prize' && row.amount === 40).length, 1);
+  assert.equal(prizeLedger.json.filter((row) => row.label === 'Prize' && row.amount === 22.5).length, 1);
 
   // Verify: owner sees the grid and winner flag; others only the status.
   const mineV = (await api('POST', '/api/verify', { token: winnerToken, body: { cardId: winnerCard } })).json;
