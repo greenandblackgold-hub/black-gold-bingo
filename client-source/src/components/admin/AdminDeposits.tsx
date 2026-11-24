@@ -51,8 +51,8 @@ export function AdminDeposits() {
     try {
       await api.post(`/api/admin/deposits/${encodeURIComponent(row.reference)}/${action}`, {});
       await load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : t.error);
+    } catch {
+      setError(t.error);
     } finally {
       setBusyId(null);
     }
