@@ -37,6 +37,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   kenoMinBet: 200,
   maxBet: 100000,
   kenoBettingSeconds: 20,
+  kenoDrawIntervalSeconds: 1,
   aviatorBettingSeconds: 8,
   houseEdgePercent: DEFAULT_HOUSE_EDGE_PERCENT,
 });
@@ -163,6 +164,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       createdAt,
       expireAt: new Date(createdAt + 30 * 24 * 60 * 60 * 1000),
       bettingEndsAt: createdAt + (game === 'keno' ? currentSettings.kenoBettingSeconds : currentSettings.aviatorBettingSeconds) * 1000,
+      ...(game === 'keno' ? { kenoDrawIntervalSeconds: currentSettings.kenoDrawIntervalSeconds } : {}),
     };
     return repo.createGameHubRound(game, round);
   }
@@ -299,6 +301,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     if (game === 'keno') {
       state.payoutTable = KENO_PAYOUTS;
       state.drawCount = 20;
+      state.drawIntervalSeconds = round.kenoDrawIntervalSeconds ?? currentSettings.kenoDrawIntervalSeconds;
       state.selectedNumberLimit = 10;
       if (round.status === 'settled') {
         state.drawnNumbers = round.drawnNumbers;
@@ -434,6 +437,11 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       next.maxBet = Math.round(n * 100);
     }
     if (next.minBet > next.maxBet || next.kenoMinBet > next.maxBet) throw new HttpError(400, 'invalid_bet_range', 'Game minimum bet cannot exceed maximum bet.');
+    if (input.kenoDrawIntervalSeconds !== undefined) {
+      const n = Number(input.kenoDrawIntervalSeconds);
+      if (!Number.isInteger(n) || n < 1 || n > 10) throw new HttpError(400, 'invalid_keno_draw_interval', 'Keno number reveal interval must be 1–10 seconds.');
+      next.kenoDrawIntervalSeconds = n;
+    }
     if (input.kenoBettingSeconds !== undefined) {
       const n = Number(input.kenoBettingSeconds);
       if (!Number.isInteger(n) || n < 10 || n > 600) throw new HttpError(400, 'invalid_keno_timer', 'Keno round duration must be 10–600 seconds (up to 10 minutes).');
