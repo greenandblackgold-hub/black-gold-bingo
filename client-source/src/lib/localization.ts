@@ -277,7 +277,7 @@ export const translations = {
     locked: 'ብዙ ጊዜ ሞክረዋል። ከ15 ደቂቃ በኋላ ይሞክሩ።', rate_limited: 'በጣም ብዙ ጥያቄዎች። ትንሽ ቆይተው ይሞክሩ።', network: 'ከአገልጋዩ ጋር መገናኘት አልተቻለም።', error: 'የሆነ ችግር ተፈጥሯል። እንደገና ይሞክሩ።',
     age: '18 ዓመት እና ከዚያ በላይ ብቻ። ስልክ ቁጥሩ በSMS አይረጋገጥም፤ የራስዎን ቁጥር ብቻ ይጠቀሙ።',
     forgot: 'የይለፍ ቁጥር ረሱት?', forgotInfo: 'የPIN ማገገሚያ አገልግሎት እስካሁን አልተዘጋጀም። እባክዎ ከአስተዳዳሪ ጋር ይገናኙ።',
-    languageLabel: 'ቋንቋ ይምረጡ', brandLine: 'የቢንጎ ጨዋታዎን በዘመናዊ መንገድ ይደሰቱ።', welcome: 'እንኳን ደህና መጡ', formHint: 'ለመቀጠል የመለያ መረጃዎን ያስገቡ።', show: 'አሳይ', hide: 'ደብቅ',
+    languageLabel: 'ቋንቋ ይምረጡ', registrationProgress: 'የምዝገባ ሂደት', brandLine: 'የቢንጎ ጨዋታዎን በዘመናዊ መንገድ ይደሰቱ።', welcome: 'እንኳን ደህና መጡ', formHint: 'ለመቀጠል የመለያ መረጃዎን ያስገቡ።', show: 'አሳይ', hide: 'ደብቅ',
   },
   ti: {
     login: 'እቶ', register: 'መለያ ክፈት', phone: 'ቁጽሪ ተሌፎን', name: 'ምሉእ ስም', pin: '6 ኣሃዝ ምስጢራዊ ቁጽሪ (PIN)', confirmPin: 'PIN ደግም', pinMismatch: 'እቲ ዘእተኹሞ PIN ኣይመሳሰልን።',
@@ -287,7 +287,7 @@ export const translations = {
     locked: 'ብዙሕ ግዜ ፈቲኖም። ድሕሪ 15 ደቓይቕ ፈትኑ።', rate_limited: 'ብዙሕ ሕቶታት። ቁሩብ ደሊኹም ፈትኑ።', network: 'ምስ ኣገልግሎት ምርካብ ኣይተኻኣለን።', error: 'ጸገም ተፈጢሩ። እንደገና ፈትኑ።',
     age: '18 ዓመትን ልዕሊኡን ጥራይ። ቁጽሪ ተሌፎን ብSMS ኣይረጋገጽን፤ ናይ ባዕልኹም ቁጽሪ ጥራይ ተጠቐሙ።',
     forgot: 'PIN ረሲዕካዮ?', forgotInfo: 'ናይ PIN ምምላስ ኣገልግሎት ገና ኣይተዳለወን። በጃኹም ምስ ኣመሓዳሪ ተራኸቡ።',
-    languageLabel: 'ቋንቋ ምረጹ', brandLine: 'ኣብ ዘመናዊ መንገዲ ቢንጎ ተጻወቱን ተዘናግዑን።', welcome: 'እንቋዕ ብደሓን መጻእኩም', formHint: 'ንምቕጻል ናይ መለያ ሓበሬታኹም የእትዉ።', show: 'ኣርኢ', hide: 'ሕባእ',
+    languageLabel: 'ቋንቋ ምረጹ', registrationProgress: 'ሂደት ምዝገባ', brandLine: 'ኣብ ዘመናዊ መንገዲ ቢንጎ ተጻወቱን ተዘናግዑን።', welcome: 'እንቋዕ ብደሓን መጻእኩም', formHint: 'ንምቕጻል ናይ መለያ ሓበሬታኹም የእትዉ።', show: 'ኣርኢ', hide: 'ሕባእ',
   },
   en: {
     login: 'Sign in', register: 'Create account', phone: 'Phone number', name: 'Full name', pin: '6-digit PIN', confirmPin: 'Confirm PIN', pinMismatch: 'The PINs do not match.',
@@ -297,7 +297,7 @@ export const translations = {
     locked: 'Too many attempts. Try again in 15 minutes.', rate_limited: 'Too many requests. Wait a moment.', network: 'Can’t reach the server.', error: 'Something went wrong. Try again.',
     age: '18+ only. Phone numbers are not SMS-verified; use only your own number.',
     forgot: 'Forgot your PIN?', forgotInfo: 'PIN recovery is not available yet. Please contact the administrator for assistance.',
-    languageLabel: 'Choose language', brandLine: 'Enjoy your bingo experience with a modern touch.', welcome: 'Welcome back', formHint: 'Enter your account details to continue.', show: 'Show', hide: 'Hide',
+    languageLabel: 'Choose language', registrationProgress: 'Registration progress', brandLine: 'Enjoy your bingo experience with a modern touch.', welcome: 'Welcome back', formHint: 'Enter your account details to continue.', show: 'Show', hide: 'Hide',
   },
 },
   header: {
