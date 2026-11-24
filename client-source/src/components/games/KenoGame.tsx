@@ -5,7 +5,7 @@ import { gameUi } from '@/lib/gameUi';
 import { useAuth } from '@/context/AuthContext';
 
 type KenoBet = { id: string; status: string; stakeEtb: number; selectedNumbers: number[]; matchedNumbers: number[]; hits: number; payoutEtb: number; createdAt: number; settledAt?: number | null };
-type KenoState = { payoutTable: Record<string, Record<string, number>>; enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; nextRoundAt?: number; serverTime: number; serverSeedHash: string; drawIntervalSeconds?: number; drawnNumbers?: number[]; settledAt?: number; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string };
+type KenoState = { payoutTable: Record<string, Record<string, number>>; enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; nextRoundAt?: number | null; serverTime: number; serverSeedHash: string; drawIntervalSeconds?: number; drawnNumbers?: number[]; settledAt?: number; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string };
 type HistoryRound = { roundId: string; status: string; drawnNumbers?: number[]; serverSeedHash: string; serverSeed?: string; myBets: KenoBet[] };
 type Tab = 'game' | 'history' | 'results' | 'statistics' | 'live';
 type KenoTicketDraft = { requestId: string; amount: number; selectedNumbers: number[] };
