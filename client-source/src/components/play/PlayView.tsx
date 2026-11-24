@@ -697,7 +697,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               {!quickBuyAllowed && <p role="status" className="mb-3 rounded-lg bg-amber-950/60 p-2 text-xs text-amber-200">{t.buyOnlyWaiting}</p>}
               {bonusRound && quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">{t.insufficient}</p>}
               {quickBuyMessage && <p role="status" className="mb-3 text-xs font-bold text-yellow-300">{quickBuyMessage}</p>}
-              {bonusRound ? (
+              {bonusRound && (
                 <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="sticky bottom-0 z-10 mt-3 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
                   {quickBuyBusy ? t.buying : t.getFreeCards}
                 </button>
