@@ -11,21 +11,21 @@ export function PatternGuide({ pattern, lang, compact = false }: { pattern: WinP
   const highlighted = new Set(mask.map(([r,c]) => `${r}-${c}`));
   const detailLabel = lang === 'am' ? 'ዝርዝር' : lang === 'ti' ? 'ዝርዝር' : 'Details';
   const freeLabel = lang === 'am' ? 'ነፃ' : lang === 'ti' ? 'ነጻ' : 'FREE';
-  const legend = lang === 'am' ? 'ወርቃማው ምስል አንድ ምሳሌ ነው፤ ቅርጹ በተለያዩ ቦታዎች ሊፈጠር ከቻለ ማንኛውም ተመሳሳይ ቦታ ይቀበላል። FREE በህጉ ውስጥ ከተካተተ በነፃ ይቆጠራል።' : 'The gold diagram is one example. Where a pattern can appear in multiple places, any matching placement is accepted. FREE counts automatically when included in the selected pattern.';
+  const legend = lang === 'am' ? 'ወርቃማው ምስል አንድ ምሳሌ ነው፤ ቅርጹ በተለያዩ ቦታዎች ሊፈጠር ከቻለ ማንኛውም ተመሳሳይ ቦታ ይቀበላል። FREE በህጉ ውስጥ ከተካተተ በነፃ ይቆጠራል።' : lang === 'ti' ? 'እቲ ወርቃዊ ስእሊ ሓደ ኣብነት እዩ። ቅርጺ ኣብ ብዙሕ ቦታታት ክፍጠር እንተኽኢሉ፣ ዝኾነ ዝሰማማዕ ቦታ ይቕበል። FREE ኣብቲ ዝተመርጸ ቅርጺ እንተተኻቲቱ ብኣውቶማቲክ ይቑጸር።' : 'The gold diagram is one example. Where a pattern can appear in multiple places, any matching placement is accepted. FREE counts automatically when included in the selected pattern.';
   return (
     <section className={`rounded-2xl border border-gold-700/45 bg-cardbg p-3 sm:p-4 ${compact ? 'mt-3' : ''}`}>
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-gold-500">{lang === 'am' ? 'የአሁኑ ዙር የBingo ዓይነት' : 'Current round pattern'}</p>
+          <p className="text-xs font-semibold text-gold-500">{lang === 'am' ? 'የአሁኑ ዙር የBingo ዓይነት' : lang === 'ti' ? 'ናይ ሕጂ ዙር ቅርጺ Bingo' : 'Current round pattern'}</p>
           <h3 className="mt-1 truncate text-base font-black text-gold-200">{title}</h3>
         </div>
         <button type="button" onClick={() => setExpanded(v => !v)} aria-expanded={expanded} className="shrink-0 rounded-lg border border-gold-500/40 bg-gold-500/10 px-3 py-2 text-sm font-bold text-gold-300 hover:bg-gold-500/20">
-          {expanded ? (lang === 'am' ? 'ደብቅ' : 'Hide') : detailLabel}
+          {expanded ? (lang === 'am' ? 'ደብቅ' : lang === 'ti' ? 'ሕባእ' : 'Hide') : detailLabel}
         </button>
       </div>
       {expanded && (
         <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,220px)_1fr] sm:items-center">
-          <div className="mx-auto grid w-full max-w-[220px] grid-cols-5 gap-1 rounded-xl border border-gold-700/40 bg-black/30 p-2" role="img" aria-label={`${title} winning pattern diagram`}>
+          <div className="mx-auto grid w-full max-w-[220px] grid-cols-5 gap-1 rounded-xl border border-gold-700/40 bg-black/30 p-2" role="img" aria-label={`${title} ${lang === "am" ? "የአሸናፊነት ቅጥ ምስል" : lang === "ti" ? "ስእሊ ቅርጺ ዓወት" : "winning pattern diagram"}`}>
             {Array.from({ length: 25 }, (_, i) => {
               const r = Math.floor(i / 5), c = i % 5;
               const isFree = r === 2 && c === 2;
