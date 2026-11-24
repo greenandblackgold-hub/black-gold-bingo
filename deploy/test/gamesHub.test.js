@@ -41,6 +41,40 @@ test('Keno state reuses its settings snapshot for the round tick', async () => {
   assert.equal(settingsReads, 1, 'one state poll should read the Keno settings document once');
 });
 
+test('Keno bet submission reuses the scheduler-confirmed round ID without a preflight database read', async () => {
+  const f = await fixture();
+  await f.service.getState('keno', f.user);
+
+  const originalGetCurrentRound = f.repo.getCurrentGameHubRound.bind(f.repo);
+  let extraRoundReads = 0;
+  f.repo.getCurrentGameHubRound = async (game) => {
+    if (game === 'keno') extraRoundReads += 1;
+    return originalGetCurrentRound(game);
+  };
+
+  const accepted = await f.service.placeKenoBets(f.user, {
+    tickets: [{ requestId: 'keno_fast_submit_0001', amount: 10, selectedNumbers: [4, 18, 39] }],
+  });
+  assert.equal(accepted.bets.length, 1);
+  assert.equal(accepted.balanceEtb, 990);
+  assert.equal(extraRoundReads, 0, 'a warm round cache avoids the redundant preflight read; the repository transaction still validates the round');
+});
+
+test('Keno fast submit never accepts a cached round after its betting deadline', async () => {
+  const f = await fixture();
+  await f.service.getState('keno', f.user);
+  f.advance(21_000);
+
+  await assert.rejects(
+    f.service.placeKenoBets(f.user, {
+      tickets: [{ requestId: 'keno_closed_submit_0001', amount: 10, selectedNumbers: [4, 18, 39] }],
+    }),
+    (error) => error instanceof HttpError && error.code === 'betting_closed',
+  );
+  assert.equal((await f.repo.findUserById(f.user.id)).balance, 100000, 'a stale cached round cannot debit the wallet');
+  assert.equal((await f.repo.listLedger(f.user.id)).filter((entry) => entry.kind === 'game_bet').length, 0);
+});
+
 test('Keno uses ETB 2 minimum while Aviator keeps its independent ETB 5 minimum', async () => {
   const f = await fixture();
   const keno = await f.service.getState('keno', f.user);
