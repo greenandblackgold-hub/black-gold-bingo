@@ -242,6 +242,7 @@ body { min-height: 100vh; min-height: 100dvh; }
   min-width: 0;
   margin-inline: auto;
   overflow-x: clip;
+  overflow-y: visible;
   padding-bottom: calc(9rem + env(safe-area-inset-bottom));
 }
 .player-play-view,

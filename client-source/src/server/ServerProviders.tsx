@@ -16,7 +16,24 @@ import { play } from '@/lib/audio';
 import { API_URL, api, ApiError, type ServerGameState } from '@/lib/api';
 import type { BingoCard, GameBackend, PlayerContextValue, RoundContextValue, Tx, VerifyResult, WinPattern } from '@/types/game';
 
-const MARKS_KEY = 'bgb.marks';
+const LEGACY_MARKS_KEY = 'bgb.marks';
+const marksKeyFor = (userId: string) => `bgb.marks.${userId}`;
+const cardsCacheKeyFor = (userId: string) => `bgb.cards.${userId}`;
+const hiddenCardsKeyFor = (userId: string) => `bgb.hiddenCards.${userId}`;
+function loadCardCache(userId?: string): BingoCard[] {
+  try {
+    const raw = userId ? localStorage.getItem(cardsCacheKeyFor(userId)) : null;
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed as BingoCard[] : [];
+  } catch { return []; }
+}
+function loadHiddenCards(userId?: string): string[] {
+  try {
+    const raw = userId ? localStorage.getItem(hiddenCardsKeyFor(userId)) : null;
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+  } catch { return []; }
+}
 const NOOP_BACKEND = (canHost: boolean): GameBackend => ({
   kind: 'server',
   canHost,
@@ -28,10 +45,17 @@ const NOOP_BACKEND = (canHost: boolean): GameBackend => ({
   clearClaims: async () => undefined,
 });
 
-function loadMarks(): Record<string, number[]> {
+function loadMarks(userId?: string): Record<string, number[]> {
   try {
-    const raw = localStorage.getItem(MARKS_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, number[]>) : {};
+    const scoped = userId ? localStorage.getItem(marksKeyFor(userId)) : null;
+    const legacy = localStorage.getItem(LEGACY_MARKS_KEY);
+    const raw = scoped ?? legacy;
+    const parsed = raw ? JSON.parse(raw) as Record<string, number[]> : {};
+    if (userId && scoped === null && raw) {
+      localStorage.setItem(marksKeyFor(userId), JSON.stringify(parsed));
+      localStorage.removeItem(LEGACY_MARKS_KEY);
+    }
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
   } catch {
     return {};
   }
@@ -41,17 +65,39 @@ function loadMarks(): Record<string, number[]> {
 
 function ServerPlayerProvider({ children }: { children: ReactNode }) {
   const { user, refresh } = useAuth();
-  const [cards, setCards] = useState<BingoCard[]>([]);
+  const [cards, setCards] = useState<BingoCard[]>(() => loadCardCache(user?.id));
   const [transactions, setTransactions] = useState<Tx[]>([]);
-  const [markedByCard, setMarks] = useState<Record<string, number[]>>(loadMarks);
+  const [hiddenCardIds, setHiddenCardIds] = useState<string[]>(() => loadHiddenCards(user?.id));
+  const hiddenCardIdsRef = useRef(hiddenCardIds);
+  hiddenCardIdsRef.current = hiddenCardIds;
+  const currentUserIdRef = useRef(user?.id);
+  currentUserIdRef.current = user?.id;
+  const [markedByCard, setMarks] = useState<Record<string, number[]>>(() => loadMarks(user?.id));
+  const cardsRequestInFlight = useRef(false);
+  const cardsReloadQueued = useRef(false);
+  const marksStorageKey = user?.id ? marksKeyFor(user.id) : LEGACY_MARKS_KEY;
   const marksRef = useRef(markedByCard);
   marksRef.current = markedByCard;
 
   const reloadCards = useCallback(async () => {
+    if (cardsRequestInFlight.current) { cardsReloadQueued.current = true; return; }
+    const requestedUserId = currentUserIdRef.current;
+    if (!requestedUserId) return;
+    cardsRequestInFlight.current = true;
     try {
-      setCards(await api.get<BingoCard[]>('/api/cards'));
+      const latest = await api.get<BingoCard[]>('/api/cards');
+      if (requestedUserId !== currentUserIdRef.current || !Array.isArray(latest) || cardsReloadQueued.current) return;
+      try { if (requestedUserId) localStorage.setItem(cardsCacheKeyFor(requestedUserId), JSON.stringify(latest)); } catch { /* server remains authoritative */ }
+      const hidden = new Set(hiddenCardIdsRef.current);
+      setCards(latest.filter(card => !hidden.has(card.id)));
     } catch {
-      /* keep what we have */
+      // Preserve the cached/last confirmed cards. Focus/online polling below retries automatically.
+    } finally {
+      cardsRequestInFlight.current = false;
+      if (cardsReloadQueued.current) {
+        cardsReloadQueued.current = false;
+        void reloadCards();
+      }
     }
   }, []);
   const reloadLedger = useCallback(async () => {
@@ -63,9 +109,38 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const hidden = loadHiddenCards(user?.id);
+    hiddenCardIdsRef.current = hidden;
+    setHiddenCardIds(hidden);
+    const cached = loadCardCache(user?.id);
+    const hiddenSet = new Set(hidden);
+    setCards(cached.filter(card => !hiddenSet.has(card.id)));
+    setMarks(loadMarks(user?.id));
     void reloadCards();
     void reloadLedger();
-  }, [reloadCards, reloadLedger]);
+  }, [user?.id, reloadCards, reloadLedger]);
+
+  useEffect(() => {
+    try { if (user?.id) localStorage.setItem(hiddenCardsKeyFor(user.id), JSON.stringify(hiddenCardIds)); } catch { /* keep cards available in memory */ }
+  }, [hiddenCardIds, user?.id]);
+
+  // Recover card lists after refreshes and transient API failures without ever replacing
+  // a previously confirmed list with an empty/error response.
+  useEffect(() => {
+    let active = true;
+    const refreshCards = () => { if (active && document.visibilityState !== 'hidden') void reloadCards(); };
+    const timer = window.setInterval(refreshCards, 15_000);
+    window.addEventListener('focus', refreshCards);
+    window.addEventListener('online', refreshCards);
+    document.addEventListener('visibilitychange', refreshCards);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshCards);
+      window.removeEventListener('online', refreshCards);
+      document.removeEventListener('visibilitychange', refreshCards);
+    };
+  }, [reloadCards]);
 
   // Admin-side changes can affect the player's profile, cards, or ledger.
   // Re-fetch only authorized player data after receiving the invalidation signal.
@@ -103,11 +178,11 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(MARKS_KEY, JSON.stringify(markedByCard));
+      localStorage.setItem(marksStorageKey, JSON.stringify(markedByCard));
     } catch {
       /* ignore */
     }
-  }, [markedByCard]);
+  }, [markedByCard, marksStorageKey]);
 
   // Marks are only a convenience on this device: the server decides wins from its own record.
   const toggleMark = useCallback((cardId: string, n: number) => {
@@ -120,9 +195,9 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const buyCards = useCallback(
-    async (count: number, serial?: string) => {
+    async (count: number, serial?: string, preview?: { grid: (number | null)[][]; token?: string }) => {
       try {
-        await api.post('/api/cards/buy', { count, ...(serial ? { serial } : {}) });
+        await api.post('/api/cards/buy', { count, ...(serial ? { serial } : {}), ...(preview ? { previewGrid: preview.grid, ...(preview.token ? { previewToken: preview.token } : {}) } : {}) });
         play('coin');
         await Promise.all([reloadCards(), reloadLedger(), refresh()]);
         return { ok: true };
@@ -141,15 +216,20 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   // Player preference: hide selected cards from this device only; never delete server records.
   const removeCards = useCallback((ids: string[]) => {
     const remove = new Set(ids);
+    const nextHidden = [...new Set([...hiddenCardIdsRef.current, ...ids])];
+    hiddenCardIdsRef.current = nextHidden;
+    setHiddenCardIds(nextHidden);
     setCards((current) => current.filter((card) => !remove.has(card.id)));
   }, []);
 
   const clearCards = useCallback(() => {
     setMarks({});
+    setCards([]);
+    try { if (user?.id) localStorage.removeItem(cardsCacheKeyFor(user.id)); } catch { /* cache is optional */ }
     void reloadCards();
     void reloadLedger();
     void refresh();
-  }, [reloadCards, reloadLedger, refresh]);
+  }, [user?.id, reloadCards, reloadLedger, refresh]);
 
   const value = useMemo<PlayerContextValue>(
     () => ({
@@ -186,8 +266,11 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
   // waiting -> running stream transition must not blank the banner if a server
   // update briefly reports zero while the round snapshot is being propagated.
   const prizeSnapshot = useRef<{ roundNumber: number; amountEtb: number } | null>(null);
+  const latestServerTime = useRef(0);
 
   const apply = useCallback((incoming: ServerGameState) => {
+    if (!incoming || !Number.isFinite(incoming.serverTime) || incoming.serverTime < latestServerTime.current) return;
+    latestServerTime.current = incoming.serverTime;
     const amountEtb = Number(incoming.roundPrizeEtb);
     const safeAmount = Number.isFinite(amountEtb) && amountEtb > 0 ? amountEtb : 0;
     const previous = prizeSnapshot.current;
@@ -210,14 +293,36 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
   }, [setGameSettings]);
 
   useEffect(() => {
+    let active = true;
+    let snapshotInFlight = false;
+    const refreshSnapshot = async () => {
+      if (!active || snapshotInFlight || document.visibilityState === 'hidden') return;
+      snapshotInFlight = true;
+      try { apply(await api.get<ServerGameState>('/api/game')); } catch { /* SSE reconnect and next poll retry */ }
+      finally { snapshotInFlight = false; }
+    };
+    void refreshSnapshot();
+    const poll = window.setInterval(() => void refreshSnapshot(), 15_000);
+    window.addEventListener('focus', refreshSnapshot);
+    window.addEventListener('online', refreshSnapshot);
+    document.addEventListener('visibilitychange', refreshSnapshot);
     const es = new EventSource(`${API_URL}/api/stream`);
-    es.addEventListener('game', (e) => apply(JSON.parse((e as MessageEvent<string>).data) as ServerGameState));
+    es.addEventListener('game', (e) => {
+      try { apply(JSON.parse((e as MessageEvent<string>).data) as ServerGameState); } catch { /* malformed event; snapshot fallback repairs it */ }
+    });
     es.addEventListener('admin-change', () => window.dispatchEvent(new Event('bgb:admin-change')));
     es.addEventListener('app-version', (e) => {
       const detail = JSON.parse((e as MessageEvent<string>).data) as { buildPath?: string };
       window.dispatchEvent(new CustomEvent('bgb:app-version', { detail }));
     });
-    return () => es.close();
+    return () => {
+      active = false;
+      window.clearInterval(poll);
+      window.removeEventListener('focus', refreshSnapshot);
+      window.removeEventListener('online', refreshSnapshot);
+      document.removeEventListener('visibilitychange', refreshSnapshot);
+      es.close();
+    };
   }, [apply]);
 
   // Notify players when the host publishes a new announcement (not on the initial snapshot).
@@ -270,12 +375,19 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
 
   // New round or a decided round: refresh cards and balance.
   const round = game?.roundNumber ?? null;
-  const seenRound = useRef<number | null>(null);
+  const roundStorageKey = `bgb.seenRound.${user?.id ?? 'guest'}`;
+  const seenRound = useRef<number | null>((() => {
+    try {
+      const saved = Number(localStorage.getItem(roundStorageKey));
+      return Number.isInteger(saved) && saved > 0 ? saved : null;
+    } catch { return null; }
+  })());
   useEffect(() => {
     if (round === null) return;
     if (seenRound.current !== null && seenRound.current !== round) clearCards();
     seenRound.current = round;
-  }, [round, clearCards]);
+    try { localStorage.setItem(roundStorageKey, String(round)); } catch { /* round state remains server-owned */ }
+  }, [round, clearCards, roundStorageKey]);
   const winnerAt = game?.winner?.at ?? null;
   useEffect(() => {
     if (winnerAt !== null) void refresh(); // the prize may have just been paid

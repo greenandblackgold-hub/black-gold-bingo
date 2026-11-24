@@ -96,7 +96,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const buyCards = useCallback(
-    async (count: number, requestedSerial?: string) => {
+    async (count: number, requestedSerial?: string, _preview?: { grid: (number | null)[][]; token?: string }) => {
       const s = stateRef.current;
       const total = count * cardPrice;
       if (requestedSerial && (count !== 1 || !/^\d{5}$/.test(requestedSerial) || s.cards.some((c) => String(c.serial) === requestedSerial))) return { ok: false, error: 'ይህ የካርድ ቁጥር ተይዟል ወይም ልክ አይደለም።' };

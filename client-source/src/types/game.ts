@@ -21,6 +21,8 @@ export interface BingoCard {
   locked?: boolean;
   /** 5x5 grid, null = FREE center. */
   grid: (number | null)[][];
+  /** Server signature for a prepared preview card; survives a browser refresh. */
+  previewToken?: string;
 }
 
 export interface Tx {
@@ -49,7 +51,7 @@ export interface PlayerContextValue {
   toggleMark: (cardId: string, n: number) => void;
   transactions?: Tx[];
   deposit: (amount: number, method: PayMethod, reference: string) => Promise<void>;
-  buyCards: (count: number, serial?: string) => Promise<{ ok: boolean; error?: string }>;
+  buyCards: (count: number, serial?: string, preview?: { grid: (number | null)[][]; token?: string }) => Promise<{ ok: boolean; error?: string }>;
   /** Removes all cards and marks (called when a new round is set up). */
   clearCards: () => void;
   clearMarks: () => void;
