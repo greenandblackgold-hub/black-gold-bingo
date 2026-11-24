@@ -20,9 +20,9 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
           <img src="/images/aviator-antonov-card.webp" alt="Red Antonov aircraft with Aviator and SPRIBE branding" className="h-full w-full object-fill" />
         </span>
       ) : (
-        <span className={icon === 'keno' ? 'relative block h-28 w-full overflow-hidden rounded-2xl border border-lime-400/35 bg-black/60 shadow-[inset_0_1px_rgba(255,255,255,.08)]' : 'relative grid h-14 w-14 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]'}>
+        <span className={icon === 'keno' ? 'relative block h-36 w-full overflow-hidden rounded-2xl border border-lime-400/35 bg-[#00110f] shadow-[inset_0_1px_rgba(255,255,255,.08)]' : 'relative grid h-14 w-14 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]'}>
           {icon === 'bingo' && <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/><path d="m6 6 2 2m8 8 2 2" /></svg>}
-          {icon === 'keno' && <img src="/images/fast-keno-card-v3.jpg" alt="FAST KENO — Fairness" className="h-full w-full object-cover" />}
+          {icon === 'keno' && <img src="/images/fast-keno-card-v4.jpg" alt="FAST KENO — Kiza.bet" className="h-full w-full object-contain" />}
           {icon === 'virtual' && <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M3 18h18M5 18l2-8 4 4 3-7 5 11"/><path d="M4 6h4M16 4h4"/></svg>}
           {icon === 'live' && <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/><path d="M3 3l2 2M19 19l2 2"/></svg>}
           {icon === 'mines' && <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="6"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8m0-14.2-2.8 2.8m-8.6 8.6-2.8 2.8"/></svg>}
