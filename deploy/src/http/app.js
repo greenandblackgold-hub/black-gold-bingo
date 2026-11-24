@@ -363,6 +363,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   admin('POST', '/api/admin/draw', async () => (await game.draw(), game.getPublicState()));
   admin('POST', '/api/admin/auto', async ({ body }) => (await game.setAuto(body.on === true, body.intervalSec), game.getPublicState()));
   admin('POST', '/api/admin/pattern', async ({ body }) => (await game.setWinPattern(body.pattern), game.getPublicState()));
+  admin('POST', '/api/admin/card-limit', async ({ body }) => (await game.setRoundCardLimit(body.count), game.getPublicState()));
   admin('POST', '/api/admin/announcement', async ({ body }) => (await game.setAnnouncement(body.message), game.getPublicState()));
   admin('POST', '/api/admin/prize-schedule', async ({ body }) => (await game.setPrizeScheduleSettings(body), game.getPublicState()));
   admin('GET', '/api/admin/withdrawals', async ({ query }) =>
