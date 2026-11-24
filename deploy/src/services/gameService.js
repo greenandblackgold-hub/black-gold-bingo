@@ -330,7 +330,8 @@ export function createGameService({ repo, config, now = Date.now }) {
       if (g.phase !== 'waiting') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
       const sold = config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0;
       if (sold + n > roundCardLimit) throw new HttpError(409, 'card_pool_full', 'All available Bingo cards for this round have been taken.');
-      if (Number(user.balance ?? 0) < n * config.cardPrice) throw new HttpError(402, 'insufficient_funds', 'Not enough balance');
+      const currentPlayer = await repo.findUserById(user.id);
+      if (!currentPlayer || Number(currentPlayer.balance ?? 0) < n * config.cardPrice) throw new HttpError(402, 'insufficient_funds', 'Not enough balance');
       if (requestedSerial !== undefined && requestedSerial !== null && (n !== 1 || !/^\d{5}$/.test(String(requestedSerial)))) {
         throw new HttpError(400, 'invalid_card_number', 'Enter one unique five-digit card number and buy one card at a time');
       }
