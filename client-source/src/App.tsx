@@ -5,6 +5,8 @@ import { useLanguage } from '@/context/LanguageContext';
 import { AudioCallAnnouncer } from '@/components/audio/AudioCallAnnouncer';
 import { PlayerFeatures } from '@/components/play/PlayerFeatures';
 import { GamesCenter } from '@/components/games/GamesCenter';
+import { AppHeader } from '@/components/layout/AppHeader';
+import { BottomNav } from '@/components/layout/BottomNav';
 import { HelpCenter } from '@/components/help/HelpCenter';
 import { KenoGame } from '@/components/games/KenoGame';
 import { AviatorGame } from '@/components/games/AviatorGame';
@@ -23,8 +25,6 @@ import { ServerProviders } from '@/server/ServerProviders';
 const ADMIN_HASH = '#host';
 
 const AdminApp = lazy(() => import('@/components/admin/AdminApp').then((m) => ({ default: m.AdminApp })));
-const AppHeader = lazy(() => import('@/components/layout/AppHeader').then((m) => ({ default: m.AppHeader })));
-const BottomNav = lazy(() => import('@/components/layout/BottomNav').then((m) => ({ default: m.BottomNav })));
 const PlayView = lazy(() => import('@/components/play/PlayView').then((m) => ({ default: m.PlayView })));
 const WalletView = lazy(() => import('@/components/wallet/WalletView').then((m) => ({ default: m.WalletView })));
 const AuthScreen = lazy(() => import('@/components/auth/AuthScreen').then((m) => ({ default: m.AuthScreen })));
@@ -107,7 +107,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
   return (
     <div className="premium-ui min-h-screen">
       <AudioCallAnnouncer enabled={tab === 'play'} />
-      {generalEnabled && <Suspense fallback={<RouteLoading />}><AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} onLogout={onLogout} onOpenMenu={() => setMenuOpen(true)} onOpenSettings={() => setPlayerSettingsOpen(true)} hideControls={tab === 'play'} /></Suspense>}
+      {generalEnabled && <AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} onLogout={onLogout} onOpenMenu={() => setMenuOpen(true)} onOpenSettings={() => setPlayerSettingsOpen(true)} hideControls={tab === 'play'} />}
       <main className={!generalEnabled ? 'mx-auto w-full max-w-6xl px-4 pt-4' : tab === 'keno' || tab === 'mines' ? 'mx-auto w-full max-w-none px-0 pt-0 pb-28' : tab === 'play' ? 'mx-auto w-full max-w-none px-2 pt-2 pb-28 sm:px-4 sm:pt-4' : tab === 'aviator' ? 'mx-auto w-full max-w-6xl px-3 pt-4 pb-28 sm:px-4 sm:pt-6' : 'mx-auto max-w-6xl px-4 pt-5 pb-28 sm:pt-8'}>
         {(!generalEnabled || tab === 'games') && <GamesCenter serverMode={SERVER_MODE} onOpenBingo={() => setTab('play')} onOpenKeno={() => setTab('keno')} onOpenAviator={() => setTab('aviator')} onOpenMines={() => setTab('mines')} onOpenHelp={() => setTab('help')} />}
         {generalEnabled && tab === 'help' && <HelpCenter />}
@@ -126,7 +126,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
           <div className="overflow-y-auto overscroll-contain px-4 pb-6"><PlayerFeatures onGoToWallet={() => { setMenuOpen(false); setTab('wallet'); }} menuOnly /></div>
         </section>
       </div>}
-      {generalEnabled && <Suspense fallback={null}><BottomNav active={menuOpen ? 'menu' : tab === 'aviator' || tab === 'play' || tab === 'keno' || tab === 'mines' || tab === 'help' ? 'games' : tab} onChange={handleNavChange} /></Suspense>}
+      {generalEnabled && <BottomNav active={menuOpen ? 'menu' : tab === 'aviator' || tab === 'play' || tab === 'keno' || tab === 'mines' || tab === 'help' ? 'games' : tab} onChange={handleNavChange} />}
     </div>
   );
 }
