@@ -58,14 +58,15 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
   const flightProgress = state?.startedAt
     ? Math.min(0.9, Math.max(0, (clock + offset - state.startedAt) / 8500))
     : 0;
-  const planeX = flightProgress * 66;
+  const planeTravel = typeof window !== 'undefined' && window.innerWidth <= 640 ? 85 : 185;
+  const planeX = flightProgress * planeTravel;
   const planeY = -Math.sin(flightProgress * Math.PI / 2) * 168;
   const planeAngle = -32 * (1 - Math.min(1, flightProgress * 2.4));
   const planeStyle = {
-    '--plane-x': planeX + 'vw',
+    '--plane-x': planeX + '%',
     '--plane-y': planeY + 'px',
     '--plane-angle': planeAngle + 'deg',
-    transform: `translate3d(${planeX}vw, ${planeY}px, 0) rotate(${planeAngle}deg)`,
+    transform: `translate3d(${planeX}%, ${planeY}px, 0) rotate(${planeAngle}deg)`,
   } as React.CSSProperties;
 
   const updatePanel = (index: number, patch: Partial<BetPanel>) => {
