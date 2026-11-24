@@ -172,9 +172,15 @@ function BingoCardView({ labels, card, index, marks, called, pattern, claimable,
 
   return (
     <section className={`relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-1 shadow-xl ${accent.glow}`}>
-      <div className={`flex items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-1 text-base font-black text-white sm:text-xl`}>
-        {labels.card} #{String(card.serial).padStart(5, '0')}
-      </div>
+      {draft ? (
+        <button type="button" onClick={onRegister} disabled={registering} className={'flex w-full items-center justify-center gap-2 bg-gradient-to-r ' + accent.head + ' px-2 py-1 text-base font-black text-white sm:text-xl disabled:opacity-60'}>
+          {registering ? '…' : 'REGISTER'} · #{String(card.serial).padStart(5, '0')}
+        </button>
+      ) : (
+        <div className={'flex items-center justify-center bg-gradient-to-r ' + accent.head + ' px-2 py-1 text-base font-black text-white sm:text-xl'}>
+          {labels.card} #{String(card.serial).padStart(5, '0')} · BINGO
+        </div>
+      )}
       {card.locked && <span className="absolute left-1 top-1 z-10 rounded bg-red-700 px-2 py-0.5 text-[9px] font-black text-white">{labels.locked}</span>}
       <button type="button" aria-label={`Remove card #${card.serial}`} onClick={(event) => { event.stopPropagation(); onRemove(); }} className="absolute right-1 top-1 z-20 grid h-6 w-6 place-items-center rounded-full border border-white/70 bg-red-700 text-sm font-black leading-none text-white shadow">×</button>
       <div className="grid grid-cols-5 gap-px overflow-hidden rounded-b-lg bg-zinc-400">
