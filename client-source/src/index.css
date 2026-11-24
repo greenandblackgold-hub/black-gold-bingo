@@ -1286,17 +1286,17 @@ body { color: #f7edcf; background: #030303 !important; }
   box-shadow: 0 18px 55px rgba(212, 175, 55, .16);
 }
 .premium-ui .games-center-artwork {
-  flex: 0 0 9rem;
-  height: 9rem;
-  min-height: 9rem;
+  flex: 0 0 13rem;
+  height: 13rem;
+  min-height: 13rem;
   width: 100%;
   overflow: hidden;
 }
 @media (min-width: 640px) {
   .premium-ui .games-center-artwork {
-    flex-basis: 10rem;
-    height: 10rem;
-    min-height: 10rem;
+    flex-basis: 15rem;
+    height: 15rem;
+    min-height: 15rem;
   }
 }
 .premium-ui .games-center-artwork img {
