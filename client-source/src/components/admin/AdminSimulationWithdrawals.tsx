@@ -58,12 +58,12 @@ export function AdminSimulationWithdrawals() {
   </div>
   <p className="mb-3 text-xs text-gold-500">{lang === 'am'
    ? 'በመጀመሪያ ክፍያውን ይጀምሩ። የባንክ/Telebirr ዝውውሩን ከፈጸሙ በኋላ የውጭ ማጣቀሻ ቁጥሩን ያስገቡና ይረጋግጡ።'
-   : 'Start processing first. After the bank or Telebirr transfer is actually sent, enter its external reference and confirm.'}</p>
+   : lang === 'ti' ? 'መጀመርታ ሂደት ክፍሊት ጀምሩ። ዝውውር ባንኪ ወይ Telebirr ብሓቂ ምስ ሰደድኩም፣ ናይ ወጻኢ መወከሲ ቁጽሪ ኣእትዉ እሞ ኣረጋግጹ።' : 'Start processing first. After the bank or Telebirr transfer is actually sent, enter its external reference and confirm.'}</p>
   {error && <p role="alert" className="mb-2 text-sm text-red-300">{error}</p>}
   {!rows.length ? <p className="py-3 text-center text-sm text-gold-700">{t.empty}</p> : <ul className="space-y-2">
    {rows.map(w => <li key={w.id} className="rounded-xl bg-white/[0.04] p-3">
     <div className="flex justify-between gap-2">
-     <b className="text-lg text-gold-400">{formatAmount(lang, w.amount)} ETB</b>
+     <b className="text-lg text-gold-400">{formatAmount(lang, w.amount)} {t.currency}</b>
      <span className="text-xs text-gold-500">{w.status === 'processing' ? words.processing : t.pending}</span>
     </div>
     <p className="mt-1 text-sm text-gold-300">{t.player}: {w.userName} · {w.userPhone}</p>
