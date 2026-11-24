@@ -118,7 +118,7 @@ Cash-outs and payouts are disabled in the current simulation release. Do not pro
 
 ## If something looks wrong
 
-- **The site does not open:** in Render, click your service and look for **Live**. If it says failed, open **Logs** and send me a screenshot.
+- **The site does not open:** check whether the Render service shows **Live**. If it shows a failure, tell me the status shown; do not share secrets or credentials.
 - **Players cannot pay:** payments are intentionally disabled until the legal permit and Chapa's written approval are confirmed.
 - **You forgot your owner PIN:** change `ADMIN_PIN` in Render, Environment, Save. It becomes your PIN after the restart.
 - **Anything else:** describe the page and the message you see. Never share passwords, PINs, API keys or database connection strings.
