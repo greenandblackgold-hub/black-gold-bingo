@@ -4,7 +4,7 @@ const games = {
   am: {
     management:'የጨዋታ አስተዳደር', controls:'የጨዋታ ማዕከል ቁጥጥሮች', simulation:'የሙከራ ሁነታ ብቻ',
     maxPayout:'በእያንዳንዱ Keno ቲኬት / Aviator ውርርድ ከፍተኛ ክፍያ', enforced:'በሰርቨሩ በኩል ይተገበራል።',
-    commission:'የኩባንያ ኮሚሽን', playerPool:'የተጫዋቾች ገንዘብ ገንዳ', poolNote:'Keno እና Aviator ክፍያዎች ከዙሩ ገንዘብ ገንዳ ብቻ ይከፈላሉ። Cash Out ብዜቶች ወዲያውኑ ይመዘገባሉ፤ Aviator ክፍያ ዙሩ ከተቋረጠ በኋላ ይገባል።',
+    commission:'የኩባንያ ኮሚሽን', playerPool:'የተጫዋቾች ገንዘብ ገንዳ', poolNote:'Keno እና Aviator ክፍያዎች ከዙሩ ገንዘብ ገንዳ ብቻ ይከፈላሉ። የገንዘብ ማውጫ ብዜቶች ወዲያውኑ ይመዘገባሉ፤ Aviator ክፍያ ዙሩ ከተቋረጠ በኋላ ይገባል።',
     poolCap:'የዙር ገንዳ ገደብ በሰርቨሩ በኩል ተነቅቷል፤ ጠቅላላ ሽልማቶች ከተሰበሰበው ውርርድ የተጫዋቾች ድርሻ 40%–50% አይበልጡም።',
     announcement:'የአስተዳዳሪ ማስታወቂያ', announcementHelp:'የጥገና፣ የዝማኔ ወይም የደህንነት ማስታወቂያ እዚህ ይጻፉ። አስተናጋጁ ማሳያውን ሲያበራ ተጫዋቾች ያዩታል።',
     announcementPlaceholder:'የታቀደ ጥገና ስለሚኖር የጨዋታ ማዕከሉ ለጊዜው አይገኝም።', saveAnnouncement:'ማስታወቂያ አስቀምጥ',
@@ -13,7 +13,7 @@ const games = {
     confirmOff:'እርግጠኛ ነዎት መላውን የጨዋታ ማዕከል መዝጋት ይፈልጋሉ?', generalOff:'አጠቃላይ አጥፋ', generalOn:'አጠቃላይ አብራ',
     showAnnouncement:'ማስታወቂያውን ለተጫዋቾች አሳይ', visibleOff:'አጠቃላይ ሲጠፋ ይታያል', hidden:'ከተጫዋቾች ተደብቋል', hideMessage:'መልዕክቱን ደብቅ', showMessage:'መልዕክቱን አሳይ',
     visible:'ለተጫዋቾች ይታያል', hiddenPlayers:'ከተጫዋቾች ተደብቋል', turnOff:'አጥፋ', turnOn:'አብራ', loading:'በመጫን ላይ',
-    minBet:'ዝቅተኛ ውርርድ (ETB)', aviatorMinBet:'የAviator ዝቅተኛ ውርርድ (ETB)', kenoMinBet:'የKeno ዝቅተኛ ውርርድ (ETB)', kenoMinBetHelp:'የKeno ዝቅተኛ የሚፈቀድ ውርርድ 2 ETB ነው።', maxBet:'ከፍተኛ ውርርድ (ETB)', houseEdge:'የኩባንያ ኮሚሽን / House Edge (%)',
+    minBet:'ዝቅተኛ ውርርድ (ብር)', aviatorMinBet:'የAviator ዝቅተኛ ውርርድ (ETB)', kenoMinBet:'የKeno ዝቅተኛ ውርርድ (ETB)', kenoMinBetHelp:'የKeno ዝቅተኛ የሚፈቀድ ውርርድ 2 ብር ነው።', maxBet:'ከፍተኛ ውርርድ (ETB)', houseEdge:'የኩባንያ ኮሚሽን / የቤት ድርሻ (%)',
     kenoDrawInterval:'የKeno ቁጥሮች መውጫ ልዩነት', kenoDrawIntervalHelp:'ከእያንዳንዱ ቁጥር በፊት የሚጠበቅ ሰከንድ።', kenoDrawIntervalTotal:'20 ቁጥሮች ለመውጣት የሚወስደው ጊዜ', decreaseSeconds:'ሰከንድ ቀንስ', increaseSeconds:'ሰከንድ ጨምር',
     kenoDuration:'የKeno ዙር / የውርርድ ቆይታ', seconds:'ሰከንዶች', minutes:'ደቂቃ', nextKeno:'ከሚቀጥለው የKeno ዙር ጀምሮ ይተገበራል።',
     aviatorWindow:'የAviator ውርርድ ጊዜ (ሰከንዶች)', saving:'በማስቀመጥ ላይ…', saveSettings:'የጨዋታ ቅንብሮችን አስቀምጥ',
