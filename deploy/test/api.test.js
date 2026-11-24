@@ -360,36 +360,6 @@ test('legacy signed SMS webhook records a match only and never credits the walle
   assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 42.5);
 });
 
-test('simulation deposits remain available in production while real-money checkout stays disabled', async () => {
-  const p = await newPlayer();
-  const previous = {
-    prod: ctx.config.prod,
-    realMoneyEnabled: ctx.config.realMoneyEnabled,
-    lotteryLicenseApproved: ctx.config.lotteryLicenseApproved,
-  };
-  try {
-    ctx.config.prod = true;
-    ctx.config.realMoneyEnabled = false;
-    ctx.config.lotteryLicenseApproved = false;
-    const pending = await api('POST', '/api/simulation/deposits', {
-      token: p.token, body: { amount: 25, reference: 'TXN-PROD-SIM-001', provider: 'CBE' },
-    });
-    assert.equal(pending.status, 200, JSON.stringify(pending.json));
-    assert.equal(pending.json.status, 'pending');
-    assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 0);
-
-    const realMoney = await api('POST', '/api/payments/deposit', {
-      token: p.token, body: { amount: 25 },
-    });
-    assert.equal(realMoney.status, 503);
-    assert.equal(realMoney.json.code, 'real_money_disabled');
-  } finally {
-    ctx.config.prod = previous.prod;
-    ctx.config.realMoneyEnabled = previous.realMoneyEnabled;
-    ctx.config.lotteryLicenseApproved = previous.lotteryLicenseApproved;
-  }
-});
-
 test('simulation withdrawals reserve balance, expose test destination to admins, approve without payout, and refund on rejection', async () => {
   const p = await newPlayer('Withdrawal Player', 100);
   assert.equal((await api('POST', '/api/simulation/withdrawals', { token: p.token, body: { amount: 0 } })).json.error, 'invalid_amount');
@@ -798,7 +768,7 @@ test('rate limiting and CORS', async () => {
   assert.equal(limited, true);
 });
 
-test('production safety gates block registration and all real-money routes until approvals are enabled', async () => {
+test('production safety gates block real-money routes while simulation deposits remain pending', async () => {
   const previous = {
     prod: ctx.config.prod,
     registrationEnabled: ctx.config.registrationEnabled,
@@ -823,7 +793,10 @@ test('production safety gates block registration and all real-money routes until
 
     assert.equal((await api('POST', '/api/auth/register', { body: { phone: newPhone(), name: 'Blocked', pin: '123456', pinConfirm: '123456' } })).status, 503);
     assert.equal((await api('POST', '/api/payments/deposit', { token: p.token, body: { amount: 100 } })).status, 503);
-    assert.equal((await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: 100, reference: 'TXN-LICENSE-BLOCK-01' } })).status, 503);
+    const simulationDeposit = await api('POST', '/api/simulation/deposits', { token: p.token, body: { amount: 100, reference: 'TXN-LICENSE-BLOCK-01' } });
+    assert.equal(simulationDeposit.status, 200, JSON.stringify(simulationDeposit.json));
+    assert.equal(simulationDeposit.json.status, 'pending');
+    assert.equal((await api('GET', '/api/me', { token: p.token })).json.balance, 10);
     assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 1 } })).status, 200);
     assert.equal((await api('POST', '/api/claim', { token: p.token, body: { cardId: 'BG-TEST22' } })).status, 409);
     assert.equal((await api('POST', '/api/withdrawals', { token: p.token, body: { amount: 50, accountName: 'Test Name', accountNumber: '0911000111', bankCode: '1' } })).status, 503);
