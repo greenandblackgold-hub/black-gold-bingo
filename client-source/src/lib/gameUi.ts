@@ -6,7 +6,7 @@ export const gameUi = {
   gamesCenter: {
     am: {
       title: 'የጨዋታዎች ማዕከል',
-      intro: 'አንድ ማዕከል፣ አራት የጨዋታ አማራጮች። የሚፈልጉትን ጨዋታ ይምረጡና ይደሰቱ።',
+      intro: 'አንድ ማዕከል፤ አራት ጨዋታዎች እና ሁለት በቅርቡ የሚመጡ የስፖርት አማራጮች።',
       unifiedWallet: 'የBingo፣ Keno እና Aviator የጋራ ቦርሳ',
       demoWallet: 'የጨዋታ ሙከራ ቦርሳ',
       loadingBalance: 'ሂሳብ በመጫን ላይ…',
@@ -21,6 +21,8 @@ export const gameUi = {
       kenoDetail: 'እስከ 10 ቁጥሮች ይምረጡ፣ ስዕሉን ይከታተሉና የዙሩን ውጤት ይመልከቱ።',
       aviatorSubtitle: 'ብዜቱን ይከታተሉ',
       aviatorDetail: 'ብዜቱ ሲጨምር ይመልከቱና አውሮፕላኑ ከመብረሩ በፊት ገንዘብዎን ያውጡ።',
+      virtualSportsSubtitle: 'በቅርቡ ይጀምራል', virtualSportsDetail: 'የቨርቹዋል ስፖርት ልምድ በቅርቡ ይገኛል።',
+      liveSportsSubtitle: 'በቅርቡ ይጀምራል', liveSportsDetail: 'የቀጥታ ስፖርት ልምድ በቅርቡ ይገኛል።', comingSoon: 'በቅርቡ',
       unavailable: 'አይገኝም',
       serverOnly: 'በServer ሁነታ ብቻ ይገኛል',
       refreshUnavailable: 'አይገኝም · ያድሱ',
@@ -32,7 +34,7 @@ export const gameUi = {
     },
     ti: {
       title: 'ማእከል ጸወታታት',
-      intro: 'ሓደ ማእከል፣ ኣርባዕተ ኣማራጺታት ጸወታ። ዝደለኹሞ ጸወታ ምረጹን ተዘናግዑን።',
+      intro: 'ሓደ ማእከል፤ ኣርባዕተ ጸወታታትን ክልተ ብቐረባ ዝመጽኡ ናይ ስፖርት ኣማራጺታትን።',
       unifiedWallet: 'ሓባራዊ ቦርሳ Bingo፣ Keno እና Aviator',
       demoWallet: 'ናይ ፈተነ ቦርሳ ጸወታ',
       loadingBalance: 'ሒሳብ ይጽዓን ኣሎ…',
@@ -47,6 +49,8 @@ export const gameUi = {
       kenoDetail: 'ክሳብ 10 ቁጽሪታት ምረጹ፣ ስእሊ ቁጽሪ ተኸታተሉን ውጽኢት ዙር ርኣዩን።',
       aviatorSubtitle: 'ብዝሒ ብዜት ተኸታተሉ',
       aviatorDetail: 'ብዜት እናወሰኸ ተመልከቱ፣ ነፋሪት ቅድሚ ምንፋራ ገንዘብኩም ኣውጽኡ።',
+      virtualSportsSubtitle: 'ብቐረባ ክጅምር እዩ', virtualSportsDetail: 'ናይ ቨርቹዋል ስፖርት ተመኩሮ ብቐረባ ክርከብ እዩ።',
+      liveSportsSubtitle: 'ብቐረባ ክጅምር እዩ', liveSportsDetail: 'ናይ ቀጥታ ስፖርት ተመኩሮ ብቐረባ ክርከብ እዩ።', comingSoon: 'ብቐረባ',
       unavailable: 'ኣይርከብን',
       serverOnly: 'ኣብ Server ሞድ ጥራይ ይርከብ',
       refreshUnavailable: 'ኣይርከብን · ኣሐድሱ',
@@ -58,7 +62,7 @@ export const gameUi = {
     },
     en: {
       title: 'GAMES CENTER',
-      intro: 'One destination. Four experiences. Choose your game and enjoy the Black Gold experience.',
+      intro: 'One destination. Four games, plus two sports experiences coming soon.',
       unifiedWallet: 'Unified Bingo + Keno + Aviator Wallet',
       demoWallet: 'Games Demo Wallet',
       loadingBalance: 'Loading balance…',
@@ -73,6 +77,8 @@ export const gameUi = {
       kenoDetail: 'Choose up to ten numbers, follow the draw and check your round results.',
       aviatorSubtitle: 'Ride the multiplier',
       aviatorDetail: 'Watch the multiplier climb and cash out before the plane flies away.',
+      virtualSportsSubtitle: 'Coming soon', virtualSportsDetail: 'Virtual sports experiences will be available soon.',
+      liveSportsSubtitle: 'Coming soon', liveSportsDetail: 'Live sports experiences will be available soon.', comingSoon: 'Coming Soon',
       unavailable: 'Unavailable',
       serverOnly: 'Available in server mode',
       refreshUnavailable: 'Unavailable · refresh',
