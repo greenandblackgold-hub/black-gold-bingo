@@ -847,8 +847,11 @@ body, #root { min-height: 100dvh; }
 }
 .aviator-premium .aviator-plane {
   z-index:3;
-  left:3%;
-  bottom:9%;
+  left:auto;
+  right:3%;
+  bottom:8%;
+  display:block;
+  visibility:visible;
   width:clamp(205px,34vw,350px);
   height:auto;
   aspect-ratio:2 / 1;
@@ -856,6 +859,7 @@ body, #root { min-height: 100dvh; }
   font-size:initial;
   filter:drop-shadow(0 14px 18px rgba(0,0,0,.7)) drop-shadow(0 0 20px rgba(255,184,76,.32));
   transform-origin:55% 50%;
+  will-change:transform;
 }
 .aviator-aircraft { display:block; width:100%; height:auto; overflow:visible; position:relative; z-index:2; }
 .aviator-exhaust {
@@ -891,17 +895,17 @@ body, #root { min-height: 100dvh; }
   65% { opacity:.55; }
   100% { opacity:0; transform:translate(-155px,-35px) scale(3.6); }
 }
-/* One continuous flight path: lift from the lower-left, climb, level out and travel right. */
+/* The aircraft begins clearly in the lower-right, climbs diagonally up-left, then keeps travelling left. */
 .aviator-flight.flying .aviator-plane,
 .aviator-flight.crashed .aviator-plane {
-  animation:aviator-antonov-flight 10s cubic-bezier(.42,.02,.58,.98) 1 both;
+  animation:aviator-antonov-flight 6.5s linear 1 both;
 }
 @keyframes aviator-antonov-flight {
-  0% { transform:translate(0,30px) rotate(-32deg) scale(.88); }
-  19% { transform:translate(8vw,28px) rotate(-24deg) scale(.94); }
-  38% { transform:translate(18vw,-78px) rotate(-7deg) scale(1); }
-  50% { transform:translate(25vw,-104px) rotate(0deg) scale(1.04); }
-  100% { transform:translate(62vw,-104px) rotate(0deg) scale(1.04); }
+  0% { transform:translate(0,34px) rotate(-34deg) scaleX(-1) scale(.82); }
+  18% { transform:translate(-5vw,-2px) rotate(-29deg) scaleX(-1) scale(.88); }
+  42% { transform:translate(-15vw,-82px) rotate(-17deg) scaleX(-1) scale(.96); }
+  68% { transform:translate(-30vw,-132px) rotate(-5deg) scaleX(-1) scale(1.02); }
+  100% { transform:translate(-49vw,-145px) rotate(0deg) scaleX(-1) scale(1.04); }
 }
 .aviator-flight.crashed .aviator-plane {
   animation-play-state:paused;
@@ -932,13 +936,13 @@ body, #root { min-height: 100dvh; }
 }
 @media(max-width:640px) {
   .aviator-premium .aviator-flight { min-height:330px; }
-  .aviator-premium .aviator-plane { width:clamp(190px,62vw,260px); left:1%; bottom:8%; }
+  .aviator-premium .aviator-plane { width:clamp(190px,62vw,260px); right:1%; left:auto; bottom:7%; }
   @keyframes aviator-antonov-flight {
-    0% { transform:translate(0,22px) rotate(-32deg) scale(.84); }
-    22% { transform:translate(4vw,15px) rotate(-23deg) scale(.9); }
-    42% { transform:translate(12vw,-65px) rotate(-5deg) scale(.95); }
-    54% { transform:translate(16vw,-82px) rotate(0deg) scale(.98); }
-    100% { transform:translate(30vw,-82px) rotate(0deg) scale(.98); }
+    0% { transform:translate(0,24px) rotate(-34deg) scaleX(-1) scale(.78); }
+    20% { transform:translate(-4vw,-8px) rotate(-28deg) scaleX(-1) scale(.84); }
+    46% { transform:translate(-12vw,-62px) rotate(-15deg) scaleX(-1) scale(.91); }
+    72% { transform:translate(-23vw,-100px) rotate(-4deg) scaleX(-1) scale(.96); }
+    100% { transform:translate(-34vw,-112px) rotate(0deg) scaleX(-1) scale(.98); }
   }
 }
 @media(prefers-reduced-motion:reduce) {
