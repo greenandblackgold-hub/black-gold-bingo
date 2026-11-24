@@ -314,7 +314,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       // Browser-saved previews remain available if the API is temporarily offline.
     });
     return () => { active = false; };
-  }, [loaded, user?.id, draftCardsStorageKey]);
+  }, [loaded, user?.id, draftCardsStorageKey, removedDraftsStorageKey]);
 
   useEffect(() => {
     if (draftCardsLoadedFor !== draftCardsStorageKey) return;
