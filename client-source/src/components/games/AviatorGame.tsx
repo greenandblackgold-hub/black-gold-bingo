@@ -269,25 +269,25 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
           <div className="aviator-exhaust"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div>
           <svg className="aviator-aircraft" viewBox="0 0 340 170" role="presentation">
             <defs>
-              <linearGradient id="antonovBody" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#fff8df"/><stop offset=".48" stopColor="#d9d7ce"/><stop offset="1" stopColor="#777d82"/></linearGradient>
-              <linearGradient id="antonovWing" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor="#f8e9bd"/><stop offset="1" stopColor="#858b8d"/></linearGradient>
+              <linearGradient id="antonovBody" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#fff0ed"/><stop offset=".42" stopColor="#e32936"/><stop offset="1" stopColor="#760b19"/></linearGradient>
+              <linearGradient id="antonovWing" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stopColor="#ff6268"/><stop offset=".52" stopColor="#c9152b"/><stop offset="1" stopColor="#590b18"/></linearGradient>
               <linearGradient id="antonovGlass" x1="0" x2="1"><stop stopColor="#162d43"/><stop offset="1" stopColor="#6f9bb4"/></linearGradient>
             </defs>
-            <path d="M22 80 L84 65 L130 12 L155 10 L145 67 L238 57 L286 64 L327 76 L327 88 L286 98 L238 105 L145 98 L155 155 L130 153 L84 101 L22 94 Z" fill="url(#antonovWing)" stroke="#fff0c9" strokeWidth="2"/>
-            <path d="M36 81 L63 50 L73 49 L65 82 L65 92 L73 122 L63 121 L36 94 Z" fill="#c7c8c2" stroke="#fff0c9" strokeWidth="2"/>
-            <path d="M20 83 Q35 68 76 67 L272 68 Q309 69 333 82 Q339 86 333 91 Q309 104 272 104 L76 105 Q35 104 20 91 Z" fill="url(#antonovBody)" stroke="#fff8df" strokeWidth="2"/>
-            <path d="M290 70 L325 79 L335 85 L325 91 L290 101 Z" fill="#e8e5dc"/>
+            <path d="M22 80 L84 65 L130 12 L155 10 L145 67 L238 57 L286 64 L327 76 L327 88 L286 98 L238 105 L145 98 L155 155 L130 153 L84 101 L22 94 Z" fill="url(#antonovWing)" stroke="#ffb6ad" strokeWidth="2"/>
+            <path d="M36 81 L63 50 L73 49 L65 82 L65 92 L73 122 L63 121 L36 94 Z" fill="#9e1023" stroke="#fff0c9" strokeWidth="2"/>
+            <path d="M20 83 Q35 68 76 67 L272 68 Q309 69 333 82 Q339 86 333 91 Q309 104 272 104 L76 105 Q35 104 20 91 Z" fill="url(#antonovBody)" stroke="#ffd2ca" strokeWidth="2"/>
+            <path d="M290 70 L325 79 L335 85 L325 91 L290 101 Z" fill="#c91d30"/>
             <path d="M300 73 L321 80 L321 85 L300 83 Z" fill="url(#antonovGlass)"/>
             <path d="M24 82 L13 80 L7 85 L13 90 L24 91 Z" fill="#e8e5dc"/>
-            <path d="M105 73 L134 28 L149 28 L140 75 Z M105 97 L134 142 L149 142 L140 95 Z" fill="#9da2a3" stroke="#f5e8c8" strokeWidth="1.5"/>
-            <g fill="#39434a" stroke="#f7e7c4" strokeWidth="2">
+            <path d="M105 73 L134 28 L149 28 L140 75 Z M105 97 L134 142 L149 142 L140 95 Z" fill="#a90f24" stroke="#ffb6ad" strokeWidth="1.5"/>
+            <g fill="#39434a" stroke="#ffc1b5" strokeWidth="2">
               <ellipse cx="151" cy="47" rx="13" ry="8"/><ellipse cx="151" cy="123" rx="13" ry="8"/>
               <ellipse cx="203" cy="57" rx="12" ry="7"/><ellipse cx="203" cy="113" rx="12" ry="7"/>
             </g>
             <g fill="#25313a"><path d="M145 43h13v8h-13z"/><path d="M145 119h13v8h-13z"/><path d="M197 53h12v7h-12z"/><path d="M197 109h12v7h-12z"/></g>
-            <path d="M84 84 H282" stroke="#c49a3c" strokeWidth="3" opacity=".9"/>
-            <path d="M285 86 H323" stroke="#b98b2e" strokeWidth="2"/>
-            <g fill="#5d6266"><path d="M82 101v13h8v-13z"/><path d="M258 102v10h7v-10z"/></g>
+            <path d="M84 84 H282" stroke="#ffd36b" strokeWidth="3" opacity=".9"/>
+            <path d="M285 86 H323" stroke="#ffd36b" strokeWidth="2"/>
+            <g fill="#4b1019"><path d="M82 101v13h8v-13z"/><path d="M258 102v10h7v-10z"/></g>
           </svg>
           <span className="aviator-impact-flash"/>
         </div>
