@@ -222,6 +222,10 @@ test('Admin settings are validated and persist independently of Bingo settings',
   await assert.rejects(f.service.updateSettings({ aviatorBettingSeconds: 61 }), (e) => e instanceof HttpError && e.code === 'invalid_aviator_timer');
   assert.equal(settings.maxBet, 20000);
   assert.equal(settings.kenoBettingSeconds, 30);
+  const drawPaceSettings = await f.service.updateSettings({ kenoDrawIntervalSeconds: 3 });
+  assert.equal(drawPaceSettings.kenoDrawIntervalSeconds, 3, 'Keno number reveal interval is saved independently');
+  await assert.rejects(f.service.updateSettings({ kenoDrawIntervalSeconds: 0 }), (e) => e instanceof HttpError && e.code === 'invalid_keno_draw_interval');
+  await assert.rejects(f.service.updateSettings({ kenoDrawIntervalSeconds: 11 }), (e) => e instanceof HttpError && e.code === 'invalid_keno_draw_interval');
   const twoMinuteSettings = await f.service.updateSettings({ kenoBettingSeconds: 120 });
   assert.equal(twoMinuteSettings.kenoBettingSeconds, 120, 'Keno accepts minute-based betting windows');
   const tenMinuteSettings = await f.service.updateSettings({ kenoBettingSeconds: 600 });
