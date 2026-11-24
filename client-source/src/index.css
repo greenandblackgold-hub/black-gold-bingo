@@ -823,3 +823,125 @@ body, #root { min-height: 100dvh; }
     margin-inline: auto;
   }
 }
+
+
+/* Aviator: oversized Antonov-style aircraft, animated exhaust and full takeoff-to-crash flight. */
+.aviator-premium .aviator-flight {
+  min-height: 430px;
+  background:
+    radial-gradient(ellipse at 16% 88%, rgba(255,143,54,.24), transparent 35%),
+    radial-gradient(ellipse at 75% 8%, rgba(48,102,142,.25), transparent 48%),
+    linear-gradient(165deg,#101c2a 0%,#17222b 43%,#090b0d 100%);
+}
+.aviator-premium .aviator-stars {
+  opacity:.5;
+  background-image:radial-gradient(#fff0c8 1px,transparent 1.6px),radial-gradient(#e7b95c 1px,transparent 1.7px);
+  background-size:93px 81px,147px 119px;
+}
+.aviator-premium .aviator-flight-path {
+  height:3px;
+  bottom:17%;
+  background:linear-gradient(90deg,transparent,rgba(255,202,104,.8),rgba(255,244,204,.9),transparent);
+  box-shadow:0 0 16px rgba(255,171,70,.65);
+  transform:rotate(-16deg);
+}
+.aviator-premium .aviator-plane {
+  z-index:3;
+  left:3%;
+  bottom:9%;
+  width:clamp(205px,34vw,350px);
+  height:auto;
+  aspect-ratio:2 / 1;
+  color:inherit;
+  font-size:initial;
+  filter:drop-shadow(0 14px 18px rgba(0,0,0,.7)) drop-shadow(0 0 20px rgba(255,184,76,.32));
+  transform-origin:55% 50%;
+}
+.aviator-aircraft { display:block; width:100%; height:auto; overflow:visible; position:relative; z-index:2; }
+.aviator-exhaust {
+  position:absolute;
+  z-index:1;
+  width:68%;
+  height:68%;
+  left:-51%;
+  top:48%;
+  transform:translateY(-50%);
+  pointer-events:none;
+}
+.aviator-exhaust i {
+  position:absolute;
+  display:block;
+  left:38%;
+  top:42%;
+  width:clamp(18px,3vw,34px);
+  aspect-ratio:1;
+  border-radius:50%;
+  background:radial-gradient(circle at 42% 45%,rgba(255,255,245,.96) 0%,rgba(221,226,225,.82) 28%,rgba(166,177,184,.38) 62%,rgba(126,145,155,0) 78%);
+  filter:blur(3px);
+  opacity:0;
+  animation:aviator-heavy-smoke 1.55s ease-out infinite;
+}
+.aviator-exhaust i:nth-child(2n) { top:56%; animation-delay:-.35s; animation-duration:1.8s; }
+.aviator-exhaust i:nth-child(3n) { top:28%; animation-delay:-.7s; animation-duration:1.65s; }
+.aviator-exhaust i:nth-child(4n) { left:50%; animation-delay:-1.05s; animation-duration:1.9s; }
+.aviator-exhaust i:nth-child(5n) { left:24%; animation-delay:-1.3s; }
+@keyframes aviator-heavy-smoke {
+  0% { opacity:0; transform:translate(10px,0) scale(.35); }
+  12% { opacity:.88; }
+  65% { opacity:.55; }
+  100% { opacity:0; transform:translate(-155px,-35px) scale(3.6); }
+}
+/* One continuous flight path: lift from the lower-left, climb, level out and travel right. */
+.aviator-flight.flying .aviator-plane,
+.aviator-flight.crashed .aviator-plane {
+  animation:aviator-antonov-flight 10s cubic-bezier(.42,.02,.58,.98) 1 both;
+}
+@keyframes aviator-antonov-flight {
+  0% { transform:translate(0,92px) rotate(-32deg) scale(.88); }
+  19% { transform:translate(8vw,28px) rotate(-24deg) scale(.94); }
+  38% { transform:translate(18vw,-78px) rotate(-7deg) scale(1); }
+  50% { transform:translate(25vw,-104px) rotate(0deg) scale(1.04); }
+  100% { transform:translate(62vw,-104px) rotate(0deg) scale(1.04); }
+}
+.aviator-flight.crashed .aviator-plane {
+  animation-play-state:paused;
+  filter:drop-shadow(0 0 22px rgba(255,80,28,.95)) drop-shadow(0 0 45px rgba(255,34,14,.8));
+}
+.aviator-impact-flash { display:none; }
+.aviator-flight.crashed .aviator-impact-flash {
+  display:block;
+  position:absolute;
+  z-index:4;
+  left:48%;
+  top:35%;
+  width:42px;
+  aspect-ratio:1;
+  border-radius:50%;
+  background:radial-gradient(circle,#fff8c8 0%,#ffcb4e 20%,#ff612e 45%,rgba(255,52,18,0) 75%);
+  box-shadow:0 0 25px 14px rgba(255,96,28,.65),0 0 65px 32px rgba(230,42,18,.4);
+  animation:aviator-impact-burst .85s ease-out forwards;
+}
+@keyframes aviator-impact-burst {
+  0% { opacity:1; transform:scale(.25); }
+  45% { opacity:1; transform:scale(2.8); }
+  100% { opacity:0; transform:scale(5.5); }
+}
+.aviator-flight.crashed .aviator-exhaust i {
+  background:radial-gradient(circle,#fff7d8 0%,#ffb13f 30%,rgba(238,58,22,.28) 62%,transparent 78%);
+  animation-duration:.55s;
+}
+@media(max-width:640px) {
+  .aviator-premium .aviator-flight { min-height:330px; }
+  .aviator-premium .aviator-plane { width:clamp(190px,62vw,260px); left:1%; bottom:8%; }
+  @keyframes aviator-antonov-flight {
+    0% { transform:translate(0,72px) rotate(-32deg) scale(.84); }
+    22% { transform:translate(4vw,15px) rotate(-23deg) scale(.9); }
+    42% { transform:translate(12vw,-65px) rotate(-5deg) scale(.95); }
+    54% { transform:translate(16vw,-82px) rotate(0deg) scale(.98); }
+    100% { transform:translate(36vw,-82px) rotate(0deg) scale(.98); }
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  .aviator-flight.flying .aviator-plane,.aviator-flight.crashed .aviator-plane { animation:none; }
+  .aviator-exhaust i,.aviator-flight.crashed .aviator-impact-flash { animation:none; }
+}
