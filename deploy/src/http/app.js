@@ -163,6 +163,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
 
   /* cards */
   route('GET', '/api/cards', 'user', 'default', ({ user }) => game.myCards(user));
+  route('POST', '/api/cards/preview', 'user', 'default', ({ user, body }) => game.previewCards(user, body.count ?? 1));
   route('POST', '/api/cards/buy', 'user', 'default', async ({ user, body }) => {
     await gamesHub.assertGameEnabled('bingo');
     return game.buyCards(user, body.count, body.serial);
