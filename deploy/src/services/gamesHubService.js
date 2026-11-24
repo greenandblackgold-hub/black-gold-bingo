@@ -186,8 +186,8 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     return repo.createGameHubRound(game, round);
   }
 
-  async function runGameTick(game) {
-    const currentSettings = await settings();
+  async function runGameTick(game, settingsSnapshot) {
+    const currentSettings = settingsSnapshot ?? await settings();
     let round = await repo.getCurrentGameHubRound(game);
     // Extend an already-settled Keno round created before paced reveals were enabled,
     // so the full 20-number display is not cut short during the first deployment.
@@ -267,10 +267,10 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     return round;
   }
 
-  async function tickGame(game) {
+  async function tickGame(game, settingsSnapshot) {
     const pending = gameTickLocks.get(game);
     if (pending) return pending;
-    const task = runGameTick(game);
+    const task = runGameTick(game, settingsSnapshot);
     gameTickLocks.set(game, task);
     try { return await task; }
     finally { if (gameTickLocks.get(game) === task) gameTickLocks.delete(game); }
@@ -301,7 +301,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     ensureSimulationMode();
     const currentSettings = await settings();
     if (currentSettings.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
-    const round = await tickGame(game);
+    const round = await tickGame(game, currentSettings);
     const serverTime = now();
     const revealCount = game === 'keno' ? kenoRevealCount(round, serverTime) : 20;
     const revealComplete = game !== 'keno' || revealCount >= 20;
@@ -358,7 +358,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const currentSettings = await settings();
     if (currentSettings.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
     if (!currentSettings[game + 'Enabled']) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
-    const round = await tickGame(game);
+    const round = await tickGame(game, currentSettings);
     if (round.status !== 'betting' || now() >= round.bettingEndsAt) {
       throw new HttpError(409, 'betting_closed', 'Betting for this round has closed.');
     }
