@@ -158,7 +158,7 @@ export function MinesGame({ onBack, onSwitchGame }: { onBack: () => void; onSwit
     <main className="mx-auto min-h-[100dvh] w-full max-w-3xl space-y-3 bg-[#070707] px-3 pt-3 text-[#f3dfad] sm:px-4 sm:pt-5">
       <header className="rounded-2xl border border-amber-400/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.2),transparent_50%),linear-gradient(120deg,#17140c,#090909_65%,#151006)] px-4 py-3">
         <div className="flex items-center justify-between gap-2">
-          <div><p className="text-[10px] font-black uppercase tracking-[.3em] text-amber-500">BLACK GOLD · {t('demoOnly')}</p><h1 className="text-2xl font-black tracking-wider text-amber-100">MINES</h1></div>
+          <div><p className="text-[10px] font-black uppercase tracking-[.3em] text-amber-500">BLACK GOLD · {t('demoLabel')}</p><h1 className="text-2xl font-black tracking-wider text-amber-100">MINES</h1></div>
           <div className="flex items-center gap-1 rounded-full border border-amber-300/20 bg-black/50 p-1">
             {([{ id: 'am', label: 'አማ' }, { id: 'ti', label: 'ትግ' }, { id: 'en', label: 'EN' }] as const).map((option) => <button key={option.id} type="button" aria-pressed={lang === option.id} onClick={() => setLang(option.id)} className={`rounded-full px-2 py-1 text-[10px] font-black ${lang === option.id ? 'bg-amber-300 text-black' : 'text-amber-200'}`}>{option.label}</button>)}
             <button type="button" onClick={() => setHelpOpen(true)} aria-label={t('help')} className="grid h-8 w-8 place-items-center rounded-full border border-amber-300/35 bg-black/50 text-lg font-bold text-amber-200">?</button>
