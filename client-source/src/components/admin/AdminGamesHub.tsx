@@ -14,7 +14,7 @@ type HostGameSection = 'bingo' | 'keno' | 'aviator' | 'mines';
 export function AdminGamesHub({ activeGame }: { activeGame: HostGameSection }) {
   const { lang } = useLanguage();
   const t = (key: Parameters<typeof adminGamesLocale>[1]) => adminGamesLocale(lang, key);
-  const statusLabel = (status?: string | null) => status === 'betting' ? t('statusBetting') : status === 'settled' ? t('statusSettled') : status === 'crashed' ? t('statusCrashed') : status ?? t('loading');
+  const statusLabel = (status?: string | null) => status === 'betting' ? t('statusBetting') : status === 'settled' ? t('statusSettled') : status === 'crashed' ? t('statusCrashed') : status === 'waiting' ? t('statusWaiting') : status === 'active' ? t('statusActive') : status === 'pending' ? t('statusPending') : status ? t('statusUnknown') : t('loading');
   const [overview, setOverview] = useState<Overview | null>(null);
   const [minBet, setMinBet] = useState('5');
   const [kenoMinBet, setKenoMinBet] = useState('2');
@@ -52,7 +52,7 @@ export function AdminGamesHub({ activeGame }: { activeGame: HostGameSection }) {
   const card = 'rounded-xl border border-amber-400/15 bg-black/40 p-3';
   const label = 'block text-xs font-semibold text-amber-100/60';
   const input = 'mt-1 w-full rounded-lg border border-amber-400/20 bg-black px-3 py-2 text-sm text-amber-100';
-  return <section aria-label={`${activeGame} host controls`} className="rounded-2xl border border-amber-400/25 bg-[#0c0c0a] p-3 shadow-lg shadow-black/20 sm:p-4">
+  return <section aria-label={`${activeGame} · ${t('hostControls')}`} className="rounded-2xl border border-amber-400/25 bg-[#0c0c0a] p-3 shadow-lg shadow-black/20 sm:p-4">
     <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.25em] text-amber-500">{t('management')}</p><h2 className="mt-1 text-lg font-black text-amber-100">{t('controls')}</h2></div><span className="rounded-full border border-amber-400/20 px-3 py-1 text-[10px] font-bold uppercase text-amber-300">{activeGame}</span></div>
     {error && <p role="alert" className="mt-3 text-sm text-red-300">{error}</p>}
     {notice && <p role="status" className="mt-3 text-sm text-emerald-300">{notice}</p>}
