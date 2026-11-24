@@ -172,7 +172,7 @@ export function createMemoryRepo() {
       if (!Number.isInteger(count) || count < 1) throw new RepoError('CARD_POOL_FULL');
       if (requestedSerial !== undefined && requestedSerial !== null) {
         const serial = String(requestedSerial);
-        if (!/^\\d{5}$/.test(serial) || Number(serial) < 10000 || Number(serial) > 24999) throw new RepoError('INVALID_CARD_NUMBER');
+        if (!/^\d{5}$/.test(serial) || Number(serial) < 10000 || Number(serial) > 24999) throw new RepoError('INVALID_CARD_NUMBER');
         if ([...cards.values()].some((card) => card.serial === serial)) throw new RepoError('CARD_NUMBER_TAKEN');
         nextCardSerial = Math.max(nextCardSerial, Number(serial) + 1);
         return [serial];
