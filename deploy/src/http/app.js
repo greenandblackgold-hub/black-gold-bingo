@@ -164,6 +164,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   /* cards */
   route('GET', '/api/cards', 'user', 'default', ({ user }) => game.myCards(user));
   route('GET', '/api/cards/previews', 'user', 'default', ({ user }) => game.myPreviews(user));
+  route('POST', '/api/cards/previews/remove', 'user', 'default', ({ user, body }) => game.removePreview(user, body.serial));
   route('POST', '/api/cards/preview', 'user', 'default', async ({ user, body }) => {
     await gamesHub.assertGameEnabled('bingo');
     return game.previewCards(user, body.count ?? 1);
