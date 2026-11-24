@@ -61,7 +61,7 @@ export function AdminGamesHub() {
     <div className={card + ' mt-4'}>
       <p className="font-bold text-amber-100">{t('announcement')}</p>
       <p className="mt-1 text-xs text-amber-100/50">{t('announcementHelp')}</p>
-      <textarea maxLength={500} rows={3} value={announcementText} onChange={e => setAnnouncementText(e.target.value)} className={input + ' resize-y'} placeholder="{t('announcementPlaceholder')}" />
+      <textarea maxLength={500} rows={3} value={announcementText} onChange={e => setAnnouncementText(e.target.value)} className={input + ' resize-y'} placeholder={t('announcementPlaceholder')} />
       <button disabled={busy || !overview} onClick={() => void save({ announcementText })} className="mt-2 rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{t('saveAnnouncement')}</button>
     </div>
     <p className="mt-4 text-xs font-semibold text-amber-100/60">{t('hostControls')}</p>
