@@ -5,7 +5,6 @@
  * win decision now live on the server.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AudioCallAnnouncer } from '@/components/audio/AudioCallAnnouncer';
 import { PushNotificationPrompt } from '@/components/notifications/PushNotificationPrompt';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { useAuth } from '@/context/AuthContext';
@@ -254,15 +253,6 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
     previousRoundNumber.current = roundNumber;
   }, [roundNumber, game?.phase]);
 
-  // Bell on every device for each new number (not for the first snapshot).
-  const prevLen = useRef<number | null>(null);
-  const len = game?.calledNumbers.length ?? null;
-  useEffect(() => {
-    if (len === null) return;
-    if (prevLen.current !== null && len > prevLen.current) play('call');
-    prevLen.current = len;
-  }, [len]);
-
   // New round or a decided round: refresh cards and balance.
   const round = game?.roundNumber ?? null;
   const seenRound = useRef<number | null>(null);
@@ -378,7 +368,6 @@ export function ServerProviders({ children }: { children: ReactNode }) {
     <BackendContext.Provider value={backend}>
       <ServerPlayerProvider>
         <ServerRoundProvider>
-          <AudioCallAnnouncer />
           <PushNotificationPrompt />
           {children}
         </ServerRoundProvider>
