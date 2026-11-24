@@ -59,7 +59,7 @@ export function BottomNav({ active, onChange }: { active: TabId; onChange: (tab:
                 ].join(' ')}
               >
                 {ICONS[id]}
-                {id === 'menu' ? (lang === 'en' ? 'Menu' : 'ምናሌ') : id === 'games' ? (lang === 'en' ? 'Games' : lang === 'ti' ? 'ጸወታታት' : 'ጨዋታዎች') : LABELS[lang].wallet}
+                {id === 'menu' ? LABELS[lang].menu : id === 'games' ? LABELS[lang].games : LABELS[lang].wallet}
               </button>
             </li>
           );
