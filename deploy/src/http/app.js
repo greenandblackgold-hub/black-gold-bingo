@@ -410,7 +410,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
     if (!staticRoot) return process.env.RENDER_GIT_COMMIT ?? 'unknown';
     try {
       const html = fs.readFileSync(path.join(staticRoot, 'index.html'), 'utf8');
-      return html.match(/<script\\b[^>]*\\bsrc=["']([^"']+\\.js(?:\\?[^"']*)?)["']/i)?.[1]
+      return html.match(/<script\b[^>]*\bsrc=["']([^"']+\.js(?:\?[^"']*)?)["']/i)?.[1]
         ?? process.env.RENDER_GIT_COMMIT
         ?? 'unknown';
     } catch {
@@ -430,7 +430,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
     const write = (state) => res.write(`event: game\ndata: ${JSON.stringify(state)}\n\n`);
     game.getPublicState().then(write).catch(() => undefined);
     const off = game.subscribe(write);
-    const beat = setInterval(() => res.write(': keep-alive\\n\\n'), 25_000);
+    const beat = setInterval(() => res.write(': keep-alive\n\n'), 25_000);
     req.on('close', () => {
       clearInterval(beat);
       off();
