@@ -1311,3 +1311,43 @@ body { color: #f7edcf; background: #030303 !important; }
   object-position: center;
   flex: none;
 }
+
+
+/* Keno-only premium emerald play surface. Scoped to the Keno root so no other
+   game, wallet, lobby, or administration screen inherits this background. */
+.premium-ui .keno-reference-page {
+  background-color: #073b2b !important;
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(43, 190, 126, .30), transparent 32rem),
+    radial-gradient(ellipse at 50% 100%, rgba(9, 88, 57, .26), transparent 30rem),
+    linear-gradient(180deg, #0b4a35 0%, #073b2b 48%, #041f18 100%) !important;
+  color: #f3f7e9 !important;
+  box-shadow: 0 0 44px rgba(0, 35, 23, .34);
+}
+.premium-ui .keno-reference-page .keno-topbar,
+.premium-ui .keno-reference-page .keno-bet-panel,
+.premium-ui .keno-reference-page .keno-draw-stage,
+.premium-ui .keno-reference-page .keno-tabs,
+.premium-ui .keno-reference-page .keno-counts {
+  background-color: #092f23 !important;
+  border-color: rgba(115, 220, 164, .26) !important;
+}
+.premium-ui .keno-reference-page .keno-number-grid,
+.premium-ui .keno-reference-page .keno-stake-controls,
+.premium-ui .keno-reference-page .keno-bet-panel [class*="bg-[#0b1915]"] {
+  background-color: #041d16 !important;
+}
+.premium-ui .keno-reference-page .keno-number-grid button:not([aria-pressed="true"]) {
+  background: linear-gradient(145deg, #24513f, #123426) !important;
+  border-color: rgba(123, 197, 157, .32) !important;
+  color: #e7f5e9 !important;
+}
+.premium-ui .keno-reference-page .keno-bet-submit {
+  background: linear-gradient(180deg, #e3a33e, #b66b1e) !important;
+  border-color: rgba(255, 221, 151, .55) !important;
+  color: #1a160b !important;
+}
+.premium-ui .keno-reference-page .keno-bet-submit:disabled {
+  filter: saturate(.65);
+  opacity: .62;
+}
