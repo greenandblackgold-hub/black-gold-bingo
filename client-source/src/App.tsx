@@ -53,6 +53,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
   const [menuOpen, setMenuOpen] = useState(false);
   const [playerSettingsOpen, setPlayerSettingsOpen] = useState(false);
   const [generalEnabled, setGeneralEnabled] = useState(true);
+  const [minesEnabled, setMinesEnabled] = useState(true);
   useEffect(() => {
     if (!SERVER_MODE) return;
     let active = true;
@@ -61,8 +62,8 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
       if (pending) return;
       pending = true;
       try {
-        const value = await api.get<{ generalEnabled: boolean }>('/api/games/settings');
-        if (active) setGeneralEnabled(value.generalEnabled !== false);
+        const value = await api.get<{ generalEnabled: boolean; minesEnabled?: boolean }>('/api/games/settings');
+        if (active) { setGeneralEnabled(value.generalEnabled !== false); setMinesEnabled(value.minesEnabled !== false); }
       } catch {
         // A transient network failure must not kick a player out of the selected game.
         // Keep the last confirmed maintenance state until the server responds again.
@@ -77,6 +78,9 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
   useEffect(() => {
     if (!generalEnabled) { setMenuOpen(false); setPlayerSettingsOpen(false); }
   }, [generalEnabled]);
+  useEffect(() => {
+    if (SERVER_MODE && !minesEnabled && tab === 'mines') setTab('games');
+  }, [minesEnabled, tab]);
   const handleNavChange = (next: TabId) => {
     if (next === 'menu') { setMenuOpen(true); return; }
     setMenuOpen(false);
