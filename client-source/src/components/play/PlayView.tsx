@@ -277,15 +277,31 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   // Registered cards and called numbers continue to come from their existing server sources.
   useEffect(() => {
     if (!loaded || !user?.id) return;
+    let active = true;
     setDraftCardsLoadedFor(null);
+    let saved: BingoCard[] = [];
     try {
       const raw = localStorage.getItem(draftCardsStorageKey);
       const parsed: unknown = raw ? JSON.parse(raw) : [];
-      setDraftCards(Array.isArray(parsed) ? parsed as BingoCard[] : []);
+      saved = Array.isArray(parsed) ? parsed as BingoCard[] : [];
     } catch {
-      setDraftCards([]);
+      saved = [];
     }
+    setDraftCards(saved);
     setDraftCardsLoadedFor(draftCardsStorageKey);
+
+    // The API copy survives an ordinary browser refresh even if local storage is blocked.
+    void api.get<BingoCard[]>('/api/cards/previews').then(serverPreviews => {
+      if (!active || !Array.isArray(serverPreviews)) return;
+      setDraftCards(current => {
+        const bySerial = new Map(current.map(card => [String(card.serial), card]));
+        for (const card of serverPreviews) bySerial.set(String(card.serial), { ...bySerial.get(String(card.serial)), ...card });
+        return [...bySerial.values()].sort((a, b) => Number(a.serial) - Number(b.serial));
+      });
+    }).catch(() => {
+      // Browser-saved previews remain available if the API is temporarily offline.
+    });
+    return () => { active = false; };
   }, [loaded, user?.id, draftCardsStorageKey]);
 
   useEffect(() => {
@@ -406,7 +422,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     setRegisteringDraftId(card.id);
     setDraftMessage('');
     try {
-      const result = await buyCards(1, String(card.serial));
+      const result = await buyCards(1, String(card.serial), { grid: card.grid, token: card.previewToken });
       if (result.ok) {
         setDraftCards(current => current.filter(item => item.id !== card.id));
         setDraftMessage('ካርቴላው ተመዝግቧል። BINGO!');
@@ -445,7 +461,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         : '0:00';
 
   return (
-    <main className="player-play-view relative mx-auto min-h-full w-full max-w-[1100px] overflow-hidden rounded-[2rem] border-2 border-zinc-500/80 bg-[#030303] px-2 pb-32 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
+    <main className="player-play-view relative mx-auto min-h-full w-full max-w-[1100px] overflow-x-clip rounded-[2rem] border-2 border-zinc-500/80 bg-[#030303] px-2 pb-32 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
       <div className="pointer-events-none absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_50%_12%,rgba(255,196,0,.17),transparent_36%),radial-gradient(ellipse_at_50%_100%,rgba(255,196,0,.13),transparent_38%)]" />
       <div className="relative z-10 space-y-2 sm:space-y-3">
 
