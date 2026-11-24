@@ -7,6 +7,7 @@ import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { play } from '@/lib/audio';
+import { api } from '@/lib/api';
 import { findWinningPattern, patternMasks } from '@/lib/bingo';
 import { getPatternDescription } from '@/lib/patternCatalog';
 import { patternNames } from '@/lib/localization';
@@ -156,9 +157,12 @@ type CardProps = {
   onClaim: () => void;
   onToggle: (n: number) => void;
   onRemove: () => void;
+  draft?: boolean;
+  registering?: boolean;
+  onRegister?: () => void;
 };
 
-function BingoCardView({ labels, card, index, marks, called, pattern, claimable, claiming, onClaim, onToggle, onRemove }: CardProps) {
+function BingoCardView({ labels, card, index, marks, called, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister }: CardProps) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
   const winning = useMemo(() => {
     const result = findWinningPattern(card.grid, new Set([...called].filter(n => marks.has(n))), pattern);
@@ -249,12 +253,17 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     } catch { return 2; }
   });
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
+  const [draftCards, setDraftCards] = useState<BingoCard[]>([]);
+  const [registeringDraftId, setRegisteringDraftId] = useState<string | null>(null);
+  const [draftMessage, setDraftMessage] = useState('');
   const [quickBuyCount, setQuickBuyCount] = useState(1);
   const [quickBuyBusy, setQuickBuyBusy] = useState(false);
   const [quickBuyMessage, setQuickBuyMessage] = useState('');
   const [selectedDepositAccount, setSelectedDepositAccount] = useState<DepositAccount | null>(null);
   const [copyStatus, setCopyStatus] = useState('');
 
+
+  useEffect(() => { setDraftCards([]); setDraftMessage(''); }, [roundNumber]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -341,6 +350,32 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   useEffect(() => {
     if (bonusRound) setQuickBuyCount(count => Math.min(count, 3));
   }, [bonusRound]);
+  const addPreviewCard = async () => {
+    try {
+      const previews = await api.post<BingoCard[]>('/api/cards/preview', { count: 1 });
+      setDraftCards(current => [...current, ...previews]);
+      setDraftMessage('');
+      setQuickBuyOpen(false);
+    } catch (error) {
+      setQuickBuyMessage(error instanceof Error ? error.message : 'ካርቴላውን ማዘጋጀት አልተቻለም።');
+    }
+  };
+  const registerDraftCard = async (card: BingoCard) => {
+    if (registeringDraftId) return;
+    setRegisteringDraftId(card.id);
+    setDraftMessage('');
+    try {
+      const result = await buyCards(1, String(card.serial));
+      if (result.ok) {
+        setDraftCards(current => current.filter(item => item.id !== card.id));
+        setDraftMessage('ካርቴላው ተመዝግቧል። BINGO!');
+      } else {
+        setDraftMessage(result.error ?? 'በቂ ቀሪ ሂሳብ የለም። ካርቴላው አልተመዘገበም።');
+      }
+    } finally {
+      setRegisteringDraftId(null);
+    }
+  };
   const submitQuickBuy = async () => {
     if (!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy) return;
     setQuickBuyBusy(true);
@@ -591,6 +626,14 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
           )}
         </section>
 
+        {draftCards.length > 0 && (
+          <section className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: 'repeat(' + cardsPerRow + ', minmax(0, 1fr))' }}>
+            {draftCards.map((card, index) => (
+              <BingoCardView labels={t} key={card.id} card={card} index={index} marks={new Set<number>()} called={called} pattern={winPattern} claimable={false} claiming={false} onClaim={() => undefined} onToggle={() => undefined} draft registering={registeringDraftId === card.id} onRegister={() => void registerDraftCard(card)} onRemove={() => setDraftCards(current => current.filter(item => item.id !== card.id))} />
+            ))}
+          </section>
+        )}
+        {draftMessage && <p role="status" className="rounded-lg bg-yellow-950/70 p-2 text-center text-xs font-bold text-yellow-200">{draftMessage}</p>}
         {cards.length > 0 && (
           <section className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))` }}>
             {cards.map((card, index) => (
@@ -644,6 +687,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               {!quickBuyAllowed && <p role="status" className="mb-3 rounded-lg bg-amber-950/60 p-2 text-xs text-amber-200">{t.buyOnlyWaiting}</p>}
               {!bonusRound && quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">{t.insufficient}</p>}
               {quickBuyMessage && <p role="status" className="mb-3 text-xs font-bold text-yellow-300">{quickBuyMessage}</p>}
+              {!bonusRound && <button type="button" onClick={() => void addPreviewCard()} disabled={!quickBuyAllowed || quickBuyBusy} className="mt-2 w-full rounded-xl border border-yellow-400/60 bg-yellow-950/50 px-4 py-3 text-sm font-black text-yellow-200 disabled:opacity-40">＋ ካርቴላ አይተህ ጨምር (ነፃ ማየት)</button>}
               <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="sticky bottom-0 z-10 mt-2 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
                 {quickBuyBusy ? t.buying : bonusRound ? t.getFreeCards : t.buyCards}
               </button>
