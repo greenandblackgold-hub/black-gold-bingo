@@ -8,14 +8,16 @@ type KenoBet = { id: string; status: string; stakeEtb: number; selectedNumbers: 
 type KenoState = { payoutTable: Record<string, Record<string, number>>; enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; drawIntervalSeconds?: number; drawnNumbers?: number[]; settledAt?: number; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string };
 type HistoryRound = { roundId: string; status: string; drawnNumbers?: number[]; serverSeedHash: string; serverSeed?: string; myBets: KenoBet[] };
 type Tab = 'game' | 'history' | 'results' | 'statistics' | 'live';
+type KenoTicketDraft = { requestId: string; amount: number; selectedNumbers: number[] };
+type KenoBatchResponse = { bets: (KenoBet & { duplicate?: boolean })[]; balanceEtb: number; duplicateCount: number };
 
 const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const requestId = () => 'keno_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
 
 const copy = {
-  am: { title: 'BLACK GOLD KENO', rules: 'ህጎች', sound: 'ድምጽ', turbo: 'ፈጣን', draw: 'የወጡ ቁጥሮች', picks: 'የተመረጡ', hits: 'የተዛመዱ', bet: 'ውርርድ', total: 'ጠቅላላ', game: 'ጨዋታ', history: 'ታሪክ', results: 'ውጤቶች', stats: 'ስታቲስቲክስ', live: 'የእኔ ቲኬቶች', clear: 'አጽዳ', quick: 'ፈጣን ምርጫ', selected: 'የተመረጡ ቁጥሮች', play: 'BET / ተጫወት', waiting: 'ውጤት በመጠበቅ ላይ', noTickets: 'በዚህ ዙር ገና ቲኬት የለም', noHistory: 'ገና የተጠናቀቁ ዙሮች የሉም', rounds: 'ዙሮች', tickets: 'ቲኬቶች', wagered: 'ጠቅላላ ውርርድ', won: 'ጠቅላላ ያሸነፉት', count: 'ብዛት', status: 'ሁኔታ', payout: 'ክፍያ', noWin: 'ሽልማት የለም', minMax: 'የሚፈቀደው', round: 'ዙር', drawComplete: 'ዕጣው ተጠናቋል', recent: 'የቅርብ ውጤቶች', poolNote: 'የመጨረሻ ክፍያ በዙሩ የገንዘብ ገንዳና በከፍተኛ ገደብ ሊስተካከል ይችላል።', simulation: 'የሙከራ ክሬዲት ብቻ', boardClosed: '20ዎቹ ቁጥሮች ወጥተዋል። ቀጣዩ ዙር ሲጀምር ሰሌዳው በራስ-ሰር ይመለሳል።', fast:'ፈጣን', chooseTen:'10 ቁጥሮችን ይምረጡ', fromTo:'ከ1 እስከ 80', selectedCount:'ተመርጠዋል', decreaseBet:'ውርርድ ቀንስ', increaseBet:'ውርርድ ጨምር', openMenu:'የተጫዋች ሜኑ ክፈት', timeRemaining:'በዚህ ዙር የቀረ ጊዜ', drawnNumbersAria:'የKeno የወጡ ቁጥሮች', number:'ቁጥር', selectedState:'ተመርጧል', betButton:'ውርርድ', all:'ሁሉም', myTickets:'የእኔ ቲኬቶች', myBets:'ውርርዶቼ', ticket:'ቲኬት', waitingBet:'በመጠበቅ ላይ' },
-  ti: { title: 'BLACK GOLD KENO', rules: 'ሕግታት', sound: 'ድምጺ', turbo: 'ቅልጡፍ', draw: 'ዝወጹ ቁጽሪታት', picks: 'ዝተመርጹ', hits: 'ዝተሰማምዑ', bet: 'ውርርድ', total: 'ጠቕላላ', game: 'ጸወታ', history: 'ታሪኽ', results: 'ውጽኢት', stats: 'ስታቲስቲክስ', live: 'ቲኬታተይ', clear: 'ኣጽርይ', quick: 'ቅልጡፍ ምርጫ', selected: 'ዝተመርጹ ቁጽሪታት', play: 'BET / ተጻወት', waiting: 'ውጽኢት ይጽበ ኣሎ', noTickets: 'ኣብዚ ዙር ገና ቲኬት የለን', noHistory: 'ገና ዝተወድኡ ዙራት የለዉን', rounds: 'ዙራት', tickets: 'ቲኬታት', wagered: 'ጠቕላላ ውርርድ', won: 'ጠቕላላ ዝተዓወትኩም', count: 'ብዝሒ', status: 'ኩነታት', payout: 'ክፍሊት', noWin: 'ሽልማት የለን', minMax: 'ዝፍቀድ', round: 'ዙር', drawComplete: 'ዕጫ ተወዲኡ', recent: 'ናይ ቀረባ ውጽኢታት', poolNote: 'ናይ መወዳእታ ክፍሊት ብገንዘብ ገንዳ ዙርን ዝለዓለ ደረትን ክስተኻኸል ይኽእል።', simulation: 'ናይ ፈተነ ክረዲት ጥራይ', boardClosed: 'እቶም 20 ቁጽሪታት ወጺኦም። እቲ ሰሌዳ ኣብ ዝቕጽል ዙር ብኣውቶማቲክ ክምለስ እዩ።', fast:'ቅልጡፍ', chooseTen:'10 ቁጽሪታት ምረጹ', fromTo:'ካብ 1 ክሳብ 80', selectedCount:'ተመሪጾም', decreaseBet:'ውርርድ ኣጉድል', increaseBet:'ውርርድ ወስኽ', openMenu:'ሜኑ ተጻዋታይ ክፈት', timeRemaining:'ኣብዚ ዙር ዝተረፈ ግዜ', drawnNumbersAria:'ዝወጹ ቁጽሪታት Keno', number:'ቁጽሪ', selectedState:'ተመሪጹ', betButton:'ውርርድ', all:'ኩሉ', myTickets:'ቲኬታተይ', myBets:'ውርርደይ', ticket:'ቲኬት', waitingBet:'ይጽበ ኣሎ' },
-  en: { title: 'BLACK GOLD KENO', rules: 'RULES', sound: 'SOUND', turbo: 'TURBO', draw: 'DRAWN NUMBERS', picks: 'PICKS', hits: 'HITS', bet: 'BET', total: 'TOTAL', game: 'GAME', history: 'HISTORY', results: 'RESULTS', stats: 'STATISTICS', live: 'MY TICKETS', clear: 'CLEAR', quick: 'QUICK PICK', selected: 'SELECTED NUMBERS', play: 'BET NOW', waiting: 'Waiting for draw', noTickets: 'No tickets in this round yet', noHistory: 'No completed rounds yet', rounds: 'Rounds', tickets: 'Tickets', wagered: 'Total wagered', won: 'Total returned', count: 'Count', status: 'Status', payout: 'Payout', noWin: 'No prize', minMax: 'Allowed', round: 'Round', drawComplete: 'DRAW COMPLETE', recent: 'RECENT RESULTS', poolNote: 'Final payouts may be adjusted by the round pool and the maximum payout cap.', simulation: 'DEMO CREDITS ONLY', boardClosed: 'All 20 numbers have been drawn. The board will return automatically when the next round opens.', fast:'FAST', chooseTen:'Choose 10 numbers', fromTo:'From 1 to 80', selectedCount:'selected', decreaseBet:'Decrease bet', increaseBet:'Increase bet', openMenu:'Open player menu', timeRemaining:'Time remaining in this round', drawnNumbersAria:'Drawn Keno numbers', number:'Number', selectedState:'selected', betButton:'BET', all:'All', myTickets:'My Tickets', myBets:'My Bets', ticket:'Ticket', waitingBet:'Waiting' },
+  am: { title: 'BLACK GOLD KENO', rules: 'ህጎች', sound: 'ድምጽ', turbo: 'ፈጣን', draw: 'የወጡ ቁጥሮች', picks: 'የተመረጡ', hits: 'የተዛመዱ', bet: 'ውርርድ', total: 'ጠቅላላ', game: 'ጨዋታ', history: 'ታሪክ', results: 'ውጤቶች', stats: 'ስታቲስቲክስ', live: 'የእኔ ቲኬቶች', clear: 'አጽዳ', quick: 'ፈጣን ምርጫ', selected: 'የተመረጡ ቁጥሮች', play: 'BET / ተጫወት', waiting: 'ውጤት በመጠበቅ ላይ', noTickets: 'በዚህ ዙር ገና ቲኬት የለም', noHistory: 'ገና የተጠናቀቁ ዙሮች የሉም', rounds: 'ዙሮች', tickets: 'ቲኬቶች', wagered: 'ጠቅላላ ውርርድ', won: 'ጠቅላላ ያሸነፉት', count: 'ብዛት', status: 'ሁኔታ', payout: 'ክፍያ', noWin: 'ሽልማት የለም', minMax: 'የሚፈቀደው', round: 'ዙር', drawComplete: 'ዕጣው ተጠናቋል', recent: 'የቅርብ ውጤቶች', poolNote: 'የመጨረሻ ክፍያ በዙሩ የገንዘብ ገንዳና በከፍተኛ ገደብ ሊስተካከል ይችላል።', simulation: 'የሙከራ ክሬዲት ብቻ', boardClosed: '20ዎቹ ቁጥሮች ወጥተዋል። ቀጣዩ ዙር ሲጀምር ሰሌዳው በራስ-ሰር ይመለሳል።', fast:'ፈጣን', chooseTen:'10 ቁጥሮችን ይምረጡ', fromTo:'ከ1 እስከ 80', selectedCount:'ተመርጠዋል', decreaseBet:'ውርርድ ቀንስ', increaseBet:'ውርርድ ጨምር', openMenu:'የተጫዋች ሜኑ ክፈት', timeRemaining:'በዚህ ዙር የቀረ ጊዜ', drawnNumbersAria:'የKeno የወጡ ቁጥሮች', number:'ቁጥር', selectedState:'ተመርጧል', betButton:'ውርርድ', all:'ሁሉም', myTickets:'የእኔ ቲኬቶች', myBets:'ውርርዶቼ', ticket:'ቲኬት', waitingBet:'በመጠበቅ ላይ', addTicket:'ቲኬት ጨምር', queued:'የተዘጋጁ ቲኬቶች', placeBets:'ውርርዶችን አስገባ', betsConfirmed:'ውርርዶች ተረጋግጠዋል' },
+  ti: { title: 'BLACK GOLD KENO', rules: 'ሕግታት', sound: 'ድምጺ', turbo: 'ቅልጡፍ', draw: 'ዝወጹ ቁጽሪታት', picks: 'ዝተመርጹ', hits: 'ዝተሰማምዑ', bet: 'ውርርድ', total: 'ጠቕላላ', game: 'ጸወታ', history: 'ታሪኽ', results: 'ውጽኢት', stats: 'ስታቲስቲክስ', live: 'ቲኬታተይ', clear: 'ኣጽርይ', quick: 'ቅልጡፍ ምርጫ', selected: 'ዝተመርጹ ቁጽሪታት', play: 'BET / ተጻወት', waiting: 'ውጽኢት ይጽበ ኣሎ', noTickets: 'ኣብዚ ዙር ገና ቲኬት የለን', noHistory: 'ገና ዝተወድኡ ዙራት የለዉን', rounds: 'ዙራት', tickets: 'ቲኬታት', wagered: 'ጠቕላላ ውርርድ', won: 'ጠቕላላ ዝተዓወትኩም', count: 'ብዝሒ', status: 'ኩነታት', payout: 'ክፍሊት', noWin: 'ሽልማት የለን', minMax: 'ዝፍቀድ', round: 'ዙር', drawComplete: 'ዕጫ ተወዲኡ', recent: 'ናይ ቀረባ ውጽኢታት', poolNote: 'ናይ መወዳእታ ክፍሊት ብገንዘብ ገንዳ ዙርን ዝለዓለ ደረትን ክስተኻኸል ይኽእል።', simulation: 'ናይ ፈተነ ክረዲት ጥራይ', boardClosed: 'እቶም 20 ቁጽሪታት ወጺኦም። እቲ ሰሌዳ ኣብ ዝቕጽል ዙር ብኣውቶማቲክ ክምለስ እዩ።', fast:'ቅልጡፍ', chooseTen:'10 ቁጽሪታት ምረጹ', fromTo:'ካብ 1 ክሳብ 80', selectedCount:'ተመሪጾም', decreaseBet:'ውርርድ ኣጉድል', increaseBet:'ውርርድ ወስኽ', openMenu:'ሜኑ ተጻዋታይ ክፈት', timeRemaining:'ኣብዚ ዙር ዝተረፈ ግዜ', drawnNumbersAria:'ዝወጹ ቁጽሪታት Keno', number:'ቁጽሪ', selectedState:'ተመሪጹ', betButton:'ውርርድ', all:'ኩሉ', myTickets:'ቲኬታተይ', myBets:'ውርርደይ', ticket:'ቲኬት', waitingBet:'ይጽበ ኣሎ', addTicket:'ቲኬት ወስኽ', queued:'ዝተዳለዉ ቲኬታት', placeBets:'ውርርድ ኣእቱ', betsConfirmed:'ውርርድ ተረጋጊጹ' },
+  en: { title: 'BLACK GOLD KENO', rules: 'RULES', sound: 'SOUND', turbo: 'TURBO', draw: 'DRAWN NUMBERS', picks: 'PICKS', hits: 'HITS', bet: 'BET', total: 'TOTAL', game: 'GAME', history: 'HISTORY', results: 'RESULTS', stats: 'STATISTICS', live: 'MY TICKETS', clear: 'CLEAR', quick: 'QUICK PICK', selected: 'SELECTED NUMBERS', play: 'BET NOW', waiting: 'Waiting for draw', noTickets: 'No tickets in this round yet', noHistory: 'No completed rounds yet', rounds: 'Rounds', tickets: 'Tickets', wagered: 'Total wagered', won: 'Total returned', count: 'Count', status: 'Status', payout: 'Payout', noWin: 'No prize', minMax: 'Allowed', round: 'Round', drawComplete: 'DRAW COMPLETE', recent: 'RECENT RESULTS', poolNote: 'Final payouts may be adjusted by the round pool and the maximum payout cap.', simulation: 'DEMO CREDITS ONLY', boardClosed: 'All 20 numbers have been drawn. The board will return automatically when the next round opens.', fast:'FAST', chooseTen:'Choose 10 numbers', fromTo:'From 1 to 80', selectedCount:'selected', decreaseBet:'Decrease bet', increaseBet:'Increase bet', openMenu:'Open player menu', timeRemaining:'Time remaining in this round', drawnNumbersAria:'Drawn Keno numbers', number:'Number', selectedState:'selected', betButton:'BET', all:'All', myTickets:'My Tickets', myBets:'My Bets', ticket:'Ticket', waitingBet:'Waiting', addTicket:'ADD TICKET', queued:'QUEUED TICKETS', placeBets:'PLACE BETS', betsConfirmed:'bets confirmed' },
 } as const;
 
 export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator' | 'mines') => void; onOpenMenu: () => void }) {
@@ -27,6 +29,12 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
   const stateRequestInFlight = useRef(false);
   const [history, setHistory] = useState<HistoryRound[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
+  const [queuedTickets, setQueuedTickets] = useState<KenoTicketDraft[]>([]);
+  const [displayedDrawnNumbers, setDisplayedDrawnNumbers] = useState<number[]>([]);
+  const [drawQueue, setDrawQueue] = useState<number[]>([]);
+  const activeDrawRound = useRef<string | null>(null);
+  const drawStartedRound = useRef<string | null>(null);
+  const lastDrawAt = useRef(0);
   const [amount, setAmount] = useState('2.00');
   const [clock, setClock] = useState(Date.now());
   const [offset, setOffset] = useState(0);
@@ -58,9 +66,44 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
     return () => { window.clearInterval(poll); window.clearInterval(tick); };
   }, [loadState, loadHistory]);
 
-  // The API releases only the numbers whose reveal time has elapsed on the server.
-  // Do not run a separate client timer: a refresh or late join must preserve the same order.
-  const visibleDrawnNumbers = state?.drawnNumbers ?? [];
+  // Buffer server catch-up responses and reveal each ball separately. A delayed poll,
+  // background tab, or reconnect must never paint two or more new balls together.
+  useEffect(() => {
+    if (!state) return;
+    const roundChanged = activeDrawRound.current !== state.roundId;
+    if (roundChanged) {
+      activeDrawRound.current = state.roundId;
+      drawStartedRound.current = null;
+      lastDrawAt.current = 0;
+      setDisplayedDrawnNumbers([]);
+      setDrawQueue([]);
+    }
+    if (state.status !== 'settled') return;
+    if (drawStartedRound.current !== state.roundId) {
+      drawStartedRound.current = state.roundId;
+      const elapsed = Math.max(0, state.serverTime - Number(state.settledAt ?? state.serverTime));
+      lastDrawAt.current = Date.now() - elapsed;
+    }
+    setDrawQueue(current => {
+      const known = new Set([...(roundChanged ? [] : displayedDrawnNumbers), ...(roundChanged ? [] : current)]);
+      const additions = (state.drawnNumbers ?? []).filter(number => !known.has(number));
+      return roundChanged ? additions : [...current, ...additions];
+    });
+  }, [state?.roundId, state?.status, state?.drawnNumbers, state?.serverTime, state?.settledAt, displayedDrawnNumbers]);
+
+  useEffect(() => {
+    if (!drawQueue.length) return;
+    const delay = Math.max(0, 1000 - (Date.now() - lastDrawAt.current));
+    const timer = window.setTimeout(() => {
+      const next = drawQueue[0];
+      setDisplayedDrawnNumbers(current => current.includes(next) ? current : [...current, next]);
+      setDrawQueue(current => current[0] === next ? current.slice(1) : current.filter(number => number !== next));
+      lastDrawAt.current = Date.now();
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [drawQueue]);
+
+  const visibleDrawnNumbers = displayedDrawnNumbers;
   const visibleDrawCount = visibleDrawnNumbers.length;
   const revealComplete = state?.status === 'settled' && visibleDrawCount >= 20;
   useEffect(() => { if (state?.status === 'settled') void loadHistory(); }, [state?.status, state?.roundId, revealComplete, loadHistory]);
@@ -82,16 +125,28 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
     setSelected(pool.slice(0,10).sort((a,b)=>a-b));
   };
   const betRequestInFlight = useRef(false);
+  const addTicket = () => {
+    if (!selected.length || !validAmount || !isBetting || busy || queuedTickets.length >= 19) return;
+    setQueuedTickets(current => [...current, { requestId: requestId(), amount: numericAmount, selectedNumbers: [...selected] }]);
+    setSelected([]);
+    setError(''); setNotice('');
+  };
   const submit = async () => {
-    if (!selected.length || !validAmount || !isBetting || busy || betRequestInFlight.current) return;
+    const selectedSnapshot = selected.length && validAmount ? selected : [];
+    const queuedSnapshot = queuedTickets;
+    const tickets = [
+      ...queuedSnapshot,
+      ...(selectedSnapshot.length ? [{ requestId: requestId(), amount: numericAmount, selectedNumbers: [...selectedSnapshot] }] : []),
+    ];
+    if (!tickets.length || tickets.length > 20 || !isBetting || busy || betRequestInFlight.current) return;
     betRequestInFlight.current = true;
     setBusy(true); setError(''); setNotice('');
     try {
-      await api.post('/api/games/keno/bets',{requestId:requestId(),amount:numericAmount,selectedNumbers:selected});
-      setNotice(t.betConfirmed); setSelected([]);
-      // Release the betting control as soon as the bet is accepted.
-      // Balance and ticket refreshes continue without blocking the next entry.
-      setBusy(false);
+      const response = await api.post<KenoBatchResponse>('/api/games/keno/bets/batch', { tickets });
+      const queuedIds = new Set(queuedSnapshot.map(ticket => ticket.requestId));
+      setQueuedTickets(current => current.filter(ticket => !queuedIds.has(ticket.requestId)));
+      if (selectedSnapshot.length) setSelected(current => current === selectedSnapshot ? [] : current);
+      setNotice(`${response.bets.length} ${c.betsConfirmed}`);
       void loadState();
       void loadHistory();
     } catch { setError(t.betError); }
@@ -144,7 +199,7 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
           <button type="button" disabled={!isBetting} onClick={()=>adjustBet(numericAmount)} className="rounded-sm bg-[#263b34] text-[12px] font-black text-emerald-300 disabled:opacity-40">X2</button>
           <button type="button" disabled={!isBetting} onClick={()=>setAmount(maxBet.toFixed(2))} className="rounded-sm bg-[#263b34] text-[12px] font-black text-emerald-300 disabled:opacity-40">MAX</button>
         </div>
-        <button type="button" disabled={!isBetting||!selected.length||!validAmount||busy} onClick={()=>void submit()} className="keno-bet-submit w-full rounded-b-md border-t border-emerald-200/15 bg-gradient-to-b from-[#276b4b] to-[#17432f] py-3 text-[25px] font-black text-slate-200 shadow-inner disabled:opacity-45">{busy?t.confirming:c.betButton}</button>
+        {queuedTickets.length > 0 && <div className="space-y-1 border-t border-emerald-200/10 bg-[#0b1915] p-2 text-[11px]">\n          <div className="flex items-center justify-between font-black text-emerald-200"><span>{c.queued} ({queuedTickets.length}/20)</span><span>{money(queuedTickets.reduce((sum, ticket) => sum + ticket.amount, 0))} ETB</span></div>\n          {queuedTickets.map((ticket, index) => <div key={ticket.requestId} className="flex items-center justify-between gap-2 rounded bg-black/20 px-2 py-1 text-emerald-100/80"><span className="min-w-0 flex-1 truncate">#{index + 1} · {ticket.selectedNumbers.join(", ")}</span><span className="shrink-0">{money(ticket.amount)} ETB</span><button type="button" disabled={busy} onClick={() => setQueuedTickets(current => current.filter(item => item.requestId !== ticket.requestId))} aria-label="Remove queued ticket" className="px-2 font-black text-amber-300">×</button></div>)}\n        </div>}\n        {selected.length > 0 && <button type="button" disabled={!isBetting||!validAmount||busy||queuedTickets.length>=19} onClick={addTicket} className="w-full border-t border-emerald-200/10 bg-[#172d23] py-2 text-xs font-black text-emerald-100 disabled:opacity-40">{c.addTicket}</button>}\n        <button type="button" disabled={!isBetting||(!queuedTickets.length&&(!selected.length||!validAmount))||busy} onClick={()=>void submit()} className="keno-bet-submit w-full rounded-b-md border-t border-emerald-200/15 bg-gradient-to-b from-[#276b4b] to-[#17432f] py-3 text-[25px] font-black text-slate-200 shadow-inner disabled:opacity-45">{busy?t.confirming:(queuedTickets.length?c.placeBets:c.betButton)+(queuedTickets.length+(selected.length&&validAmount?1:0)>1?" ("+(queuedTickets.length+(selected.length&&validAmount?1:0))+")":"")}</button>
         {(error||notice)&&<p role={error?'alert':'status'} className={'px-3 py-2 text-center text-xs '+(error?'bg-red-950/50 text-red-200':'bg-emerald-950/50 text-emerald-200')}>{error||notice}</p>}
         <div className="flex justify-between px-2 py-1 text-[9px] text-emerald-100/50"><span>Minimum {money(minBet)} ETB</span><span>Maximum {money(maxBet)} ETB</span><button type="button" onClick={()=>document.getElementById('keno-rules')?.scrollIntoView({behavior:'smooth',block:'center'})}>{c.rules}</button></div>
       </section>}
