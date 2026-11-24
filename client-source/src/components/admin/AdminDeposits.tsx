@@ -75,7 +75,7 @@ export function AdminDeposits() {
             return (
             <li key={row.id} className={`rounded-xl p-3 ${matchedSms ? 'bg-emerald-500/[0.08] ring-1 ring-emerald-400/50' : 'bg-white/[0.04]'}`}>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-lg font-black tabular-nums text-gold-400">{formatAmount(lang, row.amount)} ETB</span>
+                <span className="text-lg font-black tabular-nums text-gold-400">{formatAmount(lang, row.amount)} {t.currency}</span>
                 <span className={`rounded-full px-2.5 py-1 text-xs ${matchedSms ? 'bg-emerald-500/20 font-bold text-emerald-200' : 'bg-amber-500/15 text-amber-200'}`}>{matchedSms ? t.smsMatchedManual : row.smsMatch?.status === 'amount-mismatch' ? t.smsAmountMismatch : t.pending}</span>
               </div>
               {/^TEST-/i.test(row.reference) && <p className="mt-2 rounded-lg bg-sky-500/10 px-3 py-2 text-xs font-bold text-sky-200">{t.testOnly}</p>}
