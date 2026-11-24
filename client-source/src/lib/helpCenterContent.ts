@@ -100,6 +100,16 @@ export const helpTopics: HelpTopic[] = [
     keywords: { am: ['ፍትሃዊ','fair','seed','hash','ማረጋገጥ','ትንበያ'], ti: ['ፍትሓዊ','fair','seed','hash','ምርግጋጽ','ትንበያ'], en: ['fairness','fair','seed','hash','verify','predict'] }
   },
   {
+    id: 'wallet-withdrawal', category: 'safety',
+    question: { am: 'የWallet የሙከራ ብርን ማውጣት ወይም መቀበል እችላለሁ?', ti: 'ናይ Wallet ፈተና ብር ከውጽእ ወይ ክቕበል ይኽእል?', en: 'Can I withdraw or receive a payout from test wallet credits?' },
+    answer: {
+      am: 'አይ። በዚህ የሙከራ ስሪት የWallet ETB ቀሪ ሂሳብ የሙከራ ክሬዲት ብቻ ነው፤ የገንዘብ ዋጋ የለውም፣ ሊወጣ ወይም ሊከፈል አይችልም። Real-money deposits እና payouts ተዘግተዋል።',
+      ti: 'ኣይፋልን። ኣብዚ ናይ ፈተና ስሪት ናይ Wallet ETB ሒሳብ ናይ ፈተና ክሬዲት ጥራይ እዩ፤ ናይ ገንዘብ ዋጋ የብሉን፣ ክወጽእ ወይ ክኽፈል ኣይክእልን። Real-money depositsን payoutsን ተዓጽዮም ኣለዉ።',
+      en: 'No. Wallet ETB in this test version is simulated credit only. It has no cash value and cannot be withdrawn or paid out. Real-money deposits and payouts are disabled.'
+    },
+    keywords: { am: ['withdraw','cashout','ማውጣት','ወጪ','ክፍያ','payout'], ti: ['withdraw','cashout','ምውጻእ','ወጻኢ','ክፍሊት','payout'], en: ['withdraw','withdrawal','cash out','cashout','payout','cash value'] }
+  },
+  {
     id: 'wallet-safety', category: 'safety',
     question: { am: 'Black Gold AI የWallet ሂሳቤን ማየት ወይም መቀየር ይችላል?', ti: 'Black Gold AI ሒሳብ Wallet ክርኢ ወይ ክቕይር ይኽእል?', en: 'Can Black Gold AI view or change my wallet?' },
     answer: {
@@ -112,7 +122,7 @@ export const helpTopics: HelpTopic[] = [
 ];
 
 export const helpQuickQuestionIds = [
-  'how-center-works', 'bingo-how', 'keno-how', 'aviator-how', 'mines-how', 'cash-out',
+  'how-center-works', 'bingo-how', 'keno-how', 'aviator-how', 'mines-how', 'cash-out', 'wallet-withdrawal',
 ] as const;
 
 export function findHelpAnswer(query: string, lang: Lang): HelpTopic[] {
