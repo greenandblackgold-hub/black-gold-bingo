@@ -13,6 +13,7 @@ before(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bingo-site-'));
   fs.writeFileSync(path.join(dir, 'index.html'), '<!doctype html><title>Bingo</title><div id="root"></div>');
   fs.writeFileSync(path.join(dir, 'favicon.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
+  fs.writeFileSync(path.join(dir, 'bingo.webp'), Buffer.from('RIFF0000WEBP', 'ascii'));
   fs.writeFileSync(path.join(os.tmpdir(), 'secret-outside.txt'), 'top secret');
   const config = loadConfig({
     NODE_ENV: 'test', STORAGE: 'memory', CHAPA_MOCK: 'true', STATIC_DIR: dir,
@@ -43,6 +44,9 @@ test('the server serves the website and falls back to the single page for app ro
   assert.match(await home.text(), /id="root"/);
   assert.match(await (await get('/wallet')).text(), /id="root"/);
   assert.equal((await get('/favicon.svg')).headers.get('content-type'), 'image/svg+xml');
+  const webp = await get('/bingo.webp');
+  assert.equal(webp.status, 200);
+  assert.equal(webp.headers.get('content-type'), 'image/webp');
   assert.equal((await get('/nope.js')).status, 404, 'a missing file is a real 404');
 });
 
