@@ -70,10 +70,15 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
 
   useEffect(() => {
     void loadState(); void loadHistory();
+    const onAdminChange = () => { void loadState(); void loadHistory(); };
+    window.addEventListener('bgb:admin-change', onAdminChange);
     // Countdown is local. Do not poll MongoDB every second while betting:
     // refresh at the round boundary, then once per reveal while results are hidden.
     const tick = window.setInterval(() => setClock(Date.now()), 1000);
-    return () => window.clearInterval(tick);
+    return () => {
+      window.clearInterval(tick);
+      window.removeEventListener('bgb:admin-change', onAdminChange);
+    };
   }, [loadState, loadHistory]);
 
   useEffect(() => {
