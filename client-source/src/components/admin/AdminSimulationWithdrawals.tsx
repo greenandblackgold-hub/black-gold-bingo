@@ -31,7 +31,7 @@ export function AdminSimulationWithdrawals() {
    ]);
    setRows([...pending, ...processing]);
    setError('');
-  } catch (e) { setError(e instanceof ApiError ? e.message : t.err); }
+  } catch { setError(t.err); }
  }, [t.err]);
  useEffect(() => { void load(); const timer = setInterval(() => void load(), 15000); return () => clearInterval(timer); }, [load]);
  const act = async (id: string, action: 'start' | 'confirm' | 'reject') => {
@@ -67,7 +67,7 @@ export function AdminSimulationWithdrawals() {
      <span className="text-xs text-gold-500">{w.status === 'processing' ? words.processing : t.pending}</span>
     </div>
     <p className="mt-1 text-sm text-gold-300">{t.player}: {w.userName} · {w.userPhone}</p>
-    <p className="mt-1 text-xs text-gold-500">{t.method}: {w.method} · {t.destination}: {w.destination}</p>
+    <p className="mt-1 text-xs text-gold-500">{t.method}: {w.method.toLowerCase() === 'telebirr' ? words.telebirr : w.method.toLowerCase() === 'bank' ? words.bank : w.method} · {t.destination}: {w.destination}</p>
     <p className="mt-1 break-all font-mono text-[11px] text-gold-700">{w.id}</p>
     {w.status === 'pending' ? <div className="mt-3 flex gap-2">
      <button disabled={!!busy} onClick={() => void act(w.id, 'start')} className={btn + ' flex-1 bg-gold-500 text-darkbg ring-gold-400'}>{busy === w.id ? '…' : words.start}</button>
