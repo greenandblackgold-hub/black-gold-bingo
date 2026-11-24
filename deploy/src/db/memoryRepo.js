@@ -169,6 +169,7 @@ export function createMemoryRepo() {
     /* cards */
     async peekNextCardSerial() { return Math.max(10000, nextCardSerial); },
     async cardSerialExists(serial) { return [...cards.values()].some((card) => card.serial === String(serial)); },
+    async listUsedCardSerials() { return [...cards.values()].map((card) => String(card.serial)).filter((serial) => Number(serial) >= 10000 && Number(serial) <= 24999); },
     async reserveCardSerials(round, count, requestedSerial) {
       if (game.phase !== 'waiting' || game.roundNumber !== round) throw new RepoError('ROUND_NOT_OPEN');
       if (!Number.isInteger(count) || count < 1) throw new RepoError('CARD_POOL_FULL');
