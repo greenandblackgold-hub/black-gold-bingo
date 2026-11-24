@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { translations, formatAmount } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
-import { api, ApiError } from '@/lib/api';
+import { api } from '@/lib/api';
 
 const TEXT = translations.adminPayouts;
 
@@ -26,8 +26,8 @@ export function AdminWinPayouts() {
     try {
       setRows(await api.get<WinPayout[]>('/api/admin/win-payouts?status=pending'));
       setError(null);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : t.err);
+    } catch {
+      setError(t.err);
     }
   }, [t.err]);
   useEffect(() => {
