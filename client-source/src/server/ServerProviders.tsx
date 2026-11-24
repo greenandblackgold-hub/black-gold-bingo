@@ -218,10 +218,12 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
 
   const clearCards = useCallback(() => {
     setMarks({});
+    setCards([]);
+    try { if (user?.id) localStorage.removeItem(cardsCacheKeyFor(user.id)); } catch { /* cache is optional */ }
     void reloadCards();
     void reloadLedger();
     void refresh();
-  }, [reloadCards, reloadLedger, refresh]);
+  }, [user?.id, reloadCards, reloadLedger, refresh]);
 
   const value = useMemo<PlayerContextValue>(
     () => ({
