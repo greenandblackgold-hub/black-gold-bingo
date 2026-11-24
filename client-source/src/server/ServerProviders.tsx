@@ -74,12 +74,13 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   currentUserIdRef.current = user?.id;
   const [markedByCard, setMarks] = useState<Record<string, number[]>>(() => loadMarks(user?.id));
   const cardsRequestInFlight = useRef(false);
+  const cardsReloadQueued = useRef(false);
   const marksStorageKey = user?.id ? marksKeyFor(user.id) : LEGACY_MARKS_KEY;
   const marksRef = useRef(markedByCard);
   marksRef.current = markedByCard;
 
   const reloadCards = useCallback(async () => {
-    if (cardsRequestInFlight.current) return;
+    if (cardsRequestInFlight.current) { cardsReloadQueued.current = true; return; }
     const requestedUserId = user?.id;
     cardsRequestInFlight.current = true;
     try {
@@ -92,6 +93,10 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
       // Preserve the cached/last confirmed cards. Focus/online polling below retries automatically.
     } finally {
       cardsRequestInFlight.current = false;
+      if (cardsReloadQueued.current) {
+        cardsReloadQueued.current = false;
+        void reloadCards();
+      }
     }
   }, [user?.id]);
   const reloadLedger = useCallback(async () => {
