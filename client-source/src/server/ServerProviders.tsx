@@ -374,12 +374,19 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
 
   // New round or a decided round: refresh cards and balance.
   const round = game?.roundNumber ?? null;
-  const seenRound = useRef<number | null>(null);
+  const roundStorageKey = `bgb.seenRound.${user?.id ?? 'guest'}`;
+  const seenRound = useRef<number | null>((() => {
+    try {
+      const saved = Number(localStorage.getItem(roundStorageKey));
+      return Number.isInteger(saved) && saved > 0 ? saved : null;
+    } catch { return null; }
+  })());
   useEffect(() => {
     if (round === null) return;
     if (seenRound.current !== null && seenRound.current !== round) clearCards();
     seenRound.current = round;
-  }, [round, clearCards]);
+    try { localStorage.setItem(roundStorageKey, String(round)); } catch { /* round state remains server-owned */ }
+  }, [round, clearCards, roundStorageKey]);
   const winnerAt = game?.winner?.at ?? null;
   useEffect(() => {
     if (winnerAt !== null) void refresh(); // the prize may have just been paid
