@@ -1157,3 +1157,82 @@ body, #root { min-height: 100dvh; }
   .aviator-premium .aviator-exhaust::after,
   .aviator-premium .aviator-exhaust i {animation:none;opacity:.75}
 }
+
+
+/* BLACK GOLD global player theme: deep black surfaces with bright gold accents. */
+:root {
+  --premium-bg: #030303;
+  --premium-panel: #090909;
+  --premium-panel-raised: #11100c;
+  --premium-gold: #d6ad45;
+  --premium-gold-bright: #ffe08a;
+  --premium-line: rgba(214, 173, 69, .34);
+}
+html, body, #root { background: #030303 !important; }
+body { color: #f7edcf; background: #030303 !important; }
+.premium-ui {
+  color: #f7edcf !important;
+  background: #030303 !important;
+  background-image:
+    radial-gradient(ellipse at 50% -22%, rgba(214,173,69,.075), transparent 44rem),
+    linear-gradient(180deg, #050505 0%, #020202 58%, #050505 100%) !important;
+}
+.premium-ui main { background-color: transparent; }
+.premium-ui :is(header, nav, section, article, aside, [role="dialog"]) {
+  border-color: rgba(214,173,69,.28);
+}
+.premium-ui [class*="text-emerald-"],
+.premium-ui [class*="text-green-"],
+.premium-ui [class*="text-lime-"] {
+  color: #ffe08a !important;
+}
+.premium-ui [class*="border-emerald-"],
+.premium-ui [class*="border-green-"],
+.premium-ui [class*="border-lime-"] {
+  border-color: rgba(214,173,69,.48) !important;
+}
+.premium-ui [class*="ring-emerald-"],
+.premium-ui [class*="ring-green-"],
+.premium-ui [class*="ring-lime-"] {
+  --tw-ring-color: rgba(255,224,138,.52) !important;
+}
+.premium-ui [class*="bg-emerald-"],
+.premium-ui [class*="bg-green-"],
+.premium-ui [class*="bg-lime-"] {
+  background-color: #b88a28 !important;
+  color: #080704 !important;
+}
+.premium-ui [class*="from-emerald-"],
+.premium-ui [class*="from-green-"],
+.premium-ui [class*="from-lime-"] {
+  --tw-gradient-from: #f5d477 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(245 212 119 / 0) var(--tw-gradient-to-position) !important;
+}
+.premium-ui [class*="to-emerald-"],
+.premium-ui [class*="to-green-"],
+.premium-ui [class*="to-lime-"] {
+  --tw-gradient-to: #8b6418 var(--tw-gradient-to-position) !important;
+}
+.premium-ui [class*="via-emerald-"],
+.premium-ui [class*="via-green-"],
+.premium-ui [class*="via-lime-"] {
+  --tw-gradient-via: #d6ad45 var(--tw-gradient-via-position) !important;
+}
+.premium-ui [class*="bg-zinc-950"],
+.premium-ui [class*="bg-neutral-950"],
+.premium-ui [class*="bg-slate-950"] {
+  background-color: #030303 !important;
+}
+.premium-ui :is(input, select, textarea) {
+  border-color: rgba(214,173,69,.42) !important;
+  background-color: #080806 !important;
+  color: #fff0c4 !important;
+}
+.premium-ui :is(button, a):focus-visible,
+.premium-ui summary:focus-visible {
+  outline-color: #ffe08a !important;
+}
+.premium-ui ::selection { color: #080704; background: #ffe08a; }
+
+/* Keno desktop canvas expands while preserving the compact ten-column mobile board. */
+.premium-ui .keno-reference-page { max-width: 56rem; }
