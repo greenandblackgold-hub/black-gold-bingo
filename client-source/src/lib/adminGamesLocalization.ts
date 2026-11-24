@@ -18,7 +18,7 @@ const games = {
     aviatorWindow:'የAviator ውርርድ ጊዜ (ሰከንዶች)', saving:'በማስቀመጥ ላይ…', saveSettings:'የጨዋታ ቅንብሮችን አስቀምጥ',
     footer:'የጨዋታ መገኘት፣ የውርርድ ገደቦች፣ የዙር ጊዜዎችና የገንዘብ ገንዳ ኮሚሽን (50%–60%)። የክፍያ ስሌት በዙር የተሰበሰበው ውርርድ ይገደባል፤ የዕጣና የድራው ፍትሃዊነት ስልቶች አይቀየሩም።',
     loadError:'የጨዋታ ቅንብሮችን ማምጣት አልተቻለም።', saved:'የጨዋታ ማዕከል ቅንብሮች ተቀምጠዋል።', saveError:'ቅንብሮቹን ማስቀመጥ አልተቻለም።',
-    allUnavailable:'በአሁኑ ጊዜ ሁሉም ጨዋታዎች አይገኙም። እባክዎ ቆይተው ይመልከቱ።',
+    allUnavailable:'በአሁኑ ጊዜ ሁሉም ጨዋታዎች አይገኙም። እባክዎ ቆይተው ይመልከቱ።', statusBetting:'ውርርድ ክፍት ነው', statusSettled:'ዙሩ ተጠናቋል', statusCrashed:'ዙሩ ተቋርጧል', betsLabel:'ውርርዶች',
   },
   ti: {
     management:'ምሕደራ ጸወታ', controls:'ቁጽጽር ማእከል ጸወታ', simulation:'ናይ ፈተነ ሞድ ጥራይ',
