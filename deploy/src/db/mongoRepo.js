@@ -716,30 +716,67 @@ export async function createMongoRepo({ uri, dbName }) {
     },
     async placeGameHubBets({ game, roundId, bets, userId, acceptedAt }) {
       return tx(async (session) => {
+        if (game !== 'keno') throw new RepoError('ROUND_NOT_OPEN');
         const key = game + ':' + roundId;
-        const round = await gameHubRounds.findOne({ _id: key }, { session });
-        if (!round) throw new RepoError('ROUND_NOT_OPEN');
-        if (game !== 'keno' || round.status !== 'betting' || round.bettingEndsAt <= acceptedAt) {
-          throw new RepoError('ROUND_NOT_OPEN');
+        const requestIds = bets.map((item) => item.bet.requestId);
+
+        // Fast path: append all fresh request IDs with one conditional round write.
+        // If any request ID already exists, fall through to the idempotent retry path.
+        // This removes the separate round read + versioned round write from normal bets.
+        const fastRound = await gameHubRounds.findOneAndUpdate(
+          {
+            _id: key,
+            status: 'betting',
+            bettingEndsAt: { $gt: acceptedAt },
+            bets: { $not: { $elemMatch: { userId, requestId: { $in: requestIds } } } },
+          },
+          { $push: { bets: { $each: bets.map((item) => item.bet) } }, $inc: { version: 1 } },
+          { returnDocument: 'after', projection: { walletMode: 1 }, session },
+        );
+
+        let walletMode;
+        let entries;
+        let newEntries;
+        if (fastRound) {
+          walletMode = fastRound.walletMode === 'shared' ? 'shared' : 'legacy-demo';
+          entries = bets.map((item) => ({ bet: item.bet, duplicate: false }));
+          newEntries = entries;
+        } else {
+          // Slow path is only used for duplicate/idempotent retries or a closed round.
+          const round = await gameHubRounds.findOne(
+            { _id: key },
+            { session, projection: { walletMode: 1, bets: 1, version: 1, status: 1, bettingEndsAt: 1 } },
+          );
+          if (!round || round.status !== 'betting' || round.bettingEndsAt <= acceptedAt) {
+            throw new RepoError('ROUND_NOT_OPEN');
+          }
+          walletMode = round.walletMode === 'shared' ? 'shared' : 'legacy-demo';
+          const existingByRequest = new Map((round.bets ?? [])
+            .filter((item) => item.userId === userId)
+            .map((item) => [item.requestId, item]));
+          entries = bets.map((item) => {
+            const existing = existingByRequest.get(item.bet.requestId);
+            return existing ? { bet: existing, duplicate: true } : { bet: item.bet, duplicate: false };
+          });
+          newEntries = entries.filter((entry) => !entry.duplicate);
+
+          if (newEntries.length) {
+            const updated = await gameHubRounds.findOneAndUpdate(
+              { _id: key, version: round.version, status: 'betting', bettingEndsAt: { $gt: acceptedAt } },
+              { $push: { bets: { $each: newEntries.map((entry) => entry.bet) } }, $inc: { version: 1 } },
+              { returnDocument: 'after', projection: { _id: 1 }, session },
+            );
+            if (!updated) throw new RepoError('ROUND_NOT_OPEN');
+          }
         }
 
-        const walletMode = round.walletMode === 'shared' ? 'shared' : 'legacy-demo';
+        const total = newEntries.reduce((sum, entry) => sum + entry.bet.stake, 0);
         const walletCollection = walletMode === 'shared' ? users : gameHubWallets;
         const ledgerCollection = walletMode === 'shared' ? ledger : gameHubLedger;
-        const existingByRequest = new Map((round.bets ?? [])
-          .filter((item) => item.userId === userId)
-          .map((item) => [item.requestId, item]));
-        const entries = bets.map((item) => {
-          const existing = existingByRequest.get(item.bet.requestId);
-          return existing ? { bet: existing, duplicate: true } : { bet: item.bet, duplicate: false };
-        });
-        const newEntries = entries.filter((entry) => !entry.duplicate);
-        const total = newEntries.reduce((sum, entry) => sum + entry.bet.stake, 0);
         let balance;
 
         if (total > 0) {
-          // Return the post-debit balance from the atomic update itself. This
-          // avoids a separate wallet read on every successful ticket submission.
+          // Atomic debit returns the post-debit balance; no follow-up wallet read.
           let walletAfter = await walletCollection.findOneAndUpdate(
             { _id: userId, balance: { $gte: total } },
             { $inc: { balance: -total } },
@@ -754,9 +791,8 @@ export async function createMongoRepo({ uri, dbName }) {
             if (existingWallet) throw new RepoError('INSUFFICIENT_FUNDS');
             if (walletMode !== 'legacy-demo') throw new RepoError('USER_NOT_FOUND');
 
-            // The normal player flow creates the demo wallet during state load.
-            // Preserve direct-API/first-visit behavior without paying this extra
-            // initialization round trip for every ordinary bet.
+            // Preserve first-visit demo wallet creation without adding work to
+            // ordinary submissions where the wallet already exists.
             const createdAt = new Date();
             const initialized = await gameHubWallets.updateOne(
               { _id: userId },
@@ -779,22 +815,14 @@ export async function createMongoRepo({ uri, dbName }) {
           }
 
           const createdAt = new Date();
-          const ledgerRows = newEntries.map(({ bet }) => ({
+          await ledgerCollection.insertMany(newEntries.map(({ bet }) => ({
             userId,
             amount: -bet.stake,
             kind: 'game_bet',
             ref: 'games:keno:bet:' + bet.requestId,
             meta: { game, roundId, betId: bet.id, requestId: bet.requestId },
             createdAt,
-          }));
-          await ledgerCollection.insertMany(ledgerRows, { session });
-
-          const updated = await gameHubRounds.findOneAndUpdate(
-            { _id: key, version: round.version, status: 'betting', bettingEndsAt: { $gt: acceptedAt } },
-            { $push: { bets: { $each: newEntries.map((entry) => entry.bet) } }, $inc: { version: 1 } },
-            { returnDocument: 'after', session },
-          );
-          if (!updated) throw new RepoError('ROUND_NOT_OPEN');
+          })), { session });
           balance = walletAfter.balance;
         } else {
           const wallet = await walletCollection.findOne(
