@@ -12,6 +12,7 @@
 import { useEffect, useState } from 'react';
 import { translations, patternNames } from '@/lib/localization';
 import { WIN_PATTERN_OPTIONS } from '@/lib/patternCatalog';
+import { hostExtraLocale } from '@/lib/hostExtraLocalization';
 import { PatternGuide } from '@/components/play/PatternGuide';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRound } from '@/context/RoundContext';
@@ -128,6 +129,8 @@ function BigBall({ n, empty }: { n: number | null; empty: string }) {
 
 export function HostView() {
   const h = useHostData();
+  const { lang } = useLanguage();
+  const x = (key: Parameters<typeof hostExtraLocale>[1]) => hostExtraLocale(lang, key);
   const t = (k: StringKey) => (STRINGS[h.lang] ?? STRINGS.en)[k];
   const [announcementDraft, setAnnouncementDraft] = useState('');
   useEffect(() => setAnnouncementDraft(h.announcement?.message ?? ''), [h.announcement?.message]);
@@ -189,29 +192,29 @@ export function HostView() {
 
       {/* Host announcement is persisted on the shared round state and streamed to every player. */}
       <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
-        <label htmlFor="player-announcement" className="mb-2 block text-sm font-semibold text-gold-300">ለተጫዋቾች ቀጥታ ማስታወቂያ</label>
+        <label htmlFor="player-announcement" className="mb-2 block text-sm font-semibold text-gold-300">{x('announcementLabel')}</label>
         <textarea
           id="player-announcement"
           value={announcementDraft}
           maxLength={240}
           rows={2}
           onChange={(e) => setAnnouncementDraft(e.target.value)}
-          placeholder="ማስታወቂያዎን እዚህ ይጻፉ…"
+          placeholder={x('announcementPlaceholder')}
           className="w-full resize-y rounded-xl bg-zinc-900 px-4 py-3 text-sm text-gold-100 ring-1 ring-gold-700/60 placeholder:text-gold-700 focus:outline-none focus:ring-gold-400"
         />
         <div className="mt-3 flex items-center justify-between gap-3">
           <span className="text-xs text-gold-600">{announcementDraft.length}/240</span>
           <div className="flex gap-2">
-            <button type="button" onClick={() => { setAnnouncementDraft(''); h.setAnnouncement(''); }} className={ghostBtn}>ማጥፋት</button>
-            <button type="button" onClick={() => h.setAnnouncement(announcementDraft)} disabled={!announcementDraft.trim()} className={primaryBtn}>ማስታወቂያ ላክ</button>
+            <button type="button" onClick={() => { setAnnouncementDraft(''); h.setAnnouncement(''); }} className={ghostBtn}>{x('clear')}</button>
+            <button type="button" onClick={() => h.setAnnouncement(announcementDraft)} disabled={!announcementDraft.trim()} className={primaryBtn}>{x('send')}</button>
           </div>
         </div>
-        {h.announcement?.message && <p className="mt-3 rounded-lg border border-emerald-500/25 bg-emerald-950/35 px-3 py-2 text-xs text-emerald-100">በPlayer ገጽ ላይ የሚታየው፦ {h.announcement.message}</p>}
+        {h.announcement?.message && <p className="mt-3 rounded-lg border border-emerald-500/25 bg-emerald-950/35 px-3 py-2 text-xs text-emerald-100">{x('playerDisplay')} {h.announcement.message}</p>}
       </section>
 
       {/* Winning pattern is selected before a round starts and enforced by the server. */}
       <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
-        <label htmlFor="win-pattern" className="mb-2 block text-sm font-semibold text-gold-300">የዙሩ የBingo አሸናፊነት ቅጥ</label>
+        <label htmlFor="win-pattern" className="mb-2 block text-sm font-semibold text-gold-300">{x('winningPattern')}</label>
         <select id="win-pattern" value={h.winPattern} disabled={h.phase === 'running'}
           onChange={(e) => h.setWinPattern(e.target.value as WinPattern)}
           className="w-full rounded-xl bg-zinc-900 px-4 py-3 text-gold-300 ring-1 ring-gold-700/60 disabled:opacity-50">
@@ -223,44 +226,44 @@ export function HostView() {
 
       {/* Prize calculation and automatic next-round interval are server controlled. */}
       <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
-        <h2 className="mb-3 text-lg font-bold text-gold-300">የሽልማት እና የቀጣይ ዙር ቅንብር</h2>
+        <h2 className="mb-3 text-lg font-bold text-gold-300">{x('prizeSchedule')}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-sm text-gold-300">የሽልማት ስሌት
+          <label className="grid gap-1 text-sm text-gold-300">{x('prizeMode')}
             <select disabled={h.phase !== 'waiting'} value={prizeModeDraft} onChange={(e) => setPrizeModeDraft(e.target.value as 'revenue_percent' | 'per_player' | 'fixed')} className="rounded-xl bg-zinc-900 px-3 py-2 text-gold-100 ring-1 ring-gold-700/60">
-              <option value="revenue_percent">Gross Revenue Percentage</option>
-              <option value="per_player">Per Player</option>
-              <option value="fixed">Fixed Prize (ETB)</option>
+              <option value="revenue_percent">{x('revenuePercent')}</option>
+              <option value="per_player">{x('perPlayer')}</option>
+              <option value="fixed">{x('fixedPrize')}</option>
             </select>
           </label>
-          <label className="grid gap-1 text-sm text-gold-300">የዙር መጠበቂያ ጊዜ
+          <label className="grid gap-1 text-sm text-gold-300">{x('interval')}
             <select disabled={h.phase !== 'waiting'} value={roundIntervalDraft} onChange={(e) => setRoundIntervalDraft(e.target.value)} className="rounded-xl bg-zinc-900 px-3 py-2 text-gold-100 ring-1 ring-gold-700/60">
-              <option value="4">4 ደቂቃ</option><option value="5">5 ደቂቃ</option><option value="10">10 ደቂቃ</option>
+              <option value="4">{x('minutes4')}</option><option value="5">{x('minutes5')}</option><option value="10">{x('minutes10')}</option>
             </select>
           </label>
           {prizeModeDraft === 'revenue_percent' ? (
-            <label className="grid gap-1 text-sm text-gold-300">Gross Revenue መቶኛ (%)
+            <label className="grid gap-1 text-sm text-gold-300">{x('grossPercent')}
               <input disabled={h.phase !== 'waiting'} type="number" min="0" max="100" step="0.01" value={prizePercentDraft} onChange={(e) => setPrizePercentDraft(e.target.value)} className="rounded-xl bg-zinc-900 px-3 py-2 text-gold-100 ring-1 ring-gold-700/60" />
             </label>
           ) : prizeModeDraft === 'per_player' ? (
-            <label className="grid gap-1 text-sm text-gold-300">ለእያንዳንዱ ልዩ ተጫዋች (ብር)
+            <label className="grid gap-1 text-sm text-gold-300">{x('perPlayerAmount')}
               <input disabled={h.phase !== 'waiting'} type="number" min="0" step="0.01" value={prizePerPlayerDraft} onChange={(e) => setPrizePerPlayerDraft(e.target.value)} className="rounded-xl bg-zinc-900 px-3 py-2 text-gold-100 ring-1 ring-gold-700/60" />
             </label>
           ) : (
-            <label className="grid gap-1 text-sm text-gold-300">ቋሚ የሽልማት መጠን (ብር)
+            <label className="grid gap-1 text-sm text-gold-300">{x('fixedAmount')}
               <input disabled={h.phase !== 'waiting'} type="number" min="0" step="0.01" value={fixedPrizeDraft} onChange={(e) => setFixedPrizeDraft(e.target.value)} className="rounded-xl bg-zinc-900 px-3 py-2 text-gold-100 ring-1 ring-gold-700/60" />
             </label>
           )}
-          <label className="grid gap-1 text-sm text-gold-300">ከፍተኛ የሽልማት ገደብ (ብር፤ 0 = Gross Revenue)
+          <label className="grid gap-1 text-sm text-gold-300">{x('maxCap')}
             <input disabled={h.phase !== 'waiting'} type="number" min="0" step="0.01" value={maxPrizeCapDraft} onChange={(e) => setMaxPrizeCapDraft(e.target.value)} className="rounded-xl bg-zinc-900 px-3 py-2 text-gold-100 ring-1 ring-gold-700/60" />
           </label>
         </div>
-        <p className="mt-3 text-xs text-gold-500">Unique Players: {h.roundPlayerCount ?? 0} · የአሁኑ የተሰላ ሽልማት: {Number(h.roundPrizeEtb ?? 0).toFixed(2)} ብር</p>
+        <p className="mt-3 text-xs text-gold-500">{x('uniquePlayers')}: {h.roundPlayerCount ?? 0} · {x('calculatedPrize')}: {Number(h.roundPrizeEtb ?? 0).toFixed(2)} ብር</p>
         <button type="button" disabled={h.phase !== 'waiting'} onClick={() => h.setPrizeScheduleSettings?.({
           prizeMode: prizeModeDraft, prizePercent: Number(prizePercentDraft), prizePerPlayer: Number(prizePerPlayerDraft), fixedPrize: Number(fixedPrizeDraft),
           maxPrizeCap: Number(maxPrizeCapDraft), roundIntervalMinutes: Number(roundIntervalDraft) as 4 | 5 | 10,
-        })} className={primaryBtn}>ቅንብሩን አስቀምጥ</button>
-        {h.phase !== 'waiting' && <p className="mt-2 text-xs text-gold-600">በዙር ጨዋታ ላይ ሳለ የሽልማት ቅንብር አይቀየርም። ቀጣዩ ዙር ሲጠብቅ ይቀይሩት።</p>}
-        {prizeModeDraft === 'fixed' && <p className="mt-2 text-xs text-gold-600">ቋሚው መጠን ዙሩ ሲጀምር ይቆለፋል፤ ከGross Revenue እና ከከፍተኛ ገደቡ በላይ አይከፈልም።</p>}
+        })} className={primaryBtn}>{x('save')}</button>
+        {h.phase !== 'waiting' && <p className="mt-2 text-xs text-gold-600">{x('locked')}</p>}
+        {prizeModeDraft === 'fixed' && <p className="mt-2 text-xs text-gold-600">{x('fixedNote')}</p>}
       </section>
 
       {/* Stage */}
