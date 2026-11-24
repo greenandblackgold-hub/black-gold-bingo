@@ -338,6 +338,8 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
       winner: g?.winner ?? null,
       roundPrizeEtb: g?.roundPrizeEtb ?? 0,
       roundCardCount: g?.roundCardCount ?? 0,
+      roundCardLimit: g?.roundCardLimit ?? 15000,
+      availableCardCount: g?.availableCardCount ?? 15000,
       roundPlayerCount: g?.roundPlayerCount ?? 0,
       prizeMode: g?.prizeMode ?? 'revenue_percent',
       fixedPrizeEtb: g?.fixedPrizeEtb ?? 0,

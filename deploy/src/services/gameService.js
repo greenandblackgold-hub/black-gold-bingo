@@ -31,6 +31,11 @@ export function createGameService({ repo, config, now = Date.now }) {
   };
   const ROUND_DURATION_MS = 8 * 60 * 1000;
   const AUTO_CALL_SECONDS = 8;
+  // Host's per-round sales ceiling is intentionally process-local. It resets to
+  // the full pool after a Render restart; no database schema or persistent state is added.
+  let roundCardLimit = 15000;
+  let previewNextSerial = null;
+  const pendingCardPreviews = new Map();
 
   /** What every connected browser may see. Never includes anyone's card grid or user id. */
   const publicState = (g) => ({
@@ -59,6 +64,8 @@ export function createGameService({ repo, config, now = Date.now }) {
         ) / 100
       : calculatePrize(g) / 100,
     roundCardCount: config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0,
+    roundCardLimit,
+    availableCardCount: Math.max(0, roundCardLimit - (config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0)),
     roundPlayerCount: g.roundPlayerIds?.length ?? 0,
     prizeMode: g.prizeMode ?? 'revenue_percent',
     fixedPrizeEtb: (g.fixedPrize ?? 0) / 100,
@@ -198,6 +205,17 @@ export function createGameService({ repo, config, now = Date.now }) {
       return mutate(null, () => ({ announcement: clean ? { message: clean, at: now() } : null }));
     },
 
+    setRoundCardLimit(count) {
+      const limit = Number(count);
+      if (!Number.isInteger(limit) || limit < 1 || limit > 15000) throw new HttpError(400, 'invalid_card_limit', 'Card limit must be between 1 and 15000');
+      return mutate('waiting', (g) => {
+        const sold = config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0;
+        if (limit < sold) throw new HttpError(409, 'below_sold_cards', 'Card limit cannot be lower than the number of cards already sold');
+        roundCardLimit = limit;
+        return {};
+      });
+    },
+
     setWinPattern(pattern) {
       if (!isWinPattern(pattern)) throw new HttpError(400, 'invalid_pattern', 'Choose a supported bingo pattern');
       return mutate('waiting', () => ({ winPattern: pattern }));
@@ -263,6 +281,34 @@ export function createGameService({ repo, config, now = Date.now }) {
 
     /* ───────────── players ───────────── */
 
+    async previewCards(user, count = 1) {
+      const n = Number(count);
+      if (user.role !== 'player' || user.phoneVerified !== true) throw new HttpError(403, 'player_only', 'Verified player accounts only');
+      if (!Number.isInteger(n) || n < 1 || n > 10) throw new HttpError(400, 'invalid_count', 'Preview 1 to 10 cards at a time');
+      const g = await repo.getGame();
+      if (g.phase !== 'waiting' || g.bonusRound === true) throw new HttpError(409, 'round_not_open', 'Cards can only be prepared before a regular round starts');
+      const sold = config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0;
+      if (sold + n > roundCardLimit) throw new HttpError(409, 'card_pool_full', 'All available Bingo cards for this round have been taken.');
+      const expiredBefore = now() - 30 * 60 * 1000;
+      for (const [key, preview] of pendingCardPreviews) if (preview.createdAt < expiredBefore) pendingCardPreviews.delete(key);
+      const userPreviewCount = [...pendingCardPreviews.keys()].filter((key) => key.startsWith(user.id + ':')).length;
+      if (userPreviewCount + n > 20) throw new HttpError(429, 'too_many_previews', 'Register or remove your existing preview cards before adding more.');
+      if (previewNextSerial === null) previewNextSerial = await repo.peekNextCardSerial();
+      const usedSerials = new Set(await repo.listUsedCardSerials());
+      const previews = [];
+      for (let i = 0; i < n; i++) {
+        while (previewNextSerial <= 24999 && usedSerials.has(String(previewNextSerial))) previewNextSerial += 1;
+        if (previewNextSerial > 24999) throw new HttpError(409, 'card_pool_full', 'All 15,000 Bingo card numbers have been used.');
+        const serial = String(previewNextSerial++);
+        usedSerials.add(serial);
+        const grid = generateGrid();
+        const preview = { id: 'draft-' + serial, serial, grid };
+        pendingCardPreviews.set(user.id + ':' + serial, { grid, createdAt: now() });
+        previews.push(preview);
+      }
+      return previews;
+    },
+
     async buyCards(user, count, requestedSerial) {
       const n = Number(count);
       if (!Number.isInteger(n) || n < 1 || n > Math.min(config.maxCardsPerPurchase, 50)) {
@@ -288,19 +334,33 @@ export function createGameService({ repo, config, now = Date.now }) {
         };
       }
       if (g.phase !== 'waiting') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
+      const sold = config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0;
+      if (sold + n > roundCardLimit) throw new HttpError(409, 'card_pool_full', 'All available Bingo cards for this round have been taken.');
+      const currentPlayer = await repo.findUserById(user.id);
+      if (!currentPlayer || Number(currentPlayer.balance ?? 0) < n * config.cardPrice) throw new HttpError(402, 'insufficient_funds', 'Not enough balance');
       if (requestedSerial !== undefined && requestedSerial !== null && (n !== 1 || !/^\d{5}$/.test(String(requestedSerial)))) {
         throw new HttpError(400, 'invalid_card_number', 'Enter one unique five-digit card number and buy one card at a time');
       }
       let serials;
       try {
         serials = await repo.reserveCardSerials(g.roundNumber, n, requestedSerial);
+        if (requestedSerial === undefined || requestedSerial === null) {
+          const pendingSerials = new Set([...pendingCardPreviews.keys()].map((key) => key.slice(key.lastIndexOf(':') + 1)));
+          while (serials.some((serial) => pendingSerials.has(String(serial)))) {
+            serials = await repo.reserveCardSerials(g.roundNumber, n, undefined);
+          }
+        }
       } catch (e) {
         if (e instanceof RepoError && e.code === 'ROUND_NOT_OPEN') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
+        if (e instanceof RepoError && e.code === 'CARD_NUMBER_TAKEN') throw new HttpError(409, 'card_number_taken', 'That card number is already taken. Choose another number.');
+        if (e instanceof RepoError && e.code === 'CARD_POOL_FULL') throw new HttpError(409, 'card_pool_full', 'All 15,000 Bingo card numbers have been used.');
+        if (e instanceof RepoError && e.code === 'INVALID_CARD_NUMBER') throw new HttpError(400, 'invalid_card_number', 'Card numbers must be between 10000 and 24999.');
         throw e;
       }
+      const pendingPreview = requestedSerial !== undefined && requestedSerial !== null ? pendingCardPreviews.get(user.id + ':' + String(requestedSerial)) : null;
       const cards = Array.from({ length: n }, (_, i) => {
         const code = newCardCode();
-        const grid = generateGrid();
+        const grid = n === 1 && pendingPreview ? pendingPreview.grid : generateGrid();
         return { code, serial: serials[i], grid, sig: signCard(code, g.roundNumber, grid) };
       });
       try {
@@ -311,12 +371,15 @@ export function createGameService({ repo, config, now = Date.now }) {
           round: g.roundNumber,
           ref: `buy:${g.roundNumber}:${user.id}:${randomToken(6)}`,
         });
+        if (requestedSerial !== undefined && requestedSerial !== null) pendingCardPreviews.delete(user.id + ':' + String(requestedSerial));
         broadcast(res.game);
         return { balance: res.balance / 100, cards: cards.map((c) => ({ id: c.code, serial: c.serial, grid: c.grid })) };
       } catch (e) {
         if (e instanceof RepoError && e.code === 'INSUFFICIENT_FUNDS') throw new HttpError(402, 'insufficient_funds', 'Not enough balance');
         if (e instanceof RepoError && e.code === 'ROUND_NOT_OPEN') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
         if (e instanceof RepoError && e.code === 'CARD_NUMBER_TAKEN') throw new HttpError(409, 'card_number_taken', 'That card number is already taken. Choose another number.');
+        if (e instanceof RepoError && e.code === 'CARD_POOL_FULL') throw new HttpError(409, 'card_pool_full', 'All 15,000 Bingo card numbers have been used.');
+        if (e instanceof RepoError && e.code === 'INVALID_CARD_NUMBER') throw new HttpError(400, 'invalid_card_number', 'Card numbers must be between 10000 and 24999.');
         throw e;
       }
     },

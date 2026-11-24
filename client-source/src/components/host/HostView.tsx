@@ -16,7 +16,7 @@ import { hostExtraLocale } from '@/lib/hostExtraLocalization';
 import { PatternGuide } from '@/components/play/PatternGuide';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRound } from '@/context/RoundContext';
-import { SERVER_MODE } from '@/lib/api';
+import { api, SERVER_MODE } from '@/lib/api';
 import type { Lang, WinPattern } from '@/types/game';
 
 /* ───────────────────────────── CONTEXT WIRING ───────────────────────────── */
@@ -133,7 +133,10 @@ export function HostView() {
   const x = (key: Parameters<typeof hostExtraLocale>[1]) => hostExtraLocale(lang, key);
   const t = (k: StringKey) => (STRINGS[h.lang] ?? STRINGS.en)[k];
   const [announcementDraft, setAnnouncementDraft] = useState('');
+  const [cardLimitDraft, setCardLimitDraft] = useState(String(h.roundCardLimit ?? 15000));
+  const [cardLimitMessage, setCardLimitMessage] = useState('');
   useEffect(() => setAnnouncementDraft(h.announcement?.message ?? ''), [h.announcement?.message]);
+  useEffect(() => setCardLimitDraft(String(h.roundCardLimit ?? 15000)), [h.roundCardLimit]);
   const [prizeModeDraft, setPrizeModeDraft] = useState<'revenue_percent' | 'per_player' | 'fixed'>(h.prizeMode ?? 'revenue_percent');
   const [prizePercentDraft, setPrizePercentDraft] = useState(String(h.prizePercent ?? 80));
   const [prizePerPlayerDraft, setPrizePerPlayerDraft] = useState(String(h.prizePerPlayer ?? 0));
@@ -265,6 +268,32 @@ export function HostView() {
         {h.phase !== 'waiting' && <p className="mt-2 text-xs text-gold-600">{x('locked')}</p>}
         {prizeModeDraft === 'fixed' && <p className="mt-2 text-xs text-gold-600">{x('fixedNote')}</p>}
       </section>
+
+      {/* Per-round Bingo card sales cap. The server keeps this setting in memory only. */}
+      {SERVER_MODE && (
+        <section className="rounded-xl bg-cardbg p-3 ring-1 ring-gold-700/50 sm:p-4">
+          <h2 className="mb-2 text-lg font-bold text-gold-300">የቀጣይ ዙር የካርቴላ ገደብ</h2>
+          <p className="mb-3 text-xs text-gold-500">እስከ 15,000 ካርቴላ መወሰን ይችላሉ። ይህ ቅንብር Render Restart ሲደረግ ወደ 15,000 ይመለሳል።</p>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="rounded-lg bg-black/30 p-2"><span className="block text-xs text-gold-600">የተሸጡ</span><strong className="text-gold-200">{h.roundCardCount ?? 0}</strong></div>
+            <div className="rounded-lg bg-black/30 p-2"><span className="block text-xs text-gold-600">የቀሩ</span><strong className="text-gold-200">{h.availableCardCount ?? 15000}</strong></div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <input aria-label="የካርቴላ ገደብ" type="number" min={Math.max(1, h.roundCardCount ?? 0)} max={15000} step={1} disabled={h.phase !== 'waiting'} value={cardLimitDraft} onChange={(e) => setCardLimitDraft(e.target.value)} className="min-w-0 flex-1 rounded-lg bg-zinc-900 px-3 py-2 text-gold-100 ring-1 ring-gold-700/60 disabled:opacity-50" />
+            <button type="button" disabled={h.phase !== 'waiting'} onClick={async () => {
+              setCardLimitMessage('');
+              try {
+                await api.post('/api/admin/card-limit', { count: Number(cardLimitDraft) });
+                setCardLimitMessage('የካርቴላ ገደቡ ተቀምጧል።');
+              } catch (error) {
+                setCardLimitMessage(error instanceof Error ? error.message : 'ማስቀመጥ አልተሳካም።');
+              }
+            }} className={primaryBtn}>አስቀምጥ</button>
+          </div>
+          {cardLimitMessage && <p role="status" className="mt-2 text-xs text-gold-300">{cardLimitMessage}</p>}
+          {h.phase !== 'waiting' && <p className="mt-2 text-xs text-gold-600">ዙሩ ሲጠበቅ ብቻ ይቀየራል።</p>}
+        </section>
+      )}
 
       {/* Stage */}
       <section className="rounded-2xl bg-cardbg px-3 py-4 ring-1 ring-gold-700/50">

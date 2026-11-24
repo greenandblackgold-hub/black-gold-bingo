@@ -111,6 +111,8 @@ export interface ServerGameState {
   serverTime: number;
   roundPrizeEtb: number;
   roundCardCount: number;
+  roundCardLimit: number;
+  availableCardCount: number;
   roundPlayerCount: number;
   prizeMode: 'revenue_percent' | 'per_player' | 'fixed';
   fixedPrizeEtb: number;

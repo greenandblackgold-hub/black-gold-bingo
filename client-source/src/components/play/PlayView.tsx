@@ -7,6 +7,7 @@ import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { play } from '@/lib/audio';
+import { api } from '@/lib/api';
 import { findWinningPattern, patternMasks } from '@/lib/bingo';
 import { getPatternDescription } from '@/lib/patternCatalog';
 import { patternNames } from '@/lib/localization';
@@ -155,9 +156,13 @@ type CardProps = {
   claiming: boolean;
   onClaim: () => void;
   onToggle: (n: number) => void;
+  onRemove: () => void;
+  draft?: boolean;
+  registering?: boolean;
+  onRegister?: () => void;
 };
 
-function BingoCardView({ labels, card, index, marks, called, pattern, claimable, claiming, onClaim, onToggle }: CardProps) {
+function BingoCardView({ labels, card, index, marks, called, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister }: CardProps) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
   const winning = useMemo(() => {
     const result = findWinningPattern(card.grid, new Set([...called].filter(n => marks.has(n))), pattern);
@@ -167,10 +172,17 @@ function BingoCardView({ labels, card, index, marks, called, pattern, claimable,
 
   return (
     <section className={`relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-1 shadow-xl ${accent.glow}`}>
-      <div className={`flex items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-1 text-base font-black text-white sm:text-xl`}>
-        {labels.card} #{index + 1}
-      </div>
-      {card.locked && <span className="absolute right-1 top-1 z-10 rounded bg-red-700 px-2 py-0.5 text-[9px] font-black text-white">{labels.locked}</span>}
+      {draft ? (
+        <button type="button" onClick={onRegister} disabled={registering} className={'flex w-full items-center justify-center gap-2 bg-gradient-to-r ' + accent.head + ' px-2 py-1 text-base font-black text-white sm:text-xl disabled:opacity-60'}>
+          {registering ? '…' : 'REGISTER'} · #{String(card.serial).padStart(5, '0')}
+        </button>
+      ) : (
+        <div className={'flex items-center justify-center bg-gradient-to-r ' + accent.head + ' px-2 py-1 text-base font-black text-white sm:text-xl'}>
+          {labels.card} #{String(card.serial).padStart(5, '0')} · BINGO
+        </div>
+      )}
+      {card.locked && <span className="absolute left-1 top-1 z-10 rounded bg-red-700 px-2 py-0.5 text-[9px] font-black text-white">{labels.locked}</span>}
+      <button type="button" aria-label={`Remove card #${card.serial}`} onClick={(event) => { event.stopPropagation(); onRemove(); }} className="absolute right-1 top-1 z-20 grid h-6 w-6 place-items-center rounded-full border border-white/70 bg-red-700 text-sm font-black leading-none text-white shadow">×</button>
       <div className="grid grid-cols-5 gap-px overflow-hidden rounded-b-lg bg-zinc-400">
         {LETTERS.map((letter, col) => (
           <div key={letter} className={`py-1 text-center text-base font-black text-white sm:text-2xl ${['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'][col]}`}>{letter}</div>
@@ -190,21 +202,21 @@ function BingoCardView({ labels, card, index, marks, called, pattern, claimable,
               aria-label={free ? labels.free : `${LETTERS[c]} ${value}`}
               className={[
                 'relative grid aspect-square min-w-0 place-items-center rounded-[3px] text-[clamp(10px,2.1vw,22px)] font-black leading-none text-black transition',
-                free ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
+                free ? (claimable ? 'animate-pulse bg-gradient-to-br from-yellow-300 via-yellow-400 to-red-600 text-red-950 shadow-[0_0_18px_rgba(250,204,21,.9)]' : 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]') :
                   marked ? 'bg-lime-300 shadow-[inset_0_0_9px_rgba(255,255,255,.75)]' :
                   'bg-gradient-to-b from-white to-zinc-200',
                 inWinningLine ? 'outline outline-2 outline-yellow-300' : '',
                 wasCalled && !marked ? 'bg-blue-500 text-white' : '',
               ].join(' ')}
             >
-              {free ? labels.free : value}
+              {free ? (claimable ? <span className="animate-pulse rounded px-1 text-[clamp(7px,1.4vw,13px)] font-black text-yellow-100">BINGO</span> : labels.free) : value}
             </button>
           );
         }))}
       </div>
       {claimable && !card.locked && (
-        <button type="button" onClick={onClaim} disabled={claiming} className="mt-1 w-full rounded-lg bg-gradient-to-r from-yellow-200 to-amber-500 py-1 text-xs font-black text-black">
-          {claiming ? labels.claiming : labels.claim}
+        <button type="button" onClick={onClaim} disabled={claiming} className="mt-1 w-full animate-pulse rounded-lg bg-gradient-to-r from-yellow-200 via-red-500 to-yellow-300 py-1 text-xs font-black text-black">
+          {claiming ? labels.claiming : 'BINGO'}
         </button>
       )}
     </section>
@@ -228,7 +240,7 @@ function CalledBall({ number, latest = false }: { number: number; latest?: boole
 export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: { onGoToWallet: () => void; settingsOpen: boolean; onSettingsOpenChange: (open: boolean) => void }) {
   const { lang } = useLanguage();
   const t = gameUi.bingoScreen[lang];
-  const { cards, markedByCard, toggleMark, balance, buyCards } = usePlayer();
+  const { cards, markedByCard, toggleMark, removeCards, balance, buyCards } = usePlayer();
   const {
     phase, bonusRound = false, winPattern, calledNumbers, claimBingo, winner, roundNumber,
     nextCallAt, roundPrizeEtb, nextRoundAt, firstCallAt, endedAt,
@@ -247,12 +259,17 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     } catch { return 2; }
   });
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
+  const [draftCards, setDraftCards] = useState<BingoCard[]>([]);
+  const [registeringDraftId, setRegisteringDraftId] = useState<string | null>(null);
+  const [draftMessage, setDraftMessage] = useState('');
   const [quickBuyCount, setQuickBuyCount] = useState(1);
   const [quickBuyBusy, setQuickBuyBusy] = useState(false);
   const [quickBuyMessage, setQuickBuyMessage] = useState('');
   const [selectedDepositAccount, setSelectedDepositAccount] = useState<DepositAccount | null>(null);
   const [copyStatus, setCopyStatus] = useState('');
 
+
+  useEffect(() => { setDraftCards([]); setDraftMessage(''); }, [roundNumber]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -339,6 +356,32 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   useEffect(() => {
     if (bonusRound) setQuickBuyCount(count => Math.min(count, 3));
   }, [bonusRound]);
+  const addPreviewCard = async () => {
+    try {
+      const previews = await api.post<BingoCard[]>('/api/cards/preview', { count: 1 });
+      setDraftCards(current => [...current, ...previews]);
+      setDraftMessage('');
+      setQuickBuyOpen(false);
+    } catch (error) {
+      setQuickBuyMessage(error instanceof Error ? error.message : 'ካርቴላውን ማዘጋጀት አልተቻለም።');
+    }
+  };
+  const registerDraftCard = async (card: BingoCard) => {
+    if (registeringDraftId) return;
+    setRegisteringDraftId(card.id);
+    setDraftMessage('');
+    try {
+      const result = await buyCards(1, String(card.serial));
+      if (result.ok) {
+        setDraftCards(current => current.filter(item => item.id !== card.id));
+        setDraftMessage('ካርቴላው ተመዝግቧል። BINGO!');
+      } else {
+        setDraftMessage(result.error ?? 'በቂ ቀሪ ሂሳብ የለም። ካርቴላው አልተመዘገበም።');
+      }
+    } finally {
+      setRegisteringDraftId(null);
+    }
+  };
   const submitQuickBuy = async () => {
     if (!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy) return;
     setQuickBuyBusy(true);
@@ -589,6 +632,14 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
           )}
         </section>
 
+        {draftCards.length > 0 && (
+          <section className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: 'repeat(' + cardsPerRow + ', minmax(0, 1fr))' }}>
+            {draftCards.map((card, index) => (
+              <BingoCardView labels={t} key={card.id} card={card} index={index} marks={new Set<number>()} called={called} pattern={winPattern} claimable={false} claiming={false} onClaim={() => undefined} onToggle={() => undefined} draft registering={registeringDraftId === card.id} onRegister={() => void registerDraftCard(card)} onRemove={() => setDraftCards(current => current.filter(item => item.id !== card.id))} />
+            ))}
+          </section>
+        )}
+        {draftMessage && <p role="status" className="rounded-lg bg-yellow-950/70 p-2 text-center text-xs font-bold text-yellow-200">{draftMessage}</p>}
         {cards.length > 0 && (
           <section className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))` }}>
             {cards.map((card, index) => (
@@ -604,6 +655,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 claiming={claimingCardId === card.id}
                 onClaim={() => void handleClaim(card.id)}
                 onToggle={number => toggleMark(card.id, number)}
+                onRemove={() => removeCards([card.id])}
               />
             ))}
           </section>
@@ -641,6 +693,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               {!quickBuyAllowed && <p role="status" className="mb-3 rounded-lg bg-amber-950/60 p-2 text-xs text-amber-200">{t.buyOnlyWaiting}</p>}
               {!bonusRound && quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">{t.insufficient}</p>}
               {quickBuyMessage && <p role="status" className="mb-3 text-xs font-bold text-yellow-300">{quickBuyMessage}</p>}
+              {!bonusRound && <button type="button" onClick={() => void addPreviewCard()} disabled={!quickBuyAllowed || quickBuyBusy} className="mt-2 w-full rounded-xl border border-yellow-400/60 bg-yellow-950/50 px-4 py-3 text-sm font-black text-yellow-200 disabled:opacity-40">＋ ካርቴላ አይተህ ጨምር (ነፃ ማየት)</button>}
               <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="sticky bottom-0 z-10 mt-2 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
                 {quickBuyBusy ? t.buying : bonusRound ? t.getFreeCards : t.buyCards}
               </button>

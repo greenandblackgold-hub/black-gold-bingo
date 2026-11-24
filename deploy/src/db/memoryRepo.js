@@ -25,7 +25,7 @@ export function createMemoryRepo() {
   const gameHubLedger = new Map();
   let gameHubSettings = { kenoEnabled: true, aviatorEnabled: true, minBet: 500, maxBet: 100000, kenoBettingSeconds: 20, aviatorBettingSeconds: 8 };
   let game = { ...DEFAULT_GAME, calledNumbers: [] };
-  let nextCardSerial = 1;
+  let nextCardSerial = 10000;
 
   const credit = (userId, amount, kind, ref, meta = {}) => {
     const user = users.get(userId);
@@ -167,16 +167,25 @@ export function createMemoryRepo() {
     },
 
     /* cards */
+    async peekNextCardSerial() { return Math.max(10000, nextCardSerial); },
+    async cardSerialExists(serial) { return [...cards.values()].some((card) => card.serial === String(serial)); },
+    async listUsedCardSerials() { return [...cards.values()].map((card) => String(card.serial)).filter((serial) => Number(serial) >= 10000 && Number(serial) <= 24999); },
     async reserveCardSerials(round, count, requestedSerial) {
       if (game.phase !== 'waiting' || game.roundNumber !== round) throw new RepoError('ROUND_NOT_OPEN');
+      if (!Number.isInteger(count) || count < 1) throw new RepoError('CARD_POOL_FULL');
       if (requestedSerial !== undefined && requestedSerial !== null) {
         const serial = String(requestedSerial);
-        nextCardSerial = Math.max(nextCardSerial, Number(serial) + 1);
+        if (!/^\d{5}$/.test(serial) || Number(serial) < 10000 || Number(serial) > 24999) throw new RepoError('INVALID_CARD_NUMBER');
+        if ([...cards.values()].some((card) => card.serial === serial)) throw new RepoError('CARD_NUMBER_TAKEN');
         return [serial];
       }
-      const first = nextCardSerial;
-      nextCardSerial += count;
-      return Array.from({ length: count }, (_, i) => String(first + i).padStart(5, '0'));
+      const serials = [];
+      while (serials.length < count && nextCardSerial <= 24999) {
+        const serial = String(nextCardSerial++);
+        if (![...cards.values()].some((card) => card.serial === serial)) serials.push(serial);
+      }
+      if (serials.length !== count) throw new RepoError('CARD_POOL_FULL');
+      return serials;
     },
     async purchaseCards({ userId, cost, cards: newCards, round, ref }) {
       if (game.phase !== 'waiting' || game.roundNumber !== round) throw new RepoError('ROUND_NOT_OPEN');
