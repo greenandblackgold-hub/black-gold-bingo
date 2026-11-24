@@ -18,6 +18,22 @@ import type { BingoCard, GameBackend, PlayerContextValue, RoundContextValue, Tx,
 
 const LEGACY_MARKS_KEY = 'bgb.marks';
 const marksKeyFor = (userId: string) => `bgb.marks.${userId}`;
+const cardsCacheKeyFor = (userId: string) => `bgb.cards.${userId}`;
+const hiddenCardsKeyFor = (userId: string) => `bgb.hiddenCards.${userId}`;
+function loadCardCache(userId?: string): BingoCard[] {
+  try {
+    const raw = userId ? localStorage.getItem(cardsCacheKeyFor(userId)) : null;
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed as BingoCard[] : [];
+  } catch { return []; }
+}
+function loadHiddenCards(userId?: string): string[] {
+  try {
+    const raw = userId ? localStorage.getItem(hiddenCardsKeyFor(userId)) : null;
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+  } catch { return []; }
+}
 const NOOP_BACKEND = (canHost: boolean): GameBackend => ({
   kind: 'server',
   canHost,
@@ -49,8 +65,13 @@ function loadMarks(userId?: string): Record<string, number[]> {
 
 function ServerPlayerProvider({ children }: { children: ReactNode }) {
   const { user, refresh } = useAuth();
-  const [cards, setCards] = useState<BingoCard[]>([]);
+  const [cards, setCards] = useState<BingoCard[]>(() => loadCardCache(user?.id));
   const [transactions, setTransactions] = useState<Tx[]>([]);
+  const [hiddenCardIds, setHiddenCardIds] = useState<string[]>(() => loadHiddenCards(user?.id));
+  const hiddenCardIdsRef = useRef(hiddenCardIds);
+  hiddenCardIdsRef.current = hiddenCardIds;
+  const currentUserIdRef = useRef(user?.id);
+  currentUserIdRef.current = user?.id;
   const [markedByCard, setMarks] = useState<Record<string, number[]>>(() => loadMarks(user?.id));
   const cardsRequestInFlight = useRef(false);
   const marksStorageKey = user?.id ? marksKeyFor(user.id) : LEGACY_MARKS_KEY;
@@ -59,16 +80,20 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
 
   const reloadCards = useCallback(async () => {
     if (cardsRequestInFlight.current) return;
+    const requestedUserId = user?.id;
     cardsRequestInFlight.current = true;
     try {
       const latest = await api.get<BingoCard[]>('/api/cards');
-      if (Array.isArray(latest)) setCards(latest);
+      if (requestedUserId !== currentUserIdRef.current || !Array.isArray(latest)) return;
+      try { if (requestedUserId) localStorage.setItem(cardsCacheKeyFor(requestedUserId), JSON.stringify(latest)); } catch { /* server remains authoritative */ }
+      const hidden = new Set(hiddenCardIdsRef.current);
+      setCards(latest.filter(card => !hidden.has(card.id)));
     } catch {
-      // Preserve the last confirmed cards. Focus/online polling below retries automatically.
+      // Preserve the cached/last confirmed cards. Focus/online polling below retries automatically.
     } finally {
       cardsRequestInFlight.current = false;
     }
-  }, []);
+  }, [user?.id]);
   const reloadLedger = useCallback(async () => {
     try {
       setTransactions(await api.get<Tx[]>('/api/ledger'));
@@ -78,11 +103,20 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    setCards([]);
+    const hidden = loadHiddenCards(user?.id);
+    hiddenCardIdsRef.current = hidden;
+    setHiddenCardIds(hidden);
+    const cached = loadCardCache(user?.id);
+    const hiddenSet = new Set(hidden);
+    setCards(cached.filter(card => !hiddenSet.has(card.id)));
     setMarks(loadMarks(user?.id));
     void reloadCards();
     void reloadLedger();
   }, [user?.id, reloadCards, reloadLedger]);
+
+  useEffect(() => {
+    try { if (user?.id) localStorage.setItem(hiddenCardsKeyFor(user.id), JSON.stringify(hiddenCardIds)); } catch { /* keep cards available in memory */ }
+  }, [hiddenCardIds, user?.id]);
 
   // Recover card lists after refreshes and transient API failures without ever replacing
   // a previously confirmed list with an empty/error response.
@@ -176,6 +210,9 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   // Player preference: hide selected cards from this device only; never delete server records.
   const removeCards = useCallback((ids: string[]) => {
     const remove = new Set(ids);
+    const nextHidden = [...new Set([...hiddenCardIdsRef.current, ...ids])];
+    hiddenCardIdsRef.current = nextHidden;
+    setHiddenCardIds(nextHidden);
     setCards((current) => current.filter((card) => !remove.has(card.id)));
   }, []);
 
