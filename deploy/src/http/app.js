@@ -163,13 +163,14 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
 
   /* cards */
   route('GET', '/api/cards', 'user', 'default', ({ user }) => game.myCards(user));
+  route('GET', '/api/cards/previews', 'user', 'default', ({ user }) => game.myPreviews(user));
   route('POST', '/api/cards/preview', 'user', 'default', async ({ user, body }) => {
     await gamesHub.assertGameEnabled('bingo');
     return game.previewCards(user, body.count ?? 1);
   });
   route('POST', '/api/cards/buy', 'user', 'default', async ({ user, body }) => {
     await gamesHub.assertGameEnabled('bingo');
-    return game.buyCards(user, body.count, body.serial);
+    return game.buyCards(user, body.count, body.serial, body.previewGrid, body.previewToken);
   });
   route('POST', '/api/claim', 'user', 'default', ({ user, body }) => game.claim(user, body.cardId, body.expectedCallCount));
   route('POST', '/api/verify', 'user', 'default', ({ user, body }) => game.verify(user, body.cardId));
