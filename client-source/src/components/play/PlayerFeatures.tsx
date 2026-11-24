@@ -174,7 +174,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                 </div>
                 <div className="rounded-xl border border-amber-400/20 bg-black/40 p-3">
                   <p className="text-xs text-amber-200/70">{t.currentBalance}</p>
-                  <p className="text-xl font-black tabular-nums text-amber-300">{formatAmount(lang, balance)} ETB</p>
+                  <p className="text-xl font-black tabular-nums text-amber-300">{formatAmount(lang, balance)} {translations.wallet[lang].etb}</p>
                 </div>
                 <div className="space-y-3 rounded-xl border border-amber-400/20 p-3">
                   <p className="text-sm font-semibold">{t.chooseCardCount}</p>
@@ -185,8 +185,8 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                       </button>
                     ))}
                   </div>
-                  <div className="flex justify-between text-sm"><span className="text-amber-100/60">{t.pricePerCard}</span><strong>{formatAmount(lang, cardPrice)} ETB</strong></div>
-                  <div className="flex justify-between border-t border-amber-400/20 pt-3"><span className="font-bold">{t.payable}</span><strong className="text-lg text-amber-300">{formatAmount(lang, purchaseCount * cardPrice)} ETB</strong></div>
+                  <div className="flex justify-between text-sm"><span className="text-amber-100/60">{t.pricePerCard}</span><strong>{formatAmount(lang, cardPrice)} {translations.wallet[lang].etb}</strong></div>
+                  <div className="flex justify-between border-t border-amber-400/20 pt-3"><span className="font-bold">{t.payable}</span><strong className="text-lg text-amber-300">{formatAmount(lang, purchaseCount * cardPrice)} {translations.wallet[lang].etb}</strong></div>
                 </div>
                 {phase !== 'waiting' && <p className="rounded-lg bg-red-950/60 p-2 text-sm text-red-200">{t.purchaseOnlyWaiting}</p>}
                 {purchaseMessage && <p role="status" className={`rounded-lg p-2 text-sm ${purchaseMessage.kind === 'ok' ? 'bg-emerald-950 text-emerald-200' : 'bg-red-950 text-red-200'}`}>{purchaseMessage.text}</p>}
