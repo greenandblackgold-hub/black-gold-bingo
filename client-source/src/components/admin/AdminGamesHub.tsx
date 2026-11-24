@@ -59,7 +59,7 @@ export function AdminGamesHub({ activeGame }: { activeGame: HostGameSection }) {
     {activeGame === 'bingo' && <>
     <div className={card + ' mt-4'}>
       <p className="text-xs font-semibold text-amber-100/60">{t('maxPayout')}</p>
-      <p className="mt-1 text-2xl font-black text-amber-200">{overview ? Number(overview.settings.maxPayoutEtb).toLocaleString() : '20,000'} ETB</p>
+      <p className="mt-1 text-2xl font-black text-amber-200">{overview ? Number(overview.settings.maxPayoutEtb).toLocaleString() : '20,000'} {t('currency')}</p>
       <p className="mt-1 text-[11px] text-amber-100/40">{t('enforced')}</p>
       <p className="mt-2 text-xs text-amber-100/60">{t('commission')}: {overview?.settings.houseEdgePercent ?? 55}% · {t('playerPool')}: {100 - (overview?.settings.houseEdgePercent ?? 55)}%</p>
       <p className="mt-3 text-xs leading-5 text-amber-100/55">{t('poolNote')}</p>
