@@ -42,9 +42,10 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
     if (!serverMode) return;
     let active = true;
     let pending = false;
+    let refreshQueued = false;
     const refreshAvailability = async () => {
-      // Never overlap settings requests: a slow response must not race a newer poll.
-      if (pending) return;
+      // Never overlap settings requests; queue an SSE invalidation that arrives mid-request.
+      if (pending) { refreshQueued = true; return; }
       pending = true;
       try {
         const value = await api.get<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minesEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings');
@@ -66,11 +67,27 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
         if (active) setAvailabilityError(t.loadError);
       } finally {
         pending = false;
+        if (active && refreshQueued) {
+          refreshQueued = false;
+          void refreshAvailability();
+        }
       }
     };
+    const onAdminChange = () => void refreshAvailability();
+    const onReturn = () => void refreshAvailability();
     void refreshAvailability();
-    const poll = window.setInterval(() => void refreshAvailability(), 5000);
-    return () => { active = false; window.clearInterval(poll); };
+    window.addEventListener('bgb:admin-change', onAdminChange);
+    window.addEventListener('focus', onReturn);
+    document.addEventListener('visibilitychange', onReturn);
+    // Recovery fallback only; successful admin changes update the lobby immediately over SSE.
+    const poll = window.setInterval(() => void refreshAvailability(), 30_000);
+    return () => {
+      active = false;
+      window.clearInterval(poll);
+      window.removeEventListener('bgb:admin-change', onAdminChange);
+      window.removeEventListener('focus', onReturn);
+      document.removeEventListener('visibilitychange', onReturn);
+    };
   }, [serverMode, t.loadError]);
   if (serverMode && availability?.generalEnabled === false) {
     return <main className="mx-auto min-h-[70vh] w-full max-w-6xl px-4 py-8"><section className="mx-auto mb-6 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/20 bg-black/45 px-5 py-4"><div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">{availability.walletMode === 'shared' ? t.unifiedWallet : t.demoWallet}</p><p className="mt-1 text-xl font-black text-amber-100">{money(availability.balanceEtb)} ETB</p></div><span className="rounded-full border border-amber-300/20 px-3 py-1.5 text-[9px] font-bold tracking-wider text-amber-300">{mt('walletBalance')}</span></section>{availability.announcement && <p role="status" className="mx-auto max-w-2xl rounded-xl border border-amber-300/20 bg-black/40 p-5 text-center text-sm leading-7 text-amber-100">{availability.announcement}</p>}</main>;

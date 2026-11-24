@@ -426,7 +426,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
       'X-Accel-Buffering': 'no',
     });
     liveStreamClients.add(res);
-    res.write(`event: app-version\ndata: ${JSON.stringify({ buildPath: currentClientBuildPath() })}\n\n`);
+    res.write(`event: app-version\ndata: ${JSON.stringify({ buildPath: currentClientBuildPath(), buildId: process.env.RENDER_GIT_COMMIT ?? process.env.GITHUB_SHA ?? 'unknown' })}\n\n`);
     const write = (state) => res.write(`event: game\ndata: ${JSON.stringify(state)}\n\n`);
     game.getPublicState().then(write).catch(() => undefined);
     const off = game.subscribe(write);

@@ -62,6 +62,7 @@ test('SSE advertises the active frontend bundle and broadcasts successful admin 
   try {
     await readUntil(/event: app-version\n/);
     assert.ok(buffered.includes('"buildPath":"/assets/') && buffered.includes('.js"'), "the SSE build marker must match the current Vite entry asset");
+    assert.match(buffered, /"buildId":"[^"]+"/, "the SSE stream must advertise a release fingerprint");
     await fetch(`${base}/api/admin/games/settings`, {
       method: 'POST',
       headers: {

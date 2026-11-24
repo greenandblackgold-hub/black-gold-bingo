@@ -16,8 +16,10 @@ const applyPendingAppUpdate = () => {
   window.location.reload();
 };
 window.addEventListener('bgb:app-version', (event) => {
-  const detail = (event as CustomEvent<{ buildPath?: string }>).detail;
-  if (!Capacitor.isNativePlatform() && detail?.buildPath && detail.buildPath !== 'unknown' && detail.buildPath !== CLIENT_BUILD_PATH) {
+  const detail = (event as CustomEvent<{ buildPath?: string; buildId?: string }>).detail;
+  const buildChanged = detail?.buildId && detail.buildId !== 'unknown' && detail.buildId !== __APP_BUILD_ID__;
+  const bundleChanged = detail?.buildPath && detail.buildPath !== 'unknown' && detail.buildPath !== CLIENT_BUILD_PATH;
+  if (!Capacitor.isNativePlatform() && (buildChanged || bundleChanged)) {
     pendingAppUpdate = true;
     applyPendingAppUpdate();
   }

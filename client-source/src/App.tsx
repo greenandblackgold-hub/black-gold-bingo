@@ -76,8 +76,9 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
     if (!SERVER_MODE) return;
     let active = true;
     let pending = false;
+    let refreshQueued = false;
     const refresh = async () => {
-      if (pending) return;
+      if (pending) { refreshQueued = true; return; }
       pending = true;
       try {
         const value = await api.get<{ generalEnabled: boolean; minesEnabled?: boolean }>('/api/games/settings');
@@ -86,6 +87,10 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
         // Keep the last confirmed state during temporary network failures.
       } finally {
         pending = false;
+        if (active && refreshQueued) {
+          refreshQueued = false;
+          void refresh();
+        }
       }
     };
     const onAdminChange = () => void refresh();
