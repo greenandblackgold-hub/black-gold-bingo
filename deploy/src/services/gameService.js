@@ -335,6 +335,8 @@ export function createGameService({ repo, config, now = Date.now }) {
         if (e instanceof RepoError && e.code === 'INSUFFICIENT_FUNDS') throw new HttpError(402, 'insufficient_funds', 'Not enough balance');
         if (e instanceof RepoError && e.code === 'ROUND_NOT_OPEN') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
         if (e instanceof RepoError && e.code === 'CARD_NUMBER_TAKEN') throw new HttpError(409, 'card_number_taken', 'That card number is already taken. Choose another number.');
+        if (e instanceof RepoError && e.code === 'CARD_POOL_FULL') throw new HttpError(409, 'card_pool_full', 'All 15,000 Bingo card numbers have been used.');
+        if (e instanceof RepoError && e.code === 'INVALID_CARD_NUMBER') throw new HttpError(400, 'invalid_card_number', 'Card numbers must be between 10000 and 24999.');
         throw e;
       }
     },
