@@ -5,7 +5,7 @@ import { gameUi } from '@/lib/gameUi';
 import { useAuth } from '@/context/AuthContext';
 
 type KenoBet = { id: string; status: string; stakeEtb: number; selectedNumbers: number[]; matchedNumbers: number[]; hits: number; payoutEtb: number; createdAt: number; settledAt?: number | null };
-type KenoState = { payoutTable: Record<string, Record<string, number>>; enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; drawIntervalSeconds?: number; drawnNumbers?: number[]; settledAt?: number; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string };
+type KenoState = { payoutTable: Record<string, Record<string, number>>; enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; nextRoundAt?: number; serverTime: number; serverSeedHash: string; drawIntervalSeconds?: number; drawnNumbers?: number[]; settledAt?: number; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string };
 type HistoryRound = { roundId: string; status: string; drawnNumbers?: number[]; serverSeedHash: string; serverSeed?: string; myBets: KenoBet[] };
 type Tab = 'game' | 'history' | 'results' | 'statistics' | 'live';
 type KenoTicketDraft = { requestId: string; amount: number; selectedNumbers: number[] };
@@ -70,11 +70,30 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
 
   useEffect(() => {
     void loadState(); void loadHistory();
-    const poll = window.setInterval(() => void loadState(), 1000);
-    // The visible countdown changes once per second; avoid 10 full screen renders per second.
+    // Countdown is local. Do not poll MongoDB every second while betting:
+    // refresh at the round boundary, then once per reveal while results are hidden.
     const tick = window.setInterval(() => setClock(Date.now()), 1000);
-    return () => { window.clearInterval(poll); window.clearInterval(tick); };
+    return () => window.clearInterval(tick);
   }, [loadState, loadHistory]);
+
+  useEffect(() => {
+    if (!state) return;
+    const serverNow = Date.now() + offset;
+    let delayMs = 1000;
+    if (state.status === 'betting') {
+      const untilClose = state.bettingEndsAt - serverNow;
+      delayMs = untilClose > 0 ? untilClose + 150 : 1000;
+    } else {
+      const revealed = state.drawnNumbers?.length ?? 0;
+      if (revealed < 20) delayMs = 1000;
+      else {
+        const untilNextRound = (state.nextRoundAt ?? serverNow + 1000) - serverNow;
+        delayMs = untilNextRound > 0 ? untilNextRound + 150 : 1000;
+      }
+    }
+    const timer = window.setTimeout(() => void loadState(), Math.max(250, Math.min(delayMs, 30_000)));
+    return () => window.clearTimeout(timer);
+  }, [state?.roundId, state?.status, state?.bettingEndsAt, state?.nextRoundAt, state?.drawnNumbers?.length, offset, loadState]);
 
   // Buffer server catch-up responses and reveal each ball separately. A delayed poll,
   // background tab, or reconnect must never paint two or more new balls together.
@@ -273,7 +292,42 @@ type KenoNumberGridProps = {
   labels: { number: string; selectedState: string };
 };
 
-// Isolate the 80 interactive cells from countdown, balance, and round-state renders.
+const KENO_NUMBERS = Array.from({ length: 80 }, (_, index) => index + 1);
+
+type KenoNumberCellProps = {
+  number: number;
+  selected: boolean;
+  previous: boolean;
+  isBetting: boolean;
+  onToggle: (number: number) => void;
+  numberLabel: string;
+  selectedLabel: string;
+};
+
+// Each cell is isolated: a tap updates only the old and new selection, not all 80 buttons.
+const KenoNumberCell = memo(function KenoNumberCell({
+  number, selected, previous, isBetting, onToggle, numberLabel, selectedLabel,
+}: KenoNumberCellProps) {
+  const className = 'relative grid aspect-square min-w-0 touch-manipulation select-none place-items-center border text-[clamp(11px,3.6vw,17px)] font-black tabular-nums shadow-[inset_0_1px_0_rgba(255,255,255,.05)] ' +
+    (selected
+      ? 'border-emerald-200 bg-emerald-400 text-[#061c14]'
+      : 'border-[#35413f] bg-[linear-gradient(145deg,#394442,#242d2b)] text-slate-300 hover:bg-[#46524f]');
+  return (
+    <button
+      type="button"
+      disabled={!isBetting}
+      onClick={() => onToggle(number)}
+      aria-pressed={selected}
+      aria-label={numberLabel + ' ' + number + (selected ? ', ' + selectedLabel : '')}
+      className={className}
+      style={{ WebkitTapHighlightColor: 'transparent' }}
+    >
+      {number}
+      {previous && <span aria-hidden="true" className="pointer-events-none absolute right-[2px] top-[2px] h-[5px] w-[5px] rounded-full bg-sky-300 shadow-[0_0_5px_rgba(125,211,252,.6)]" />}
+    </button>
+  );
+});
+
 const KenoNumberGrid = memo(function KenoNumberGrid({
   selected, isBetting, previousDrawnNumbers, onToggle, labels,
 }: KenoNumberGridProps) {
@@ -282,24 +336,18 @@ const KenoNumberGrid = memo(function KenoNumberGrid({
 
   return (
     <div className="keno-number-grid grid grid-cols-10 gap-[3px] bg-[#090909] p-[3px]">
-      {Array.from({ length: 80 }, (_, index) => index + 1).map(number => {
-        const chosen = selectedSet.has(number);
-        const previous = previousSet.has(number);
-        return (
-          <button
-            key={number}
-            type="button"
-            disabled={!isBetting}
-            onClick={() => onToggle(number)}
-            aria-pressed={chosen}
-            aria-label={labels.number + ' ' + number + (chosen ? ', ' + labels.selectedState : '')}
-            className={'relative grid aspect-square min-w-0 place-items-center border text-[clamp(11px,3.6vw,17px)] font-black tabular-nums shadow-[inset_0_1px_0_rgba(255,255,255,.05)] ' + (chosen ? 'border-emerald-200 bg-emerald-400 text-[#061c14]' : 'border-[#35413f] bg-[linear-gradient(145deg,#394442,#242d2b)] text-slate-300 hover:bg-[#46524f]')}
-          >
-            {number}
-            {previous && <span className="absolute right-[2px] top-[2px] h-[5px] w-[5px] rounded-full bg-sky-300 shadow-[0_0_5px_rgba(125,211,252,.6)]" />}
-          </button>
-        );
-      })}
+      {KENO_NUMBERS.map(number => (
+        <KenoNumberCell
+          key={number}
+          number={number}
+          selected={selectedSet.has(number)}
+          previous={previousSet.has(number)}
+          isBetting={isBetting}
+          onToggle={onToggle}
+          numberLabel={labels.number}
+          selectedLabel={labels.selectedState}
+        />
+      ))}
     </div>
   );
 });
