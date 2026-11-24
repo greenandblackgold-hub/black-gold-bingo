@@ -56,13 +56,13 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
     const tick = window.setInterval(() => setClock(Date.now()), 100);
     return () => { window.clearInterval(poll); window.clearInterval(tick); };
   }, [loadState, loadHistory]);
-  useEffect(() => { if (state?.status === 'settled') void loadHistory(); }, [state?.status, state?.roundId, revealComplete, loadHistory]);
 
   // The API releases only the numbers whose reveal time has elapsed on the server.
   // Do not run a separate client timer: a refresh or late join must preserve the same order.
   const visibleDrawnNumbers = state?.drawnNumbers ?? [];
   const visibleDrawCount = visibleDrawnNumbers.length;
   const revealComplete = state?.status === 'settled' && visibleDrawCount >= 20;
+  useEffect(() => { if (state?.status === 'settled') void loadHistory(); }, [state?.status, state?.roundId, revealComplete, loadHistory]);
   const secondsLeft = state?.status === 'betting' ? Math.max(0, Math.ceil((state.bettingEndsAt - (clock + offset)) / 1000)) : 0;
   const isBetting = state?.enabled === true && state.status === 'betting' && secondsLeft > 0;
   const minBet = state?.minBetEtb ?? 2;
