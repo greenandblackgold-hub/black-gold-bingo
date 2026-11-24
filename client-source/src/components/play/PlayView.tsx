@@ -203,7 +203,7 @@ function BingoCardView({ labels, card, index, marks, called, pattern, claimable,
               className={[
                 'relative grid aspect-square min-w-0 place-items-center rounded-[3px] text-[clamp(10px,2.1vw,22px)] font-black leading-none text-black transition',
                 free ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
-                  marked ? 'bg-lime-300 shadow-[inset_0_0_9px_rgba(255,255,255,.75)]' :
+                  marked ? '!bg-lime-300 !shadow-[inset_0_0_9px_rgba(255,255,255,.75)]' :
                   'bg-gradient-to-b from-white to-zinc-200',
                 inWinningLine ? 'outline outline-2 outline-yellow-300' : '',
                 wasCalled && !marked ? 'bg-blue-500 text-white' : '',
@@ -638,22 +638,33 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
           )}
         </section>
 
-        {draftCards.length > 0 && (
-          <section className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: 'repeat(' + cardsPerRow + ', minmax(0, 1fr))' }}>
-            {draftCards.map((card, index) => (
-              <BingoCardView labels={t} key={card.id} card={card} index={index} marks={new Set<number>()} called={called} pattern={winPattern} claimable={false} claiming={false} onClaim={() => undefined} onToggle={() => undefined} draft registering={registeringDraftId === card.id} onRegister={() => void registerDraftCard(card)} onRemove={() => setDraftCards(current => current.filter(item => item.id !== card.id))} />
-            ))}
-          </section>
-        )}
-        {draftMessage && <p role="status" className="rounded-lg bg-yellow-950/70 p-2 text-center text-xs font-bold text-yellow-200">{draftMessage}</p>}
-        {cards.length > 0 && (
+        {(draftCards.length > 0 || cards.length > 0) && (
           <section className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))` }}>
-            {cards.map((card, index) => (
+            {draftCards.map((card, index) => (
               <BingoCardView
                 labels={t}
                 key={card.id}
                 card={card}
                 index={index}
+                marks={new Set<number>()}
+                called={called}
+                pattern={winPattern}
+                claimable={false}
+                claiming={false}
+                onClaim={() => undefined}
+                onToggle={() => undefined}
+                draft
+                registering={registeringDraftId === card.id}
+                onRegister={() => void registerDraftCard(card)}
+                onRemove={() => setDraftCards(current => current.filter(item => item.id !== card.id))}
+              />
+            ))}
+            {cards.map((card, index) => (
+              <BingoCardView
+                labels={t}
+                key={card.id}
+                card={card}
+                index={draftCards.length + index}
                 marks={markSets[card.id] ?? new Set<number>()}
                 called={called}
                 pattern={winPattern}
@@ -666,6 +677,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
             ))}
           </section>
         )}
+        {draftMessage && <p role="status" className="rounded-lg bg-yellow-950/70 p-2 text-center text-xs font-bold text-yellow-200">{draftMessage}</p>}
         {quickBuyOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:pb-3" role="presentation" onClick={() => !quickBuyBusy && setQuickBuyOpen(false)}>
             <section role="dialog" aria-modal="true" aria-labelledby="quick-buy-title" className="max-h-[calc(100dvh-7.5rem-env(safe-area-inset-bottom))] w-full max-w-md overflow-y-auto rounded-2xl border-2 border-yellow-400 bg-zinc-950 p-4 shadow-[0_0_30px_rgba(250,204,21,.3)] sm:max-h-[calc(100dvh-2rem)]" onClick={event => event.stopPropagation()}>
