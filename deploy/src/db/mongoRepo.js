@@ -248,7 +248,7 @@ export async function createMongoRepo({ uri, dbName }) {
       if (!Number.isInteger(count) || count < 1) throw new RepoError('CARD_POOL_FULL');
       if (requestedSerial !== undefined && requestedSerial !== null) {
         const serial = String(requestedSerial);
-        if (!/^\\d{5}$/.test(serial) || Number(serial) < 10000 || Number(serial) > 24999) throw new RepoError('INVALID_CARD_NUMBER');
+        if (!/^\d{5}$/.test(serial) || Number(serial) < 10000 || Number(serial) > 24999) throw new RepoError('INVALID_CARD_NUMBER');
         if (await cards.findOne({ serial })) throw new RepoError('CARD_NUMBER_TAKEN');
         const updated = await games.findOneAndUpdate(
           { _id: 'state', phase: 'waiting', roundNumber: round, nextCardSerial: { $lte: 25000 } },
