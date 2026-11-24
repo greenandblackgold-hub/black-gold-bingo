@@ -12,6 +12,7 @@ type Overview = {
 export function AdminGamesHub() {
   const { lang } = useLanguage();
   const t = (key: Parameters<typeof adminGamesLocale>[1]) => adminGamesLocale(lang, key);
+  const statusLabel = (status?: string | null) => status === 'betting' ? t('statusBetting') : status === 'settled' ? t('statusSettled') : status === 'crashed' ? t('statusCrashed') : status ?? t('loading');
   const [overview, setOverview] = useState<Overview | null>(null);
   const [minBet, setMinBet] = useState('2');
   const [maxBet, setMaxBet] = useState('1000');
@@ -68,8 +69,8 @@ export function AdminGamesHub() {
     <div className={card + ' mt-2'}><div className="flex items-center justify-between gap-3"><div><p className="font-bold text-amber-100">{t('showAnnouncement')}</p><p className="text-xs text-amber-100/45">{overview?.settings.announcementVisible ? '{t('visibleOff')}' : '{t('hidden')}'}</p></div><button disabled={busy || !overview} onClick={() => void save({ announcementVisible: !overview?.settings.announcementVisible })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.announcementVisible ? '{t('hideMessage')}' : '{t('showMessage')}'}</button></div></div>
     <div className="mt-2 grid gap-3 sm:grid-cols-3">
       <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Bingo PRO</p><p className="text-xs text-amber-100/45">{overview?.settings.bingoEnabled ? '{t('visible')}' : '{t('hidden')}'}</p></div><button disabled={busy || !overview} onClick={() => void save({ bingoEnabled: !overview?.settings.bingoEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.bingoEnabled ? '{t('turnOff')}' : '{t('turnOn')}'}</button></div></div>
-      <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Keno</p><p className="text-xs text-amber-100/45">{overview?.games.keno.status ?? 'Loading'} · {overview?.games.keno.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ kenoEnabled: !overview?.settings.kenoEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.kenoEnabled ? '{t('turnOff')}' : '{t('turnOn')}'}</button></div></div>
-      <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Aviator</p><p className="text-xs text-amber-100/45">{overview?.games.aviator.status ?? 'Loading'} · {overview?.games.aviator.bets ?? 0} bets</p></div><button disabled={busy || !overview} onClick={() => void save({ aviatorEnabled: !overview?.settings.aviatorEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.aviatorEnabled ? '{t('turnOff')}' : '{t('turnOn')}'}</button></div></div>
+      <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Keno</p><p className="text-xs text-amber-100/45">{statusLabel(overview?.games.keno.status)} · {overview?.games.keno.bets ?? 0} {t('betsLabel')}</p></div><button disabled={busy || !overview} onClick={() => void save({ kenoEnabled: !overview?.settings.kenoEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.kenoEnabled ? '{t('turnOff')}' : '{t('turnOn')}'}</button></div></div>
+      <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Aviator</p><p className="text-xs text-amber-100/45">{statusLabel(overview?.games.aviator.status)} · {overview?.games.aviator.bets ?? 0} {t('betsLabel')}</p></div><button disabled={busy || !overview} onClick={() => void save({ aviatorEnabled: !overview?.settings.aviatorEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.aviatorEnabled ? '{t('turnOff')}' : '{t('turnOn')}'}</button></div></div>
     </div>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       <label className={label}>{t('minBet')}<input className={input} type="number" min="2" max="1000" step=".01" value={minBet} onChange={e=>setMinBet(e.target.value)}/></label>
@@ -78,10 +79,10 @@ export function AdminGamesHub() {
       <label className={label}>{t('kenoDuration')}
           <select className={input} value={kenoSeconds} onChange={e=>setKenoSeconds(e.target.value)}>
             <optgroup label={t('seconds')}>
-              <option value="10">10 seconds</option><option value="15">15 seconds</option><option value="20">20 seconds</option><option value="30">30 seconds</option><option value="45">45 seconds</option>
+              <option value="10">{10} {t('seconds')}</option><option value="15">{15} {t('seconds')}</option><option value="20">{20} {t('seconds')}</option><option value="30">{30} {t('seconds')}</option><option value="45">{45} {t('seconds')}</option>
             </optgroup>
             <optgroup label={t('minutes')}>
-              <option value="60">1 minute</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option><option value="600">10 minutes</option>
+              <option value="60">{1} {t('minutes')}</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option><option value="600">10 minutes</option>
             </optgroup>
           </select>
           <span className="mt-1 block text-[10px] font-normal text-amber-100/40">{t('nextKeno')}</span>
