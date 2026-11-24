@@ -176,9 +176,10 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     // so the full 20-number display is not cut short during the first deployment.
     if (game === 'keno' && round?.status === 'settled') {
       const intervalSeconds = round.kenoDrawIntervalSeconds ?? currentSettings.kenoDrawIntervalSeconds;
-      const revealCompleteAt = Number(round.settledAt ?? now()) + intervalSeconds * 20 * 1000 + 2000;
+      const revealCompleteAt = Number(round.settledAt ?? round.createdAt ?? now()) + intervalSeconds * 20 * 1000 + 2000;
       if (Number(round.nextRoundAt ?? 0) < revealCompleteAt) {
-        round = await repo.updateGameHubRound('keno', round.roundId, round.version, { nextRoundAt: revealCompleteAt });
+        round = await repo.updateGameHubRound('keno', round.roundId, round.version, { nextRoundAt: revealCompleteAt })
+          ?? await repo.getCurrentGameHubRound('keno');
       }
     }
     if (!round || (['settled', 'crashed'].includes(round.status) && Number(round.nextRoundAt ?? 0) <= now())) {
