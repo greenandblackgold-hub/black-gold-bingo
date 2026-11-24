@@ -901,6 +901,7 @@ test('fixed prize is announced, frozen at round start, capped by gross revenue, 
 });
 
 
+
 test('Bingo card previews are free, registration requires funds, preserves the preview grid, and host cap is enforced', async () => {
   await freshRound();
   const player = await newPlayer('Card Preview Player', 0);
@@ -908,6 +909,12 @@ test('Bingo card previews are free, registration requires funds, preserves the p
   assert.equal(previewResponse.status, 200, JSON.stringify(previewResponse.json));
   const [preview] = previewResponse.json;
   assert.match(String(preview.serial), /^(1[0-9]{4}|2[0-4][0-9]{3})$/);
+  const packageResponse = await api('POST', '/api/cards/preview', { token: player.token, body: { count: 25 } });
+  assert.equal(packageResponse.status, 200, JSON.stringify(packageResponse.json));
+  assert.equal(packageResponse.json.length, 25);
+  const packageSerials = packageResponse.json.map((card) => String(card.serial));
+  assert.equal(new Set(packageSerials).size, 25, 'each preview package card must have a unique serial');
+  assert.ok(packageSerials.every((serial) => /^(1[0-9]{4}|2[0-4][0-9]{3})$/.test(serial)));
   assert.equal((await api('GET', '/api/cards', { token: player.token })).json.length, 0, 'preview must not register a card');
 
   const unpaid = await api('POST', '/api/cards/buy', { token: player.token, body: { count: 1, serial: preview.serial } });
