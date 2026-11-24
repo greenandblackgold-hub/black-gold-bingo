@@ -35,7 +35,7 @@ export function AdminGamesHub() {
       setAnnouncementText(next.settings.announcementText ?? '');
       setError('');
     } catch (e) { setError(e instanceof ApiError ? e.message : t('loadError')); }
-  }, []);
+  }, [lang]);
   useEffect(() => { void load(); }, [load]);
   const save = async (patch: Record<string, unknown>) => {
     setBusy(true); setError(''); setNotice('');
