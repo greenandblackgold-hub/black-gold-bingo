@@ -32,7 +32,8 @@ const DEFAULT_SETTINGS = Object.freeze({
   bingoEnabled: true,
   kenoEnabled: true,
   aviatorEnabled: true,
-  minBet: 200,
+  minBet: 500,
+  kenoMinBet: 200,
   maxBet: 100000,
   kenoBettingSeconds: 20,
   aviatorBettingSeconds: 8,
@@ -138,9 +139,6 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   async function settings() {
     const stored = await repo.getGameHubSettings();
     const merged = { ...settingsDefaults, ...stored };
-    // The former default was ETB 5. Move that untouched default to ETB 2;
-    // explicitly configured minimums remain unchanged.
-    if (Number(stored?.minBet) === 500) merged.minBet = 200;
     return merged;
   }
 
@@ -257,7 +255,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       serverTime,
       serverSeedHash: round.serverSeedHash,
       myBets,
-      minBetEtb: currentSettings.minBet / 100,
+      minBetEtb: (game === 'keno' ? currentSettings.kenoMinBet : currentSettings.minBet) / 100,
       maxBetEtb: currentSettings.maxBet / 100,
       maxPayoutEtb: MAX_GAMES_HUB_PAYOUT_SANTIM / 100,
       houseEdgePercent: currentSettings.houseEdgePercent ?? DEFAULT_HOUSE_EDGE_PERCENT,
@@ -306,7 +304,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     if (game === 'aviator' && (round.bets ?? []).some((item) => item.userId === user.id && item.requestId !== requestId)) {
       throw new HttpError(409, 'aviator_bet_already_placed', 'You can place one Aviator bet per round.');
     }
-    const stake = amountToSantim(input.amount, currentSettings);
+    const stake = amountToSantim(input.amount, { ...currentSettings, minBet: game === 'keno' ? currentSettings.kenoMinBet : currentSettings.minBet });
     const bet = {
       id: randomBytes(12).toString('hex'),
       requestId,
@@ -375,6 +373,13 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       }
       next.minBet = Math.round(n * 100);
     }
+    if (input.kenoMinBetEtb !== undefined) {
+      const n = Number(input.kenoMinBetEtb);
+      if (!Number.isFinite(n) || n < 2 || n > 1000 || Math.abs(n * 100 - Math.round(n * 100)) > 1e-7) {
+        throw new HttpError(400, 'invalid_keno_min_bet', 'Keno minimum bet must be 2–1,000 ETB with up to two decimal places.');
+      }
+      next.kenoMinBet = Math.round(n * 100);
+    }
     if (input.maxBetEtb !== undefined) {
       const n = Number(input.maxBetEtb);
       if (!Number.isFinite(n) || n < 1 || n > 5000 || Math.abs(n * 100 - Math.round(n * 100)) > 1e-7) {
@@ -382,7 +387,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       }
       next.maxBet = Math.round(n * 100);
     }
-    if (next.minBet > next.maxBet) throw new HttpError(400, 'invalid_bet_range', 'Minimum bet cannot exceed maximum bet.');
+    if (next.minBet > next.maxBet || next.kenoMinBet > next.maxBet) throw new HttpError(400, 'invalid_bet_range', 'Game minimum bet cannot exceed maximum bet.');
     if (input.kenoBettingSeconds !== undefined) {
       const n = Number(input.kenoBettingSeconds);
       if (!Number.isInteger(n) || n < 10 || n > 600) throw new HttpError(400, 'invalid_keno_timer', 'Keno round duration must be 10–600 seconds (up to 10 minutes).');
@@ -395,7 +400,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     }
     if (input.aviatorBettingSeconds !== undefined) {
       const n = Number(input.aviatorBettingSeconds);
-      if (!Number.isInteger(n) || n < 5 || n > 20) throw new HttpError(400, 'invalid_aviator_timer', 'Aviator betting time must be 5–20 seconds.');
+      if (!Number.isInteger(n) || n < 5 || n > 60) throw new HttpError(400, 'invalid_aviator_timer', 'Aviator betting time must be 5–60 seconds.');
       next.aviatorBettingSeconds = n;
     }
     return repo.updateGameHubSettings(next);
@@ -470,10 +475,12 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
           announcementText: currentSettings.announcementText ?? '',
           announcementVisible: currentSettings.announcementVisible === true,
           minBetEtb: currentSettings.minBet / 100,
+          kenoMinBetEtb: currentSettings.kenoMinBet / 100,
           maxBetEtb: currentSettings.maxBet / 100,
           maxPayoutEtb: MAX_GAMES_HUB_PAYOUT_SANTIM / 100,
           houseEdgePercent: currentSettings.houseEdgePercent ?? DEFAULT_HOUSE_EDGE_PERCENT,
           minBet: undefined,
+          kenoMinBet: undefined,
           maxBet: undefined,
         },
         games: {
