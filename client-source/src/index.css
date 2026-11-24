@@ -1266,3 +1266,45 @@ body { color: #f7edcf; background: #030303 !important; }
 .premium-ui .keno-reference-page .keno-selection-count{background:radial-gradient(circle at 30% 25%,#fff0b8,#d6ad45 55%,#5b3e0d)!important;color:#100c04!important}
 @media(max-width:380px){.premium-ui .keno-reference-page{padding-inline:6px}.premium-ui .keno-reference-page .keno-topbar{grid-template-columns:62px minmax(0,1fr) 32px;gap:5px;padding-inline:7px}.keno-account{gap:4px;padding-inline:5px;font-size:9px}.premium-ui .keno-reference-page .keno-stake-controls{grid-template-columns:minmax(0,1fr) 66px 66px}.premium-ui .keno-reference-page .keno-tabs{gap:9px;font-size:10px}}
 @media(min-width:600px){.premium-ui .keno-reference-page{max-width:480px!important}}
+
+
+/* Stable player Games Center: game tiles and artwork must never bob when pointer,
+   touch, global button states, or repeated availability polls update the page. */
+.premium-ui .games-center-card,
+.premium-ui .games-center-card:hover,
+.premium-ui .games-center-card:active,
+.premium-ui .games-center-card:focus-visible {
+  transform: none !important;
+}
+.premium-ui .games-center-card {
+  min-width: 0;
+  contain: layout paint;
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+.premium-ui .games-center-card:hover:not(:disabled) {
+  border-color: rgba(252, 211, 77, .7);
+  box-shadow: 0 18px 55px rgba(212, 175, 55, .16);
+}
+.premium-ui .games-center-artwork {
+  flex: 0 0 9rem;
+  height: 9rem;
+  min-height: 9rem;
+  width: 100%;
+  overflow: hidden;
+}
+@media (min-width: 640px) {
+  .premium-ui .games-center-artwork {
+    flex-basis: 10rem;
+    height: 10rem;
+    min-height: 10rem;
+  }
+}
+.premium-ui .games-center-artwork img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: center;
+  flex: none;
+}
