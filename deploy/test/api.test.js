@@ -883,7 +883,7 @@ test('fixed prize is announced, frozen at round start, capped by gross revenue, 
   assert.equal(state.roundPrizeEtb, 15, 'the prize remains fixed after the round starts');
   const changedDuringRound = await api('POST', '/api/admin/prize-schedule', {
     token: ctx.adminToken,
-    body: { prizeMode: 'fixed', fixedPrize: 20, prizePercent: 80, prizePerPlayer: 4, maxPrizeCap: 0, roundIntervalMinutes: 4 },
+    body: { prizeMode: 'fixed', fixedPrize: 20, prizePercent: 45, prizePerPlayer: 4, maxPrizeCap: 0, roundIntervalMinutes: 4 },
   });
   assert.equal(changedDuringRound.status, 409, 'active-round prize settings cannot be changed');
   await drawAll();
