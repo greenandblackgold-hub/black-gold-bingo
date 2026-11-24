@@ -303,17 +303,34 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     setDraftCardsLoadedFor(draftCardsStorageKey);
 
     // The API copy survives an ordinary browser refresh even if local storage is blocked.
-    void api.get<BingoCard[]>('/api/cards/previews').then(serverPreviews => {
-      if (!active || !Array.isArray(serverPreviews)) return;
-      setDraftCards(current => {
-        const bySerial = new Map(current.map(card => [String(card.serial), card]));
-        for (const card of serverPreviews) if (!removedSerials.has(String(card.serial))) bySerial.set(String(card.serial), { ...bySerial.get(String(card.serial)), ...card });
-        return [...bySerial.values()].sort((a, b) => Number(a.serial) - Number(b.serial));
-      });
-    }).catch(() => {
-      // Browser-saved previews remain available if the API is temporarily offline.
-    });
-    return () => { active = false; };
+    let previewsInFlight = false;
+    const refreshPreviews = async () => {
+      if (!active || previewsInFlight || document.visibilityState === 'hidden') return;
+      previewsInFlight = true;
+      try {
+        const serverPreviews = await api.get<BingoCard[]>('/api/cards/previews');
+        if (!active || !Array.isArray(serverPreviews)) return;
+        setDraftCards(current => {
+          const bySerial = new Map(current.map(card => [String(card.serial), card]));
+          for (const card of serverPreviews) if (!removedSerials.has(String(card.serial))) bySerial.set(String(card.serial), { ...bySerial.get(String(card.serial)), ...card });
+          return [...bySerial.values()].sort((a, b) => Number(a.serial) - Number(b.serial));
+        });
+      } catch {
+        // Browser-saved previews remain available if the API is temporarily offline.
+      } finally {
+        previewsInFlight = false;
+      }
+    };
+    void refreshPreviews();
+    const previewPoll = window.setInterval(() => void refreshPreviews(), 15_000);
+    window.addEventListener('focus', refreshPreviews);
+    window.addEventListener('online', refreshPreviews);
+    return () => {
+      active = false;
+      window.clearInterval(previewPoll);
+      window.removeEventListener('focus', refreshPreviews);
+      window.removeEventListener('online', refreshPreviews);
+    };
   }, [loaded, user?.id, draftCardsStorageKey, removedDraftsStorageKey]);
 
   useEffect(() => {
