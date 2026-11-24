@@ -170,7 +170,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
     const rows = await repo.listLedger(user.id, 30);
     return rows.map((e) => ({ id: e.ref, kind: ledgerKind(e.kind), amount: e.amount / 100, label: ledgerLabel[e.kind], at: new Date(e.createdAt).getTime() }));
   });
-  route('POST', '/api/simulation/deposits', 'user', 'money', ({ user, body }) => { requireRealMoney(); return wallet.startSmsSimulationDeposit(user, body); });
+  route('POST', '/api/simulation/deposits', 'user', 'money', ({ user, body }) => wallet.startSmsSimulationDeposit(user, body));
   route('GET', '/api/simulation/deposits', 'user', 'default', ({ user }) => wallet.listUserSimulationDeposits(user));
   route('GET', '/api/simulation/deposits/:txRef', 'user', 'default', ({ user, params }) => wallet.simulationDepositStatus(user, decodeURIComponent(params.txRef)));
 
