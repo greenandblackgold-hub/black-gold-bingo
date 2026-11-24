@@ -113,6 +113,9 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
       throw new HttpError(503, 'real_money_disabled', 'Real-money play is disabled until the required lottery authorization is verified');
     }
   };
+  const requireSimulationCashoutsDisabled = () => {
+    if (config.prod) throw new HttpError(503, 'cashouts_disabled', 'Cash-outs are not available in this simulation version.');
+  };
 
   const ledgerLabel = { prize: 'Prize', game_bet: 'Game entry', game_prize: 'Game prize', withdraw_hold: 'Cash-out', withdraw_refund: 'Cash-out refund' };
   const ledgerKind = (k) => (['card_purchase', 'withdraw_hold', 'game_bet'].includes(k) ? 'purchase' : 'deposit');
@@ -175,7 +178,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   route('GET', '/api/simulation/deposits/:txRef', 'user', 'default', ({ user, params }) => wallet.simulationDepositStatus(user, decodeURIComponent(params.txRef)));
 
   /* Simulation withdrawals: amounts are held in the simulation wallet only. */
-  route('POST', '/api/simulation/withdrawals', 'user', 'money', ({ user, body }) => wallet.requestSimulationWithdrawal(user, body));
+  route('POST', '/api/simulation/withdrawals', 'user', 'money', ({ user, body }) => { requireSimulationCashoutsDisabled(); return wallet.requestSimulationWithdrawal(user, body); });
   route('GET', '/api/simulation/withdrawals', 'user', 'default', ({ user, query }) =>
     wallet.listMySimulationWithdrawals(user).then((rows) => rows.map((w) => ({ id: w.id, amount: w.amount, method: w.method, destination: w.destination, status: w.status, at: w.at }))),
   );
@@ -266,8 +269,8 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
 
   /* Manual real-wallet withdrawals: payout is recorded only after an admin enters the external reference. */
   route('POST', '/api/manual/withdrawals', 'user', 'money', async ({ user, body }) => {
-    const result = await wallet.requestManualWithdrawal(user, body);
-    return result;
+    requireRealMoney();
+    return wallet.requestManualWithdrawal(user, body);
   });
   route('GET', '/api/manual/withdrawals', 'user', 'default', async ({ user }) =>
     (await wallet.listMyManualWithdrawals(user)).map((w) => ({
@@ -299,18 +302,18 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   admin('GET', '/api/admin/manual-withdrawals', async ({ query }) =>
     wallet.listManualWithdrawals({ status: query.get('status') || 'pending' }),
   );
-  admin('POST', '/api/admin/manual-withdrawals/:id/start', async ({ params, user }) =>
-    wallet.startManualWithdrawal(decodeURIComponent(params.id), user.id),
-    'money',
-  );
-  admin('POST', '/api/admin/manual-withdrawals/:id/confirm', async ({ params, body, user }) =>
-    wallet.confirmManualWithdrawal(
+  admin('POST', '/api/admin/manual-withdrawals/:id/start', async ({ params, user }) => {
+    requireRealMoney();
+    return wallet.startManualWithdrawal(decodeURIComponent(params.id), user.id);
+  }, 'money');
+  admin('POST', '/api/admin/manual-withdrawals/:id/confirm', async ({ params, body, user }) => {
+    requireRealMoney();
+    return wallet.confirmManualWithdrawal(
       decodeURIComponent(params.id),
       { externalReference: body.externalReference, method: body.method },
       user.id,
-    ),
-    'money',
-  );
+    );
+  }, 'money');
   admin('POST', '/api/admin/manual-withdrawals/:id/reject', async ({ params, body, user }) =>
     wallet.rejectManualWithdrawal(decodeURIComponent(params.id), body.note, user.id),
     'money',
@@ -323,9 +326,10 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   admin('GET', '/api/admin/withdrawals/simulation', async ({ query }) =>
     wallet.listSimulationWithdrawals({ status: query.get('status') || 'pending' }),
   );
-  admin('POST', '/api/admin/withdrawals/simulation/:id/approve', async ({ params, user }) =>
-    wallet.approveSimulationWithdrawal(decodeURIComponent(params.id), user.id),
-  );
+  admin('POST', '/api/admin/withdrawals/simulation/:id/approve', async ({ params, user }) => {
+    requireSimulationCashoutsDisabled();
+    return wallet.approveSimulationWithdrawal(decodeURIComponent(params.id), user.id);
+  });
   admin('POST', '/api/admin/withdrawals/simulation/:id/reject', async ({ params, body, user }) =>
     wallet.rejectSimulationWithdrawal(decodeURIComponent(params.id), body.note, user.id),
   );
@@ -341,10 +345,8 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   admin('POST', '/api/admin/win-payouts/:id/reject', async ({ params, body }) =>
     wallet.rejectWinPayout(decodeURIComponent(params.id), body.note),
   );
-  admin('POST', '/api/admin/deposits/:txRef/approve', async ({ params }) => {
-    requireRealMoney();
-    return wallet.approveSimulationDeposit(decodeURIComponent(params.txRef));
-  },
+  admin('POST', '/api/admin/deposits/:txRef/approve', async ({ params }) =>
+    wallet.approveSimulationDeposit(decodeURIComponent(params.txRef)),
   );
   admin('POST', '/api/admin/deposits/:txRef/test-approve', async ({ params }) =>
     wallet.testApproveSimulationDeposit(decodeURIComponent(params.txRef)),
