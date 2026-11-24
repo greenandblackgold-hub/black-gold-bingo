@@ -195,7 +195,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       const results = rawResults.map((result) => ({ ...result, payout: Math.min(MAX_GAMES_HUB_PAYOUT_SANTIM, Math.floor(result.payout * scale)) }));
       round = await repo.settleKenoGameHubRound({
         roundId: round.roundId, drawnNumbers, results, serverSeed: round.serverSeed,
-        settledAt: now(), nextRoundAt: now() + 6000,
+        settledAt: now(), nextRoundAt: now() + ((round.kenoDrawIntervalSeconds ?? currentSettings.kenoDrawIntervalSeconds) * 20 * 1000) + 2000,
       });
       log('games_hub_keno_round_settled', { roundId: round.roundId, bets: results.length });
     }
