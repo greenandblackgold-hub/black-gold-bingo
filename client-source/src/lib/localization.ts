@@ -460,6 +460,11 @@ export const translations = {
     testOnly: 'የሙከራ ጥያቄ · ባላንስ አይጨምርም',
     testApprove: 'TEST · የሙከራ ማጽደቅ',
     testConfirm: 'ይህ የTEST ሙከራ ብቻ ነው። ምንም ባላንስ አይጨምርም። ለመቀጠል?',
+    smsMatchedManual: 'SMS ተዛምዷል · የAdmin በእጅ ማረጋገጫ',
+    smsMatchedManualHelp: 'SMS ተዛምዷል፤ ጥያቄው Pending ከሆነ ደረሰኙን በተለየ መንገድ አረጋግጠው በእጅ ያጽድቁ።',
+    smsAmountMismatch: 'የSMS መጠን አልተዛመደም',
+    smsAmountMismatchHelp: 'የSMS መጠን ከጥያቄው ጋር አልተዛመደም፤ በእጅ ያረጋግጡ።',
+    manualReviewHelp: 'የባንክ/Telebirr ደረሰኙን በተለየ መንገድ ያረጋግጡ፤ ከዚያ በኋላ ብቻ Approve ይጫኑ።',
 
   },
   ti: {
@@ -478,6 +483,11 @@ export const translations = {
     testOnly: 'ሙከራ ጥራይ · ሚዛን ኣይውሰኽን',
     testApprove: 'TEST · ሙከራ ኣጽድቕ',
     testConfirm: 'እዚ ናይ TEST ሙከራ ጥራይ እዩ። ሚዛን ኣይውሰኽን። ክትቅጽሉ?',
+    smsMatchedManual: 'SMS ተዛሚዱ · ናይ Admin ኢድ ምርግጋጽ',
+    smsMatchedManualHelp: 'SMS ተዛሚዱ፤ እቲ ሕቶ Pending እንተኾይኑ ደረሰኙ ብናጻ ኣረጋጊጽኩም ብኢድ ኣጽድቑ።',
+    smsAmountMismatch: 'መጠን SMS ኣይተዛመደን',
+    smsAmountMismatchHelp: 'መጠን SMS ምስ ሕቶ ኣይተዛመደን፤ ብኢድ ኣረጋግጹ።',
+    manualReviewHelp: 'ደረሰኝ ባንኪ/Telebirr ብናጻ ኣረጋግጹ፤ ድሕሪኡ ጥራይ Approve ጠውቑ።',
 
   },
   en: {
@@ -496,6 +506,11 @@ export const translations = {
     testOnly: 'TEST REQUEST · NO BALANCE CREDIT',
     testApprove: 'TEST · Approve without credit',
     testConfirm: 'This is only a TEST. No wallet balance will be credited. Continue?',
+    smsMatchedManual: 'SMS MATCHED · MANUAL ADMIN REVIEW',
+    smsMatchedManualHelp: 'The SMS matched. If this request is still pending, independently verify the receipt before manually approving it.',
+    smsAmountMismatch: 'SMS AMOUNT MISMATCH',
+    smsAmountMismatchHelp: 'The SMS amount does not match the request; verify the receipt manually.',
+    manualReviewHelp: 'Independently verify the bank/Telebirr receipt before pressing Approve.',
 
   },
 },
