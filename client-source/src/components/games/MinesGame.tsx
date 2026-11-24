@@ -157,7 +157,10 @@ export function MinesGame() {
       <header className="rounded-2xl border border-amber-400/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.2),transparent_50%),linear-gradient(120deg,#17140c,#090909_65%,#151006)] px-4 py-3">
         <div className="flex items-center justify-between gap-2">
           <div><p className="text-[10px] font-black uppercase tracking-[.3em] text-amber-500">BLACK GOLD · DEMO</p><h1 className="text-2xl font-black tracking-wider text-amber-100">MINES</h1></div>
-          <button type="button" onClick={() => setHelpOpen(true)} aria-label="Mines help" className="grid h-9 w-9 place-items-center rounded-full border border-amber-300/35 bg-black/50 text-lg font-bold text-amber-200">?</button>
+          <div className="flex items-center gap-1 rounded-full border border-amber-300/20 bg-black/50 p-1">
+            {([{ id: 'am', label: 'አማ' }, { id: 'ti', label: 'ትግ' }, { id: 'en', label: 'EN' }] as const).map((option) => <button key={option.id} type="button" aria-pressed={lang === option.id} onClick={() => setLang(option.id)} className={`rounded-full px-2 py-1 text-[10px] font-black ${lang === option.id ? 'bg-amber-300 text-black' : 'text-amber-200'}`}>{option.label}</button>)}
+            <button type="button" onClick={() => setHelpOpen(true)} aria-label={t('help')} className="grid h-8 w-8 place-items-center rounded-full border border-amber-300/35 bg-black/50 text-lg font-bold text-amber-200">?</button>
+          </div>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <div className="rounded-xl border border-amber-300/15 bg-black/45 p-2"><p className="text-[9px] font-bold uppercase tracking-wider text-amber-500"{t('mineCount')}</p><p className="text-lg font-black text-amber-100">{round?.mines ?? mineCount} 💣</p></div>
