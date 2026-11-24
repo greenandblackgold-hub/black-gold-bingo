@@ -17,7 +17,7 @@ You do not need to write, read or fix any code. Follow the steps in order. Each 
 
 ## Two things you must know first
 
-**1. I can't press the buttons for you.** Creating accounts, accepting terms and typing your passwords has to be done by you. I can't log in to GitHub, MongoDB, Render or Chapa for you. The old live page was not safe: it exposed temporary OTP codes in logs and contained startup code that could delete player records. The server has been corrected in GitHub, but the new version has not yet been deployed and fully verified. Do not invite players or accept money.
+**1. You control your private accounts.** I can inspect the connected GitHub and Render project, but you must personally accept account terms and enter passwords, MongoDB credentials and owner PINs. Never send passwords or secret keys in chat. The old live page was not safe: it exposed temporary OTP codes in logs and contained startup code that could delete player records. The server has been corrected in GitHub, but the new version has not yet been deployed and fully verified. Do not invite players or accept money.
 
 **2. Real-money Bingo needs official clearance.** Ethiopia's Ministry of Justice explains that Bingo/lottery categories have different rules, and the required permit must come from the National Lottery Administration. We must confirm the exact category and get the correct permit in writing. Chapa must also approve this exact business model in writing before we use its payment service. The application now keeps real-money functions OFF by default.
 
@@ -92,7 +92,7 @@ Skip this step until Chapa has approved the Bingo business in writing and we hav
 
 ## Step 6: Safe testing (not yet ready)
 
-The current public page is intentionally a maintenance screen while the full player interface is rebuilt and verified against the secure API. No real deposits, paid cards or cash-outs are available. Do not invite players or accept money. After the new version is deployed, we will test the full player and owner journey with fake transactions first.
+The current Render deployment is live, but a full visual player/owner journey has not yet been completed on real devices. The project remains simulation-only: no real deposits, paid cards or cash-outs are enabled. Do not invite players or accept money. Complete browser/mobile and Admin approval tests with fake transactions before wider testing.
 
 ## Step 7: Real-money launch (only after every approval)
 
