@@ -163,13 +163,13 @@ export function MinesGame() {
           </div>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <div className="rounded-xl border border-amber-300/15 bg-black/45 p-2"><p className="text-[9px] font-bold uppercase tracking-wider text-amber-500"{t('mineCount')}</p><p className="text-lg font-black text-amber-100">{round?.mines ?? mineCount} 💣</p></div>
-          <div className="rounded-xl border border-amber-300/15 bg-black/45 p-2"><p className="text-[9px] font-bold uppercase tracking-wider text-amber-500"{t('nextMultiplier')}</p><p className="text-lg font-black tabular-nums text-amber-200">{nextMultiplier.toFixed(2)}×</p></div>
+          <div className="rounded-xl border border-amber-300/15 bg-black/45 p-2"><p className="text-[9px] font-bold uppercase tracking-wider text-amber-500">{t('mineCount')}</p><p className="text-lg font-black text-amber-100">{round?.mines ?? mineCount} 💣</p></div>
+          <div className="rounded-xl border border-amber-300/15 bg-black/45 p-2"><p className="text-[9px] font-bold uppercase tracking-wider text-amber-500">{t('nextMultiplier')}</p><p className="text-lg font-black tabular-nums text-amber-200">{nextMultiplier.toFixed(2)}×</p></div>
         </div>
       </header>
 
       <section className="rounded-2xl border border-amber-300/20 bg-[#100e0a] p-3">
-        <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500"{t('currentPrize')}</p><p className="text-2xl font-black tabular-nums text-amber-100">{formatMoney(currentWin)} <span className="text-xs text-amber-400">{t('demoCredit')}</span></p></div><div className="text-right"><p className="text-[10px] text-amber-500"{t('gemsFound')}</p><p className="text-xl font-black text-amber-200">{round?.safe ?? 0} 💎</p></div></div>
+        <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">{t('currentPrize')}</p><p className="text-2xl font-black tabular-nums text-amber-100">{formatMoney(currentWin)} <span className="text-xs text-amber-400">{t('demoCredit')}</span></p></div><div className="text-right"><p className="text-[10px] text-amber-500">{t('gemsFound')}</p><p className="text-xl font-black text-amber-200">{round?.safe ?? 0} 💎</p></div></div>
         {round && <p className="mt-1 text-[10px] text-amber-100/40">{t('betLabel')} {formatMoney(round.bet)} · {currentMultiplier.toFixed(2)}×</p>}
       </section>
 
@@ -190,7 +190,7 @@ export function MinesGame() {
         </section>
 
         <section className="space-y-3 rounded-2xl border border-amber-300/20 bg-[#100e0a] p-3">
-          <div><div className="mb-2 flex items-center justify-between"><label className="text-xs font-bold text-amber-200"{t('chooseMines')}</label><span className="text-xs font-black text-amber-300">{mineCount} / 24</span></div>
+          <div><div className="mb-2 flex items-center justify-between"><label className="text-xs font-bold text-amber-200">{t('chooseMines')}</label><span className="text-xs font-black text-amber-300">{mineCount} / 24</span></div>
             <div className="grid grid-cols-4 gap-2">
               {[1, 3, 5, 10].map((value) => <button key={value} type="button" disabled={!!active} onClick={() => chooseMineCount(value)} className={`rounded-lg border px-2 py-2 text-sm font-black disabled:opacity-50 ${mineCount === value ? 'border-amber-200 bg-amber-300 text-black' : 'border-amber-400/25 bg-black/50 text-amber-200'}`}>{value}</button>)}
             </div>
