@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { adminGamesLocale } from '@/lib/adminGamesLocalization';
 
 type Overview = {
-  settings: { generalEnabled: boolean; announcementText: string; announcementVisible: boolean; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; houseEdgePercent: number; kenoBettingSeconds: number; aviatorBettingSeconds: number };
+  settings: { generalEnabled: boolean; announcementText: string; announcementVisible: boolean; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minBetEtb: number; kenoMinBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; houseEdgePercent: number; kenoBettingSeconds: number; aviatorBettingSeconds: number };
   games: { keno: { roundId: string | null; status: string; bets: number }; aviator: { roundId: string | null; status: string; bets: number } };
   mode: string;
 };
@@ -14,7 +14,8 @@ export function AdminGamesHub() {
   const t = (key: Parameters<typeof adminGamesLocale>[1]) => adminGamesLocale(lang, key);
   const statusLabel = (status?: string | null) => status === 'betting' ? t('statusBetting') : status === 'settled' ? t('statusSettled') : status === 'crashed' ? t('statusCrashed') : status ?? t('loading');
   const [overview, setOverview] = useState<Overview | null>(null);
-  const [minBet, setMinBet] = useState('2');
+  const [minBet, setMinBet] = useState('5');
+  const [kenoMinBet, setKenoMinBet] = useState('2');
   const [maxBet, setMaxBet] = useState('1000');
   const [houseEdge, setHouseEdge] = useState('55');
   const [kenoSeconds, setKenoSeconds] = useState('20');
@@ -28,6 +29,7 @@ export function AdminGamesHub() {
       const next = await api.get<Overview>('/api/admin/games/overview');
       setOverview(next);
       setMinBet(String(next.settings.minBetEtb));
+      setKenoMinBet(String(next.settings.kenoMinBetEtb ?? 2));
       setMaxBet(String(next.settings.maxBetEtb));
       setHouseEdge(String(next.settings.houseEdgePercent ?? 55));
       setKenoSeconds(String(next.settings.kenoBettingSeconds));
@@ -73,7 +75,8 @@ export function AdminGamesHub() {
       <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Aviator</p><p className="text-xs text-amber-100/45">{statusLabel(overview?.games.aviator.status)} · {overview?.games.aviator.bets ?? 0} {t('betsLabel')}</p></div><button disabled={busy || !overview} onClick={() => void save({ aviatorEnabled: !overview?.settings.aviatorEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.aviatorEnabled ? t('turnOff') : t('turnOn')}</button></div></div>
     </div>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-      <label className={label}>{t('minBet')}<input className={input} type="number" min="2" max="1000" step=".01" value={minBet} onChange={e=>setMinBet(e.target.value)}/></label>
+      <label className={label}>{t('aviatorMinBet')}<input className={input} type="number" min="1" max="1000" step=".01" value={minBet} onChange={e=>setMinBet(e.target.value)}/></label>
+      <label className={label}>{t('kenoMinBet')}<input className={input} type="number" min="2" max="1000" step=".01" value={kenoMinBet} onChange={e=>setKenoMinBet(e.target.value)}/><span className="mt-1 block text-[10px] font-normal text-amber-100/40">{t('kenoMinBetHelp')}</span></label>
       <label className={label}>{t('maxBet')}<input className={input} type="number" min="1" max="5000" step=".01" value={maxBet} onChange={e=>setMaxBet(e.target.value)}/></label>
       <label className={label}>{t('houseEdge')}<input className={input} type="number" min="50" max="60" step="1" value={houseEdge} onChange={e=>setHouseEdge(e.target.value)}/></label>
       <label className={label}>{t('kenoDuration')}
@@ -87,9 +90,16 @@ export function AdminGamesHub() {
           </select>
           <span className="mt-1 block text-[10px] font-normal text-amber-100/40">{t('nextKeno')}</span>
         </label>
-      <label className={label}>{t('aviatorWindow')}<input className={input} type="number" min="5" max="20" value={aviatorSeconds} onChange={e=>setAviatorSeconds(e.target.value)}/></label>
+      <label className={label}>{t('aviatorWindow')}
+        <select className={input} value={aviatorSeconds} onChange={e=>setAviatorSeconds(e.target.value)}>
+          <optgroup label={t('seconds')}>
+            {[5, 8, 10, 12, 15, 20, 30, 45].map((value) => <option key={value} value={value}>{value} {t('seconds')}</option>)}
+          </optgroup>
+          <optgroup label={t('minutes')}><option value="60">1 {t('minutes')}</option></optgroup>
+        </select>
+      </label>
     </div>
-    <button disabled={busy} onClick={() => void save({ minBetEtb: Number(minBet), maxBetEtb: Number(maxBet), houseEdgePercent: Number(houseEdge), kenoBettingSeconds: Number(kenoSeconds), aviatorBettingSeconds: Number(aviatorSeconds) })} className="mt-4 rounded-xl bg-gradient-to-r from-amber-200 to-amber-500 px-5 py-3 text-sm font-black text-black disabled:opacity-50">{busy ? t('saving') : t('saveSettings')}</button>
+    <button disabled={busy} onClick={() => void save({ minBetEtb: Number(minBet), kenoMinBetEtb: Number(kenoMinBet), maxBetEtb: Number(maxBet), houseEdgePercent: Number(houseEdge), kenoBettingSeconds: Number(kenoSeconds), aviatorBettingSeconds: Number(aviatorSeconds) })} className="mt-4 rounded-xl bg-gradient-to-r from-amber-200 to-amber-500 px-5 py-3 text-sm font-black text-black disabled:opacity-50">{busy ? t('saving') : t('saveSettings')}</button>
     <p className="mt-3 text-[11px] leading-5 text-amber-100/40">{t('footer')}</p>
   </section>;
 }

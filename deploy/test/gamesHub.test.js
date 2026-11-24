@@ -28,11 +28,10 @@ async function fixture() {
   return { repo, user, service, advance: (ms) => { clock += ms; }, time: () => clock };
 }
 
-test('Keno minimum stake defaults to ETB 2 and migrates the former ETB 5 default', async () => {
+test('Keno uses ETB 2 minimum while Aviator keeps its independent ETB 5 minimum', async () => {
   const f = await fixture();
-  await f.repo.updateGameHubSettings({ minBet: 500 });
-  const state = await f.service.getState('keno', f.user);
-  assert.equal(state.minBetEtb, 2);
+  const keno = await f.service.getState('keno', f.user);
+  assert.equal(keno.minBetEtb, 2);
   await assert.rejects(
     f.service.placeKenoBet(f.user, { requestId: 'keno_min_bet_01', amount: 1.99, selectedNumbers: [1] }),
     (e) => e instanceof HttpError && e.code === 'invalid_bet_amount',
@@ -41,6 +40,12 @@ test('Keno minimum stake defaults to ETB 2 and migrates the former ETB 5 default
     requestId: 'keno_min_bet_02', amount: 2, selectedNumbers: [1],
   });
   assert.equal(accepted.bet.stakeEtb, 2);
+  const aviator = await f.service.getState('aviator', f.user);
+  assert.equal(aviator.minBetEtb, 5);
+  await assert.rejects(
+    f.service.placeAviatorBet(f.user, { requestId: 'aviator_min_bet_01', amount: 2 }),
+    (e) => e instanceof HttpError && e.code === 'invalid_bet_amount',
+  );
 });
 
 test('Keno accepts a valid selection, debits once and settles a committed 20-number draw', async () => {
@@ -118,10 +123,15 @@ test('Aviator commits a round before betting and reveals its seed only after cra
   const f = await fixture();
   const initial = await f.service.getState('aviator', f.user);
   assert.equal(initial.status, 'betting');
+  assert.equal(initial.minBetEtb, 5);
   assert.equal(initial.balanceEtb, 1000);
   assert.equal(initial.walletMode, 'shared');
   assert.match(initial.serverSeedHash, /^[a-f0-9]{64}$/);
   assert.equal(initial.serverSeed, undefined);
+  await assert.rejects(
+    f.service.placeAviatorBet(f.user, { requestId: 'aviator_below_min_01', amount: 2 }),
+    (e) => e instanceof HttpError && e.code === 'invalid_bet_amount',
+  );
 
   const placed = await f.service.placeAviatorBet(f.user, {
     requestId: 'aviator_test_request_01',
@@ -178,7 +188,7 @@ test('Aviator commits a round before betting and reveals its seed only after cra
 
 test('Admin settings are validated and persist independently of Bingo settings', async () => {
   const f = await fixture();
-  const settings = await f.service.updateSettings({ generalEnabled: false, announcementText: 'Maintenance window', announcementVisible: true, bingoEnabled: false, kenoEnabled: false, minBetEtb: 8, maxBetEtb: 200, houseEdgePercent: 60, kenoBettingSeconds: 30 });
+  const settings = await f.service.updateSettings({ generalEnabled: false, announcementText: 'Maintenance window', announcementVisible: true, bingoEnabled: false, kenoEnabled: false, minBetEtb: 8, kenoMinBetEtb: 2, maxBetEtb: 200, houseEdgePercent: 60, kenoBettingSeconds: 30, aviatorBettingSeconds: 60 });
   assert.equal(settings.generalEnabled, false);
   assert.equal(settings.announcementText, 'Maintenance window');
   assert.equal(settings.announcementVisible, true);
@@ -191,6 +201,10 @@ test('Admin settings are validated and persist independently of Bingo settings',
   await f.service.updateSettings({ bingoEnabled: true });
   await f.service.assertGameEnabled('bingo');
   assert.equal(settings.minBet, 800);
+  assert.equal(settings.kenoMinBet, 200, 'Keno minimum bet is stored independently');
+  assert.equal(settings.aviatorBettingSeconds, 60, 'Aviator supports the 60-second betting window');
+  await assert.rejects(f.service.updateSettings({ kenoMinBetEtb: 1 }), (e) => e instanceof HttpError && e.code === 'invalid_keno_min_bet');
+  await assert.rejects(f.service.updateSettings({ aviatorBettingSeconds: 61 }), (e) => e instanceof HttpError && e.code === 'invalid_aviator_timer');
   assert.equal(settings.maxBet, 20000);
   assert.equal(settings.kenoBettingSeconds, 30);
   const twoMinuteSettings = await f.service.updateSettings({ kenoBettingSeconds: 120 });
