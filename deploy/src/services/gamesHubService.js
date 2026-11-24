@@ -335,7 +335,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const round = game === 'keno' && now() < nextKenoTickAt
       ? await repo.getCurrentGameHubRound('keno')
       : await tickGame(game, currentSettings);
-    if (!round) throw new HttpError(503, 'keno_round_unavailable', 'Keno is preparing the next round. Please try again.');
+    if (!round) throw new HttpError(503, game === 'keno' ? 'keno_round_unavailable' : 'game_round_unavailable', game === 'keno' ? 'Keno is preparing the next round. Please try again.' : 'This game is preparing the next round. Please try again.');
     const serverTime = now();
     const revealCount = game === 'keno' ? kenoRevealCount(round, serverTime) : 20;
     const revealComplete = game !== 'keno' || revealCount >= 20;
@@ -488,9 +488,9 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       };
     });
 
-    // The 250ms server scheduler and normal state polling keep this ID warm.
-    // The transaction below rechecks round status/deadline atomically, so a stale
-    // cache can never accept a ticket into a closed round.
+    // The round-boundary scheduler keeps this ID warm. The Mongo transaction
+    // still checks round status/deadline atomically, so a stale cache cannot
+    // accept a ticket into a closed round.
     let targetRoundId = currentRoundIds.get('keno');
     if (!targetRoundId) {
       const currentRound = await tickGame('keno', currentSettings);
