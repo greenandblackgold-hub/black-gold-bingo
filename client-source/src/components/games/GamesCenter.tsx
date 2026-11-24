@@ -104,14 +104,28 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
         <span className="rounded-full border border-amber-500/20 bg-amber-400/5 px-3 py-1.5 text-[10px] font-semibold tracking-wide text-amber-300">{t.demoOnly}</span>
       </div>
       {availabilityError && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-950/30 p-3 text-sm text-red-200">{availabilityError}</p>}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {(!serverMode || availability !== null) ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {(!serverMode || availability?.bingoEnabled === true) && <GameCard title="Bingo PRO" subtitle={t.bingoSubtitle} detail={t.bingoDetail} icon="bingo" onClick={onOpenBingo} openLabel={t.openGame} featured />}
         {(!serverMode || availability?.kenoEnabled === true) && <GameCard title="Keno" subtitle={t.kenoSubtitle} detail={t.kenoDetail} icon="keno" onClick={onOpenKeno} openLabel={t.openGame} />}
         {(!serverMode || availability?.aviatorEnabled === true) && <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} openLabel={t.openGame} />}
         {(!serverMode || availability?.minesEnabled === true) && <GameCard title="Mines" subtitle={mt('cardSubtitle')} detail={mt('cardDetail')} icon="mines" onClick={onOpenMines} openLabel={t.openGame} /> }
         <GameCard title="Virtual Sports" subtitle={t.virtualSportsSubtitle} detail={t.virtualSportsDetail} icon="virtual" onClick={() => {}} openLabel={t.openGame} disabled disabledLabel={t.comingSoon} />
         <GameCard title="Live Sports" subtitle={t.liveSportsSubtitle} detail={t.liveSportsDetail} icon="live" onClick={() => {}} openLabel={t.openGame} disabled disabledLabel={t.comingSoon} />
-      </div>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" role="status" aria-busy="true" aria-label={t.loadingBalance}>
+          {Array.from({ length: 6 }, (_, index) => (
+            <div key={index} className="min-h-64 w-full overflow-hidden rounded-3xl border border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black p-5 sm:p-6">
+              <div className="h-36 w-full rounded-2xl bg-amber-100/[0.045] sm:h-40" />
+              <div className="mt-5 h-3 w-1/3 rounded bg-amber-100/[0.07]" />
+              <div className="mt-3 h-7 w-2/3 rounded bg-amber-100/[0.07]" />
+              <div className="mt-3 h-3 w-5/6 rounded bg-amber-100/[0.045]" />
+              <div className="mt-2 h-3 w-3/5 rounded bg-amber-100/[0.045]" />
+            </div>
+          ))}
+        </div>
+      )}
       <p className="text-center text-[11px] leading-5 text-amber-100/40">{t.demoNotice}</p>
     </div>
   );
