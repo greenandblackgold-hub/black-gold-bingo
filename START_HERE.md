@@ -30,7 +30,7 @@ You do not need to write, read or fix any code. Follow the steps in order. Each 
 | Card price | 10 birr | Players pay 10 birr per card |
 | Prize | 45% | The winner gets 45% of all card sales in that round. You keep 55% before operating costs, provider fees and any applicable taxes. Example: 20 cards x 10 = 200 birr in, 90 birr goes to the winner and 110 birr remains before those costs. |
 | Cash-outs | You press one button | When a player asks to cash out, you see the request in your Control Center, check it, and press **Pay**. This is the safe way to start. |
-| Deposits | 10 to 10,000 birr | Players top up through Chapa (Telebirr, CBE Birr, cards) |
+| Deposits | Simulation only | Player submits amount + transaction reference. Trusted Admin-phone SMS only matches evidence; wallet credit requires independent Admin verification and explicit Approve. Chapa/live deposits remain disabled. |
 | Minimum cash-out | 50 birr | |
 | Room name | BINGO-99 | |
 | Auto-calling | You choose 1 to 60 seconds in the Control Center | The server draws the numbers, so it keeps running even if you close the page |
@@ -43,7 +43,7 @@ To change a setting later, open Render, your service, **Environment**, edit the 
 
 - **GitHub:** free.
 - **MongoDB Atlas (database):** the free plan is fine for testing. Before you hold real players' money, upgrade to a paid plan that includes **backups**.
-- **Render (runs the game):** the **Starter** plan is a small monthly fee. Check the current price on render.com. Do not use the free plan for a real business: it falls asleep when nobody visits, and a sleeping game cannot call numbers or confirm payments.
+- **Render (runs the game):** the current `black-gold-bingo` service is on the **Free** plan. It may sleep after inactivity and wake slowly; it is suitable only for simulation/testing, not continuous live operation. A paid plan is required before a real business launch.
 - **Chapa:** takes a fee on payments and payouts. Check their price list.
 - **Netlify:** not needed. I built the website into the same program, so there is only one thing to put online.
 
@@ -231,7 +231,7 @@ This section supersedes the older Render notes above where they say public regis
 
 The Render Blueprint at `deploy/render.yaml` builds the React website, copies it into the backend's static folder, runs the backend tests, and starts one Node service. You do not need a separate frontend host.
 
-1. Sign in to **Render** and open the existing service created from this repository (the Blueprint service name is `black-gold-bingo-pro`).
+1. Sign in to **Render** and open the existing service created from this repository (the Blueprint service name is `black-gold-bingo`).
 2. If you have not created it yet: choose **New + → Blueprint**, connect GitHub, select `greenandblackgold-hub/black-gold-bingo`, and set Blueprint file to `deploy/render.yaml`.
 3. In the service's **Environment** tab, set:
    - `MONGODB_URI`: your private MongoDB Atlas connection string.
