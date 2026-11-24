@@ -12,8 +12,17 @@ const makeRequestId = () => 'aviator_' + Date.now() + '_' + Math.random().toStri
 const freshPanel = (): BetPanel => ({ amount: '10.00', requestId: '', betId: '', busy: false, autoCashOutMultiplier: '' });
 const AVIATOR_SOUND_KEY = 'black-gold-aviator-sound-enabled';
 const readSavedSoundPreference = () => {
-  try { return typeof window !== 'undefined' && window.localStorage.getItem(AVIATOR_SOUND_KEY) === 'true'; }
-  catch { return false; }
+  try {
+    if (typeof window === 'undefined') return true;
+    const saved = window.localStorage.getItem(AVIATOR_SOUND_KEY);
+    // First visit after this update: keep sound enabled by default. An explicit
+    // OFF choice remains OFF across refreshes.
+    if (saved === null) {
+      window.localStorage.setItem(AVIATOR_SOUND_KEY, 'true');
+      return true;
+    }
+    return saved === 'true';
+  } catch { return true; }
 };
 
 export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator' | 'mines') => void }) {
@@ -44,21 +53,21 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
     setSoundOn(next);
   };
 
-  // Browsers may block audio autoplay after a full refresh. Keep the saved ON
-  // preference and resume the audio context on the player's first interaction.
+  // Browsers block autoplay after a full refresh. Keep the saved preference
+  // enabled and unlock/resume the same audio context on every user interaction.
   useEffect(() => {
     if (!soundOn) return;
     const resumeAudio = () => {
       try {
         const ctx = getAudioContext();
-        if (ctx?.state === 'suspended') void ctx.resume().catch(() => undefined);
+        if (ctx && ctx.state !== 'running') void ctx.resume().catch(() => undefined);
       } catch { /* browser audio may be unavailable */ }
     };
-    window.addEventListener('pointerdown', resumeAudio, { once: true });
-    window.addEventListener('keydown', resumeAudio, { once: true });
+    window.addEventListener('pointerdown', resumeAudio, true);
+    window.addEventListener('keydown', resumeAudio, true);
     return () => {
-      window.removeEventListener('pointerdown', resumeAudio);
-      window.removeEventListener('keydown', resumeAudio);
+      window.removeEventListener('pointerdown', resumeAudio, true);
+      window.removeEventListener('keydown', resumeAudio, true);
     };
   }, [soundOn]);
 
