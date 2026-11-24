@@ -181,7 +181,7 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
           <span>{visibleDrawnNumbers.length} <i className="px-1 text-emerald-300">/</i> 20</span>
         </div>
         <div aria-label={c.drawnNumbersAria} aria-live="polite" className="relative grid grid-cols-10 gap-1.5 sm:gap-2">
-          {Array.from({length:20},(_,i)=>visibleDrawnNumbers[i] ?? null).map((n,i)=><span key={i} className={'keno-drawn-ball grid aspect-square min-w-0 place-items-center rounded-full border text-[11px] font-black tabular-nums shadow-[inset_0_2px_4px_rgba(255,255,255,.18),0_3px_8px_rgba(0,0,0,.45)] sm:text-sm '+(n===null?'border-emerald-300/10 bg-[#0a1210]/60 text-transparent':'border-slate-500/70 bg-[radial-gradient(circle_at_35%_25%,#536873,#1c303b_58%,#07141b)] text-white')} key={i}>{n ?? '·'}</span>)}
+          {Array.from({length:20},(_,i)=>visibleDrawnNumbers[i] ?? null).map((n,i)=><span key={i} className={'keno-drawn-ball grid aspect-square min-w-0 place-items-center rounded-full border text-[11px] font-black tabular-nums shadow-[inset_0_2px_4px_rgba(255,255,255,.18),0_3px_8px_rgba(0,0,0,.45)] sm:text-sm '+(n===null?'border-emerald-300/10 bg-[#0a1210]/60 text-transparent':'border-slate-500/70 bg-[radial-gradient(circle_at_35%_25%,#536873,#1c303b_58%,#07141b)] text-white')}>{n ?? '·'}</span>)}
         </div>
       </section>}
 
