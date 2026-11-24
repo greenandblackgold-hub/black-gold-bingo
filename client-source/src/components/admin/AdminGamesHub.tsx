@@ -4,7 +4,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { adminGamesLocale } from '@/lib/adminGamesLocalization';
 
 type Overview = {
-  settings: { generalEnabled: boolean; announcementText: string; announcementVisible: boolean; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minesEnabled: boolean; minBetEtb: number; kenoMinBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; houseEdgePercent: number; kenoBettingSeconds: number; aviatorBettingSeconds: number };
+  settings: { generalEnabled: boolean; announcementText: string; announcementVisible: boolean; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minesEnabled: boolean; minBetEtb: number; kenoMinBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; houseEdgePercent: number; kenoBettingSeconds: number; kenoDrawIntervalSeconds: number; aviatorBettingSeconds: number };
   games: { keno: { roundId: string | null; status: string; bets: number }; aviator: { roundId: string | null; status: string; bets: number } };
   mode: string;
 };
@@ -21,6 +21,7 @@ export function AdminGamesHub({ activeGame }: { activeGame: HostGameSection }) {
   const [maxBet, setMaxBet] = useState('1000');
   const [houseEdge, setHouseEdge] = useState('55');
   const [kenoSeconds, setKenoSeconds] = useState('20');
+  const [kenoDrawSeconds, setKenoDrawSeconds] = useState('1');
   const [aviatorSeconds, setAviatorSeconds] = useState('8');
   const [announcementText, setAnnouncementText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -35,6 +36,7 @@ export function AdminGamesHub({ activeGame }: { activeGame: HostGameSection }) {
       setMaxBet(String(next.settings.maxBetEtb));
       setHouseEdge(String(next.settings.houseEdgePercent ?? 55));
       setKenoSeconds(String(next.settings.kenoBettingSeconds));
+      setKenoDrawSeconds(String(next.settings.kenoDrawIntervalSeconds ?? 1));
       setAviatorSeconds(String(next.settings.aviatorBettingSeconds));
       setAnnouncementText(next.settings.announcementText ?? '');
       setError('');
@@ -84,6 +86,16 @@ export function AdminGamesHub({ activeGame }: { activeGame: HostGameSection }) {
       {activeGame === 'keno' && <label className={label}>{t('kenoMinBet')}<input className={input} type="number" min="2" max="1000" step=".01" value={kenoMinBet} onChange={e=>setKenoMinBet(e.target.value)}/><span className="mt-1 block text-[10px] font-normal text-amber-100/40">{t('kenoMinBetHelp')}</span></label>}
       {(activeGame === 'keno' || activeGame === 'aviator') && <label className={label}>{t('maxBet')}<input className={input} type="number" min="1" max="5000" step=".01" value={maxBet} onChange={e=>setMaxBet(e.target.value)}/></label>}
       {activeGame === 'aviator' && <label className={label}>{t('houseEdge')}<input className={input} type="number" min="50" max="60" step="1" value={houseEdge} onChange={e=>setHouseEdge(e.target.value)}/></label>}
+      {activeGame === 'keno' && <div className={card}>
+        <p className="font-bold text-amber-100">{t('kenoDrawInterval')}</p>
+        <p className="mt-1 text-[10px] text-amber-100/45">{t('kenoDrawIntervalHelp')}</p>
+        <div className="mt-3 flex items-center gap-3">
+          <button type="button" disabled={busy || Number(kenoDrawSeconds) <= 1} onClick={() => setKenoDrawSeconds(value => String(Math.max(1, Number(value) - 1)))} aria-label={t('decreaseSeconds')} className="grid h-11 w-11 place-items-center rounded-lg border border-amber-300/30 bg-black text-2xl font-black text-amber-200 disabled:opacity-35">−</button>
+          <output className="min-w-20 text-center text-2xl font-black tabular-nums text-amber-200">{kenoDrawSeconds} {t('seconds')}</output>
+          <button type="button" disabled={busy || Number(kenoDrawSeconds) >= 10} onClick={() => setKenoDrawSeconds(value => String(Math.min(10, Number(value) + 1)))} aria-label={t('increaseSeconds')} className="grid h-11 w-11 place-items-center rounded-lg border border-amber-300/30 bg-black text-2xl font-black text-amber-200 disabled:opacity-35">+</button>
+        </div>
+        <p className="mt-2 text-[10px] text-amber-300/70">{t('kenoDrawIntervalTotal')}: {Number(kenoDrawSeconds) * 20} {t('seconds')}</p>
+      </div>}
       {activeGame === 'keno' && <label className={label}>{t('kenoDuration')}
           <select className={input} value={kenoSeconds} onChange={e=>setKenoSeconds(e.target.value)}>
             <optgroup label={t('seconds')}>
@@ -104,7 +116,7 @@ export function AdminGamesHub({ activeGame }: { activeGame: HostGameSection }) {
         </select>
       </label>}
     </div>
-    {activeGame === 'keno' && <button disabled={busy || !overview} onClick={() => void save({ kenoMinBetEtb: Number(kenoMinBet), maxBetEtb: Number(maxBet), kenoBettingSeconds: Number(kenoSeconds) })} className="mt-3 rounded-xl bg-gradient-to-r from-amber-200 to-amber-500 px-5 py-3 text-sm font-black text-black disabled:opacity-50">{busy ? t('saving') : t('saveSettings')}</button>}
+    {activeGame === 'keno' && <button disabled={busy || !overview} onClick={() => void save({ kenoMinBetEtb: Number(kenoMinBet), maxBetEtb: Number(maxBet), kenoBettingSeconds: Number(kenoSeconds), kenoDrawIntervalSeconds: Number(kenoDrawSeconds) })} className="mt-3 rounded-xl bg-gradient-to-r from-amber-200 to-amber-500 px-5 py-3 text-sm font-black text-black disabled:opacity-50">{busy ? t('saving') : t('saveSettings')}</button>}
     {activeGame === 'aviator' && <button disabled={busy || !overview} onClick={() => void save({ minBetEtb: Number(minBet), maxBetEtb: Number(maxBet), houseEdgePercent: Number(houseEdge), aviatorBettingSeconds: Number(aviatorSeconds) })} className="mt-3 rounded-xl bg-gradient-to-r from-amber-200 to-amber-500 px-5 py-3 text-sm font-black text-black disabled:opacity-50">{busy ? t('saving') : t('saveSettings')}</button>}
     {activeGame === 'mines' && <p className="mt-3 text-xs text-amber-100/50">{t('footer')}</p>}
     <p className="mt-3 text-[11px] leading-5 text-amber-100/40">{t('footer')}</p>
