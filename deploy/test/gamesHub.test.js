@@ -82,16 +82,35 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   f.advance(21_000);
   const settled = await f.service.getState('keno', f.user);
   assert.equal(settled.status, 'settled');
-  assert.equal(settled.drawnNumbers.length, 20);
+  assert.equal(settled.drawnNumbers.length, 0, 'no draw numbers are sent at the instant the round settles');
+  assert.equal(settled.serverSeed, undefined, 'the server seed stays hidden until the 20th number is revealed');
   assert.equal(settled.drawIntervalSeconds, 1);
+  assert.equal(settled.myBets.length, 1);
+  assert.equal(settled.myBets[0].status, 'pending_reveal');
+  assert.deepEqual(settled.myBets[0].matchedNumbers, []);
+  assert.equal(settled.myBets[0].hits, 0);
+  assert.equal(settled.myBets[0].payoutEtb, 0);
   const settledRound = await f.repo.getCurrentGameHubRound('keno');
   assert.equal(settledRound.nextRoundAt, settledRound.settledAt + 22_000, 'the round remains visible for all 20 one-second reveals plus a short finish pause');
-  assert.equal(new Set(settled.drawnNumbers).size, 20);
-  assert.ok(settled.drawnNumbers.every((n) => Number.isInteger(n) && n >= 1 && n <= 80));
-  assert.equal(settled.serverSeed.length, 64);
-  assert.equal(settled.myBets.length, 1);
-  assert.ok(['won', 'lost'].includes(settled.myBets[0].status));
-  assert.ok(settled.myBets.reduce((sum, bet) => sum + Math.round(bet.payoutEtb * 100), 0) <= 450, 'Keno payouts cannot exceed 45% of this round stake');
+  const earlyHistory = await f.service.getHistory('keno', f.user, 8);
+  assert.equal(earlyHistory[0].drawnNumbers.length, 0, 'history does not bypass the progressive reveal');
+  assert.equal(earlyHistory[0].myBets[0].status, 'pending_reveal');
+  f.advance(10_000);
+  const halfway = await f.service.getState('keno', f.user);
+  assert.equal(halfway.drawnNumbers.length, 10, 'only ten numbers are available halfway through the reveal');
+  assert.equal(halfway.serverSeed, undefined);
+  assert.equal(halfway.myBets[0].payoutEtb, 0);
+  f.advance(10_000);
+  const completed = await f.service.getState('keno', f.user);
+  assert.equal(completed.drawnNumbers.length, 20);
+  assert.equal(new Set(completed.drawnNumbers).size, 20);
+  assert.ok(completed.drawnNumbers.every((n) => Number.isInteger(n) && n >= 1 && n <= 80));
+  assert.equal(completed.serverSeed.length, 64);
+  assert.ok(['won', 'lost'].includes(completed.myBets[0].status));
+  assert.ok(completed.myBets.reduce((sum, bet) => sum + Math.round(bet.payoutEtb * 100), 0) <= 450, 'Keno payouts cannot exceed 45% of this round stake');
+  const finalHistory = await f.service.getHistory('keno', f.user, 8);
+  assert.equal(finalHistory[0].drawnNumbers.length, 20, 'completed history reveals the full draw after the sequence ends');
+  assert.equal(finalHistory[0].serverSeed.length, 64);
   assert.equal((await f.repo.listGameHubRounds('keno', 1))[0].status, 'settled');
 });
 
@@ -107,8 +126,15 @@ test('Keno host draw interval is captured per round and controls the full reveal
   const settled = await f.service.getState('keno', f.user);
   assert.equal(settled.status, 'settled');
   assert.equal(settled.drawIntervalSeconds, 3, 'changing host settings does not speed up a round already in progress');
+  assert.equal(settled.drawnNumbers.length, 0);
   const completedRound = await f.repo.getCurrentGameHubRound('keno');
   assert.equal(completedRound.nextRoundAt, completedRound.settledAt + 62_000, 'the 20-number reveal gets 60 seconds plus a 2-second pause');
+  f.advance(30_000);
+  const halfway = await f.service.getState('keno', f.user);
+  assert.equal(halfway.drawnNumbers.length, 10, 'the round uses its captured three-second reveal pace');
+  f.advance(30_000);
+  const complete = await f.service.getState('keno', f.user);
+  assert.equal(complete.drawnNumbers.length, 20);
 });
 
 test('legacy Keno rounds finish on their original demo wallet without touching Bingo balance', async () => {

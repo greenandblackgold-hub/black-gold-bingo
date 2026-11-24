@@ -5,7 +5,7 @@ import { gameUi } from '@/lib/gameUi';
 import { useAuth } from '@/context/AuthContext';
 
 type KenoBet = { id: string; status: string; stakeEtb: number; selectedNumbers: number[]; matchedNumbers: number[]; hits: number; payoutEtb: number; createdAt: number; settledAt?: number | null };
-type KenoState = { payoutTable: Record<string, Record<string, number>>; enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; drawIntervalSeconds?: number; drawnNumbers?: number[]; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string };
+type KenoState = { payoutTable: Record<string, Record<string, number>>; enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; drawIntervalSeconds?: number; drawnNumbers?: number[]; settledAt?: number; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string };
 type HistoryRound = { roundId: string; status: string; drawnNumbers?: number[]; serverSeedHash: string; serverSeed?: string; myBets: KenoBet[] };
 type Tab = 'game' | 'history' | 'results' | 'statistics' | 'live';
 
@@ -56,31 +56,13 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
     const tick = window.setInterval(() => setClock(Date.now()), 100);
     return () => { window.clearInterval(poll); window.clearInterval(tick); };
   }, [loadState, loadHistory]);
-  useEffect(() => { if (state?.status === 'settled') void loadHistory(); }, [state?.status, state?.roundId, loadHistory]);
 
-  const drawSequenceKey = (state?.drawnNumbers ?? []).slice(0, 20).join(',');
-  const [visibleDrawCount, setVisibleDrawCount] = useState(0);
-  const revealRoundRef = useRef('');
-  useEffect(() => {
-    if (!state) return;
-    if (revealRoundRef.current !== state.roundId) {
-      revealRoundRef.current = state.roundId;
-      setVisibleDrawCount(0);
-    }
-    if (state.status !== 'settled') {
-      setVisibleDrawCount(0);
-      return;
-    }
-    const target = Math.min(20, state.drawnNumbers?.length ?? 0);
-    if (!target) return;
-    const intervalMs = Math.max(1000, Math.min(10000, Number(state.drawIntervalSeconds ?? 1) * 1000));
-    const reveal = window.setInterval(() => {
-      setVisibleDrawCount(current => Math.min(target, current + 1));
-    }, intervalMs);
-    return () => window.clearInterval(reveal);
-  }, [state?.roundId, state?.status, state?.drawIntervalSeconds, drawSequenceKey]);
-
-  const visibleDrawnNumbers = (state?.drawnNumbers ?? []).slice(0, visibleDrawCount);
+  // The API releases only the numbers whose reveal time has elapsed on the server.
+  // Do not run a separate client timer: a refresh or late join must preserve the same order.
+  const visibleDrawnNumbers = state?.drawnNumbers ?? [];
+  const visibleDrawCount = visibleDrawnNumbers.length;
+  const revealComplete = state?.status === 'settled' && visibleDrawCount >= 20;
+  useEffect(() => { if (state?.status === 'settled') void loadHistory(); }, [state?.status, state?.roundId, revealComplete, loadHistory]);
   const secondsLeft = state?.status === 'betting' ? Math.max(0, Math.ceil((state.bettingEndsAt - (clock + offset)) / 1000)) : 0;
   const isBetting = state?.enabled === true && state.status === 'betting' && secondsLeft > 0;
   const minBet = state?.minBetEtb ?? 2;
@@ -197,10 +179,10 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
         <div className="text-right"><span className="block text-[9px]">{c.myBets}</span><b className="font-mono text-emerald-300">{state?.myBets.length??0}</b></div>
       </div>
 
-      {tab==='game' && <section className="space-y-1.5">{state?.myBets?.length?state.myBets.slice().reverse().map(bet=><BetCard key={bet.id} bet={bet} labels={c}/>):<div className="rounded-lg border border-dashed border-emerald-400/20 bg-[#0b1915] px-3 py-5 text-center text-xs font-bold text-emerald-100/70">{c.noTickets}</div>}</section>}
-      {tab==='live' && <section className="space-y-1.5">{state?.myBets?.length?state.myBets.slice().reverse().map(bet=><BetCard key={bet.id} bet={bet} labels={c}/>):<p className="rounded-lg bg-[#0b1915] p-5 text-center text-xs text-slate-500">{c.noTickets}</p>}</section>}
-      {tab==='history' && <section className="space-y-2">{history.length?history.map(round=><article key={round.roundId} className="rounded-lg border border-emerald-400/15 bg-[#0b1915] p-3"><div className="flex items-center justify-between gap-2"><span className="truncate font-mono text-[10px] font-bold text-emerald-300">{round.roundId}</span><span className="text-[10px] text-slate-400">{round.status === 'settled' ? c.drawComplete : round.status}</span></div><div className="mt-2 grid grid-cols-10 gap-1">{(round.drawnNumbers??[]).slice(0,20).map(n=><span key={n} className="grid aspect-square place-items-center rounded-full border border-emerald-400/20 bg-[#1c3430] text-[10px] font-black text-white">{n}</span>)}</div><p className="mt-2 text-[10px] text-slate-400">{c.tickets}: {round.myBets.length} · {c.payout}: {money(round.myBets.reduce((sum,b)=>sum+b.payoutEtb,0))} ETB</p></article>):<p className="rounded-lg bg-[#0b1915] p-5 text-center text-xs text-slate-500">{c.noHistory}</p>}</section>}
-      {tab==='results' && <section className="space-y-2">{history.filter(round=>round.drawnNumbers?.length).length?history.filter(round=>round.drawnNumbers?.length).map(round=><article key={round.roundId} className="rounded-lg border border-emerald-400/15 bg-[#0b1915] p-3"><p className="font-mono text-[10px] text-emerald-300">{round.roundId}</p><div className="mt-2 grid grid-cols-10 gap-1">{(round.drawnNumbers??[]).slice(0,20).map(n=><span key={n} className="grid aspect-square place-items-center rounded-full bg-[#1c3430] text-[10px] font-bold text-emerald-100">{n}</span>)}</div></article>):<p className="rounded-lg bg-[#0b1915] p-5 text-center text-xs text-slate-500">{c.noHistory}</p>}</section>}
+      {tab==='game' && <section className="space-y-1.5">{state?.myBets?.length?state.myBets.slice().reverse().map(bet=><BetCard key={bet.id} bet={bet} labels={c} revealComplete={revealComplete}/>):<div className="rounded-lg border border-dashed border-emerald-400/20 bg-[#0b1915] px-3 py-5 text-center text-xs font-bold text-emerald-100/70">{c.noTickets}</div>}</section>}
+      {tab==='live' && <section className="space-y-1.5">{state?.myBets?.length?state.myBets.slice().reverse().map(bet=><BetCard key={bet.id} bet={bet} labels={c} revealComplete={revealComplete}/>):<p className="rounded-lg bg-[#0b1915] p-5 text-center text-xs text-slate-500">{c.noTickets}</p>}</section>}
+      {tab==='history' && <section className="space-y-2">{history.length?history.map(round=><article key={round.roundId} className="rounded-lg border border-emerald-400/15 bg-[#0b1915] p-3"><div className="flex items-center justify-between gap-2"><span className="truncate font-mono text-[10px] font-bold text-emerald-300">{round.roundId}</span><span className="text-[10px] text-slate-400">{round.roundId === state?.roundId ? (revealComplete ? c.drawComplete : c.waiting) : round.status === 'settled' ? c.drawComplete : round.status}</span></div>{round.roundId === state?.roundId && !revealComplete ? <p className="mt-2 rounded bg-[#101b19] px-2 py-3 text-center text-xs text-emerald-200/70">{c.waiting} · {visibleDrawCount}/20</p> : <div className="mt-2 grid grid-cols-10 gap-1">{(round.roundId === state?.roundId ? visibleDrawnNumbers : (round.drawnNumbers??[])).slice(0,20).map(n=><span key={n} className="grid aspect-square place-items-center rounded-full border border-emerald-400/20 bg-[#1c3430] text-[10px] font-black text-white">{n}</span>)}</div>}<p className="mt-2 text-[10px] text-slate-400">{c.tickets}: {round.myBets.length}{round.roundId === state?.roundId && !revealComplete ? '' : ' · '+c.payout+': '+money((round.roundId === state?.roundId ? (state?.myBets ?? []) : round.myBets).reduce((sum,b)=>sum+b.payoutEtb,0))+' ETB'}</p></article>):<p className="rounded-lg bg-[#0b1915] p-5 text-center text-xs text-slate-500">{c.noHistory}</p>}</section>}
+      {tab==='results' && <section className="space-y-2">{history.filter(round=>round.drawnNumbers?.length || round.roundId === state?.roundId).length?history.filter(round=>round.drawnNumbers?.length || round.roundId === state?.roundId).map(round=><article key={round.roundId} className="rounded-lg border border-emerald-400/15 bg-[#0b1915] p-3"><p className="font-mono text-[10px] text-emerald-300">{round.roundId}</p>{round.roundId === state?.roundId && !revealComplete ? <p className="mt-2 rounded bg-[#101b19] px-2 py-3 text-center text-xs text-emerald-200/70">{c.waiting} · {visibleDrawCount}/20</p> : <div className="mt-2 grid grid-cols-10 gap-1">{(round.roundId === state?.roundId ? visibleDrawnNumbers : (round.drawnNumbers??[])).slice(0,20).map(n=><span key={n} className="grid aspect-square place-items-center rounded-full bg-[#1c3430] text-[10px] font-bold text-emerald-100">{n}</span>)}</div>}</article>):<p className="rounded-lg bg-[#0b1915] p-5 text-center text-xs text-slate-500">{c.noHistory}</p>}</section>}
       {tab==='statistics' && <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">{[[c.rounds,stats.rounds],[c.tickets,stats.tickets],[c.wagered,money(stats.wagered)+' ETB'],[c.won,money(stats.won)+' ETB'],[c.hits,stats.hits]].map(([label,value])=><div key={String(label)} className="rounded-lg border border-emerald-400/15 bg-[#0b1915] p-3"><p className="text-[10px] text-slate-400">{label}</p><p className="mt-1 text-lg font-black text-emerald-300">{value}</p></div>)}</section>}
 
       <details id="keno-rules" className="rounded-lg border border-emerald-400/15 bg-[#0b1915] p-3 text-xs text-slate-300">
@@ -209,16 +191,16 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
         {state?.payoutTable&&<div className="mt-3 max-h-64 overflow-auto"><table className="w-full border-collapse text-left"><thead className="sticky top-0 bg-[#0b1915] text-emerald-300"><tr><th className="p-2">{t.numbersPicked}</th><th className="p-2">{t.matchesHeader}</th><th className="p-2">{t.returnMultiplier}</th></tr></thead><tbody>{Object.entries(state.payoutTable).flatMap(([picked,hits])=>Object.entries(hits).map(([matched,multiplier])=><tr key={picked+'-'+matched} className="border-t border-white/5"><td className="p-2">{picked}</td><td className="p-2">{matched}</td><td className="p-2 font-bold text-emerald-200">{(multiplier/100).toFixed(2)}×</td></tr>))}</tbody></table></div>}
         <p className="mt-2 text-[10px] text-slate-500">{t.allowed}: {money(minBet)}–{money(maxBet)} ETB · {t.maxPayout}: {money(state?.maxPayoutEtb??20000)} ETB</p>
       </details>
-      {state?.serverSeedHash&&<details className="rounded-lg border border-emerald-400/10 bg-[#0b1915] p-3 text-xs text-slate-400"><summary className="cursor-pointer font-bold text-emerald-300">{t.fairness}</summary><p className="mt-2 break-all">{t.commitment}: {state.serverSeedHash}</p>{state.serverSeed?<><p className="mt-1 break-all">{t.revealedSeed}: {state.serverSeed}</p><p className="mt-2">{t.reproducible}</p></>:<p className="mt-2">{t.seedAfter}</p>}</details>}
+      {state?.serverSeedHash&&<details className="rounded-lg border border-emerald-400/10 bg-[#0b1915] p-3 text-xs text-slate-400"><summary className="cursor-pointer font-bold text-emerald-300">{t.fairness}</summary><p className="mt-2 break-all">{t.commitment}: {state.serverSeedHash}</p>{state.serverSeed && revealComplete?<><p className="mt-1 break-all">{t.revealedSeed}: {state.serverSeed}</p><p className="mt-2">{t.reproducible}</p></>:<p className="mt-2">{t.seedAfter}</p>}</details>}
       <p className="text-center text-[9px] font-bold tracking-[.2em] text-emerald-300/35">{c.simulation}</p>
     </main>
   );
 }
 
-function BetCard({ bet, labels }: { bet: KenoBet; labels: (typeof copy)['en'] | (typeof copy)['am'] | (typeof copy)['ti'] }) {
+function BetCard({ bet, labels, revealComplete }: { bet: KenoBet; labels: (typeof copy)['en'] | (typeof copy)['am'] | (typeof copy)['ti']; revealComplete: boolean }) {
   return <article className={'overflow-hidden rounded-lg border p-1.5 '+(bet.payoutEtb>0?'border-emerald-400/40 bg-[#16432f]':'border-white/5 bg-[#172421]')}>
     <div className="px-1 pb-1 text-[11px] font-black text-emerald-300">{labels.ticket} {bet.id.slice(0,1)}***{bet.id.slice(-1)}</div>
-    <div className="grid grid-cols-10 gap-1">{Array.from({length:10},(_,i)=>{const n=bet.selectedNumbers[i];return <div key={i} className={'grid aspect-square min-w-0 place-items-center rounded-sm border border-white/5 text-xs font-black tabular-nums '+(n===undefined?'bg-[#101b19]':bet.matchedNumbers.includes(n)?'bg-emerald-400 text-[#062014]':'bg-[#34484a] text-white')}>{n??''}</div>})}</div>
-    <div className="mt-1 flex items-center justify-between gap-2 border-t border-white/5 px-1 pt-1 text-[10px]"><span className="font-bold text-slate-100">{labels.bet} {money(bet.stakeEtb)} ETB</span><span className="font-black text-emerald-300">{bet.payoutEtb>0?money(bet.payoutEtb):['active','pending','waiting'].includes(bet.status.toLowerCase())?labels.waitingBet:bet.hits+' '+labels.hits}</span></div>
+    <div className="grid grid-cols-10 gap-1">{Array.from({length:10},(_,i)=>{const n=bet.selectedNumbers[i];return <div key={i} className={'grid aspect-square min-w-0 place-items-center rounded-sm border border-white/5 text-xs font-black tabular-nums '+(n===undefined?'bg-[#101b19]':revealComplete && bet.matchedNumbers.includes(n)?'bg-emerald-400 text-[#062014]':'bg-[#34484a] text-white')}>{n??''}</div>})}</div>
+    <div className="mt-1 flex items-center justify-between gap-2 border-t border-white/5 px-1 pt-1 text-[10px]"><span className="font-bold text-slate-100">{labels.bet} {money(bet.stakeEtb)} ETB</span><span className="font-black text-emerald-300">{!revealComplete?labels.waitingBet:bet.payoutEtb>0?money(bet.payoutEtb):['active','pending','waiting','pending_reveal'].includes(bet.status.toLowerCase())?labels.waitingBet:bet.hits+' '+labels.hits}</span></div>
   </article>;
 }

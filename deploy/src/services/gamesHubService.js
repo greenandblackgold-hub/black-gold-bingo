@@ -103,6 +103,23 @@ function publicBet(bet) {
   };
 }
 
+
+
+// Keno outcomes are revealed progressively from the server clock. Never send
+// matches, payouts, or the server seed before all 20 numbers have been revealed.
+function kenoRevealCount(round, at = Date.now()) {
+  if (!round || round.status !== 'settled') return 0;
+  const intervalMs = Math.max(1000, Number(round.kenoDrawIntervalSeconds ?? 1) * 1000);
+  const settledAt = Number(round.settledAt ?? at);
+  return Math.min(20, Math.max(0, Math.floor((at - settledAt) / intervalMs)));
+}
+
+function publicKenoBet(bet, revealComplete) {
+  const result = publicBet(bet);
+  if (revealComplete) return result;
+  return { ...result, status: 'pending_reveal', matchedNumbers: [], hits: 0, multiplier: null, payoutEtb: 0 };
+}
+
 function amountToSantim(value, settings) {
   const amount = Number(value);
   if (!Number.isFinite(amount) || !Number.isSafeInteger(Math.round(amount * 100))) {
@@ -286,7 +303,10 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     if (currentSettings.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
     const round = await tickGame(game);
     const serverTime = now();
-    const myBets = (round.bets ?? []).filter((bet) => bet.userId === user.id).map(publicBet);
+    const revealCount = game === 'keno' ? kenoRevealCount(round, serverTime) : 20;
+    const revealComplete = game !== 'keno' || revealCount >= 20;
+    const myBets = (round.bets ?? []).filter((bet) => bet.userId === user.id)
+      .map((bet) => game === 'keno' ? publicKenoBet(bet, revealComplete) : publicBet(bet));
     const liveBets = game === 'aviator' ? (round.bets ?? []).map((bet) => ({ player: String(bet.username || 'Player').slice(0, 32), stakeEtb: bet.stake / 100, status: bet.status, multiplier: bet.multiplier ?? null, payoutEtb: (bet.payout ?? 0) / 100 })) : undefined;
     const playerCount = game === 'aviator' ? new Set((round.bets ?? []).map((bet) => bet.userId)).size : undefined;
     const wallet = await repo.getGameHubWallet(user.id, round.walletMode === 'shared' ? 'shared' : 'legacy-demo');
@@ -314,9 +334,9 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       state.drawIntervalSeconds = round.kenoDrawIntervalSeconds ?? currentSettings.kenoDrawIntervalSeconds;
       state.selectedNumberLimit = 10;
       if (round.status === 'settled') {
-        state.drawnNumbers = round.drawnNumbers;
-        state.serverSeed = round.serverSeed;
+        state.drawnNumbers = (round.drawnNumbers ?? []).slice(0, revealCount);
         state.settledAt = round.settledAt;
+        if (revealComplete) state.serverSeed = round.serverSeed;
       }
     } else {
       if (round.status === 'flying' || round.status === 'crashed') {
@@ -515,17 +535,25 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     async getHistory(game, user, limit = 10) {
       if (!GAME_IDS.includes(game)) throw new HttpError(404, 'game_not_found', 'Unknown game.');
       const rounds = await repo.listGameHubRounds(game, Math.min(30, Math.max(1, Number(limit) || 10)));
-      return rounds.map((round) => ({
+      const currentRound = game === 'keno' ? await repo.getCurrentGameHubRound('keno') : null;
+      const serverTime = now();
+      return rounds.map((round) => {
+        const isCurrentKenoRound = game === 'keno' && round.roundId === currentRound?.roundId && round.status === 'settled';
+        const revealCount = isCurrentKenoRound ? kenoRevealCount(round, serverTime) : 20;
+        const revealComplete = !isCurrentKenoRound || revealCount >= 20;
+        return ({
         roundId: round.roundId,
         status: round.status,
         createdAt: round.createdAt,
         settledAt: round.settledAt ?? round.crashedAt ?? null,
-        drawnNumbers: game === 'keno' ? round.drawnNumbers ?? [] : undefined,
+        drawnNumbers: game === 'keno' ? (round.drawnNumbers ?? []).slice(0, revealCount) : undefined,
         crashMultiplier: game === 'aviator' && round.status === 'crashed' ? round.crashMultiplier : undefined,
         serverSeedHash: round.serverSeedHash,
-        serverSeed: ['settled', 'crashed'].includes(round.status) ? round.serverSeed : undefined,
-        myBets: (round.bets ?? []).filter((bet) => bet.userId === user.id).map(publicBet),
-      }));
+        serverSeed: ['settled', 'crashed'].includes(round.status) && revealComplete ? round.serverSeed : undefined,
+        myBets: (round.bets ?? []).filter((bet) => bet.userId === user.id)
+          .map((bet) => game === 'keno' ? publicKenoBet(bet, revealComplete) : publicBet(bet)),
+      });
+      });
     },
     async getAdminOverview() {
       const currentSettings = await settings();
