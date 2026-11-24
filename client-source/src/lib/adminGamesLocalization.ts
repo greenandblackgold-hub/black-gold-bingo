@@ -62,5 +62,6 @@ const games = {
 
 export const adminGamesText = games;
 export function adminGamesLocale(lang: Lang, key: keyof typeof games.en): string {
-  return games[lang][key] ?? games.en[key];
+  const selected = games[lang] as Record<string, string>;
+  return selected[key] ?? games.en[key];
 }
