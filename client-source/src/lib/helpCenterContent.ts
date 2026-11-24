@@ -63,8 +63,8 @@ export const helpTopics: HelpTopic[] = [
     id: 'aviator-how', category: 'aviator',
     question: { am: 'Aviator እንዴት ይጫወታል?', ti: 'Aviator ብኸመይ ይጽወት?', en: 'How do I play Aviator?' },
     answer: {
-      am: 'በዙሩ ከመጀመሩ በፊት እስከ ሁለት የተለያዩ ውርርዶችን ማስገባት ይችላሉ፤ እያንዳንዱም የራሱ መጠን አለው። ለእያንዳንዱ ውርርድ አማራጭ ራስ-ሰር ገንዘብ ማውጣት ብዜት ማስቀመጥ ይችላሉ። አውሮፕላኑ ሲበር ብዜቱ ይጨምራል፤ በእጅ ገንዘብ ማውጣት ካደረጉ ወይም የተቀመጠው ራስ-ሰር ገንዘብ ማውጣት ግብ አውሮፕላኑ ከመውደቁ በፊት ከደረሰ ውጤቱ በዚያ ብዜት ይሰላል። አውሮፕላኑ ቀድሞ ከወደቀ ከሆነ ውርርዱ ሊጠፋ ይችላል፤ የCrash ጊዜ ሊተነበይ አይችልም.',
-      ti: 'ቅድሚ ዙር ምጅማሩ ክሳብ ክልተ ናጻ ውርርዳት ከእትዉ ትኽእሉ፤ ነፍሲ ወከፍ ውርርድ ናይ ባዕሉ መጠን ኣለዎ። ንነፍሲ ወከፍ ውርርድ ኣማራጺ ራስ-ሰር ገንዘብ ማውጣት ብዜት ክትውስኑ ትኽእሉ። ነፋሪት ክትነፍር ከላ ብዜት ይውስኽ፤ ብኢድ ገንዘብ ምውጻእ እንተገይርኩም ወይ እቲ ዝተወሰነ ብራስ-ሰር ገንዘብ ምውጻእ ዕላማ ቅድሚ ምውዳቕ ነፋሪት እንተበጺሑ ውጽኢት በቲ ብዜት ይሕሰብ። ነፋሪት ቀዲማ እንተወዲቓ እንተኾይኑ ውርርድኩም ክጠፍእ ይኽእል፤ ግዜ ምውዳቕ ነፋሪት ምግማት ኣይከኣልን.',
+      am: 'በዙሩ ከመጀመሩ በፊት እስከ ሁለት የተለያዩ ውርርዶችን ማስገባት ይችላሉ፤ እያንዳንዱም የራሱ መጠን አለው። ለእያንዳንዱ ውርርድ አማራጭ ራስ-ሰር ገንዘብ ማውጣት ብዜት ማስቀመጥ ይችላሉ። አውሮፕላኑ ሲበር ብዜቱ ይጨምራል፤ በእጅ ገንዘብ ማውጣት ካደረጉ ወይም የተቀመጠው ራስ-ሰር ገንዘብ ማውጣት ግብ አውሮፕላኑ ከመውደቁ በፊት ከደረሰ ውጤቱ በዚያ ብዜት ይሰላል። አውሮፕላኑ ቀድሞ ከወደቀ ከሆነ ውርርዱ ሊጠፋ ይችላል፤ የአውሮፕላኑ መውደቅ ጊዜ ሊተነበይ አይችልም.',
+      ti: 'ቅድሚ ዙር ምጅማሩ ክሳብ ክልተ ናጻ ውርርዳት ከእትዉ ትኽእሉ፤ ነፍሲ ወከፍ ውርርድ ናይ ባዕሉ መጠን ኣለዎ። ንነፍሲ ወከፍ ውርርድ ኣማራጺ ብራስ-ሰር ገንዘብ ምውጻእ ብዜት ክትውስኑ ትኽእሉ። ነፋሪት ክትነፍር ከላ ብዜት ይውስኽ፤ ብኢድ ገንዘብ ምውጻእ እንተገይርኩም ወይ እቲ ዝተወሰነ ብራስ-ሰር ገንዘብ ምውጻእ ዕላማ ቅድሚ ምውዳቕ ነፋሪት እንተበጺሑ ውጽኢት በቲ ብዜት ይሕሰብ። ነፋሪት ቀዲማ እንተወዲቓ እንተኾይኑ ውርርድኩም ክጠፍእ ይኽእል፤ ግዜ ምውዳቕ ነፋሪት ምግማት ኣይከኣልን.',
       en: 'You can place up to two independent bets before a round starts; each has its own stake. Each bet can also have an optional Auto Cash Out target. As the plane flies, the multiplier rises. You can cash out manually, or the server cashes out automatically if the bet target is reached before the crash. If the crash happens first, the stake can be lost. The crash point cannot be predicted.'
     },
     keywords: { am: ['aviator','አቪየተር','አውሮፕላን','cash out','ካሽ አውት','multiplier','ብዜት','crash'], ti: ['aviator','ነፋሪት','cash out','multiplier','ብዜት','crash'], en: ['aviator','plane','cash out','multiplier','crash'] }
@@ -83,7 +83,7 @@ export const helpTopics: HelpTopic[] = [
     id: 'auto-cashout', category: 'aviator',
     question: { am: 'Aviator ውስጥ ብራስ-ሰር ገንዘብ ምውጻእ ምንድን ነው?', ti: 'ኣብ Aviator Auto ገንዘብ ምውጻእ እንታይ እዩ?', en: 'What is Auto Cash Out in Aviator?' },
     answer: {
-      am: 'ብራስ-ሰር ገንዘብ ምውጻእ ማለት ለአንድ ውርርድ የሚፈልጉትን ብዜት አስቀድመው ማስቀመጥ ነው። ሰርቨሩ ያ ብዜት አውሮፕላኑ ከመውደቁ በፊት ከደረሰ በራስ-ሰር ገንዘብ ማውጣት ያከናውናል። አውሮፕላኑ ቀድሞ ከወደቀ ከሆነ ውርርዱ ሊጠፋ ይችላል። ይህ የአሸናፊነት ዋስትና አይደለም።',
+      am: 'ራስ-ሰር ገንዘብ ማውጣት ማለት ለአንድ ውርርድ የሚፈልጉትን ብዜት አስቀድመው ማስቀመጥ ነው። ሰርቨሩ ያ ብዜት አውሮፕላኑ ከመውደቁ በፊት ከደረሰ በራስ-ሰር ገንዘብ ማውጣት ያከናውናል። አውሮፕላኑ ቀድሞ ከወደቀ ከሆነ ውርርዱ ሊጠፋ ይችላል። ይህ የአሸናፊነት ዋስትና አይደለም።',
       ti: 'ብራስ-ሰር ገንዘብ ምውጻእ ማለት ንሓደ ውርርድ እትደልይዎ ብዜት ኣቐዲምኩም ምውሳን እዩ። እቲ ብዜት ቅድሚ ምውዳቕ ነፋሪት እንተበጺሑ ሰርቨር ብራስ-ሰር ገንዘብ ምውጻእ ይገብር። ነፋሪት ቀዲማ እንተወዲቓ እንተኾይኑ ውርርድኩም ክጠፍእ ይኽእል። እዚ ውሕስነት ዓወት ኣይኮነን።',
       en: 'Auto Cash Out lets you set a target multiplier for an individual bet before the round. If the target is reached before the crash, the server cashes out that bet automatically. If the crash happens first, the stake can be lost. It does not guarantee a win.'
     },
@@ -104,8 +104,8 @@ export const helpTopics: HelpTopic[] = [
     question: { am: 'ጨዋታዎቹ ፍትሃዊ መሆናቸውን እንዴት አውቃለሁ?', ti: 'ጸወታታት ፍትሓውያን ምዃኖም ብኸመይ እፈልጥ?', en: 'How can I understand game fairness?' },
     answer: {
       am: 'የጨዋታ ፍትሃዊነትን ለማረጋገጥ የጨዋታውን የተለየ መረጃ፣ የውጤት ታሪክ እና የሚታዩ ማረጋገጫዎች ይመልከቱ። Aviator ላይ የሰርቨር ዘር ሃሽ እና የተገለጠ ዘር መረጃ ሊታይ ይችላል። ይህ ማዕከል የጨዋታዎችን ውጤት በተናጠል አያረጋግጥም፣ የውጤት ትንበያም አይሰጥም።',
-      ti: 'ፍትሓውነት ጸወታ ንምርግጋጽ እቲ ፍሉይ ሓበሬታ ጸወታ፣ ታሪኽ ውጽኢትን ዝርኣዩ መረጋገጺታትን ርኣዩ። ኣብ Aviator ሓበሬታ የሰርቨር ዘር ሃሽን ዝተገልጸ ዘርን ክርአ ይኽእል። እዚ ማእከል ውጽኢት ጸወታ ብናጻ ኣየረጋግጽን፣ ትንበያ እውን ኣይህብን።',
-      en: 'To assess fairness, review each game’s own information, result history, and any verification details displayed there. Aviator may show a a Server Seed Hash and a revealed seed. This help center does not independently verify game outcomes or predict results.'
+      ti: 'ፍትሓውነት ጸወታ ንምርግጋጽ እቲ ፍሉይ ሓበሬታ ጸወታ፣ ታሪኽ ውጽኢትን ዝርኣዩ መረጋገጺታትን ርኣዩ። ኣብ Aviator ሓበሬታ ናይ ሰርቨር ዘር ሃሽን ዝተገልጸ ዘርን ክርአ ይኽእል። እዚ ማእከል ውጽኢት ጸወታ ብናጻ ኣየረጋግጽን፣ ትንበያ እውን ኣይህብን።',
+      en: 'To assess fairness, review each game’s own information, result history, and any verification details displayed there. Aviator may show a Server Seed Hash and a revealed seed. This help center does not independently verify game outcomes or predict results.'
     },
     keywords: { am: ['ፍትሃዊ','fair','seed','hash','ማረጋገጥ','ትንበያ'], ti: ['ፍትሓዊ','fair','seed','hash','ምርግጋጽ','ትንበያ'], en: ['fairness','fair','seed','hash','verify','predict'] }
   },
@@ -123,7 +123,7 @@ export const helpTopics: HelpTopic[] = [
     id: 'wallet-withdrawal', category: 'safety',
     question: { am: 'የገንዘብ ቦርሳ የሙከራ ብርን ማውጣት ወይም መቀበል እችላለሁ?', ti: 'ናይ ቦርሳ ገንዘብ ፈተና ብር ከውጽእ ወይ ክቕበል ይኽእል?', en: 'Can I withdraw or receive a payout from test wallet credits?' },
     answer: {
-      am: 'አይ። በዚህ የሙከራ ስሪት የየገንዘብ ቦርሳ የብር ቀሪ ሂሳብ የሙከራ ክሬዲት ብቻ ነው፤ የገንዘብ ዋጋ የለውም፣ ሊወጣ ወይም ሊከፈል አይችልም። እውነተኛ ገንዘብ ማስገባትና ማውጣት ተዘግተዋል።',
+      am: 'አይ። በዚህ የሙከራ ስሪት የገንዘብ ቦርሳ የብር ቀሪ ሂሳብ የሙከራ ክሬዲት ብቻ ነው፤ የገንዘብ ዋጋ የለውም፣ ሊወጣ ወይም ሊከፈል አይችልም። እውነተኛ ገንዘብ ማስገባትና ማውጣት ተዘግተዋል።',
       ti: 'ኣይፋልን። ኣብዚ ናይ ፈተና ስሪት ናይ ቦርሳ ገንዘብ ሒሳብ ብር ናይ ፈተና ክሬዲት ጥራይ እዩ፤ ናይ ገንዘብ ዋጋ የብሉን፣ ክወጽእ ወይ ክኽፈል ኣይክእልን። ሓቀኛ ገንዘብ ምእታውን ምውጻእን ተዓጽዮም ኣለዉ።',
       en: 'No. Wallet ETB in this test version is simulated credit only. It has no cash value and cannot be withdrawn or paid out. Real-money deposits and payouts are disabled.'
     },
