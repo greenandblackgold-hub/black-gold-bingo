@@ -684,7 +684,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               )}
               <div className="grid grid-cols-2 gap-3">
                 {quickBuyOptions.map(count => (
-                  <button key={count} type="button" aria-pressed={quickBuyCount === count} onClick={() => setQuickBuyCount(count)} className={`rounded-xl border-2 px-3 py-4 text-base font-black transition ${quickBuyCount === count ? 'border-yellow-200 bg-yellow-400 text-black shadow-[0_0_18px_rgba(250,204,21,.3)]' : 'border-yellow-500/40 bg-black text-yellow-100 hover:bg-yellow-950'}`}>
+                  <button key={count} type="button" aria-pressed={bonusRound && quickBuyCount === count} disabled={!quickBuyAllowed || quickBuyBusy} onClick={() => bonusRound ? setQuickBuyCount(count) : void addPreviewCards(count)} className={`rounded-xl border-2 px-3 py-4 text-base font-black transition disabled:opacity-40 ${bonusRound && quickBuyCount === count ? 'border-yellow-200 bg-yellow-400 text-black shadow-[0_0_18px_rgba(250,204,21,.3)]' : 'border-yellow-500/40 bg-black text-yellow-100 hover:bg-yellow-950'}`}>
                     {count} ካርቴላ
                   </button>
                 ))}
@@ -700,10 +700,6 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               {bonusRound ? (
                 <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="sticky bottom-0 z-10 mt-3 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
                   {quickBuyBusy ? t.buying : t.getFreeCards}
-                </button>
-              ) : (
-                <button type="button" onClick={() => void addPreviewCards(quickBuyCount)} disabled={!quickBuyAllowed || quickBuyBusy} className="sticky bottom-0 z-10 mt-3 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
-                  {quickBuyBusy ? '…' : 'ካርቴላዎቹን አሳይ'}
                 </button>
               )}
             </section>
