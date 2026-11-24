@@ -1,12 +1,9 @@
 /**
  * src/components/wallet/WalletView.tsx
  *
- * Wallet screen: ETB balance, mock Telebirr / CBE deposits, card purchasing,
- * and recent transactions. Reads from usePlayer() and useAppSettings();
- * shared types live in '@/types/game'.
- *
- * The deposit is a DEMO: nothing leaves the device. Replace `runMockPayment`
- * with your real payment API call when you integrate Telebirr / CBE.
+ * Wallet screen: simulation ETB balance, Admin-reviewed deposit requests,
+ * card purchasing, and recent transactions. Cash-outs are not available in
+ * this test version; simulation credits cannot be withdrawn or paid out.
  */
 import { useState } from 'react';
 import { translations, formatAmount, formatNumber } from '@/lib/localization';
@@ -15,7 +12,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
 import { SERVER_MODE } from '@/lib/api';
-import { SimulationWithdrawalPanel } from '@/components/wallet/SimulationWithdrawalPanel';
 import { AccountPanel } from '@/components/wallet/AccountPanel';
 import { SmsDepositPanel } from '@/components/wallet/SmsDepositPanel';
 import type { Lang, PayMethod as Method } from '@/types/game';
@@ -420,7 +416,6 @@ export function WalletView({ onGoToPlay }: { onGoToPlay?: () => void }) {
       <div className="grid items-start gap-4 lg:grid-cols-2 lg:gap-5">
         <div className="min-w-0">{SERVER_MODE ? <SmsDepositPanel /> : <DepositPanel t={t} formatAmount={fmt} onDeposit={deposit} />}</div>
         <div className="min-w-0"><PurchasePanel t={t} formatAmount={fmt} formatNumber={fmtNumber} price={cardPrice} balance={balance} onBuy={buyCards} onGoToPlay={onGoToPlay} locked={phase !== 'waiting'} /></div>
-        {SERVER_MODE && <div className="min-w-0 lg:col-span-2"><SimulationWithdrawalPanel /></div>}
       </div>
 
       {SERVER_MODE && <div className="border-t border-gold-700/25 pt-3"><AccountPanel /></div>}
