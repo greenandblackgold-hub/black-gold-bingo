@@ -21,29 +21,33 @@ export function SmsDepositPanel() {
   const { lang } = useLanguage();
   const t = copy[lang] ?? copy.en;
   const [provider, setProvider] = useState<'Telebirr' | 'CBE'>('Telebirr');
-  const [message, setMessage] = useState('');
+  const [amountText, setAmountText] = useState('100');
+  const [reference, setReference] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [request, setRequest] = useState<DepositRequest | null>(null);
   const [status, setStatus] = useState<DepositStatus | null>(null);
 
   const submit = async () => {
-    if (message.trim().length < 20 || message.trim().length > 4000) {
-      setError(t.messageInvalid);
+    const amount = Number(amountText);
+    if (!Number.isFinite(amount) || amount < 10 || amount > 10000 || !/^\\d+(?:\\.\\d{1,2})?$/.test(amountText)) {
+      setError(t.invalid);
+      return;
+    }
+    if (!/^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$/.test(reference.trim())) {
+      setError(t.refInvalid);
       return;
     }
     setBusy(true);
     setError('');
     try {
       const created = await api.post<DepositRequest>('/api/simulation/deposits', {
-        provider,
-        message: message.trim(),
+        amount, reference: reference.trim(), provider,
       });
       setRequest(created);
       setStatus('pending');
     } catch (e) {
       if (e instanceof ApiError && e.code === 'reference_used') setError(t.used);
-      else if (e instanceof ApiError && e.code === 'invalid_sms_message') setError(t.messageInvalid);
       else if (e instanceof ApiError && e.code === 'invalid_amount') setError(t.invalid);
       else if (e instanceof ApiError && e.code === 'invalid_reference') setError(t.refInvalid);
       else setError(t.generic);
@@ -66,6 +70,18 @@ export function SmsDepositPanel() {
       setBusy(false);
     }
   };
+
+  useEffect(() => {
+    if (!request || status !== 'pending') return;
+    const timer = window.setInterval(() => {
+      void api.get<{ status: DepositStatus }>(`/api/simulation/deposits/${encodeURIComponent(request.reference)}`)
+        .then((result) => {
+          setStatus(result.status);
+          if (result.status === 'success') window.location.reload();
+        }).catch(() => undefined);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [request, status]);
 
   const statusText = status === 'success' ? t.success
     : status === 'failed' ? t.failed
@@ -102,9 +118,12 @@ export function SmsDepositPanel() {
             )}
           </div>
           <div>
-            <label htmlFor="simulation-deposit-message" className="mb-1 block text-xs text-gold-500">{t.message}</label>
-            <textarea id="simulation-deposit-message" className={`${inputClass} min-h-20 resize-y`} autoComplete="off" maxLength={4000} placeholder={t.messagePlaceholder} value={message} onChange={(event) => setMessage(event.target.value)} disabled={busy} />
-            <p className="mt-1 text-[11px] leading-snug text-gold-700">{t.messageHelp}</p>
+            <label htmlFor="simulation-deposit-amount" className="mb-1 block text-xs text-gold-500">{t.amount}</label>
+            <input id="simulation-deposit-amount" className={inputClass} inputMode="decimal" autoComplete="off" placeholder="100" value={amountText} onChange={(event) => setAmountText(event.target.value.replace(/[^0-9.]/g, '').slice(0, 10))} disabled={busy} />
+          </div>
+          <div>
+            <label htmlFor="simulation-deposit-reference" className="mb-1 block text-xs text-gold-500">{t.reference}</label>
+            <input id="simulation-deposit-reference" className={inputClass} autoComplete="off" maxLength={64} placeholder={t.placeholder} value={reference} onChange={(event) => setReference(event.target.value.replace(/[^A-Za-z0-9_-]/g, '').toUpperCase().slice(0, 64))} disabled={busy} />
           </div>
           {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
           <button type="button" onClick={submit} disabled={busy} className="w-full rounded-lg bg-gradient-to-r from-gold-300 via-gold-500 to-gold-600 py-2.5 text-sm font-bold text-darkbg shadow-md shadow-gold-900/20 transition duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:ring-offset-2 focus-visible:ring-offset-darkbg disabled:cursor-not-allowed disabled:opacity-50">
@@ -114,7 +133,7 @@ export function SmsDepositPanel() {
         </div>
       ) : (
         <div className="space-y-3">
-          <dl className="space-y-2 rounded-xl bg-white/[0.04] p-4 text-sm">
+          <dl className="space-y-2 rounded-xl border border-gold-700/30 bg-black/35 p-4 text-sm">
             <div className="flex justify-between gap-3"><dt className="text-gold-500">{t.reference}</dt><dd className="break-all text-right font-semibold text-gold-300">{request.reference}</dd></div>
             <div className="flex justify-between"><dt className="text-gold-500">{t.amount}</dt><dd className="font-semibold tabular-nums text-gold-300">{formatAmount(lang, request.amount)}</dd></div>
           </dl>
