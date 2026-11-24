@@ -108,6 +108,19 @@ export async function createMongoRepo({ uri, dbName }) {
         gameHubLedger.createIndex({ userId: 1, createdAt: -1 }),
       ]);
       await games.updateOne({ _id: 'state' }, { $setOnInsert: { ...DEFAULT_GAME } }, { upsert: true });
+      // The old database default was 80%. Migrate only those legacy values to the owner's
+      // confirmed 45% share. A round's frozen roundPrize snapshot is deliberately untouched.
+      const migratedCurrentPrize = await games.updateOne(
+        { _id: 'state', prizePercent: 80 },
+        { $set: { prizePercent: 45 } },
+      );
+      const migratedBonusPrize = await games.updateOne(
+        { _id: 'state', 'bonusSavedPrizeSettings.prizePercent': 80 },
+        { $set: { 'bonusSavedPrizeSettings.prizePercent': 45 } },
+      );
+      if (migratedCurrentPrize.modifiedCount || migratedBonusPrize.modifiedCount) {
+        await games.updateOne({ _id: 'state' }, { $inc: { version: 1 } });
+      }
     },
     async close() {
       await client.close();
