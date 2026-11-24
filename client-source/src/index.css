@@ -1066,3 +1066,94 @@ body, #root { min-height: 100dvh; }
 @media(prefers-reduced-motion:reduce) {
   .aviator-premium .aviator-flight.flying .aviator-scenery span { animation:none; }
 }
+
+
+/* Aviator visual boost: denser multi-layer Antonov exhaust and faster flight scenery. */
+.aviator-premium .aviator-exhaust {
+  width:96%;
+  height:108%;
+  left:-78%;
+  top:46%;
+  overflow:visible;
+}
+.aviator-premium .aviator-exhaust::before,
+.aviator-premium .aviator-exhaust::after {
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  border-radius:50%;
+  filter:blur(15px);
+  mix-blend-mode:screen;
+}
+.aviator-premium .aviator-exhaust::before {
+  left:25%;
+  top:30%;
+  width:82%;
+  height:62%;
+  opacity:.9;
+  background:
+    radial-gradient(ellipse at 70% 50%,rgba(255,255,250,.94) 0 12%,rgba(222,230,232,.8) 30%,rgba(178,194,201,.48) 54%,rgba(142,163,174,.12) 72%,transparent 78%);
+  animation:aviator-smoke-core 1.25s ease-out infinite;
+}
+.aviator-premium .aviator-exhaust::after {
+  left:0;
+  top:4%;
+  width:100%;
+  height:90%;
+  opacity:.7;
+  background:
+    radial-gradient(ellipse at 74% 48%,rgba(246,250,250,.68) 0 9%,rgba(195,209,216,.42) 28%,rgba(150,174,185,.18) 52%,transparent 72%);
+  animation:aviator-smoke-wide 1.8s ease-out infinite;
+}
+.aviator-premium .aviator-exhaust i {
+  width:clamp(28px,4.8vw,58px);
+  filter:blur(5px);
+  background:radial-gradient(circle at 43% 43%,rgba(255,255,252,.98) 0%,rgba(231,237,239,.9) 24%,rgba(183,199,207,.58) 52%,rgba(139,161,173,.18) 72%,transparent 82%);
+  animation:aviator-heavy-smoke 1.35s ease-out infinite;
+}
+.aviator-premium .aviator-exhaust i:nth-child(1){left:34%;top:12%;animation-delay:-.1s}
+.aviator-premium .aviator-exhaust i:nth-child(2){left:45%;top:55%;animation-delay:-.32s}
+.aviator-premium .aviator-exhaust i:nth-child(3){left:24%;top:34%;animation-delay:-.55s}
+.aviator-premium .aviator-exhaust i:nth-child(4){left:56%;top:18%;animation-delay:-.78s}
+.aviator-premium .aviator-exhaust i:nth-child(5){left:18%;top:66%;animation-delay:-1s}
+.aviator-premium .aviator-exhaust i:nth-child(6){left:65%;top:48%;animation-delay:-.2s}
+.aviator-premium .aviator-exhaust i:nth-child(7){left:39%;top:78%;animation-delay:-.42s}
+.aviator-premium .aviator-exhaust i:nth-child(8){left:8%;top:43%;animation-delay:-.64s}
+.aviator-premium .aviator-exhaust i:nth-child(9){left:72%;top:27%;animation-delay:-.86s}
+.aviator-premium .aviator-exhaust i:nth-child(10){left:29%;top:2%;animation-delay:-1.08s}
+.aviator-premium .aviator-exhaust i:nth-child(11){left:52%;top:88%;animation-delay:-.28s}
+.aviator-premium .aviator-exhaust i:nth-child(12){left:4%;top:18%;animation-delay:-.5s}
+.aviator-premium .aviator-exhaust i:nth-child(13){left:78%;top:61%;animation-delay:-.72s}
+.aviator-premium .aviator-exhaust i:nth-child(14){left:16%;top:86%;animation-delay:-.94s}
+.aviator-premium .aviator-exhaust i:nth-child(15){left:60%;top:4%;animation-delay:-1.16s}
+.aviator-premium .aviator-exhaust i:nth-child(16){left:43%;top:39%;animation-delay:-.38s}
+.aviator-premium .aviator-exhaust i:nth-child(17){left:2%;top:56%;animation-delay:-.6s}
+.aviator-premium .aviator-exhaust i:nth-child(18){left:84%;top:40%;animation-delay:-.82s}
+@keyframes aviator-heavy-smoke {
+  0%{opacity:0;transform:translate(12px,0) scale(.45)}
+  12%{opacity:.98}
+  58%{opacity:.78}
+  100%{opacity:0;transform:translate(-245px,-48px) scale(4.8)}
+}
+@keyframes aviator-smoke-core {
+  0%{opacity:.38;transform:translateX(8px) scale(.76)}
+  20%{opacity:.96}
+  100%{opacity:0;transform:translateX(-190px) scale(1.42)}
+}
+@keyframes aviator-smoke-wide {
+  0%{opacity:.25;transform:translate(4px,4px) scale(.72)}
+  24%{opacity:.76}
+  100%{opacity:0;transform:translate(-230px,-28px) scale(1.5)}
+}
+.aviator-premium .aviator-flight.flying .aviator-scenery span {
+  animation-duration:2.8s;
+}
+@media(max-width:640px) {
+  .aviator-premium .aviator-exhaust {width:105%;left:-82%}
+  .aviator-premium .aviator-exhaust i {width:clamp(24px,7vw,42px)}
+}
+@media(prefers-reduced-motion:reduce) {
+  .aviator-premium .aviator-exhaust::before,
+  .aviator-premium .aviator-exhaust::after,
+  .aviator-premium .aviator-exhaust i {animation:none;opacity:.75}
+}

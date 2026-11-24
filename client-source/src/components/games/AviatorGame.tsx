@@ -69,7 +69,7 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
   // Drive the aircraft position from the live round clock, not a short CSS animation.
   // This keeps it visible and moving for the entire flight, even when a round is brief.
   const flightProgress = state?.status === 'flying' || state?.status === 'crashed'
-    ? Math.min(0.9, Math.max(0, Math.log(Math.max(1, multiplier)) / Math.log(20) * 0.9))
+    ? Math.min(0.9, Math.max(0, Math.log(Math.max(1, multiplier)) / Math.log(5) * 0.96))
     : 0;
   const planeTravel = typeof window !== 'undefined' && window.innerWidth <= 640 ? 85 : 185;
   const planeX = flightProgress * planeTravel;
@@ -266,7 +266,7 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
         <div className="aviator-flight-path" />
         <div className="aviator-scenery" aria-hidden="true"><span/><span/><span/><span/></div>
         <div className="aviator-plane" style={planeStyle} aria-hidden="true">
-          <div className="aviator-exhaust"><i/><i/><i/><i/><i/><i/><i/><i/></div>
+          <div className="aviator-exhaust"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div>
           <svg className="aviator-aircraft" viewBox="0 0 340 170" role="presentation">
             <defs>
               <linearGradient id="antonovBody" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#fff8df"/><stop offset=".48" stopColor="#d9d7ce"/><stop offset="1" stopColor="#777d82"/></linearGradient>
