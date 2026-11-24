@@ -102,9 +102,11 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
       oscillator.frequency.exponentialRampToValueAtTime(kind === 'takeoff' ? 720 : 55, ctx.currentTime + 0.35);
       gain.gain.setValueAtTime(0.0001, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.38);
+      const soundDuration = kind === 'crash' ? 0.62 : 0.38;
+      gain.gain.exponentialRampToValueAtTime(kind === 'crash' ? 0.18 : 0.08, ctx.currentTime + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + soundDuration);
       oscillator.connect(gain); gain.connect(ctx.destination);
-      oscillator.start(); oscillator.stop(ctx.currentTime + 0.4);
+      oscillator.start(); oscillator.stop(ctx.currentTime + soundDuration + 0.04);
       oscillator.onended = () => { void ctx.close(); };
     } catch { /* audio is optional and browser-controlled */ }
   };
