@@ -409,6 +409,70 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     }
   }
 
+  async function placeKenoBets(user, input = {}) {
+    ensureSimulationMode();
+    assertVerifiedPlayer(user);
+    const currentSettings = await settings();
+    if (currentSettings.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
+    if (!currentSettings.kenoEnabled) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
+    const round = await tickGame('keno', currentSettings);
+    const acceptedAt = now();
+    if (round.status !== 'betting' || acceptedAt >= round.bettingEndsAt) {
+      throw new HttpError(409, 'betting_closed', 'Betting for this round has closed.');
+    }
+
+    const tickets = input.tickets;
+    if (!Array.isArray(tickets) || tickets.length < 1 || tickets.length > 20) {
+      throw new HttpError(400, 'invalid_keno_batch', 'Submit between 1 and 20 Keno tickets at a time.');
+    }
+    const seenRequestIds = new Set();
+    const bets = tickets.map((ticket) => {
+      const requestId = String(ticket?.requestId ?? '');
+      if (!/^[A-Za-z0-9_-]{8,80}$/.test(requestId) || seenRequestIds.has(requestId)) {
+        throw new HttpError(400, 'invalid_request_id', 'Refresh the game and try again.');
+      }
+      seenRequestIds.add(requestId);
+      const stake = amountToSantim(ticket.amount, { ...currentSettings, minBet: currentSettings.kenoMinBet });
+      const selected = ticket.selectedNumbers;
+      if (!Array.isArray(selected) || selected.length < 1 || selected.length > 10 ||
+          selected.some((n) => !Number.isInteger(n) || n < 1 || n > 80) ||
+          new Set(selected).size !== selected.length) {
+        throw new HttpError(400, 'invalid_keno_numbers', 'Choose 1–10 different numbers from 1 to 80.');
+      }
+      return {
+        bet: {
+          id: randomBytes(12).toString('hex'),
+          requestId,
+          userId: user.id,
+          username: user.name,
+          stake,
+          status: 'active',
+          createdAt: acceptedAt,
+          selectedNumbers: [...selected].sort((a, b) => a - b),
+        },
+        amount: stake,
+        ref: 'games:keno:bet:' + requestId,
+      };
+    });
+
+    try {
+      const result = await repo.placeGameHubBets({
+        game: 'keno',
+        roundId: round.roundId,
+        bets,
+        userId: user.id,
+        acceptedAt,
+      });
+      return {
+        bets: result.bets.map((entry) => ({ ...publicBet(entry.bet), duplicate: entry.duplicate === true })),
+        balanceEtb: result.balance / 100,
+        duplicateCount: result.bets.filter((entry) => entry.duplicate).length,
+      };
+    } catch (error) {
+      mapRepoError(error);
+    }
+  }
+
   async function cashOutAviator(user, betId) {
     ensureSimulationMode();
     assertVerifiedPlayer(user);
@@ -529,6 +593,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     },
     getState,
     placeKenoBet: (user, input) => placeBet('keno', user, input),
+    placeKenoBets,
     placeAviatorBet: (user, input) => placeBet('aviator', user, input),
     cashOutAviator,
     updateSettings,
