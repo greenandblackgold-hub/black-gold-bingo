@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { createRoot } from 'react-dom/client';
+import { hasPendingApiRequests } from '@/lib/api';
 import App from '@/App';
 import './index.css';
 
@@ -10,7 +11,7 @@ const CLIENT_BUILD_PATH = new URL(import.meta.url).pathname;
 let pendingAppUpdate = false;
 const applyPendingAppUpdate = () => {
   const safeScreen = ['', '#games', '#help'].includes(window.location.hash);
-  if (!pendingAppUpdate || !navigator.onLine || document.visibilityState !== 'visible' || !safeScreen) return;
+  if (!pendingAppUpdate || !navigator.onLine || document.visibilityState !== 'visible' || !safeScreen || hasPendingApiRequests()) return;
   pendingAppUpdate = false;
   window.location.reload();
 };
