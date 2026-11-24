@@ -218,8 +218,11 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
   // waiting -> running stream transition must not blank the banner if a server
   // update briefly reports zero while the round snapshot is being propagated.
   const prizeSnapshot = useRef<{ roundNumber: number; amountEtb: number } | null>(null);
+  const latestServerTime = useRef(0);
 
   const apply = useCallback((incoming: ServerGameState) => {
+    if (!incoming || !Number.isFinite(incoming.serverTime) || incoming.serverTime < latestServerTime.current) return;
+    latestServerTime.current = incoming.serverTime;
     const amountEtb = Number(incoming.roundPrizeEtb);
     const safeAmount = Number.isFinite(amountEtb) && amountEtb > 0 ? amountEtb : 0;
     const previous = prizeSnapshot.current;
@@ -242,14 +245,36 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
   }, [setGameSettings]);
 
   useEffect(() => {
+    let active = true;
+    let snapshotInFlight = false;
+    const refreshSnapshot = async () => {
+      if (!active || snapshotInFlight || document.visibilityState === 'hidden') return;
+      snapshotInFlight = true;
+      try { apply(await api.get<ServerGameState>('/api/game')); } catch { /* SSE reconnect and next poll retry */ }
+      finally { snapshotInFlight = false; }
+    };
+    void refreshSnapshot();
+    const poll = window.setInterval(() => void refreshSnapshot(), 15_000);
+    window.addEventListener('focus', refreshSnapshot);
+    window.addEventListener('online', refreshSnapshot);
+    document.addEventListener('visibilitychange', refreshSnapshot);
     const es = new EventSource(`${API_URL}/api/stream`);
-    es.addEventListener('game', (e) => apply(JSON.parse((e as MessageEvent<string>).data) as ServerGameState));
+    es.addEventListener('game', (e) => {
+      try { apply(JSON.parse((e as MessageEvent<string>).data) as ServerGameState); } catch { /* malformed event; snapshot fallback repairs it */ }
+    });
     es.addEventListener('admin-change', () => window.dispatchEvent(new Event('bgb:admin-change')));
     es.addEventListener('app-version', (e) => {
       const detail = JSON.parse((e as MessageEvent<string>).data) as { buildPath?: string };
       window.dispatchEvent(new CustomEvent('bgb:app-version', { detail }));
     });
-    return () => es.close();
+    return () => {
+      active = false;
+      window.clearInterval(poll);
+      window.removeEventListener('focus', refreshSnapshot);
+      window.removeEventListener('online', refreshSnapshot);
+      document.removeEventListener('visibilitychange', refreshSnapshot);
+      es.close();
+    };
   }, [apply]);
 
   // Notify players when the host publishes a new announcement (not on the initial snapshot).
