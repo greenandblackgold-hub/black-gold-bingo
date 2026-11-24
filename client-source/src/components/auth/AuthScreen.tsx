@@ -103,9 +103,9 @@ export function AuthScreen() {
             <h2 className="text-3xl font-bold text-white">{mode === 'login' ? t.welcome : t.register}</h2>
             <p className="mt-2 text-sm leading-6 text-gold-200/65">{t.formHint}</p>
             {mode === 'register' && (
-              <div className="mt-5" aria-label="Registration progress" aria-live="polite">
+              <div className="mt-5" aria-label={t.registrationProgress} aria-live="polite">
                 <div className="mb-2 flex items-center justify-between text-xs font-semibold">
-                  <span className="tracking-wide text-gold-400">{lang === 'am' ? 'የምዝገባ ሂደት' : lang === 'ti' ? 'ሂደት ምዝገባ' : 'Registration progress'}</span>
+                  <span className="tracking-wide text-gold-400">{t.registrationProgress}</span>
                   <span className="tabular-nums text-gold-200">{registerProgress}/4</span>
                 </div>
                 <div className="grid grid-cols-4 gap-1.5">

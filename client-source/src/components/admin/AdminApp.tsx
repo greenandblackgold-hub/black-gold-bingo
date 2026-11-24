@@ -57,7 +57,7 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
             <p className="whitespace-nowrap bg-gradient-to-r from-gold-300 via-gold-400 to-gold-600 bg-clip-text text-base font-black text-transparent sm:text-lg">
               {t.title}
             </p>
-            <p className="hidden text-xs font-semibold text-gold-500 sm:block">Black Gold PLC · Games Center</p>
+            <p className="hidden text-xs font-semibold text-gold-500 sm:block">Black Gold PLC · {t.brandSubtitle}</p>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             <div role="group" aria-label={t.languageLabel} className="flex overflow-hidden rounded-full ring-1 ring-gold-700/60">
@@ -101,12 +101,12 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
           <section className="rounded-2xl border border-gold-500/30 bg-cardbg p-3 shadow-lg shadow-black/20 sm:p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[.24em] text-gold-500">HOST CONTROL CENTER</p>
-                <h2 className="mt-1 text-lg font-black text-gold-100">Game Management</h2>
+                <p className="text-[10px] font-black uppercase tracking-[.24em] text-gold-500">{t.hostControlCenter}</p>
+                <h2 className="mt-1 text-lg font-black text-gold-100">{t.gameManagement}</h2>
               </div>
-              <span className="rounded-full border border-gold-500/25 bg-black/30 px-3 py-1 text-[10px] font-bold text-gold-300">4 GAMES</span>
+              <span className="rounded-full border border-gold-500/25 bg-black/30 px-3 py-1 text-[10px] font-bold text-gold-300">{t.gamesCount}</span>
             </div>
-            <nav aria-label="Host game sections" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <nav aria-label={t.gameSections} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {([
                 ['bingo', '01', 'BINGO'],
                 ['keno', '02', 'KENO'],

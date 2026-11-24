@@ -43,12 +43,12 @@ export function SimulationWithdrawalPanel() {
         </select>
       </label>
       <label className="block text-sm text-gold-500">{t.destination}
-        <input required value={destination} maxLength={80} onChange={e => setDestination(e.target.value)} placeholder="09XXXXXXXX / account" className="mt-1 w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-300 ring-1 ring-gold-700/50" />
+        <input required value={destination} maxLength={80} onChange={e => setDestination(e.target.value)} placeholder={t.destinationPlaceholder} className="mt-1 w-full rounded-xl bg-white/[0.05] px-4 py-3 text-gold-300 ring-1 ring-gold-700/50" />
       </label>
       {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
       {message && <p role="status" className="text-sm text-gold-300">{message}</p>}
       <button type="button" disabled={busy || !Number.isFinite(Number(amount)) || Number(amount) <= 0} onClick={() => void submit()} className="w-full rounded-xl bg-gradient-to-r from-gold-300 via-gold-500 to-gold-600 py-3.5 font-bold text-darkbg shadow-lg shadow-gold-900/20 transition duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:ring-offset-2 focus-visible:ring-offset-darkbg disabled:cursor-not-allowed disabled:opacity-50">{busy ? t.busy : t.send}</button>
-      {rows.length > 0 && <div className="rounded-xl border border-gold-700/30 bg-black/35 p-3.5 sm:p-4"><h3 className="mb-2 text-sm font-semibold text-gold-300">{lang === 'am' ? 'የመውጫ ጥያቄ ታሪክ' : lang === 'ti' ? 'ታሪኽ ሕቶታት ምውጻእ' : 'Withdrawal request history'}</h3><ul className="space-y-2">{rows.map(row => <li key={row.id} className="flex items-center justify-between gap-2 text-xs"><span className="text-gold-500">{formatAmount(lang, row.amount)} ETB · {row.method || '—'}</span><span className="font-semibold text-gold-300">{row.status}</span></li>)}</ul></div>}
+      {rows.length > 0 && <div className="rounded-xl border border-gold-700/30 bg-black/35 p-3.5 sm:p-4"><h3 className="mb-2 text-sm font-semibold text-gold-300">{t.history}</h3><ul className="space-y-2">{rows.map(row => <li key={row.id} className="flex items-center justify-between gap-2 text-xs"><span className="text-gold-500">{formatAmount(lang, row.amount)} ETB · {row.method === 'telebirr' ? t.telebirr : row.method === 'bank' ? t.bank : row.method || '—'}</span><span className="font-semibold text-gold-300">{row.status.toLowerCase() === 'pending' ? t.pendingStatus : row.status.toLowerCase() === 'approved' ? t.approvedStatus : row.status.toLowerCase() === 'rejected' ? t.rejectedStatus : row.status.toLowerCase() === 'processing' ? t.processingStatus : row.status}</span></li>)}</ul></div>}
     </div>
   </section>;
 }

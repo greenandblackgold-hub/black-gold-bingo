@@ -277,7 +277,7 @@ export const translations = {
     locked: 'ብዙ ጊዜ ሞክረዋል። ከ15 ደቂቃ በኋላ ይሞክሩ።', rate_limited: 'በጣም ብዙ ጥያቄዎች። ትንሽ ቆይተው ይሞክሩ።', network: 'ከአገልጋዩ ጋር መገናኘት አልተቻለም።', error: 'የሆነ ችግር ተፈጥሯል። እንደገና ይሞክሩ።',
     age: '18 ዓመት እና ከዚያ በላይ ብቻ። ስልክ ቁጥሩ በSMS አይረጋገጥም፤ የራስዎን ቁጥር ብቻ ይጠቀሙ።',
     forgot: 'የይለፍ ቁጥር ረሱት?', forgotInfo: 'የPIN ማገገሚያ አገልግሎት እስካሁን አልተዘጋጀም። እባክዎ ከአስተዳዳሪ ጋር ይገናኙ።',
-    languageLabel: 'ቋንቋ ይምረጡ', brandLine: 'የቢንጎ ጨዋታዎን በዘመናዊ መንገድ ይደሰቱ።', welcome: 'እንኳን ደህና መጡ', formHint: 'ለመቀጠል የመለያ መረጃዎን ያስገቡ።', show: 'አሳይ', hide: 'ደብቅ',
+    languageLabel: 'ቋንቋ ይምረጡ', registrationProgress: 'የምዝገባ ሂደት', brandLine: 'የቢንጎ ጨዋታዎን በዘመናዊ መንገድ ይደሰቱ።', welcome: 'እንኳን ደህና መጡ', formHint: 'ለመቀጠል የመለያ መረጃዎን ያስገቡ።', show: 'አሳይ', hide: 'ደብቅ',
   },
   ti: {
     login: 'እቶ', register: 'መለያ ክፈት', phone: 'ቁጽሪ ተሌፎን', name: 'ምሉእ ስም', pin: '6 ኣሃዝ ምስጢራዊ ቁጽሪ (PIN)', confirmPin: 'PIN ደግም', pinMismatch: 'እቲ ዘእተኹሞ PIN ኣይመሳሰልን።',
@@ -287,7 +287,7 @@ export const translations = {
     locked: 'ብዙሕ ግዜ ፈቲኖም። ድሕሪ 15 ደቓይቕ ፈትኑ።', rate_limited: 'ብዙሕ ሕቶታት። ቁሩብ ደሊኹም ፈትኑ።', network: 'ምስ ኣገልግሎት ምርካብ ኣይተኻኣለን።', error: 'ጸገም ተፈጢሩ። እንደገና ፈትኑ።',
     age: '18 ዓመትን ልዕሊኡን ጥራይ። ቁጽሪ ተሌፎን ብSMS ኣይረጋገጽን፤ ናይ ባዕልኹም ቁጽሪ ጥራይ ተጠቐሙ።',
     forgot: 'PIN ረሲዕካዮ?', forgotInfo: 'ናይ PIN ምምላስ ኣገልግሎት ገና ኣይተዳለወን። በጃኹም ምስ ኣመሓዳሪ ተራኸቡ።',
-    languageLabel: 'ቋንቋ ምረጹ', brandLine: 'ኣብ ዘመናዊ መንገዲ ቢንጎ ተጻወቱን ተዘናግዑን።', welcome: 'እንቋዕ ብደሓን መጻእኩም', formHint: 'ንምቕጻል ናይ መለያ ሓበሬታኹም የእትዉ።', show: 'ኣርኢ', hide: 'ሕባእ',
+    languageLabel: 'ቋንቋ ምረጹ', registrationProgress: 'ሂደት ምዝገባ', brandLine: 'ኣብ ዘመናዊ መንገዲ ቢንጎ ተጻወቱን ተዘናግዑን።', welcome: 'እንቋዕ ብደሓን መጻእኩም', formHint: 'ንምቕጻል ናይ መለያ ሓበሬታኹም የእትዉ።', show: 'ኣርኢ', hide: 'ሕባእ',
   },
   en: {
     login: 'Sign in', register: 'Create account', phone: 'Phone number', name: 'Full name', pin: '6-digit PIN', confirmPin: 'Confirm PIN', pinMismatch: 'The PINs do not match.',
@@ -297,7 +297,7 @@ export const translations = {
     locked: 'Too many attempts. Try again in 15 minutes.', rate_limited: 'Too many requests. Wait a moment.', network: 'Can’t reach the server.', error: 'Something went wrong. Try again.',
     age: '18+ only. Phone numbers are not SMS-verified; use only your own number.',
     forgot: 'Forgot your PIN?', forgotInfo: 'PIN recovery is not available yet. Please contact the administrator for assistance.',
-    languageLabel: 'Choose language', brandLine: 'Enjoy your bingo experience with a modern touch.', welcome: 'Welcome back', formHint: 'Enter your account details to continue.', show: 'Show', hide: 'Hide',
+    languageLabel: 'Choose language', registrationProgress: 'Registration progress', brandLine: 'Enjoy your bingo experience with a modern touch.', welcome: 'Welcome back', formHint: 'Enter your account details to continue.', show: 'Show', hide: 'Hide',
   },
 },
   header: {
@@ -305,16 +305,19 @@ export const translations = {
     wallet: 'ቦርሳ ክፈት', admin: 'መቆጣጠሪያ ማዕከል', audio: 'የድምፅ ቅንብሮች',
     effects: 'የጨዋታ ድምፆች', voice: 'የቁጥር ንግግር', volume: 'የድምፅ መጠን',
     voiceHelp: 'በመሣሪያዎ የድምፅ ድጋፍ ይወሰናል', languageLabel: 'ቋንቋ',
+    refresh: 'ገጹን እንደገና ጫን', settings: 'ቅንብሮችን ክፈት', logout: 'ውጣ', players: 'የተጫዋቾች ሜኑ ክፈት', currency: 'ብር',
   },
   ti: {
     wallet: 'ቦርሳ ክፈት', admin: 'ማእከል ቁጥጥሪ', audio: 'ቅንብራት ድምጺ',
     effects: 'ድምጺ ጸወታ', voice: 'ኣፍ ዘረባ ቁጽሪ', volume: 'መጠን ድምጺ',
     voiceHelp: 'ኣብ ድጋፍ ድምጺ መሳርሒኻ ይምርኮስ', languageLabel: 'ቋንቋ',
+    refresh: 'ገጽ ኣሐድስ', settings: 'ቅንብራት ክፈት', logout: 'ውጻእ', players: 'ሜኑ ተጻወትቲ ክፈት', currency: 'ብር',
   },
   en: {
     wallet: 'Open wallet', admin: 'Control Center', audio: 'Audio settings',
     effects: 'Game sound effects', voice: 'Spoken number calls', volume: 'Volume',
     voiceHelp: 'Depends on speech voices available on your device', languageLabel: 'Language',
+    refresh: 'Refresh page', settings: 'Open settings', logout: 'Sign out', players: 'Open players menu', currency: 'ETB',
   },
 },
   payment: {
@@ -328,18 +331,24 @@ export const translations = {
     back: '← ተጫዋች',
     denied: 'ይህ ገጽ ለጨዋታው ባለቤት ብቻ ነው።',
     demo: 'የሙከራ ሁነታ፦ ይህ በአንድ አሳሽ ውስጥ ብቻ የሚሰራ ማሳያ ነው፤ ማንም ሰው #host መክፈት ይችላል። ደህንነቱ የተጠበቀ አይደለም።',
+    brandSubtitle: 'የጨዋታ ማዕከል', hostControlCenter: 'የሆስት ቁጥጥር ማዕከል',
+    gameManagement: 'የጨዋታ አስተዳደር', gamesCount: '4 ጨዋታዎች', gameSections: 'የሆስት ጨዋታ ክፍሎች',
   },
   ti: {
     languageLabel: 'ቋንቋ', title: 'ማእከል ቁጥጥሪ',
     back: '← ተጻዋታይ',
     denied: 'እዚ ገጽ ን ወናኒ እቲ ጸወታ ጥራይ እዩ።',
     demo: 'ናይ ፈተነ ኩነታት፦ እዚ ኣብ ሓደ ብሮውዘር ጥራይ ዝሰርሕ ምርኢት እዩ፤ ዝኾነ ሰብ #host ክኸፍት ይኽእል። ውሕስነት የብሉን።',
+    brandSubtitle: 'ማእከል ጸወታታት', hostControlCenter: 'ማእከል ቁጽጽር ሆስት',
+    gameManagement: 'ምሕደራ ጸወታ', gamesCount: '4 ጸወታታት', gameSections: 'ክፍልታት ጸወታ ሆስት',
   },
   en: {
     languageLabel: 'Language', title: 'Control Center',
     back: '← Player app',
     denied: 'This page is for the game owner only.',
     demo: 'Demo mode: runs in one browser only, and anyone can open #host. Not secure.',
+    brandSubtitle: 'Games Center', hostControlCenter: 'HOST CONTROL CENTER',
+    gameManagement: 'Game Management', gamesCount: '4 GAMES', gameSections: 'Host game sections',
   },
 },
   host: {
@@ -630,9 +639,9 @@ export const translations = {
   },
 },
   withdrawPanel: {
-  am: { title: 'የገንዘብ ማውጫ ጥያቄ', amount: 'መጠን (ETB)', method: 'የመቀበያ ዘዴ', telebirr: 'Telebirr', bank: 'Bank', destination: 'የስልክ/አካውንት ቁጥር', send: 'ጥያቄ ላክ', busy: 'በመላክ ላይ…', ok: 'ጥያቄው ተልኳል። ሂሳቡ ተይዟል።', note: 'ገንዘቡ በባንክ/Telebirr ከተላከ በኋላ አስተዳዳሪው የውጭ ማጣቀሻ ቁጥር በማስገባት ያረጋግጣል።', err: 'ጥያቄውን መላክ አልተቻለም' },
-  ti: { title: 'ሕቶ ምውጻእ', amount: 'መጠን (ETB)', method: 'መንገዲ ተቐባሊ', telebirr: 'Telebirr', bank: 'Bank', destination: 'ቁጽሪ ስልኪ/ሕሳብ', send: 'ሕቶ ስደድ', busy: 'ይስደድ ኣሎ…', ok: 'ሕቶ ተላኢኹ። ሒሳብ ተሓዚ።', note: 'ገንዘብ ባንኪ/Telebirr ምስ ተላእከ ኣማሓዳሪ መወከሲ ቁጽሪ ብምእታው የረጋግጾ።', err: 'ሕቶ ምስዳድ ኣይተኻእለን' },
-  en: { title: 'Withdrawal request', amount: 'Amount (ETB)', method: 'Destination method', telebirr: 'Telebirr', bank: 'Bank', destination: 'Phone / account number', send: 'Submit request', busy: 'Submitting…', ok: 'Request submitted. Balance has been reserved.', note: 'The administrator records the external bank or Telebirr reference after the transfer is sent.', err: 'Could not submit request' },
+  am: { title: 'የገንዘብ ማውጫ ጥያቄ', amount: 'መጠን (ETB)', method: 'የመቀበያ ዘዴ', telebirr: 'Telebirr', bank: 'Bank', destination: 'የስልክ/አካውንት ቁጥር', destinationPlaceholder: '09XXXXXXXX / የአካውንት ቁጥር', history: 'የመውጫ ጥያቄ ታሪክ', pendingStatus: 'በመጠባበቅ ላይ', approvedStatus: 'ጸድቋል', rejectedStatus: 'ውድቅ ተደርጓል', processingStatus: 'በሂደት ላይ', send: 'ጥያቄ ላክ', busy: 'በመላክ ላይ…', ok: 'ጥያቄው ተልኳል። ሂሳቡ ተይዟል።', note: 'ገንዘቡ በባንክ/Telebirr ከተላከ በኋላ አስተዳዳሪው የውጭ ማጣቀሻ ቁጥር በማስገባት ያረጋግጣል።', err: 'ጥያቄውን መላክ አልተቻለም' },
+  ti: { title: 'ሕቶ ምውጻእ', amount: 'መጠን (ETB)', method: 'መንገዲ ተቐባሊ', telebirr: 'Telebirr', bank: 'Bank', destination: 'ቁጽሪ ስልኪ/ሕሳብ', destinationPlaceholder: '09XXXXXXXX / ቁጽሪ ሕሳብ', history: 'ታሪኽ ሕቶታት ምውጻእ', pendingStatus: 'ይጽበ ኣሎ', approvedStatus: 'ጸዲቑ', rejectedStatus: 'ተነጺጉ', processingStatus: 'ኣብ ስራሕ', send: 'ሕቶ ስደድ', busy: 'ይስደድ ኣሎ…', ok: 'ሕቶ ተላኢኹ። ሒሳብ ተሓዚ።', note: 'ገንዘብ ባንኪ/Telebirr ምስ ተላእከ ኣማሓዳሪ መወከሲ ቁጽሪ ብምእታው የረጋግጾ።', err: 'ሕቶ ምስዳድ ኣይተኻእለን' },
+  en: { title: 'Withdrawal request', amount: 'Amount (ETB)', method: 'Destination method', telebirr: 'Telebirr', bank: 'Bank', destination: 'Phone / account number', destinationPlaceholder: '09XXXXXXXX / account number', history: 'Withdrawal request history', pendingStatus: 'Pending', approvedStatus: 'Approved', rejectedStatus: 'Rejected', processingStatus: 'Processing', send: 'Submit request', busy: 'Submitting…', ok: 'Request submitted. Balance has been reserved.', note: 'The administrator records the external bank or Telebirr reference after the transfer is sent.', err: 'Could not submit request' },
 },
   pinReset: {
     am: { title: 'የPIN ማገገሚያ', phone: 'ስልክ ቁጥር', otp: 'የማረጋገጫ ኮድ (OTP)', newPin: 'አዲስ 6 አሃዝ PIN', confirm: 'አዲሱን PIN ድገሙ', next: 'ቀጥል', resend: 'ኮዱን እንደገና ጠይቅ', back: 'ወደ መግቢያ ተመለስ', step: 'ደረጃ', adminHelp: 'ኮዱ በSMS አይላክም። በAdmin Dashboard ውስጥ ይታያል፤ አድሚኑ በስልክ ያሳውቅዎታል።', requested: 'ጥያቄዎ ተቀብሏል። አድሚኑ ኮዱን እስኪያሳውቅዎ ይጠብቁ።', networkError: 'ከሰርቨሩ ጋር መገናኘት አልተቻለም። እንደገና ይሞክሩ።', success: 'PINዎ በተሳካ ሁኔታ ተቀይሯል። አሁን በአዲሱ PIN ይግቡ።', expired: 'ኮዱ ጊዜው አልፏል ወይም ሙከራዎች ጨርሰዋል። አዲስ ኮድ ይጠይቁ።', wrongCode: 'የማረጋገጫ ኮዱ ትክክል አይደለም።', timer: 'የቀረ ጊዜ', working: 'በመላክ ላይ…', done: 'ጨርስ', invalid: 'እባክዎ ትክክለኛ መረጃ ያስገቡ።' },
