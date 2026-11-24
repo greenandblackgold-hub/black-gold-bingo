@@ -470,7 +470,7 @@ export const translations = {
     testOnly: 'የሙከራ ጥያቄ · ባላንስ አይጨምርም',
     testApprove: 'ሙከራ · የሙከራ ማጽደቅ',
     testConfirm: 'ይህ የTEST ሙከራ ብቻ ነው። ምንም ባላንስ አይጨምርም። ለመቀጠል?',
-    smsMatchedManual: 'SMS ተዛምዷል · የAdmin በእጅ ማረጋገጫ',
+    smsMatchedManual: 'SMS ተዛምዷል · የአስተዳዳሪ በእጅ ማረጋገጫ',
     smsMatchedManualHelp: 'SMS ተዛምዷል፤ ጥያቄው በመጠባበቅ ላይ ከሆነ ደረሰኙን በተለየ መንገድ አረጋግጠው በእጅ ያጽድቁ።',
     smsAmountMismatch: 'የSMS መጠን አልተዛመደም',
     smsAmountMismatchHelp: 'የSMS መጠን ከጥያቄው ጋር አልተዛመደም፤ በእጅ ያረጋግጡ።',
@@ -494,7 +494,7 @@ export const translations = {
     testOnly: 'ሙከራ ጥራይ · ሚዛን ኣይውሰኽን',
     testApprove: 'ሙከራ · ሙከራ ኣጽድቕ',
     testConfirm: 'እዚ ናይ TEST ሙከራ ጥራይ እዩ። ሚዛን ኣይውሰኽን። ክትቅጽሉ?',
-    smsMatchedManual: 'SMS ተዛሚዱ · ናይ Admin ኢድ ምርግጋጽ',
+    smsMatchedManual: 'SMS ተዛሚዱ · ናይ ኣማሓዳሪ ብኢድ ምርግጋጽ',
     smsMatchedManualHelp: 'SMS ተዛሚዱ፤ እቲ ሕቶ ኣብ ትጽቢት እንተሃልዩ ደረሰኙ ብናጻ ኣረጋጊጽኩም ብኢድ ኣጽድቑ።',
     smsAmountMismatch: 'መጠን SMS ኣይተዛመደን',
     smsAmountMismatchHelp: 'መጠን SMS ምስ ሕቶ ኣይተዛመደን፤ ብኢድ ኣረጋግጹ።',
@@ -647,8 +647,8 @@ export const translations = {
   en: { title: 'Withdrawal request', amount: 'Amount (ETB)', method: 'Destination method', telebirr: 'Telebirr', bank: 'Bank', destination: 'Phone / account number', destinationPlaceholder: '09XXXXXXXX / account number', history: 'Withdrawal request history', pendingStatus: 'Pending', approvedStatus: 'Approved', rejectedStatus: 'Rejected', processingStatus: 'Processing', send: 'Submit request', busy: 'Submitting…', ok: 'Request submitted. Balance has been reserved.', note: 'The administrator records the external bank or Telebirr reference after the transfer is sent.', err: 'Could not submit request' },
 },
   pinReset: {
-    am: { title: 'የPIN ማገገሚያ', phone: 'ስልክ ቁጥር', otp: 'የማረጋገጫ ኮድ (OTP)', newPin: 'አዲስ 6 አሃዝ PIN', confirm: 'አዲሱን PIN ድገሙ', next: 'ቀጥል', resend: 'ኮዱን እንደገና ጠይቅ', back: 'ወደ መግቢያ ተመለስ', step: 'ደረጃ', adminHelp: 'ኮዱ በSMS አይላክም። በAdmin Dashboard ውስጥ ይታያል፤ አድሚኑ በስልክ ያሳውቅዎታል።', requested: 'ጥያቄዎ ተቀብሏል። አድሚኑ ኮዱን እስኪያሳውቅዎ ይጠብቁ።', networkError: 'ከሰርቨሩ ጋር መገናኘት አልተቻለም። እንደገና ይሞክሩ።', success: 'PINዎ በተሳካ ሁኔታ ተቀይሯል። አሁን በአዲሱ PIN ይግቡ።', expired: 'ኮዱ ጊዜው አልፏል ወይም ሙከራዎች ጨርሰዋል። አዲስ ኮድ ይጠይቁ።', wrongCode: 'የማረጋገጫ ኮዱ ትክክል አይደለም።', timer: 'የቀረ ጊዜ', working: 'በመላክ ላይ…', done: 'ጨርስ', invalid: 'እባክዎ ትክክለኛ መረጃ ያስገቡ።' },
-    ti: { title: 'ምምላስ PIN', phone: 'ቁጽሪ ተሌፎን', otp: 'ናይ ምርግጋጽ ኮድ (OTP)', newPin: 'ሓድሽ 6 ኣሃዝ PIN', confirm: 'ነቲ ሓድሽ PIN ደግም', next: 'ቀጽል', resend: 'ኮድ እንደገና ሕተት', back: 'ናብ መእተዊ ተመለስ', step: 'ደረጃ', adminHelp: 'ኮድ ብSMS ኣይለኣኽን። ኣብ Admin Dashboard ይርአ፤ ኣድሚን ብተሌፎን ይነግረኩም።', requested: 'ሕቶኹም ተቐቢሉ። ኣድሚን ኮድ ክሳብ ዝነግረኩም ተጸበዩ።', networkError: 'ምስ ሰርቨር ምትእስሳር ኣይተኻእለን። እንደገና ፈትኑ።', success: 'PINኹም ብዓወት ተቐይሩ። ሕጂ ብሓድሽ PIN እተዉ።', expired: 'እቲ ኮድ ግዜኡ ኣብቂዑ ወይ ፈተነታት ተወዲኦም። ሓድሽ ኮድ ሕተቱ።', wrongCode: 'እቲ ኮድ ቅኑዕ ኣይኮነን።', timer: 'ዝተረፈ ግዜ', working: 'ይሰርሕ ኣሎ…', done: 'ወድእ', invalid: 'በጃኹም ቅኑዕ ሓበሬታ የእትዉ።' },
+    am: { title: 'የPIN ማገገሚያ', phone: 'ስልክ ቁጥር', otp: 'የማረጋገጫ ኮድ (OTP)', newPin: 'አዲስ 6 አሃዝ PIN', confirm: 'አዲሱን PIN ድገሙ', next: 'ቀጥል', resend: 'ኮዱን እንደገና ጠይቅ', back: 'ወደ መግቢያ ተመለስ', step: 'ደረጃ', adminHelp: 'ኮዱ በSMS አይላክም። በአስተዳዳሪ ቁጥጥር ማዕከል ውስጥ ይታያል፤ አስተዳዳሪው በስልክ ያሳውቅዎታል።', requested: 'ጥያቄዎ ተቀብሏል። ኣማሓዳሪ ኮድ እስኪያሳውቅዎ ይጠብቁ።', networkError: 'ከሰርቨሩ ጋር መገናኘት አልተቻለም። እንደገና ይሞክሩ።', success: 'PINዎ በተሳካ ሁኔታ ተቀይሯል። አሁን በአዲሱ PIN ይግቡ።', expired: 'ኮዱ ጊዜው አልፏል ወይም ሙከራዎች ጨርሰዋል። አዲስ ኮድ ይጠይቁ።', wrongCode: 'የማረጋገጫ ኮዱ ትክክል አይደለም።', timer: 'የቀረ ጊዜ', working: 'በመላክ ላይ…', done: 'ጨርስ', invalid: 'እባክዎ ትክክለኛ መረጃ ያስገቡ።' },
+    ti: { title: 'ምምላስ PIN', phone: 'ቁጽሪ ተሌፎን', otp: 'ናይ ምርግጋጽ ኮድ (OTP)', newPin: 'ሓድሽ 6 ኣሃዝ PIN', confirm: 'ነቲ ሓድሽ PIN ደግም', next: 'ቀጽል', resend: 'ኮድ እንደገና ሕተት', back: 'ናብ መእተዊ ተመለስ', step: 'ደረጃ', adminHelp: 'ኮድ ብSMS ኣይለኣኽን። ኣብ ማእከል ቁጽጽር ኣማሓዳሪ ይርአ፤ ኣማሓዳሪ ብተሌፎን ይነግረኩም።', requested: 'ሕቶኹም ተቐቢሉ። ኣማሓዳሪ ኮድ ክሳብ ዝነግረኩም ተጸበዩ።', networkError: 'ምስ ሰርቨር ምትእስሳር ኣይተኻእለን። እንደገና ፈትኑ።', success: 'PINኹም ብዓወት ተቐይሩ። ሕጂ ብሓድሽ PIN እተዉ።', expired: 'እቲ ኮድ ግዜኡ ኣብቂዑ ወይ ፈተነታት ተወዲኦም። ሓድሽ ኮድ ሕተቱ።', wrongCode: 'እቲ ኮድ ቅኑዕ ኣይኮነን።', timer: 'ዝተረፈ ግዜ', working: 'ይሰርሕ ኣሎ…', done: 'ወድእ', invalid: 'በጃኹም ቅኑዕ ሓበሬታ የእትዉ።' },
     en: { title: 'Reset your PIN', phone: 'Phone number', otp: 'Verification code (OTP)', newPin: 'New 6-digit PIN', confirm: 'Confirm new PIN', next: 'Continue', resend: 'Request a new code', back: 'Back to sign in', step: 'Step', adminHelp: 'The code is not sent by SMS. It appears in the Admin Dashboard, and an admin will read it to you by phone.', requested: 'Request received. Wait for an admin to provide your code.', networkError: 'Could not connect to the server. Please try again.', success: 'Your PIN has been reset. Sign in with your new PIN.', expired: 'The code expired or the attempt limit was reached. Request a new code.', wrongCode: 'The verification code is incorrect.', timer: 'Time remaining', working: 'Working…', done: 'Done', invalid: 'Please enter valid information.' },
   },
   serverAccess: {
