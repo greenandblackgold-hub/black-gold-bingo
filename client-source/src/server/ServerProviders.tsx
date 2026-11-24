@@ -67,6 +67,16 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
     void reloadLedger();
   }, [reloadCards, reloadLedger]);
 
+  // Admin-side changes can affect the player's profile, cards, or ledger.
+  // Re-fetch only authorized player data after receiving the invalidation signal.
+  useEffect(() => {
+    const refreshAfterAdminChange = () => {
+      void Promise.allSettled([refresh(), reloadCards(), reloadLedger()]);
+    };
+    window.addEventListener('bgb:admin-change', refreshAfterAdminChange);
+    return () => window.removeEventListener('bgb:admin-change', refreshAfterAdminChange);
+  }, [refresh, reloadCards, reloadLedger]);
+
   // Deposits and automatically credited prizes change the server wallet outside the player's session.
   // Refresh the profile and ledger at most every five seconds, and immediately when the player returns.
   // Prevent overlapping requests when a slow network response outlasts the polling interval.
@@ -202,6 +212,11 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const es = new EventSource(`${API_URL}/api/stream`);
     es.addEventListener('game', (e) => apply(JSON.parse((e as MessageEvent<string>).data) as ServerGameState));
+    es.addEventListener('admin-change', () => window.dispatchEvent(new Event('bgb:admin-change')));
+    es.addEventListener('app-version', (e) => {
+      const detail = JSON.parse((e as MessageEvent<string>).data) as { buildPath?: string };
+      window.dispatchEvent(new CustomEvent('bgb:app-version', { detail }));
+    });
     return () => es.close();
   }, [apply]);
 

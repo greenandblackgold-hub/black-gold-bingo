@@ -83,9 +83,15 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
 
   useEffect(() => {
     void loadState(); void loadHistory();
+    const onAdminChange = () => { void loadState(); void loadHistory(); };
+    window.addEventListener('bgb:admin-change', onAdminChange);
     const poll = window.setInterval(() => void loadState(), 1000);
     const tick = window.setInterval(() => setClock(Date.now()), 50);
-    return () => { window.clearInterval(poll); window.clearInterval(tick); };
+    return () => {
+      window.clearInterval(poll);
+      window.clearInterval(tick);
+      window.removeEventListener('bgb:admin-change', onAdminChange);
+    };
   }, [loadState, loadHistory]);
 
   useEffect(() => {

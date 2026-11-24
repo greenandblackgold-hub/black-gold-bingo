@@ -36,10 +36,16 @@ export class ApiError extends Error {
   }
 }
 
+/** Track active API calls so a new frontend bundle never reloads mid-transaction. */
+let pendingApiRequests = 0;
+export const hasPendingApiRequests = (): boolean => pendingApiRequests > 0;
+
 /** Fired when the server says the session is no longer valid. */
 export const LOGOUT_EVENT = 'bgb:logout';
 
 async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
+  pendingApiRequests += 1;
+  try {
   const token = getToken();
   let res: Response;
   try {
@@ -63,6 +69,9 @@ async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown):
     throw new ApiError(res.status, e.error ?? 'error', e.message ?? `Request failed (${res.status})`);
   }
   return json as T;
+  } finally {
+    pendingApiRequests = Math.max(0, pendingApiRequests - 1);
+  }
 }
 
 export const api = {

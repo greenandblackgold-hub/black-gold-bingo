@@ -392,7 +392,32 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
     });
   }
 
-  /* ───────────── server-sent events: live game state for everyone ───────────── */
+  /* ───────────── server-sent events: live game state + app updates ───────────── */
+  const liveStreamClients = new Set();
+
+  function broadcastAdminChange(pathname) {
+    const payload = JSON.stringify({ at: Date.now(), path: pathname });
+    for (const client of liveStreamClients) {
+      if (client.destroyed || client.writableEnded) {
+        liveStreamClients.delete(client);
+        continue;
+      }
+      client.write(`event: admin-change\ndata: ${payload}\n\n`);
+    }
+  }
+
+  function currentClientBuildPath() {
+    if (!staticRoot) return process.env.RENDER_GIT_COMMIT ?? 'unknown';
+    try {
+      const html = fs.readFileSync(path.join(staticRoot, 'index.html'), 'utf8');
+      return html.match(/<script\b[^>]*\bsrc=["']([^"']+\.js(?:\?[^"']*)?)["']/i)?.[1]
+        ?? process.env.RENDER_GIT_COMMIT
+        ?? 'unknown';
+    } catch {
+      return process.env.RENDER_GIT_COMMIT ?? 'unknown';
+    }
+  }
+
   function stream(req, res) {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -400,6 +425,8 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
       Connection: 'keep-alive',
       'X-Accel-Buffering': 'no',
     });
+    liveStreamClients.add(res);
+    res.write(`event: app-version\ndata: ${JSON.stringify({ buildPath: currentClientBuildPath() })}\n\n`);
     const write = (state) => res.write(`event: game\ndata: ${JSON.stringify(state)}\n\n`);
     game.getPublicState().then(write).catch(() => undefined);
     const off = game.subscribe(write);
@@ -407,6 +434,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
     req.on('close', () => {
       clearInterval(beat);
       off();
+      liveStreamClients.delete(res);
     });
   }
 
@@ -508,6 +536,8 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
       const params = Object.fromEntries(r.keys.map((k, i) => [k, m[i + 1]]));
       const handlerStartedAt = Date.now();
       const out = await r.handler({ req, user, body, rawBody, params, query: url.searchParams });
+      // Admin writes publish an invalidation signal only; clients fetch their own authorized data.
+      if (r.access === 'admin' && req.method === 'POST') broadcastAdminChange(url.pathname);
       if (kenoBatchRequest) {
         kenoHandlerMs = Date.now() - handlerStartedAt;
         res.once('finish', () => {
