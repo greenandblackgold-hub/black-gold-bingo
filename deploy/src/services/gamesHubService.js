@@ -172,6 +172,15 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   async function runGameTick(game) {
     const currentSettings = await settings();
     let round = await repo.getCurrentGameHubRound(game);
+    // Extend an already-settled Keno round created before paced reveals were enabled,
+    // so the full 20-number display is not cut short during the first deployment.
+    if (game === 'keno' && round?.status === 'settled') {
+      const intervalSeconds = round.kenoDrawIntervalSeconds ?? currentSettings.kenoDrawIntervalSeconds;
+      const revealCompleteAt = Number(round.settledAt ?? now()) + intervalSeconds * 20 * 1000 + 2000;
+      if (Number(round.nextRoundAt ?? 0) < revealCompleteAt) {
+        round = await repo.updateGameHubRound('keno', round.roundId, round.version, { nextRoundAt: revealCompleteAt });
+      }
+    }
     if (!round || (['settled', 'crashed'].includes(round.status) && Number(round.nextRoundAt ?? 0) <= now())) {
       if (currentSettings.generalEnabled === false) return round;
       round = await createRound(game, currentSettings);
