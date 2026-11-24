@@ -199,18 +199,22 @@ test('Aviator commits a round before betting and reveals its seed only after cra
 
 test('Admin settings are validated and persist independently of Bingo settings', async () => {
   const f = await fixture();
-  const settings = await f.service.updateSettings({ generalEnabled: false, announcementText: 'Maintenance window', announcementVisible: true, bingoEnabled: false, kenoEnabled: false, minBetEtb: 8, kenoMinBetEtb: 2, maxBetEtb: 200, houseEdgePercent: 60, kenoBettingSeconds: 30, aviatorBettingSeconds: 60 });
+  const settings = await f.service.updateSettings({ generalEnabled: false, announcementText: 'Maintenance window', announcementVisible: true, bingoEnabled: false, kenoEnabled: false, minesEnabled: false, minBetEtb: 8, kenoMinBetEtb: 2, maxBetEtb: 200, houseEdgePercent: 60, kenoBettingSeconds: 30, aviatorBettingSeconds: 60 });
   assert.equal(settings.generalEnabled, false);
   assert.equal(settings.announcementText, 'Maintenance window');
   assert.equal(settings.announcementVisible, true);
   assert.equal(settings.bingoEnabled, false);
   assert.equal(settings.kenoEnabled, false);
+  assert.equal(settings.minesEnabled, false);
+  await assert.rejects(f.service.assertGameEnabled('mines'), (e) => e instanceof HttpError && e.code === 'game_disabled');
   await assert.rejects(f.service.assertGameEnabled('keno'), (e) => e instanceof HttpError && e.code === 'games_center_disabled');
   await f.service.updateSettings({ generalEnabled: true });
   await assert.rejects(f.service.assertGameEnabled('keno'), (e) => e instanceof HttpError && e.code === 'game_disabled');
   await assert.rejects(f.service.assertGameEnabled('bingo'), (e) => e instanceof HttpError && e.code === 'game_disabled');
   await f.service.updateSettings({ bingoEnabled: true });
   await f.service.assertGameEnabled('bingo');
+  await f.service.updateSettings({ minesEnabled: true });
+  await f.service.assertGameEnabled('mines');
   assert.equal(settings.minBet, 800);
   assert.equal(settings.kenoMinBet, 200, 'Keno minimum bet is stored independently');
   assert.equal(settings.aviatorBettingSeconds, 60, 'Aviator supports the 60-second betting window');
