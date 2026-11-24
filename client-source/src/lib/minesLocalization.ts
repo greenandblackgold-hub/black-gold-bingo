@@ -59,7 +59,7 @@ export const minesText = {
     mineHit: 'Mine hit! The round is over.', allSafe: 'All safe tiles opened! Your demo prize was added.',
     gemFound: 'Gem found! Keep playing or cash out.', cashOutSuccess: 'Cash Out successful. {amount} demo credits returned.',
     boardStatus: '5 × 5 · 25 TILES', custom: 'Custom · 1–24', minimum: 'Minimum', maximum: 'Maximum', maxShort: 'MAX',
-    demoOnly: 'DEMO CREDITS ONLY', cashOut: 'CASH OUT', start: 'BET / START GAME',
+    demoOnly: 'DEMO CREDITS ONLY', demoLabel: 'DEMO', cashOut: 'CASH OUT', start: 'BET / START GAME',
     startNew: 'BET / START NEW GAME', invalidBet: 'Bet must be between {min} and {max} demo credits.',
     noBet: 'No bet has started yet.', noHistory: 'No completed games yet.',
     betLabel: 'Bet', mines: 'Mines', gems: 'Gems', active: 'ACTIVE', won: 'WON', cashedOut: 'CASHED OUT', lostStatus: 'LOST',
