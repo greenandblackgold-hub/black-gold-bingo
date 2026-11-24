@@ -58,6 +58,9 @@ function makeRecord(round: Round, result: 'won' | 'lost', payout: number): Round
 }
 
 export function MinesGame() {
+  const { lang } = useLanguage();
+  const t = (key: Parameters<typeof minesLocale>[1], values: Record<string, string | number> = {}) => minesLocale(lang, key, values);
+  const formatMoney = (value: number) => money(value, lang);
   const [saved, setSaved] = useState(readSaved);
   const [round, setRound] = useState<Round | null>(null);
   const [tab, setTab] = useState<Tab>('game');
@@ -169,7 +172,7 @@ export function MinesGame() {
 
       {tab === 'game' && <>
         <section className="rounded-2xl border border-amber-300/20 bg-[#0b0b09] p-2 sm:p-3">
-          <div className="mb-2 flex items-center justify-between px-1"><h2 className="text-xs font-black tracking-wider text-amber-200">5 × 5 · 25 TILES</h2><span className="text-[10px] text-amber-100/45">{active ? t('pickTile') : round?.status === 'lost' ? t('lost') : round?.status === 'won' ? t('complete') : t('ready')}</span></div>
+          <div className="mb-2 flex items-center justify-between px-1"><h2 className="text-xs font-black tracking-wider text-amber-200">{t('boardStatus')}</h2><span className="text-[10px] text-amber-100/45">{active ? t('pickTile') : round?.status === 'lost' ? t('lost') : round?.status === 'won' ? t('complete') : t('ready')}</span></div>
           <div className="grid grid-cols-5 gap-2">
             {Array.from({ length: 25 }, (_, index) => {
               const opened = visibleTiles.has(index);
@@ -190,7 +193,7 @@ export function MinesGame() {
             </div>
             <label className="mt-3 flex items-center justify-between gap-3 text-xs text-amber-100/70"><span>{t('custom')}</span><input type="number" min="1" max="24" step="1" value={customMines} disabled={!!active} onChange={(event) => setCustomMines(event.target.value)} onBlur={() => chooseMineCount(Number(customMines) || mineCount)} className="w-20 rounded-lg border border-amber-400/25 bg-black px-2 py-1.5 text-right font-bold text-amber-100 disabled:opacity-50" /></label>
           </div>
-          <div><label className="mb-2 block text-xs font-bold text-amber-200"{t('betAmount')} ({t('demoCredit')})</label>
+          <div><label className="mb-2 block text-xs font-bold text-amber-200">{t('betAmount')} ({t('demoCredit')})</label>
             <div className="grid grid-cols-[44px_minmax(0,1fr)_44px_58px_62px] gap-1.5">
               <button type="button" disabled={!!active} onClick={() => adjustBet(0.5)} className="rounded-lg border border-amber-400/25 bg-black/60 text-xl font-black text-amber-200 disabled:opacity-40">−</button>
               <input type="number" min={MIN_BET} max={maximumBet} step="0.01" value={bet} disabled={!!active} onChange={(event) => setBet(event.target.value)} className="min-w-0 rounded-lg border border-amber-400/25 bg-black px-2 text-center text-lg font-black tabular-nums text-amber-100 disabled:opacity-50" aria-label={t('betAmountAria')} />
