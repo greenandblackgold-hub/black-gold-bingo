@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import { gameUi } from '@/lib/gameUi';
+import { minesLocale } from '@/lib/minesLocalization';
 
 const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -33,6 +34,7 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
 export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMines, serverMode }: Props) {
   const { lang } = useLanguage();
   const t = gameUi.gamesCenter[lang];
+  const mt = (key: Parameters<typeof minesLocale>[1]) => minesLocale(lang, key);
   const [availability, setAvailability] = useState<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' } | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
   useEffect(() => {
@@ -48,7 +50,7 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
     return () => { active = false; window.clearInterval(poll); };
   }, [serverMode, t.loadError]);
   if (serverMode && availability?.generalEnabled === false) {
-    return <main className="mx-auto min-h-[70vh] w-full max-w-6xl px-4 py-8"><section className="mx-auto mb-6 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/20 bg-black/45 px-5 py-4"><div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">{availability.walletMode === 'shared' ? t.unifiedWallet : t.demoWallet}</p><p className="mt-1 text-xl font-black text-amber-100">{money(availability.balanceEtb)} ETB</p></div><span className="rounded-full border border-amber-300/20 px-3 py-1.5 text-[9px] font-bold tracking-wider text-amber-300">Wallet Balance</span></section>{availability.announcement && <p role="status" className="mx-auto max-w-2xl rounded-xl border border-amber-300/20 bg-black/40 p-5 text-center text-sm leading-7 text-amber-100">{availability.announcement}</p>}</main>;
+    return <main className="mx-auto min-h-[70vh] w-full max-w-6xl px-4 py-8"><section className="mx-auto mb-6 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/20 bg-black/45 px-5 py-4"><div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">{availability.walletMode === 'shared' ? t.unifiedWallet : t.demoWallet}</p><p className="mt-1 text-xl font-black text-amber-100">{money(availability.balanceEtb)} ETB</p></div><span className="rounded-full border border-amber-300/20 px-3 py-1.5 text-[9px] font-bold tracking-wider text-amber-300">{mt('walletBalance')}</span></section>{availability.announcement && <p role="status" className="mx-auto max-w-2xl rounded-xl border border-amber-300/20 bg-black/40 p-5 text-center text-sm leading-7 text-amber-100">{availability.announcement}</p>}</main>;
   }
   return (
     <div className="mx-auto w-full max-w-6xl space-y-7 pb-8">
@@ -78,11 +80,10 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
         {(!serverMode || availability?.bingoEnabled === true) && <GameCard title="Bingo PRO" subtitle={t.bingoSubtitle} detail={t.bingoDetail} icon="bingo" onClick={onOpenBingo} openLabel={t.openGame} featured />}
         {(!serverMode || availability?.kenoEnabled === true) && <GameCard title="Keno" subtitle={t.kenoSubtitle} detail={t.kenoDetail} icon="keno" onClick={onOpenKeno} openLabel={t.openGame} />}
         {(!serverMode || availability?.aviatorEnabled === true) && <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} openLabel={t.openGame} />}
-        <GameCard title="Mines" subtitle="FIND THE GEMS" detail="Open safe tiles, grow your multiplier and cash out your demo credits." icon="mines" onClick={onOpenMines} openLabel={t.openGame} />
+        <GameCard title="Mines" subtitle={mt('cardSubtitle')} detail={mt('cardDetail')} icon="mines" onClick={onOpenMines} openLabel={t.openGame} />
         <GameCard title="Virtual Sports" subtitle={t.virtualSportsSubtitle} detail={t.virtualSportsDetail} icon="virtual" onClick={() => {}} openLabel={t.openGame} disabled disabledLabel={t.comingSoon} />
         <GameCard title="Live Sports" subtitle={t.liveSportsSubtitle} detail={t.liveSportsDetail} icon="live" onClick={() => {}} openLabel={t.openGame} disabled disabledLabel={t.comingSoon} />
       </div>
-      {serverMode && availability && !availability.bingoEnabled && !availability.kenoEnabled && !availability.aviatorEnabled && <p className="rounded-xl border border-amber-300/20 bg-black/40 p-4 text-center text-sm text-amber-100/70">All games are currently unavailable. Please check again later.</p>}
       <p className="text-center text-[11px] leading-5 text-amber-100/40">{t.demoNotice}</p>
     </div>
   );

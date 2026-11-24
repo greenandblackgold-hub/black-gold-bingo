@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode, type FormEvent } from 'react';
 import { translations } from '@/lib/localization';
+import { adminSimpleLocale } from '@/lib/adminSimpleLocalization';
 import { useLanguage } from '@/context/LanguageContext';
 import { AudioCallAnnouncer } from '@/components/audio/AudioCallAnnouncer';
 import { PlayerFeatures } from '@/components/play/PlayerFeatures';
@@ -44,6 +45,8 @@ function useHash(): string {
 
 /** Player app: Play, Wallet and Menu. */
 function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLogout: () => void }) {
+  const { lang } = useLanguage();
+  const appText = (key: string) => adminSimpleLocale('app', lang, key);
   type PlayerScreen = TabId | 'keno' | 'aviator' | 'mines';
   const [tab, setTab] = useState<PlayerScreen>(() => (window.location.hash === '#wallet' ? 'wallet' : 'games'));
   const [menuOpen, setMenuOpen] = useState(false);
@@ -89,11 +92,11 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
         {generalEnabled && tab === 'mines' && <MinesGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} />}
         {generalEnabled && tab === 'wallet' && <Suspense fallback={<RouteLoading />}><WalletView onGoToPlay={() => setTab('play')} /></Suspense>}
       </main>
-      {generalEnabled && menuOpen && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Menu">
+      {generalEnabled && menuOpen && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={appText("menu")}>
         <section className="relative flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-amber-400/35 bg-[#090909] shadow-[0_24px_90px_rgba(0,0,0,.8)] sm:rounded-3xl">
           <header className="flex shrink-0 items-center justify-between border-b border-amber-400/20 bg-gradient-to-r from-zinc-950 via-zinc-900 to-amber-950 px-5 py-4">
-            <div><p className="text-[10px] font-bold uppercase tracking-[.28em] text-amber-400">BLACK GOLD PLC · GAMES CENTER</p><h2 className="mt-1 text-lg font-black text-amber-100">Menu</h2></div>
-            <button type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu" className="rounded-xl border border-amber-300/30 bg-black/40 px-4 py-2 text-sm font-bold text-amber-200 hover:bg-amber-400/10">ዝጋ ✕</button>
+            <div><p className="text-[10px] font-bold uppercase tracking-[.28em] text-amber-400">BLACK GOLD PLC · GAMES CENTER</p><h2 className="mt-1 text-lg font-black text-amber-100">{appText("menu")}</h2></div>
+            <button type="button" onClick={() => setMenuOpen(false)} aria-label={appText("closeMenu")} className="rounded-xl border border-amber-300/30 bg-black/40 px-4 py-2 text-sm font-bold text-amber-200 hover:bg-amber-400/10">{appText("closeMenu")} ✕</button>
           </header>
           <div className="overflow-y-auto overscroll-contain px-4 pb-6"><PlayerFeatures onGoToWallet={() => { setMenuOpen(false); setTab('wallet'); }} menuOnly /></div>
         </section>
@@ -155,29 +158,33 @@ function DemoApp() {
 
 function PhoneVerificationGate() {
   const { user, refresh, logout } = useAuth();
+  const { lang } = useLanguage();
+  const appText = (key: string) => adminSimpleLocale('app', lang, key);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setError('');
     try { await api.post('/api/auth/phone-otp/verify', { code }); await refresh(); }
-    catch (e) { setError(e instanceof Error ? e.message : 'ኮዱ አልተቀበለም።'); }
+    catch (e) { setError(e instanceof Error ? e.message : appText('invalidCode')); }
     finally { setBusy(false); }
   };
   return <main className="premium-ui grid min-h-screen place-items-center bg-darkbg px-5 text-gold-100"><form onSubmit={submit} className="w-full max-w-md space-y-4 rounded-2xl bg-cardbg p-6 ring-1 ring-gold-500/40">
-    <h1 className="text-xl font-bold text-gold-400">ስልክዎን ያረጋግጡ</h1>
-    <p className="text-sm text-gold-200/80">የማረጋገጫ ቁጥሩን ከአስተዳዳሪው በስልክ ጥሪ ይቀበሉ። SMS አይላክም።</p>
+    <h1 className="text-xl font-bold text-gold-400">{appText("phoneTitle")}</h1>
+    <p className="text-sm text-gold-200/80">{appText("phoneHelp")}</p>
     <p className="text-sm text-gold-500">{user?.phone}</p>
-    <input aria-label="6 digit code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,''))} className="w-full rounded-xl bg-black/30 p-3 text-center text-2xl tracking-[0.5em] text-gold-200" />
+    <input aria-label={appText("code")} inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,''))} className="w-full rounded-xl bg-black/30 p-3 text-center text-2xl tracking-[0.5em] text-gold-200" />
     {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
-    <button disabled={busy || code.length!==6} className="w-full rounded-xl bg-gold-500 p-3 font-bold text-black disabled:opacity-50">{busy ? 'በመፈተሽ ላይ…' : 'አረጋግጥ'}</button>
-    <button type="button" onClick={logout} className="w-full p-2 text-sm text-gold-400">ውጣ</button>
+    <button disabled={busy || code.length!==6} className="w-full rounded-xl bg-gold-500 p-3 font-bold text-black disabled:opacity-50">{busy ? appText('verifying') : appText('verify')}</button>
+    <button type="button" onClick={logout} className="w-full p-2 text-sm text-gold-400">{appText("logout")}</button>
   </form></main>;
 }
 
 function AuthGate({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="grid min-h-screen place-items-center text-gold-500" role="status">…</div>;
+  const { lang } = useLanguage();
+  const appText = (key: string) => adminSimpleLocale('app', lang, key);
+  if (loading) return <div className="grid min-h-screen place-items-center text-gold-500" role="status">{appText("loading")}</div>;
   if (!user) return <Suspense fallback={<RouteLoading />}><AuthScreen /></Suspense>;
   if (user.role === 'player' && user.phoneVerified === false) return <PhoneVerificationGate />;
   return <>{children}</>;
