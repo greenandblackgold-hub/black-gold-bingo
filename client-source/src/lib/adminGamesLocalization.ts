@@ -19,7 +19,7 @@ const games = {
     aviatorWindow:'የAviator ውርርድ ጊዜ (ሰከንዶች)', saving:'በማስቀመጥ ላይ…', saveSettings:'የጨዋታ ቅንብሮችን አስቀምጥ',
     footer:'የጨዋታ መገኘት፣ የውርርድ ገደቦች፣ የዙር ጊዜዎችና የገንዘብ ገንዳ ኮሚሽን (50%–60%)። የክፍያ ስሌት በዙር የተሰበሰበው ውርርድ ይገደባል፤ የዕጣና የድራው ፍትሃዊነት ስልቶች አይቀየሩም።',
     loadError:'የጨዋታ ቅንብሮችን ማምጣት አልተቻለም።', saved:'የጨዋታ ማዕከል ቅንብሮች ተቀምጠዋል።', saveError:'ቅንብሮቹን ማስቀመጥ አልተቻለም።',
-    allUnavailable:'በአሁኑ ጊዜ ሁሉም ጨዋታዎች አይገኙም። እባክዎ ቆይተው ይመልከቱ።', statusBetting:'ውርርድ ክፍት ነው', statusSettled:'ዙሩ ተጠናቋል', statusCrashed:'ዙሩ ተቋርጧል', betsLabel:'ውርርዶች',
+    allUnavailable:'በአሁኑ ጊዜ ሁሉም ጨዋታዎች አይገኙም። እባክዎ ቆይተው ይመልከቱ።', statusBetting:'ውርርድ ክፍት ነው', statusSettled:'ዙሩ ተጠናቋል', statusCrashed:'ዙሩ ተቋርጧል', statusWaiting:'በመጠባበቅ ላይ', statusActive:'በሂደት ላይ', statusPending:'በመጠባበቅ ላይ', statusUnknown:'ያልታወቀ ሁኔታ', betsLabel:'ውርርዶች',
   },
   ti: {
     management:'ምሕደራ ጸወታ', controls:'ቁጽጽር ማእከል ጸወታ', simulation:'ናይ ፈተነ ሞድ ጥራይ',
@@ -39,7 +39,7 @@ const games = {
     aviatorWindow:'ግዜ ውርርድ Aviator (ካልኢታት)', saving:'ይቕመጥ ኣሎ…', saveSettings:'ቅንብራት ጸወታ ኣቐምጥ',
     footer:'ምርካብ ጸወታ፣ ገደብ ውርርድ፣ ግዜ ዙርን ኮሚሽን ገንዳን (50%–60%)። ክፍሊት ብዝተኣከበ ውርርድ ዙር ይገደብ፤ ስልቲ ፍትሓዊነት ዕጫን ድራውን ኣይቅየርን።',
     loadError:'ቅንብራት ጸወታ ምምጻእ ኣይተኻእለን።', saved:'ቅንብራት ማእከል ጸወታ ተቐሚጦም።', saveError:'ቅንብራት ምቕማጥ ኣይተኻእለን።',
-    allUnavailable:'ኣብዚ ሕጂ ኩሎም ጸወታታት ኣይርከቡን። በጃኹም ድሕሪ ግዜ ፈትሹ።', statusBetting:'ውርርድ ክፉት እዩ', statusSettled:'ዙር ተወዲኡ', statusCrashed:'ዙር ተቛሪጹ', betsLabel:'ውርርድ',
+    allUnavailable:'ኣብዚ ሕጂ ኩሎም ጸወታታት ኣይርከቡን። በጃኹም ድሕሪ ግዜ ፈትሹ።', statusBetting:'ውርርድ ክፉት እዩ', statusSettled:'ዙር ተወዲኡ', statusCrashed:'ዙር ተቛሪጹ', statusWaiting:'ይጽበ ኣሎ', statusActive:'ኣብ ስራሕ', statusPending:'ይጽበ ኣሎ', statusUnknown:'ዘይፍለጥ ኩነታት', betsLabel:'ውርርድ',
   },
   en: {
     management:'Games management', controls:'Games Center Controls', simulation:'SIMULATION ONLY',
@@ -59,7 +59,7 @@ const games = {
     aviatorWindow:'Aviator betting window (seconds)', saving:'Saving…', saveSettings:'Save game settings',
     footer:'Game availability, bet limits, round timers and pool commission (50%–60%). Payout settlement is capped by each round’s collected stakes; draw and crash fairness algorithms remain unchanged.',
     loadError:'Could not load game settings.', saved:'Games Center settings saved.', saveError:'Settings could not be saved.',
-    allUnavailable:'All games are currently unavailable. Please check again later.', statusBetting:'Betting open', statusSettled:'Round settled', statusCrashed:'Round crashed', betsLabel:'bets',
+    allUnavailable:'All games are currently unavailable. Please check again later.', statusBetting:'Betting open', statusSettled:'Round settled', statusCrashed:'Round crashed', statusWaiting:'Waiting', statusActive:'Active', statusPending:'Pending', statusUnknown:'Unknown status', betsLabel:'bets',
   },
 } satisfies Record<Lang, Record<string, string>>;
 
