@@ -82,7 +82,7 @@ export function AdminGamesHub() {
               <option value="10">{10} {t('seconds')}</option><option value="15">{15} {t('seconds')}</option><option value="20">{20} {t('seconds')}</option><option value="30">{30} {t('seconds')}</option><option value="45">{45} {t('seconds')}</option>
             </optgroup>
             <optgroup label={t('minutes')}>
-              <option value="60">{1} {t('minutes')}</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option><option value="600">10 minutes</option>
+              <option value="60">{1} {t('minutes')}</option><option value="120">{2} {t('minutes')}</option><option value="180">{3} {t('minutes')}</option><option value="300">{5} {t('minutes')}</option><option value="600">{10} {t('minutes')}</option>
             </optgroup>
           </select>
           <span className="mt-1 block text-[10px] font-normal text-amber-100/40">{t('nextKeno')}</span>
