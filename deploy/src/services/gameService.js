@@ -9,6 +9,7 @@ export function createGameService({ repo, config, now = Date.now }) {
   const listeners = new Set();
   const cardSecret = hmacHex(config.jwtSecret, 'card-signing');
   const signCard = (code, round, grid) => hmacHex(cardSecret, `${code}|${round}|${JSON.stringify(grid)}`);
+  const signPreview = (userId, round, serial, grid) => hmacHex(cardSecret, `preview|${userId}|${round}|${serial}|${JSON.stringify(grid)}`);
   let timer = null;
   const roundIntervalMs = (g) => ([4, 5, 10].includes(Number(g.roundIntervalMinutes)) ? Number(g.roundIntervalMinutes) : 10) * 60 * 1000;
   const calculatePrize = (g) => {
@@ -289,9 +290,8 @@ export function createGameService({ repo, config, now = Date.now }) {
       if (g.phase !== 'waiting' || g.bonusRound === true) throw new HttpError(409, 'round_not_open', 'Cards can only be prepared before a regular round starts');
       const sold = config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0;
       if (sold + n > roundCardLimit) throw new HttpError(409, 'card_pool_full', 'All available Bingo cards for this round have been taken.');
-      const expiredBefore = now() - 30 * 60 * 1000;
-      for (const [key, preview] of pendingCardPreviews) if (preview.createdAt < expiredBefore) pendingCardPreviews.delete(key);
-      const userPreviewCount = [...pendingCardPreviews.keys()].filter((key) => key.startsWith(user.id + ':')).length;
+      for (const [key, preview] of pendingCardPreviews) if (preview.round !== g.roundNumber) pendingCardPreviews.delete(key);
+      const userPreviewCount = [...pendingCardPreviews.entries()].filter(([key, preview]) => key.startsWith(user.id + ':') && preview.round === g.roundNumber).length;
       if (userPreviewCount + n > 50) throw new HttpError(429, 'too_many_previews', 'You can keep up to 50 preview cards. Register or remove existing previews before adding more.');
       if (previewNextSerial === null) previewNextSerial = await repo.peekNextCardSerial();
       const usedSerials = new Set(await repo.listUsedCardSerials());
@@ -302,14 +302,26 @@ export function createGameService({ repo, config, now = Date.now }) {
         const serial = String(previewNextSerial++);
         usedSerials.add(serial);
         const grid = generateGrid();
-        const preview = { id: 'draft-' + serial, serial, grid };
-        pendingCardPreviews.set(user.id + ':' + serial, { grid, createdAt: now() });
+        const previewToken = signPreview(user.id, g.roundNumber, serial, grid);
+        const preview = { id: 'draft-' + serial, serial, grid, previewToken };
+        pendingCardPreviews.set(user.id + ':' + serial, { grid, round: g.roundNumber, previewToken, createdAt: now() });
         previews.push(preview);
       }
       return previews;
     },
 
-    async buyCards(user, count, requestedSerial) {
+    async myPreviews(user) {
+      const g = await repo.getGame();
+      return [...pendingCardPreviews.entries()]
+        .filter(([key, preview]) => key.startsWith(user.id + ':') && preview.round === g.roundNumber)
+        .map(([key, preview]) => {
+          const serial = key.slice(key.lastIndexOf(':') + 1);
+          return { id: 'draft-' + serial, serial, grid: preview.grid, previewToken: preview.previewToken };
+        })
+        .sort((a, b) => Number(a.serial) - Number(b.serial));
+    },
+
+    async buyCards(user, count, requestedSerial, previewGrid, previewToken) {
       const n = Number(count);
       if (!Number.isInteger(n) || n < 1 || n > Math.min(config.maxCardsPerPurchase, 50)) {
         throw new HttpError(400, 'invalid_count', `Buy 1 to ${Math.min(config.maxCardsPerPurchase, 50)} cards`);
@@ -358,9 +370,21 @@ export function createGameService({ repo, config, now = Date.now }) {
         throw e;
       }
       const pendingPreview = requestedSerial !== undefined && requestedSerial !== null ? pendingCardPreviews.get(user.id + ':' + String(requestedSerial)) : null;
+      let signedPreviewGrid = null;
+      if (previewToken !== undefined && previewToken !== null) {
+        const serial = String(requestedSerial ?? '');
+        if (n !== 1 || !/^\\d{5}$/.test(serial) || !isValidGrid(previewGrid) ||
+            !safeEqual(String(previewToken), signPreview(user.id, g.roundNumber, serial, previewGrid))) {
+          throw new HttpError(400, 'invalid_preview', 'This prepared card could not be verified. Please prepare it again.');
+        }
+        if (pendingPreview && !safeEqual(String(previewToken), pendingPreview.previewToken)) {
+          throw new HttpError(400, 'invalid_preview', 'This prepared card could not be verified. Please prepare it again.');
+        }
+        signedPreviewGrid = previewGrid;
+      }
       const cards = Array.from({ length: n }, (_, i) => {
         const code = newCardCode();
-        const grid = n === 1 && pendingPreview ? pendingPreview.grid : generateGrid();
+        const grid = n === 1 ? (signedPreviewGrid ?? pendingPreview?.grid ?? generateGrid()) : generateGrid();
         return { code, serial: serials[i], grid, sig: signCard(code, g.roundNumber, grid) };
       });
       try {
