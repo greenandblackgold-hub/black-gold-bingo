@@ -119,7 +119,7 @@ export function KenoGame({ onBack, onSwitchGame, onOpenMenu }: { onBack: () => v
   const previousBalls = visibleDrawnNumbers.slice(-8,-1);
 
   return (
-    <main className="keno-reference-page mx-auto min-h-[100dvh] w-full max-w-2xl space-y-3 bg-[#070707] px-2 text-[#f3dfad] sm:px-4">
+    <main className="keno-reference-page mx-auto min-h-[100dvh] w-full max-w-4xl space-y-3 bg-[#070707] px-2 text-[#f3dfad] sm:px-4">
       <header className="relative z-10 -mx-2 flex min-h-[42px] items-center justify-between gap-2 border-b border-emerald-400/15 bg-[#07110f] px-2 py-1 shadow-[0_4px_16px_rgba(0,0,0,.35)]">
         <div className="flex shrink-0 items-center gap-2"><button type="button" onClick={onBack} aria-label={lang === 'en' ? 'Back to games' : lang === 'ti' ? 'ናብ ጸወታታት ተመለስ' : 'ወደ ጨዋታዎች ተመለስ'} className="grid h-8 w-8 place-items-center rounded-lg border border-emerald-300/20 bg-black/40 text-base text-emerald-200">←</button><span className="leading-[.82]"><span className="block text-[10px] font-black italic text-white">{c.fast}</span><span className="block text-[17px] font-black italic tracking-tight text-emerald-300">KENO</span></span></div>
         <div className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full border border-emerald-400/20 bg-black/35 px-2 py-1">
