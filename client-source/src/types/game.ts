@@ -135,6 +135,8 @@ export interface RoundContextValue {
   winner: SharedGame['winner'];
   roundPrizeEtb?: number;
   roundCardCount?: number;
+  roundCardLimit?: number;
+  availableCardCount?: number;
   roundPlayerCount?: number;
   prizeMode?: 'revenue_percent' | 'per_player' | 'fixed';
   fixedPrizeEtb?: number;
