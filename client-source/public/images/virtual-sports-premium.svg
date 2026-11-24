@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 768" role="img" aria-labelledby="t d">
+<title id="t">Virtual Sports premium icon</title><desc id="d">A luminous holographic football above a futuristic virtual sports arena.</desc>
+<defs>
+ <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#09052c"/><stop offset=".5" stop-color="#10105a"/><stop offset="1" stop-color="#070b25"/></linearGradient>
+ <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff7b2"/><stop offset=".25" stop-color="#ffd34e"/><stop offset=".6" stop-color="#f39a09"/><stop offset="1" stop-color="#8e4300"/></linearGradient>
+ <radialGradient id="orb" cx=".32" cy=".2" r=".82"><stop stop-color="#eaffff"/><stop offset=".18" stop-color="#75faff"/><stop offset=".48" stop-color="#138fff"/><stop offset=".8" stop-color="#2835d8"/><stop offset="1" stop-color="#090b49"/></radialGradient>
+ <filter id="neon"><feGaussianBlur stdDeviation="14" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <filter id="shadow"><feGaussianBlur stdDeviation="22"/></filter>
+ <clipPath id="clip"><rect x="24" y="24" width="720" height="720" rx="112"/></clipPath>
+</defs>
+<g clip-path="url(#clip)">
+ <rect width="768" height="768" fill="url(#bg)"/>
+ <g fill="none" stroke="#13dfff" stroke-opacity=".6" filter="url(#neon)"><path d="M-30 270L384 80 798 270M-30 340L384 150 798 340" stroke-width="5"/><path d="M-20 390L384 205 788 390" stroke-width="3"/></g>
+ <g opacity=".9" stroke="#4ef5ff" stroke-width="5" fill="none"><path d="M60 180l120-65 120 65v140l-120 65-120-65z"/><path d="M468 180l120-65 120 65v140l-120 65-120-65z"/><path d="M60 180l120 70 120-70M180 250v135M468 180l120 70 120-70M588 250v135"/></g>
+ <g fill="#64faff" opacity=".85"><circle cx="180" cy="180" r="9"/><circle cx="588" cy="180" r="9"/><circle cx="384" cy="100" r="7"/><circle cx="90" cy="420" r="6"/><circle cx="678" cy="420" r="6"/></g>
+ <ellipse cx="384" cy="630" rx="280" ry="62" fill="#00dfff" opacity=".3" filter="url(#shadow)"/>
+ <path d="M95 626Q384 520 673 626L630 696H138Z" fill="#121b63" stroke="#25e8ff" stroke-width="8" filter="url(#neon)"/>
+ <ellipse cx="384" cy="615" rx="245" ry="55" fill="#0a0d3b" stroke="#b24cff" stroke-width="9"/>
+ <ellipse cx="384" cy="605" rx="190" ry="38" fill="none" stroke="#1eeaff" stroke-width="8" filter="url(#neon)"/>
+ <ellipse cx="384" cy="600" rx="120" ry="22" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="4"/>
+ <g fill="none" stroke="#39eaff" stroke-width="7" opacity=".9" filter="url(#neon)"><ellipse cx="384" cy="400" rx="270" ry="100" transform="rotate(-18 384 400)"/><ellipse cx="384" cy="400" rx="270" ry="100" transform="rotate(18 384 400)"/></g>
+ <g transform="translate(384 345)" filter="url(#neon)">
+  <circle r="190" fill="#04cfff" opacity=".18"/>
+  <circle r="158" fill="url(#orb)" stroke="#a7ffff" stroke-width="8"/>
+  <g fill="none" stroke="#d8ffff" stroke-width="5" opacity=".95">
+   <path d="M0-158Q-86-80-92 0Q-86 80 0 158Q86 80 92 0Q86-80 0-158Z"/>
+   <path d="M-158 0H158M-137-78Q0-28 137-78M-137 78Q0 28 137 78"/>
+   <path d="M-78-137Q-28 0-78 137M78-137Q28 0 78 137"/>
+  </g>
+  <path d="M-115-105Q-25-177 72-122" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="round" opacity=".8"/>
+  <circle cx="-72" cy="-75" r="13" fill="#fff"/>
+ </g>
+ <g fill="none" stroke="#c5faff" stroke-width="5" opacity=".8"><path d="M115 485l-55 80M653 485l55 80"/><path d="M120 520h-40M648 520h40"/></g>
+ <path d="M24 24h720v720H24z" fill="none" stroke="url(#gold)" stroke-width="22"/>
+ <path d="M47 47h674v674H47z" fill="none" stroke="#b9faff" stroke-opacity=".55" stroke-width="4"/>
+ <g fill="#fff4bd"><circle cx="92" cy="92" r="7"/><circle cx="676" cy="92" r="7"/><circle cx="92" cy="676" r="7"/><circle cx="676" cy="676" r="7"/></g>
+</g></svg>
