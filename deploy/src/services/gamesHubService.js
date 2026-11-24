@@ -158,16 +158,30 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   let timer = null;
   let ticking = false;
   const gameTickLocks = new Map();
-  // Keep the last scheduler-confirmed round ID in memory. The database transaction
-  // remains authoritative for every bet; this cache only avoids a redundant
-  // preflight round read on the latency-sensitive Keno submit path.
+  // The Mongo transaction remains authoritative for every bet. This process-local
+  // round ID cache avoids a preflight read on the Keno submit path.
   const currentRoundIds = new Map();
+  let nextKenoTickAt = 0;
   const settingsDefaults = { ...DEFAULT_SETTINGS };
+  let settingsCache = null;
+  let settingsCacheExpiresAt = 0;
+  let settingsLoad = null;
 
+  // The game scheduler ticks every 250ms for Aviator. Settings are admin-managed,
+  // so a short cache avoids repeatedly reading the same Mongo document on every tick
+  // and on every Keno state request. Admin writes refresh this cache immediately.
   async function settings() {
-    const stored = await repo.getGameHubSettings();
-    const merged = { ...settingsDefaults, ...stored };
-    return merged;
+    const at = Date.now();
+    if (settingsCache && at < settingsCacheExpiresAt) return settingsCache;
+    if (settingsLoad) return settingsLoad;
+    settingsLoad = (async () => {
+      const stored = await repo.getGameHubSettings();
+      settingsCache = { ...settingsDefaults, ...stored };
+      settingsCacheExpiresAt = Date.now() + 5000;
+      return settingsCache;
+    })();
+    try { return await settingsLoad; }
+    finally { settingsLoad = null; }
   }
 
   async function createRound(game, currentSettings) {
@@ -277,6 +291,11 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const task = runGameTick(game, settingsSnapshot).then((round) => {
       if (round?.roundId) currentRoundIds.set(game, round.roundId);
       else currentRoundIds.delete(game);
+      if (game === 'keno') {
+        if (round?.status === 'betting') nextKenoTickAt = Number(round.bettingEndsAt);
+        else if (round?.status === 'settled' && Number(round.nextRoundAt) > now()) nextKenoTickAt = Number(round.nextRoundAt);
+        else nextKenoTickAt = now() + 5000;
+      }
       return round;
     });
     gameTickLocks.set(game, task);
@@ -288,7 +307,11 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     if (ticking) return;
     ticking = true;
     try {
-      await Promise.all(GAME_IDS.map((game) => tickGame(game)));
+      const dueGames = ['aviator'];
+      // Keno only needs a scheduler tick when betting closes or the reveal window ends.
+      // The 250ms Aviator scheduler must not cause four Keno Mongo reads per second.
+      if (now() >= nextKenoTickAt) dueGames.push('keno');
+      await Promise.all(dueGames.map((game) => tickGame(game)));
     } finally {
       ticking = false;
     }
@@ -309,7 +332,10 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     ensureSimulationMode();
     const currentSettings = await settings();
     if (currentSettings.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
-    const round = await tickGame(game, currentSettings);
+    const round = game === 'keno' && now() < nextKenoTickAt
+      ? await repo.getCurrentGameHubRound('keno')
+      : await tickGame(game, currentSettings);
+    if (!round) throw new HttpError(503, 'keno_round_unavailable', 'Keno is preparing the next round. Please try again.');
     const serverTime = now();
     const revealCount = game === 'keno' ? kenoRevealCount(round, serverTime) : 20;
     const revealComplete = game !== 'keno' || revealCount >= 20;
@@ -341,6 +367,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       state.drawCount = 20;
       state.drawIntervalSeconds = round.kenoDrawIntervalSeconds ?? currentSettings.kenoDrawIntervalSeconds;
       state.selectedNumberLimit = 10;
+      state.nextRoundAt = round.nextRoundAt ?? null;
       if (round.status === 'settled') {
         state.drawnNumbers = (round.drawnNumbers ?? []).slice(0, revealCount);
         state.settledAt = round.settledAt;
@@ -591,7 +618,10 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       if (!Number.isInteger(n) || n < 5 || n > 60) throw new HttpError(400, 'invalid_aviator_timer', 'Aviator betting time must be 5–60 seconds.');
       next.aviatorBettingSeconds = n;
     }
-    return repo.updateGameHubSettings(next);
+    const saved = await repo.updateGameHubSettings(next);
+    settingsCache = { ...settingsDefaults, ...saved };
+    settingsCacheExpiresAt = Date.now() + 5000;
+    return settingsCache;
   }
 
   return {
