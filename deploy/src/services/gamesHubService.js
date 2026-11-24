@@ -448,7 +448,9 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const startedAt = Date.now();
     ensureSimulationMode();
     assertVerifiedPlayer(user);
+    const settingsStartedAt = Date.now();
     const currentSettings = await settings();
+    const settingsMs = Date.now() - settingsStartedAt;
     if (currentSettings.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
     if (!currentSettings.kenoEnabled) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
 
@@ -504,8 +506,10 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       acceptedAt: now(),
     });
 
+    let transactionMs = 0;
     try {
       let result;
+      const transactionStartedAt = Date.now();
       try {
         result = await submitBatch(targetRoundId);
       } catch (error) {
@@ -520,6 +524,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
         targetRoundId = freshRound.roundId;
         result = await submitBatch(targetRoundId);
       }
+      transactionMs = Date.now() - transactionStartedAt;
 
       const response = {
         bets: result.bets.map((entry) => ({ ...publicBet(entry.bet), duplicate: entry.duplicate === true })),
@@ -527,15 +532,28 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
         duplicateCount: result.bets.filter((entry) => entry.duplicate).length,
       };
       const durationMs = Date.now() - startedAt;
-      if (durationMs >= 750) {
-        log('games_hub_keno_bet_slow', {
+      if (durationMs >= 250) {
+        log('games_hub_keno_bet_timing', {
           ticketCount: tickets.length,
           duplicateCount: response.duplicateCount,
-          durationMs,
+          settingsMs,
+          transactionMs,
+          serviceMs: durationMs,
         });
       }
       return response;
     } catch (error) {
+      const durationMs = Date.now() - startedAt;
+      transactionMs ||= Math.max(0, durationMs - settingsMs);
+      if (durationMs >= 250) {
+        log('games_hub_keno_bet_timing', {
+          ticketCount: tickets.length,
+          settingsMs,
+          transactionMs,
+          serviceMs: durationMs,
+          failed: true,
+        });
+      }
       mapRepoError(error);
     }
   }
