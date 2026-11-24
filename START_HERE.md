@@ -28,7 +28,7 @@ You do not need to write, read or fix any code. Follow the steps in order. Each 
 | Setting | Value | What it means |
 |---|---|---|
 | Card price | 10 birr | Players pay 10 birr per card |
-| Prize | 80% | The winner gets 80% of all card sales in that round. You keep 20% (before Chapa fees and any taxes). Example: 20 cards x 10 = 200 birr in, 160 paid to the winner, 40 stays with you. |
+| Prize | 45% | The winner gets 45% of all card sales in that round. You keep 55% before operating costs, provider fees and any applicable taxes. Example: 20 cards x 10 = 200 birr in, 90 birr goes to the winner and 110 birr remains before those costs. |
 | Cash-outs | You press one button | When a player asks to cash out, you see the request in your Control Center, check it, and press **Pay**. This is the safe way to start. |
 | Deposits | 10 to 10,000 birr | Players top up through Chapa (Telebirr, CBE Birr, cards) |
 | Minimum cash-out | 50 birr | |
