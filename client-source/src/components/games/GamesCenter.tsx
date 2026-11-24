@@ -13,6 +13,7 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
   return (
     <button type="button" disabled={disabled} onClick={onClick} className={`group relative disabled:cursor-not-allowed disabled:opacity-55 flex min-h-64 w-full flex-col overflow-hidden rounded-3xl border text-left transition duration-300 hover:-translate-y-1 hover:border-amber-300/70 hover:shadow-[0_18px_55px_rgba(212,175,55,.16)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300 ${featured ? 'border-amber-300/50 bg-gradient-to-br from-[#28200d] via-[#100f0b] to-black' : 'border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black'} p-5 sm:p-6`}>
       <span className="absolute -right-8 -top-12 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl transition group-hover:bg-amber-300/20" />
+      {disabled && <span className="absolute right-4 top-4 z-10 rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-amber-200">{disabledLabel}</span>}
       <span className="relative grid h-14 w-14 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]">
         {icon === 'bingo' && <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/><path d="m6 6 2 2m8 8 2 2" /></svg>}
         {icon === 'keno' && <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="6" cy="6" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg>}
@@ -24,7 +25,7 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
       <span className="relative mt-6 text-[10px] font-black uppercase tracking-[.28em] text-amber-400">{subtitle}</span>
       <span className="relative mt-2 text-2xl font-black tracking-wide text-amber-50">{title}</span>
       <span className="relative mt-2 max-w-sm text-sm leading-6 text-amber-100/60">{detail}</span>
-      <span className="relative mt-auto flex items-center gap-2 pt-6 text-sm font-bold text-amber-300">{disabled ? disabledLabel : openLabel} <span aria-hidden>{disabled ? '•' : '→'}</span></span>
+      {!disabled && <span className="relative mt-auto flex items-center gap-2 pt-6 text-sm font-bold text-amber-300">{openLabel} <span aria-hidden>→</span></span>}
     </button>
   );
 }
