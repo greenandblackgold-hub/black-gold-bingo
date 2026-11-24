@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { translations, formatAmount, formatDateTime } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
-import { api, ApiError } from '@/lib/api';
+import { api } from '@/lib/api';
 
 const TEXT = translations.adminDeposits;
 
@@ -32,8 +32,8 @@ export function AdminDeposits() {
       const result = await api.get<DepositRow[]>('/api/admin/deposits?status=pending');
       setRows(result);
       setError('');
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : t.error);
+    } catch {
+      setError(t.error);
     }
   }, [t.error]);
 
