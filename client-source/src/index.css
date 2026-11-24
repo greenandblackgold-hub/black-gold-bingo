@@ -1236,3 +1236,77 @@ body { color: #f7edcf; background: #030303 !important; }
 
 /* Keno desktop canvas expands while preserving the compact ten-column mobile board. */
 .premium-ui .keno-reference-page { max-width: 56rem; }
+
+
+/* Keno player reference rebuild: compact mobile-first sportsbook-style canvas. */
+.premium-ui .keno-reference-page {
+  width:100%;
+  max-width:480px !important;
+  min-height:100dvh;
+  margin-inline:auto;
+  padding:0 8px 18px;
+  gap:8px;
+  color:#f2eee5 !important;
+  background:#050505 !important;
+  background-image:linear-gradient(180deg,#050505 0%,#090909 48%,#030303 100%) !important;
+}
+.premium-ui .keno-reference-page .keno-topbar {
+  position:sticky;
+  top:0;
+  z-index:30;
+  display:grid;
+  grid-template-columns:76px minmax(0,1fr) 38px;
+  align-items:center;
+  gap:8px;
+  min-height:44px;
+  margin:0 -8px;
+  padding:3px 9px;
+  border-bottom:1px solid rgba(214,173,69,.32);
+  background:rgba(4,4,4,.97);
+  box-shadow:0 4px 18px rgba(0,0,0,.55);
+  backdrop-filter:blur(12px);
+}
+.keno-brand {display:flex;flex-direction:column;line-height:.83;font-style:italic}
+.keno-brand span {font-size:10px;font-weight:1000;color:#fff}
+.keno-brand strong {font-size:17px;font-weight:1000;letter-spacing:-.06em;color:#f0c65e}
+.keno-account {display:flex;min-width:0;align-items:center;justify-content:center;gap:7px;padding:4px 7px;border:1px solid rgba(214,173,69,.27);border-radius:999px;background:#0c0b08;font-size:10px;font-weight:800;color:#f5e7c2}
+.keno-account span {overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.keno-account i {height:13px;width:1px;flex:none;background:rgba(214,173,69,.3)}
+.keno-account b {display:grid;width:16px;height:16px;flex:none;place-items:center;border-radius:50%;background:#d6ad45;color:#090806;font-size:10px}
+.premium-ui .keno-reference-page .keno-menu {display:grid;width:34px;height:34px;place-items:center;border:0;background:transparent;color:#f4d47c;font-size:23px;font-weight:900}
+.premium-ui .keno-reference-page .keno-countdown {color:#f6d77a !important;text-shadow:0 0 12px rgba(214,173,69,.35)}
+.premium-ui .keno-reference-page .keno-bet-panel {border:1px solid rgba(214,173,69,.2);border-radius:7px;background:#0b0a08 !important;box-shadow:0 8px 22px rgba(0,0,0,.38)}
+.premium-ui .keno-reference-page .keno-bet-panel>div:first-child {min-height:164px;background:linear-gradient(135deg,#17140d,#0c0b09 68%,#151108)}
+.premium-ui .keno-reference-page .keno-number-grid {gap:3px;background:#050505 !important;padding:3px}
+.premium-ui .keno-reference-page .keno-number-grid button {min-height:0;aspect-ratio:1;border-radius:2px;border:1px solid #39342a;background:linear-gradient(145deg,#302c24,#191814) !important;color:#e6e0d4 !important;font-weight:900;box-shadow:inset 0 1px 0 rgba(255,255,255,.055)}
+.premium-ui .keno-reference-page .keno-number-grid button[aria-pressed="true"] {background:linear-gradient(145deg,#ffe69a,#d6ad45 60%,#8e681d) !important;border-color:#fff0b8 !important;color:#100c04 !important;box-shadow:0 0 10px rgba(246,215,122,.36),inset 0 1px 0 rgba(255,255,255,.7)}
+.premium-ui .keno-reference-page .keno-number-grid button:disabled {opacity:1}
+.premium-ui .keno-reference-page .keno-number-grid button span {background:#79c9e6 !important}
+.premium-ui .keno-reference-page .keno-stake-controls {background:#050505 !important;grid-template-columns:minmax(0,1fr) 94px 94px;gap:3px}
+.premium-ui .keno-reference-page .keno-stake-controls>div {height:58px;border:1px solid rgba(214,173,69,.18);border-radius:2px;background:linear-gradient(145deg,#211d14,#100e09) !important}
+.premium-ui .keno-reference-page .keno-stake-controls>div button {color:#e7d6ad !important}
+.premium-ui .keno-reference-page .keno-stake-controls>div span {color:#fff !important}
+.premium-ui .keno-reference-page .keno-stake-controls>button {border:1px solid rgba(214,173,69,.2);border-radius:2px;background:linear-gradient(145deg,#211b0e,#100e09) !important;color:#f2cc67 !important}
+.premium-ui .keno-reference-page .keno-bet-submit {min-height:66px;border-color:rgba(255,224,138,.32);background:linear-gradient(180deg,#d6ad45,#8b6418) !important;color:#080704 !important;font-size:27px;letter-spacing:.02em;text-shadow:0 1px rgba(255,255,255,.22)}
+.premium-ui .keno-reference-page .keno-bet-submit:disabled {opacity:.68}
+.premium-ui .keno-reference-page .keno-draw-stage {border:1px solid rgba(214,173,69,.18);background:radial-gradient(ellipse at 50% 45%,#17140d 0%,#0b0a08 65%,#050505 100%) !important}
+.premium-ui .keno-reference-page .keno-tabs {gap:12px;background:#080806 !important;border-color:rgba(214,173,69,.28) !important}
+.premium-ui .keno-reference-page .keno-tabs button[aria-current="page"] {border-color:#f4d47c !important;color:#f4d47c !important}
+.premium-ui .keno-reference-page .keno-tabs button {color:#bfae83}
+.premium-ui .keno-reference-page .keno-counts {background:#080806 !important;color:#b8b2a5 !important}
+.premium-ui .keno-reference-page .keno-counts b {color:#f4d47c !important}
+.premium-ui .keno-reference-page article {border-color:rgba(214,173,69,.19) !important;background:#100f0c !important}
+.premium-ui .keno-reference-page article .text-emerald-300 {color:#f4d47c !important}
+.premium-ui .keno-reference-page .keno-live-ball,
+.premium-ui .keno-reference-page .keno-drawn-ball:last-child {background:radial-gradient(circle at 32% 22%,#fff0b8,#d6ad45 48%,#5b3e0d 82%) !important;color:#100c04 !important;border-color:#fff0b8 !important}
+.premium-ui .keno-reference-page .keno-selection-count {background:radial-gradient(circle at 30% 25%,#fff0b8,#d6ad45 55%,#5b3e0d) !important;color:#100c04 !important}
+@media(max-width:380px) {
+  .premium-ui .keno-reference-page {padding-inline:6px}
+  .premium-ui .keno-reference-page .keno-topbar {grid-template-columns:62px minmax(0,1fr) 32px;gap:5px;padding-inline:7px}
+  .keno-account {gap:4px;padding-inline:5px;font-size:9px}
+  .premium-ui .keno-reference-page .keno-stake-controls {grid-template-columns:minmax(0,1fr) 66px 66px}
+  .premium-ui .keno-reference-page .keno-tabs {gap:9px;font-size:10px}
+}
+@media(min-width:600px) {
+  .premium-ui .keno-reference-page {max-width:480px !important}
+}
