@@ -1,10 +1,10 @@
 # Black Gold PLC Bingo PRO: start here
 
-> **CURRENT DEPLOYMENT NOTE (15 Nov 2026):** The active Render configuration is `deploy/render.yaml`. In Render choose **New + → Blueprint**, connect this repository, and set the Blueprint file path to `deploy/render.yaml`. There is intentionally no root `package.json`: the backend package is `deploy/package.json` and the frontend package is `client-source/package.json`. The Blueprint installs both, runs the frontend TypeScript check and production build, copies the website into `deploy/public`, runs backend tests, and starts the Node server with `npm --prefix deploy start`. The GitHub Actions workflow checks the same frontend typecheck/build and backend tests.
+> **CURRENT DEPLOYMENT STATUS (24 Nov 2026):** The active Render Web Service `black-gold-bingo` is already connected to this repository's `main` branch in Oregon. Its build uses `deploy/render.yaml`, serves both the website and API, and runs the health check at `/health`. The latest `main` commit `1b070c2` is deployed and Render reports the deployment as **Live**. Do not create a duplicate Render service or re-enter deployment settings.
 >
 > **Only three private values need your input during first setup:** `MONGODB_URI` (your MongoDB Atlas connection string), `ADMIN_PHONE` (your owner phone number), and `ADMIN_PIN` (a new six-digit PIN). Render generates `JWT_SECRET` and `SMS_WEBHOOK_SECRET` automatically. Do not paste private values into GitHub or this chat. The Blueprint cannot create a MongoDB Atlas account/cluster or know your owner phone/PIN, so these three values cannot safely be filled in automatically.
 >
-> **Safety:** this project is configured for simulation-only ETB credits. Real-money features remain disabled. A successful GitHub build does not prove that a Render service is deployed or that MongoDB credentials are correct.
+> **Safety:** this project is configured for simulation-only ETB credits. Real-money deposits, paid play and cash-outs remain disabled. The current Render deployment is Live and its production server started successfully with MongoDB storage. This does not replace end-to-end player/Admin testing or an audit of existing database records and backups.
 
 ---
 
@@ -17,7 +17,7 @@ You do not need to write, read or fix any code. Follow the steps in order. Each 
 
 ## Two things you must know first
 
-**1. You control your private accounts.** I can inspect the connected GitHub and Render project, but you must personally accept account terms and enter passwords, MongoDB credentials and owner PINs. Never send passwords or secret keys in chat. The old live page was not safe: it exposed temporary OTP codes in logs and contained startup code that could delete player records. The server has been corrected in GitHub, but the new version has not yet been deployed and fully verified. Do not invite players or accept money.
+**1. You control your private accounts.** I can inspect the connected GitHub and Render project, but you must personally accept account terms and enter passwords, MongoDB credentials and owner PINs. Never send passwords or secret keys in chat. The previous release had serious safety defects, including OTP exposure and unsafe startup behavior. Those defects were corrected in the current `main` code, and the corrected version is now deployed on Render. Automated checks pass, but the full browser/Android player and Admin acceptance journey is still outstanding. Keep all use simulation-only; never accept real money.
 
 **2. Real-money Bingo needs official clearance.** Ethiopia's Ministry of Justice explains that Bingo/lottery categories have different rules, and the required permit must come from the National Lottery Administration. We must confirm the exact category and get the correct permit in writing. Chapa must also approve this exact business model in writing before we use its payment service. The application now keeps real-money functions OFF by default.
 
@@ -29,9 +29,9 @@ You do not need to write, read or fix any code. Follow the steps in order. Each 
 |---|---|---|
 | Card price | 10 birr | Players pay 10 birr per card |
 | Prize | 45% | The winner gets 45% of all card sales in that round. You keep 55% before operating costs, provider fees and any applicable taxes. Example: 20 cards x 10 = 200 birr in, 90 birr goes to the winner and 110 birr remains before those costs. |
-| Cash-outs | You press one button | When a player asks to cash out, you see the request in your Control Center, check it, and press **Pay**. This is the safe way to start. |
+| Cash-outs | Disabled | Cash-out requests and real payouts are disabled in this simulation release. Do not promise or send withdrawals. |
 | Deposits | Simulation only | Player submits amount + transaction reference. Trusted Admin-phone SMS only matches evidence; wallet credit requires independent Admin verification and explicit Approve. Chapa/live deposits remain disabled. |
-| Minimum cash-out | 50 birr | |
+| Minimum cash-out | Not active | 50 birr is retained as a future threshold only; cash-outs are currently disabled. |
 | Room name | BINGO-99 | |
 | Auto-calling | You choose 1 to 60 seconds in the Control Center | The server draws the numbers, so it keeps running even if you close the page |
 
@@ -72,19 +72,19 @@ Keep that note. You will paste it in Step 4.
 
 Do not create a live payment key or send money through Chapa yet. First ask Chapa support to confirm in writing that they accept this exact model: paid Bingo cards, a player wallet, prize credits and cash-outs. Their terms may restrict monetizable wallet balances. We will add the payment key only after they approve the model.
 
-## Step 4: Put the game online with Render (about 15 minutes)
+## Step 4: Render deployment (already configured)
 
-1. Go to **render.com** and sign in.
-2. Click **New**, then **Blueprint**. Connect GitHub and choose `greenandblackgold-hub/black-gold-bingo`.
-3. Set the Blueprint file path to `deploy/render.yaml`. The service is configured to run from the `deploy` folder.
-3. Render will ask for the database address and owner login details:
-   - **MONGODB_URI:** paste the private MongoDB connection string.
-   - **ADMIN_PHONE:** your owner phone number.
-   - **ADMIN_PIN:** a new 6-digit owner PIN. Do not reuse a PIN used elsewhere.
-   - **JWT_SECRET:** Render generates this automatically.
-4. The Blueprint keeps real-money deposits, paid card purchases and cash-outs disabled. Do not switch them on yet.
-4. Click **Apply** (or **Deploy**). Render builds it. Wait about 3 to 5 minutes until you see **Live**.
-5. At the top of the page is your address, like `https://black-gold-bingo.onrender.com`. **Open it.** You should see the gold Sign in page.
+The active Render service is already set up; no new service needs to be created.
+
+- **Service:** `black-gold-bingo`
+- **Repository:** `greenandblackgold-hub/black-gold-bingo`
+- **Branch:** `main` (automatic deployment on new commits)
+- **Region and plan:** Oregon, Free plan
+- **Build:** frontend typecheck/build, backend tests, then the Node server starts
+- **Health check:** `/health`
+- **Current deployed commit:** `1b070c2` — status **Live**
+
+The service uses private environment settings for MongoDB and the owner account. Never paste `MONGODB_URI`, owner PINs, JWT secrets or webhook secrets into GitHub or chat. Do not change Render environment variables or create another service as part of routine testing.
 
 ## Step 5: Payment notifications (wait)
 
@@ -92,7 +92,7 @@ Skip this step until Chapa has approved the Bingo business in writing and we hav
 
 ## Step 6: Safe testing (not yet ready)
 
-The current Render deployment is live, but a full visual player/owner journey has not yet been completed on real devices. The project remains simulation-only: no real deposits, paid cards or cash-outs are enabled. Do not invite players or accept money. Complete browser/mobile and Admin approval tests with fake transactions before wider testing.
+The current Render deployment is Live and automated GitHub checks pass. A full visual player/owner journey on a browser and actual Android device has not yet been completed. The project remains simulation-only: players can use test ETB credits and Admin-reviewed simulation deposits, but real-money deposits, paid card sales and cash-outs are disabled. Complete the browser/mobile and Admin approval acceptance tests before any wider release.
 
 ## Step 7: Real-money launch (only after every approval)
 
@@ -108,27 +108,27 @@ Only after those steps will we enter approved payment credentials and switch on 
 
 ## Running a game
 
-This section is not active yet. The public site is currently in safe maintenance mode. Do not start paid rounds, invite players or accept money. We will restore these instructions only after the new player interface and owner control center pass the full test.
+The player and Admin interfaces are deployed. You may test Bingo, Keno and Aviator using simulation credits only. The production service is not in Render maintenance mode, but this is not authorization to accept real money or run paid rounds. Finish the browser/Android acceptance checks before a wider release.
 
 ## Paying cash-outs
 
-Cash-outs are disabled. Do not promise or send payouts through the old site. Existing balances and any previous payment records must be checked and reconciled before real-money operation resumes.
+Cash-outs and payouts are disabled in the current simulation release. Do not promise or send payouts. Existing balances and previous payment records must be audited and reconciled before any future real-money operation.
 
 ---
 
 ## If something looks wrong
 
-- **The site does not open:** in Render, click your service and look for **Live**. If it says failed, open **Logs** and send me a screenshot.
+- **The site does not open:** check whether the Render service shows **Live**. If it shows a failure, tell me the status shown; do not share secrets or credentials.
 - **Players cannot pay:** payments are intentionally disabled until the legal permit and Chapa's written approval are confirmed.
 - **You forgot your owner PIN:** change `ADMIN_PIN` in Render, Environment, Save. It becomes your PIN after the restart.
-- **Anything else:** send me a screenshot of the page and of Render's **Logs** and I will fix it.
+- **Anything else:** describe the page and the message you see. Never share passwords, PINs, API keys or database connection strings.
 
 ---
 
 ## What still needs to be completed
 
-- Real SMS phone verification and age/identity checks.
-- The complete player and owner interfaces must be rebuilt and tested against the secure API.
+- Complete an end-to-end test of the existing Admin-assisted phone OTP flow (the Admin contacts the player and reads the code; the app does not send an OTP SMS to the player), plus age/identity checks required before any real-money launch.
+- Complete the full player and Admin journey in a browser and on an actual Android device, including game navigation, deposits, Admin approval and the SMS matching-only flow.
 - Existing database records and any old balances must be audited before migration.
 - The official Bingo category, permit, taxes and Chapa merchant approval must be confirmed.
 - The payment provider's live checkout and payout flows must pass end-to-end tests.
@@ -136,7 +136,7 @@ Cash-outs are disabled. Do not promise or send payouts through the old site. Exi
 
 ## Test and deployment status
 
-Automated test files are included in `deploy/test/`, and a GitHub Actions workflow has been added to run them on pushes and pull requests. Do not assume tests have passed until the workflow shows a successful result. The real MongoDB Atlas connection, Chapa test checkout, Render deployment, and full browser journey still need to be verified using your own service accounts. Complete Step 6 with test money before considering a live launch.
+As of 24 Nov 2026, the latest `main` commit `1b070c2` passed GitHub Actions frontend typecheck/build, backend test suite, and Android debug/release APK build. Render also reports this exact commit as **Live**, with its `/health` readiness check passed. The production process starts with MongoDB storage; database record integrity, backup/restore readiness and old-balance reconciliation have not yet been independently audited. Chapa mock flows are covered by automated tests, but real Chapa approval and live payment credentials remain disabled. Actual browser and physical-device acceptance testing is still required before a wider release.
 
 
 ## Admin-phone SMS Bridge for the simulation wallet
