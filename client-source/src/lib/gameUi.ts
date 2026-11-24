@@ -20,7 +20,7 @@ export const gameUi = {
       kenoSubtitle: 'ቁጥሮችዎን ይምረጡ',
       kenoDetail: 'እስከ 10 ቁጥሮች ይምረጡ፣ ስዕሉን ይከታተሉና የዙሩን ውጤት ይመልከቱ።',
       aviatorSubtitle: 'ብዜቱን ይከታተሉ',
-      aviatorDetail: 'ብዜቱ ሲጨምር ይመልከቱና አውሮፕላኑ ከመብረሩ በፊት ገንዘብዎን ያውጡ።',
+      aviatorDetail: 'ብዜቱ ሲጨምር ይመልከቱና አውሮፕላኑ ከመውደቁ በፊት ገንዘብዎን ያውጡ።',
       virtualSportsSubtitle: 'በቅርቡ ይጀምራል', virtualSportsDetail: 'የቨርቹዋል ስፖርት ልምድ በቅርቡ ይገኛል።',
       liveSportsSubtitle: 'በቅርቡ ይጀምራል', liveSportsDetail: 'የቀጥታ ስፖርት ልምድ በቅርቡ ይገኛል።', comingSoon: 'በቅርቡ',
       unavailable: 'አይገኝም',
