@@ -712,6 +712,8 @@ test('live stream: clients receive the new state when the host draws', async () 
         let i;
         while ((i = buf.indexOf('\n\n')) >= 0) {
           const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+          // The shared stream now includes app-version and admin-change events as well as game state.
+          if (!chunk.startsWith('event: game')) continue;
           const m = chunk.match(/^data: (.*)$/m);
           if (m) events.push(JSON.parse(m[1]));
         }
