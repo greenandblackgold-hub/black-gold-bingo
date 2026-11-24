@@ -49,7 +49,25 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
   const { lang } = useLanguage();
   const appText = (key: string) => adminSimpleLocale('app', lang, key);
   type PlayerScreen = TabId | 'keno' | 'aviator' | 'mines' | 'help';
-  const [tab, setTab] = useState<PlayerScreen>(() => (window.location.hash === '#wallet' ? 'wallet' : 'games'));
+  const hash = useHash();
+  const readScreenFromHash = (value: string): PlayerScreen => {
+    const screen = value.replace(/^#/, '');
+    return screen === 'play' || screen === 'wallet' || screen === 'games' || screen === 'keno' || screen === 'aviator' || screen === 'mines' || screen === 'help'
+      ? screen
+      : 'games';
+  };
+  const [tab, setTab] = useState<PlayerScreen>(() => readScreenFromHash(window.location.hash));
+  useEffect(() => {
+    // Restore the selected player screen when a URL hash changes (including browser back/forward).
+    if (hash !== ADMIN_HASH) setTab(readScreenFromHash(hash));
+  }, [hash]);
+  useEffect(() => {
+    // Keep the current screen in the URL so a page refresh returns to the same section.
+    const nextHash = `#${tab}`;
+    if (window.location.hash !== nextHash) {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`);
+    }
+  }, [tab]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [playerSettingsOpen, setPlayerSettingsOpen] = useState(false);
   const [generalEnabled, setGeneralEnabled] = useState(true);
