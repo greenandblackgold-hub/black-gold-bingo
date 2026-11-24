@@ -11,7 +11,7 @@ test('ten completed regular rounds trigger one free ETB 10,000 bonus round with 
     jwtSecret: 'bonus-test-secret-bonus-test-secret-123456',
     roomId: 'TEST',
     cardPrice: 1000,
-    prizePercent: 80,
+    prizePercent: 45,
     maxCardsPerPurchase: 50,
   };
   const players = [];
