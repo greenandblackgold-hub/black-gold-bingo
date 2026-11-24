@@ -45,7 +45,7 @@ export const helpTopics: HelpTopic[] = [
     answer: {
       am: 'የማሸነፍ ቅርጽ በካርድ ላይ ምልክት ማድረግ ያለብዎትን ሳጥኖች ያሳያል፤ ለምሳሌ መስመር፣ X ወይም ሌላ ቅርጽ። ሁሉም የሚታዩ ምሳሌዎች በአንድ ዙር አይሰሩም። በዚያ ዙር የሚሰራውን ቅርጽ በጨዋታው ላይ ያለውን “የአሸናፊነት ቅርጽ” መረጃ ይመልከቱ።',
       ti: 'ቅርጺ ዓወት ኣብ ካርድ ኣየኖት ሳጹናት ምልክት ክትገብሩ ከም ዘለኩም የርኢ፤ ንኣብነት መስመር፣ X ወይ ካልእ ቅርጺ። ኩሎም ዝርኣዩ ኣብነታት ኣብ ሓደ ዙር ኣይሰርሑን። ኣብቲ ዙር ዝሰርሕ ቅርጺ ኣብ “የአሸናፊነት ቅርጽ” ሓበሬታ እቲ ጸወታ ርኣዩ።',
-      en: 'A winning pattern shows which squares on your card must be marked, such as a line, X, or another shape. Not every example pattern is active in every round. Check the “የአሸናፊነት ቅርጽ” shown in the game for the pattern selected for the current round.'
+      en: 'A winning pattern shows which squares on your card must be marked, such as a line, X, or another shape. Not every example pattern is active in every round. Check the winning pattern shown in the game for the pattern selected for the current round.'
     },
     keywords: { am: ['winning pattern','ቅርጽ','ማሸነፍ','x','መስመር'], ti: ['winning pattern','ቅርጺ','ዓወት','መስመር'], en: ['winning pattern','pattern','line','x pattern'] }
   },
