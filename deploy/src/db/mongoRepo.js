@@ -109,7 +109,9 @@ export async function createMongoRepo({ uri, dbName }) {
       ]);
       await games.updateOne({ _id: 'state' }, { $setOnInsert: { ...DEFAULT_GAME, nextCardSerial: 10000 } }, { upsert: true });
       // Keep the existing game document field as the allocator; no schema or collection changes.
-      await games.updateOne({ _id: 'state' }, { $max: { nextCardSerial: 10000 } });
+      // Re-scan the fixed serial pool from its beginning after each process restart.
+      // Existing cards are skipped by reserveCardSerials, so unused gaps remain available.
+      await games.updateOne({ _id: 'state' }, { $set: { nextCardSerial: 10000 } });
       // The old database default was 80%. Migrate only those legacy values to the owner's
       // confirmed 45% share. A round's frozen roundPrize snapshot is deliberately untouched.
       const migratedCurrentPrize = await games.updateOne(
@@ -255,28 +257,32 @@ export async function createMongoRepo({ uri, dbName }) {
       if (!Number.isInteger(count) || count < 1) throw new RepoError('CARD_POOL_FULL');
       if (requestedSerial !== undefined && requestedSerial !== null) {
         const serial = String(requestedSerial);
-        if (!/^\d{5}$/.test(serial) || Number(serial) < 10000 || Number(serial) > 24999) throw new RepoError('INVALID_CARD_NUMBER');
+        if (!/^\\d{5}$/.test(serial) || Number(serial) < 10000 || Number(serial) > 24999) throw new RepoError('INVALID_CARD_NUMBER');
         if (await cards.findOne({ serial })) throw new RepoError('CARD_NUMBER_TAKEN');
-        const updated = await games.findOneAndUpdate(
-          { _id: 'state', phase: 'waiting', roundNumber: round, nextCardSerial: { $lte: 25000 } },
-          { $max: { nextCardSerial: Number(serial) + 1 } },
-          { returnDocument: 'after', projection: { nextCardSerial: 1 } },
-        );
-        if (!updated) throw new RepoError('ROUND_NOT_OPEN');
+        const current = await games.findOne({ _id: 'state', phase: 'waiting', roundNumber: round }, { projection: { _id: 1 } });
+        if (!current) throw new RepoError('ROUND_NOT_OPEN');
         return [serial];
       }
-      const game = await games.findOneAndUpdate(
-        { _id: 'state', phase: 'waiting', roundNumber: round, nextCardSerial: { $lte: 25000 - count } },
-        { $inc: { nextCardSerial: count } },
-        { returnDocument: 'after', projection: { nextCardSerial: 1 } },
-      );
-      if (!game) {
-        const current = await games.findOne({ _id: 'state' }, { projection: { phase: 1, roundNumber: 1, nextCardSerial: 1 } });
-        if (!current || current.phase !== 'waiting' || current.roundNumber !== round) throw new RepoError('ROUND_NOT_OPEN');
-        throw new RepoError('CARD_POOL_FULL');
+      const serials = [];
+      while (serials.length < count) {
+        const needed = count - serials.length;
+        const game = await games.findOneAndUpdate(
+          { _id: 'state', phase: 'waiting', roundNumber: round, nextCardSerial: { $lte: 25000 - needed } },
+          { $inc: { nextCardSerial: needed } },
+          { returnDocument: 'after', projection: { nextCardSerial: 1 } },
+        );
+        if (!game) {
+          const current = await games.findOne({ _id: 'state' }, { projection: { phase: 1, roundNumber: 1, nextCardSerial: 1 } });
+          if (!current || current.phase !== 'waiting' || current.roundNumber !== round) throw new RepoError('ROUND_NOT_OPEN');
+          throw new RepoError('CARD_POOL_FULL');
+        }
+        const first = game.nextCardSerial - needed;
+        const candidates = Array.from({ length: needed }, (_, i) => String(first + i));
+        const existing = await cards.find({ serial: { $in: candidates } }, { projection: { serial: 1, _id: 0 } }).toArray();
+        const used = new Set(existing.map((card) => String(card.serial)));
+        for (const serial of candidates) if (!used.has(serial)) serials.push(serial);
       }
-      const first = game.nextCardSerial - count;
-      return Array.from({ length: count }, (_, i) => String(first + i));
+      return serials;
     },
     async purchaseCards({ userId, cost, cards: newCards, round, ref }) {
       return tx(async (session) => {
