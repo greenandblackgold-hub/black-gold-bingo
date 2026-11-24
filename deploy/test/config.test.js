@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadConfig } from '../src/config.js';
+import { DEFAULT_GAME } from '../src/db/defaults.js';
 
 const productionEnv = {
   NODE_ENV: 'production',
@@ -52,4 +53,10 @@ test('production manual bank deposits require lottery authorization but not Chap
 test('Android Capacitor WebView origin is allowed without dropping configured website origins', () => {
   const config = loadConfig({ ...productionEnv, CLIENT_ORIGINS: 'https://black-gold-bingo.onrender.com' });
   assert.deepEqual(config.clientOrigins, ['https://black-gold-bingo.onrender.com', 'https://localhost']);
+});
+
+
+test('Bingo default winner share is the confirmed 45 percent', () => {
+  assert.equal(loadConfig({ ...productionEnv }).prizePercent, 45);
+  assert.equal(DEFAULT_GAME.prizePercent, 45);
 });
