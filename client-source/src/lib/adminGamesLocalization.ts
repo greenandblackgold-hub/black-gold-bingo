@@ -37,7 +37,7 @@ const games = {
     aviatorWindow:'ግዜ ውርርድ Aviator (ካልኢታት)', saving:'ይቕመጥ ኣሎ…', saveSettings:'ቅንብራት ጸወታ ኣቐምጥ',
     footer:'ምርካብ ጸወታ፣ ገደብ ውርርድ፣ ግዜ ዙርን ኮሚሽን ገንዳን (50%–60%)። ክፍሊት ብዝተኣከበ ውርርድ ዙር ይገደብ፤ ስልቲ ፍትሓዊነት ዕጫን ድራውን ኣይቅየርን።',
     loadError:'ቅንብራት ጸወታ ምምጻእ ኣይተኻእለን።', saved:'ቅንብራት ማእከል ጸወታ ተቐሚጦም።', saveError:'ቅንብራት ምቕማጥ ኣይተኻእለን።',
-    allUnavailable:'ኣብዚ ሕጂ ኩሎም ጸወታታት ኣይርከቡን። በጃኹም ድሕሪ ግዜ ፈትሹ።',
+    allUnavailable:'ኣብዚ ሕጂ ኩሎም ጸወታታት ኣይርከቡን። በጃኹም ድሕሪ ግዜ ፈትሹ።', statusBetting:'ውርርድ ክፉት እዩ', statusSettled:'ዙር ተወዲኡ', statusCrashed:'ዙር ተቛሪጹ', betsLabel:'ውርርድ',
   },
   en: {
     management:'Games management', controls:'Games Center Controls', simulation:'SIMULATION ONLY',
@@ -56,7 +56,7 @@ const games = {
     aviatorWindow:'Aviator betting window (seconds)', saving:'Saving…', saveSettings:'Save game settings',
     footer:'Game availability, bet limits, round timers and pool commission (50%–60%). Payout settlement is capped by each round’s collected stakes; draw and crash fairness algorithms remain unchanged.',
     loadError:'Could not load game settings.', saved:'Games Center settings saved.', saveError:'Settings could not be saved.',
-    allUnavailable:'All games are currently unavailable. Please check again later.',
+    allUnavailable:'All games are currently unavailable. Please check again later.', statusBetting:'Betting open', statusSettled:'Round settled', statusCrashed:'Round crashed', betsLabel:'bets',
   },
 } satisfies Record<Lang, Record<string, string>>;
 
