@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { translations, formatAmount } from '@/lib/localization';
-import { api, ApiError } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 
 type Row = {
@@ -47,7 +47,7 @@ export function AdminSimulationWithdrawals() {
     await api.post('/api/admin/manual-withdrawals/' + encodeURIComponent(id) + '/reject', { note: 'Rejected by administrator' });
    }
    await load();
-  } catch (e) { setError(e instanceof ApiError ? e.message : t.err); }
+  } catch { setError(t.err); }
   finally { setBusy(''); }
  };
  const btn = 'rounded-lg px-3 py-2 text-sm font-semibold ring-1 active:scale-95 disabled:opacity-50';
