@@ -16,25 +16,8 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
       <span className="absolute -right-8 -top-12 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl transition group-hover:bg-amber-300/20" />
       {disabled && <span className="absolute right-4 top-4 z-10 rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-amber-200">{disabledLabel}</span>}
       {icon === 'aviator' ? (
-        <span className="relative mt-1 flex h-24 w-full items-center justify-center overflow-hidden" aria-label="Large red Antonov aircraft">
-          <span className="absolute inset-x-8 top-1/2 h-12 -translate-y-1/2 rounded-full bg-red-600/15 blur-2xl" />
-          <svg viewBox="0 0 360 140" className="relative h-full w-full max-w-[340px] drop-shadow-[0_8px_12px_rgba(220,25,25,.28)]" role="img" aria-label="Red Antonov An-225 cargo aircraft" preserveAspectRatio="xMidYMid meet">
-            <defs>
-              <linearGradient id="antonov-red" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff7777"/><stop offset=".42" stopColor="#e32636"/><stop offset="1" stopColor="#8f0718"/></linearGradient>
-              <linearGradient id="antonov-wing" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#f34b56"/><stop offset="1" stopColor="#970b1d"/></linearGradient>
-            </defs>
-            <path d="M20 91 L93 82 L145 61 L216 55 L274 64 L329 75 L341 81 L329 87 L270 91 L205 87 L145 93 L92 91 Z" fill="url(#antonov-wing)" stroke="#ff9a9a" strokeWidth="1.5"/>
-            <path d="M148 77 L190 15 L205 13 L197 78 L237 113 L222 119 L172 91 L119 118 L105 114 L143 79 Z" fill="url(#antonov-wing)" stroke="#ff9a9a" strokeWidth="1.5"/>
-            <path d="M46 69 L63 34 L74 32 L80 71 L103 86 L91 91 L61 81 L35 92 L27 87 Z" fill="url(#antonov-wing)" stroke="#ff9a9a" strokeWidth="1.2"/>
-            <path d="M32 76 Q40 65 62 64 L293 67 Q316 68 337 79 L342 84 Q329 94 304 96 L68 97 Q42 96 30 88 Z" fill="url(#antonov-red)" stroke="#ffb0b0" strokeWidth="1.6"/>
-            <path d="M302 69 Q322 71 338 80 L342 84 Q337 88 327 90 L302 88 Z" fill="#f4c7c7" opacity=".9"/>
-            <path d="M43 72 L63 67 L71 68 L65 78 L43 80 Z" fill="#9de3f5" stroke="#fff" strokeWidth="1"/>
-            <path d="M80 70 L286 72" stroke="#ffd1d1" strokeWidth="2" opacity=".8"/>
-            <path d="M90 88 L281 88" stroke="#750616" strokeWidth="2" opacity=".55"/>
-            {[0,1,2,3,4,5].map((n) => <g key={n}><path d={`M${105+n*27} 91 l-3 12 q8 5 15 0 l-3-12 Z`} fill="#6b0b18" stroke="#ff7777" strokeWidth="1"/><ellipse cx={111+n*27} cy="102" rx="6" ry="2.5" fill="#2b1115"/></g>)}
-            <path d="M18 112 H92" stroke="#ff626b" strokeWidth="2" strokeLinecap="round" opacity=".7"/>
-            <path d="M7 120 H65" stroke="#ff626b" strokeWidth="1.5" strokeLinecap="round" opacity=".4"/>
-          </svg>
+        <span className="relative mt-1 block h-36 w-full overflow-hidden rounded-2xl bg-[#050606] shadow-[0_0_24px_rgba(132,204,22,.24)]" aria-label="Aviator Antonov aircraft game artwork">
+          <img src="/images/aviator-antonov-card.webp" alt="Red Antonov aircraft with Aviator and SPRIBE branding" className="h-full w-full object-fill" />
         </span>
       ) : (
         <span className={icon === 'keno' ? 'relative block h-28 w-full overflow-hidden rounded-2xl border border-lime-400/35 bg-black/60 shadow-[inset_0_1px_rgba(255,255,255,.08)]' : 'relative grid h-14 w-14 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]'}>
