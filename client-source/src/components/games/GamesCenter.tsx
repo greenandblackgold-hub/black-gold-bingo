@@ -16,24 +16,24 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
       <span className="absolute -right-8 -top-12 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl transition group-hover:bg-amber-300/20" />
       {disabled && <span className="absolute right-4 top-4 z-10 rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-amber-200">{disabledLabel}</span>}
       {icon === 'aviator' ? (
-        <span className="relative mt-1 flex h-24 w-full items-center justify-center overflow-hidden" aria-label="Large red Antonov aircraft">
-          <span className="absolute inset-x-8 top-1/2 h-12 -translate-y-1/2 rounded-full bg-red-600/15 blur-2xl" />
-          <svg viewBox="0 0 360 140" className="relative h-full w-full max-w-[340px] drop-shadow-[0_8px_12px_rgba(220,25,25,.28)]" role="img" aria-label="Red Antonov An-225 cargo aircraft" preserveAspectRatio="xMidYMid meet">
+        <span className="relative mt-1 block h-36 w-full overflow-hidden rounded-2xl border-2 border-lime-400 bg-[#080909] shadow-[0_0_24px_rgba(132,204,22,.2)]" aria-label="Aviator game icon with red Antonov aircraft">
+          <span className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,rgba(255,255,255,.13),transparent_58%),linear-gradient(145deg,#242424,#050505_72%)]" />
+          <svg viewBox="0 0 360 220" className="relative h-full w-full" role="img" aria-label="Red Antonov cargo aircraft, Aviator, SPRIBE" preserveAspectRatio="xMidYMid meet">
             <defs>
-              <linearGradient id="antonov-red" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff7777"/><stop offset=".42" stopColor="#e32636"/><stop offset="1" stopColor="#8f0718"/></linearGradient>
-              <linearGradient id="antonov-wing" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#f34b56"/><stop offset="1" stopColor="#970b1d"/></linearGradient>
+              <linearGradient id="aviator-card-red" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff7777"/><stop offset=".48" stopColor="#ed1828"/><stop offset="1" stopColor="#8f0718"/></linearGradient>
+              <linearGradient id="aviator-card-wing" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#ff6b72"/><stop offset="1" stopColor="#870b1b"/></linearGradient>
+              <filter id="aviator-card-glow"><feGaussianBlur stdDeviation="5"/></filter>
             </defs>
-            <path d="M20 91 L93 82 L145 61 L216 55 L274 64 L329 75 L341 81 L329 87 L270 91 L205 87 L145 93 L92 91 Z" fill="url(#antonov-wing)" stroke="#ff9a9a" strokeWidth="1.5"/>
-            <path d="M148 77 L190 15 L205 13 L197 78 L237 113 L222 119 L172 91 L119 118 L105 114 L143 79 Z" fill="url(#antonov-wing)" stroke="#ff9a9a" strokeWidth="1.5"/>
-            <path d="M46 69 L63 34 L74 32 L80 71 L103 86 L91 91 L61 81 L35 92 L27 87 Z" fill="url(#antonov-wing)" stroke="#ff9a9a" strokeWidth="1.2"/>
-            <path d="M32 76 Q40 65 62 64 L293 67 Q316 68 337 79 L342 84 Q329 94 304 96 L68 97 Q42 96 30 88 Z" fill="url(#antonov-red)" stroke="#ffb0b0" strokeWidth="1.6"/>
-            <path d="M302 69 Q322 71 338 80 L342 84 Q337 88 327 90 L302 88 Z" fill="#f4c7c7" opacity=".9"/>
-            <path d="M43 72 L63 67 L71 68 L65 78 L43 80 Z" fill="#9de3f5" stroke="#fff" strokeWidth="1"/>
-            <path d="M80 70 L286 72" stroke="#ffd1d1" strokeWidth="2" opacity=".8"/>
-            <path d="M90 88 L281 88" stroke="#750616" strokeWidth="2" opacity=".55"/>
-            {[0,1,2,3,4,5].map((n) => <g key={n}><path d={`M${105+n*27} 91 l-3 12 q8 5 15 0 l-3-12 Z`} fill="#6b0b18" stroke="#ff7777" strokeWidth="1"/><ellipse cx={111+n*27} cy="102" rx="6" ry="2.5" fill="#2b1115"/></g>)}
-            <path d="M18 112 H92" stroke="#ff626b" strokeWidth="2" strokeLinecap="round" opacity=".7"/>
-            <path d="M7 120 H65" stroke="#ff626b" strokeWidth="1.5" strokeLinecap="round" opacity=".4"/>
+            <path d="M20 98 L100 78 L165 49 L245 40 L326 61 L344 72 L326 82 L245 76 L169 82 L101 100 Z" fill="url(#aviator-card-wing)" stroke="#ff9a9a" strokeWidth="2"/>
+            <path d="M145 76 L184 15 L204 10 L198 78 L256 119 L238 128 L174 94 L111 132 L94 125 L139 79 Z" fill="url(#aviator-card-wing)" stroke="#ff9a9a" strokeWidth="2"/>
+            <path d="M45 81 L63 44 L77 41 L83 81 L111 99 L95 105 L62 91 L29 111 L17 103 Z" fill="url(#aviator-card-wing)" stroke="#ff9a9a" strokeWidth="1.5"/>
+            <path d="M32 82 Q45 68 69 67 L286 56 Q316 57 338 70 L348 77 Q332 91 306 96 L76 112 Q48 111 30 99 Z" fill="url(#aviator-card-red)" stroke="#ffc0c0" strokeWidth="2"/>
+            <path d="M53 82 L81 72 L90 73 L82 87 L53 92 Z" fill="#b8efff" stroke="#fff" strokeWidth="1.5"/>
+            <path d="M94 77 L287 65" stroke="#ffe0e0" strokeWidth="2.5" opacity=".9"/>
+            <path d="M88 101 L284 84" stroke="#720514" strokeWidth="2" opacity=".65"/>
+            {[0,1,2,3,4,5].map((n) => <g key={n}><path d={`M${112+n*27} 91 l-4 14 q9 6 17 0 l-4-14 Z`} fill="#790918" stroke="#ff9a9a" strokeWidth="1.4"/><ellipse cx={121+n*27} cy="105" rx="6.5" ry="3" fill="#160c0e" stroke="#ffb4b4" strokeWidth="1"/></g>)}
+            <text x="180" y="158" textAnchor="middle" fill="#f0182a" fontSize="43" fontWeight="900" fontStyle="italic" letterSpacing="-2">Aviator</text>
+            <text x="180" y="188" textAnchor="middle" fill="#fff" fontSize="21" fontWeight="800" letterSpacing="2">SPRIBE</text>
           </svg>
         </span>
       ) : (
