@@ -41,7 +41,7 @@ before(async () => {
   // Set TEST_MONGODB_URI to run this whole suite against a real MongoDB (a throwaway database is created and dropped).
   const mongo = process.env.TEST_MONGODB_URI;
   const config = loadConfig({
-    NODE_ENV: 'test', STORAGE: mongo ? 'mongo' : 'memory', MONGODB_URI: mongo ?? '', DB_NAME: `bingo_test_${Date.now()}`, CHAPA_MOCK: 'true', CARD_PRICE_ETB: '10', PRIZE_PERCENT: '80',
+    NODE_ENV: 'test', STORAGE: mongo ? 'mongo' : 'memory', MONGODB_URI: mongo ?? '', DB_NAME: `bingo_test_${Date.now()}`, CHAPA_MOCK: 'true', CARD_PRICE_ETB: '10', PRIZE_PERCENT: '45',
     MIN_WITHDRAW_ETB: '50', RATE_LIMIT_AUTH: '100000', RATE_LIMIT_MONEY: '100000', RATE_LIMIT_DEFAULT: '100000', JWT_SECRET: 'test-secret-test-secret-test-secret-123', CLIENT_URL: 'http://web.test', CLIENT_ORIGINS: 'http://web.test',
   });
   ctx = await build(config);
@@ -624,7 +624,7 @@ test('a full round: a valid BINGO claim automatically credits the winner wallet 
   const wins = [ra, rb].filter((r) => r.json.ok === true);
   assert.equal(wins.length, 1, `expected one winner, got ${JSON.stringify([ra.json, rb.json])}`);
   const prize = wins[0].json.prize;
-  assert.equal(prize, 40); // pot = 5 cards x 10 = 50 ETB, 80% = 40
+  assert.equal(prize, 22.5); // pot = 5 cards x 10 = 50 ETB, 45% = 22.5
   assert.equal(wins[0].json.payoutStatus, 'paid');
   const g = (await api('GET', '/api/game')).json;
   assert.equal(g.phase, 'ended');
@@ -867,7 +867,7 @@ test('fixed prize is announced, frozen at round start, capped by gross revenue, 
   const player = await newPlayer('Fixed Prize Player', 100);
   const configured = await api('POST', '/api/admin/prize-schedule', {
     token: ctx.adminToken,
-    body: { prizeMode: 'fixed', fixedPrize: 15, prizePercent: 80, prizePerPlayer: 4, maxPrizeCap: 0, roundIntervalMinutes: 4 },
+    body: { prizeMode: 'fixed', fixedPrize: 15, prizePercent: 45, prizePerPlayer: 4, maxPrizeCap: 0, roundIntervalMinutes: 4 },
   });
   assert.equal(configured.status, 200, JSON.stringify(configured.json));
   assert.equal(configured.json.prizeMode, 'fixed');
