@@ -202,7 +202,7 @@ function BingoCardView({ labels, card, index, marks, called, pattern, claimable,
               aria-label={free ? labels.free : `${LETTERS[c]} ${value}`}
               className={[
                 'relative grid aspect-square min-w-0 place-items-center rounded-[3px] text-[clamp(10px,2.1vw,22px)] font-black leading-none text-black transition',
-                free ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
+                free ? (claimable ? 'animate-pulse bg-gradient-to-br from-yellow-300 via-yellow-400 to-red-600 text-red-950 shadow-[0_0_18px_rgba(250,204,21,.9)]' : 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]') :
                   marked ? 'bg-lime-300 shadow-[inset_0_0_9px_rgba(255,255,255,.75)]' :
                   'bg-gradient-to-b from-white to-zinc-200',
                 inWinningLine ? 'outline outline-2 outline-yellow-300' : '',
@@ -215,7 +215,7 @@ function BingoCardView({ labels, card, index, marks, called, pattern, claimable,
         }))}
       </div>
       {claimable && !card.locked && (
-        <button type="button" onClick={onClaim} disabled={claiming} className="mt-1 w-full rounded-lg bg-gradient-to-r from-yellow-200 to-amber-500 py-1 text-xs font-black text-black">
+        <button type="button" onClick={onClaim} disabled={claiming} className="mt-1 w-full animate-pulse rounded-lg bg-gradient-to-r from-yellow-200 via-red-500 to-yellow-300 py-1 text-xs font-black text-black">
           {claiming ? labels.claiming : 'BINGO'}
         </button>
       )}
