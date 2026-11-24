@@ -85,7 +85,7 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
     cardsRequestInFlight.current = true;
     try {
       const latest = await api.get<BingoCard[]>('/api/cards');
-      if (requestedUserId !== currentUserIdRef.current || !Array.isArray(latest)) return;
+      if (requestedUserId !== currentUserIdRef.current || !Array.isArray(latest) || cardsReloadQueued.current) return;
       try { if (requestedUserId) localStorage.setItem(cardsCacheKeyFor(requestedUserId), JSON.stringify(latest)); } catch { /* server remains authoritative */ }
       const hidden = new Set(hiddenCardIdsRef.current);
       setCards(latest.filter(card => !hidden.has(card.id)));
