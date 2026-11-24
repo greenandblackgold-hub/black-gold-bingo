@@ -196,7 +196,7 @@ type KenoNumberGridProps = {
   isBetting: boolean;
   previousDrawnNumbers?: number[];
   onToggle: (number: number) => void;
-  labels: Pick<(typeof copy)['en'], 'number' | 'selectedState'>;
+  labels: { number: string; selectedState: string };
 };
 
 // Isolate the 80 interactive cells from countdown, balance, and round-state renders.
