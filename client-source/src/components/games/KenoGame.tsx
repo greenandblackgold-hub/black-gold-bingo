@@ -121,7 +121,7 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
   return (
     <main className="keno-reference-page mx-auto min-h-[100dvh] w-full max-w-[480px] space-y-2 bg-[#050505] px-2 text-[#f3dfad] sm:px-3">
       <header className="keno-topbar">
-        <div className="keno-brand"><span>{c.fast}</span><strong>KENO</strong></div>
+        <div className="keno-brand"><span>FAST</span><strong>KENO</strong></div>
         <div className="keno-account">
           <span>{money(state?.balanceEtb ?? user?.balance ?? 0)} ETB</span>
           <i />
