@@ -1,4 +1,5 @@
 import { StrictMode } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { createRoot } from 'react-dom/client';
 import App from '@/App';
 import './index.css';
@@ -15,7 +16,7 @@ const applyPendingAppUpdate = () => {
 };
 window.addEventListener('bgb:app-version', (event) => {
   const detail = (event as CustomEvent<{ buildPath?: string }>).detail;
-  if (detail?.buildPath && detail.buildPath !== 'unknown' && detail.buildPath !== CLIENT_BUILD_PATH) {
+  if (!Capacitor.isNativePlatform() && detail?.buildPath && detail.buildPath !== 'unknown' && detail.buildPath !== CLIENT_BUILD_PATH) {
     pendingAppUpdate = true;
     applyPendingAppUpdate();
   }
