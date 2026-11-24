@@ -294,11 +294,13 @@ export function createGameService({ repo, config, now = Date.now }) {
       const userPreviewCount = [...pendingCardPreviews.keys()].filter((key) => key.startsWith(user.id + ':')).length;
       if (userPreviewCount + n > 20) throw new HttpError(429, 'too_many_previews', 'Register or remove your existing preview cards before adding more.');
       if (previewNextSerial === null) previewNextSerial = await repo.peekNextCardSerial();
+      const usedSerials = new Set(await repo.listUsedCardSerials());
       const previews = [];
       for (let i = 0; i < n; i++) {
-        while (previewNextSerial <= 24999 && await repo.cardSerialExists(String(previewNextSerial))) previewNextSerial += 1;
+        while (previewNextSerial <= 24999 && usedSerials.has(String(previewNextSerial))) previewNextSerial += 1;
         if (previewNextSerial > 24999) throw new HttpError(409, 'card_pool_full', 'All 15,000 Bingo card numbers have been used.');
         const serial = String(previewNextSerial++);
+        usedSerials.add(serial);
         const grid = generateGrid();
         const preview = { id: 'draft-' + serial, serial, grid };
         pendingCardPreviews.set(user.id + ':' + serial, { grid, createdAt: now() });
