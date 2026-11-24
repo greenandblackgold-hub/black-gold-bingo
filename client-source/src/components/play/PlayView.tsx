@@ -267,6 +267,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
   const [draftCards, setDraftCards] = useState<BingoCard[]>([]);
   const draftCardsStorageKey = `bgb.draftCards.${user?.id ?? 'guest'}.${roomId || 'default'}.${roundNumber}`;
+  const removedDraftsStorageKey = `bgb.removedDrafts.${user?.id ?? 'guest'}.${roomId || 'default'}.${roundNumber}`;
   const [draftCardsLoadedFor, setDraftCardsLoadedFor] = useState<string | null>(null);
   const [registeringDraftId, setRegisteringDraftId] = useState<string | null>(null);
   const [draftMessage, setDraftMessage] = useState('');
@@ -291,6 +292,13 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     } catch {
       saved = [];
     }
+    let removedSerials = new Set<string>();
+    try {
+      const rawRemoved = localStorage.getItem(removedDraftsStorageKey);
+      const parsedRemoved: unknown = rawRemoved ? JSON.parse(rawRemoved) : [];
+      if (Array.isArray(parsedRemoved)) removedSerials = new Set(parsedRemoved.filter((serial): serial is string => typeof serial === 'string'));
+    } catch { removedSerials = new Set(); }
+    saved = saved.filter(card => !removedSerials.has(String(card.serial)));
     setDraftCards(saved);
     setDraftCardsLoadedFor(draftCardsStorageKey);
 
@@ -299,7 +307,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       if (!active || !Array.isArray(serverPreviews)) return;
       setDraftCards(current => {
         const bySerial = new Map(current.map(card => [String(card.serial), card]));
-        for (const card of serverPreviews) bySerial.set(String(card.serial), { ...bySerial.get(String(card.serial)), ...card });
+        for (const card of serverPreviews) if (!removedSerials.has(String(card.serial))) bySerial.set(String(card.serial), { ...bySerial.get(String(card.serial)), ...card });
         return [...bySerial.values()].sort((a, b) => Number(a.serial) - Number(b.serial));
       });
     }).catch(() => {
@@ -712,7 +720,18 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 draft
                 registering={registeringDraftId === card.id}
                 onRegister={() => void registerDraftCard(card)}
-                onRemove={() => setDraftCards(current => current.filter(item => item.id !== card.id))}
+                onRemove={() => {
+                  const serial = String(card.serial);
+                  try {
+                    const raw = localStorage.getItem(removedDraftsStorageKey);
+                    const parsed: unknown = raw ? JSON.parse(raw) : [];
+                    const removed = new Set(Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : []);
+                    removed.add(serial);
+                    localStorage.setItem(removedDraftsStorageKey, JSON.stringify([...removed]));
+                  } catch { /* API removal below still clears the server copy */ }
+                  setDraftCards(current => current.filter(item => item.id !== card.id));
+                  void api.post('/api/cards/previews/remove', { serial }).catch(() => undefined);
+                }}
               />
             ))}
             {cards.map((card, index) => (
