@@ -176,13 +176,15 @@ export function createMemoryRepo() {
         const serial = String(requestedSerial);
         if (!/^\d{5}$/.test(serial) || Number(serial) < 10000 || Number(serial) > 24999) throw new RepoError('INVALID_CARD_NUMBER');
         if ([...cards.values()].some((card) => card.serial === serial)) throw new RepoError('CARD_NUMBER_TAKEN');
-        nextCardSerial = Math.max(nextCardSerial, Number(serial) + 1);
         return [serial];
       }
-      if (nextCardSerial + count > 25000) throw new RepoError('CARD_POOL_FULL');
-      const first = nextCardSerial;
-      nextCardSerial += count;
-      return Array.from({ length: count }, (_, i) => String(first + i));
+      const serials = [];
+      while (serials.length < count && nextCardSerial <= 24999) {
+        const serial = String(nextCardSerial++);
+        if (![...cards.values()].some((card) => card.serial === serial)) serials.push(serial);
+      }
+      if (serials.length !== count) throw new RepoError('CARD_POOL_FULL');
+      return serials;
     },
     async purchaseCards({ userId, cost, cards: newCards, round, ref }) {
       if (game.phase !== 'waiting' || game.roundNumber !== round) throw new RepoError('ROUND_NOT_OPEN');
