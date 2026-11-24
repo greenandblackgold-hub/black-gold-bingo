@@ -44,7 +44,7 @@ export function AdminSmsSync() {
     <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-base font-bold text-gold-300"{t('title')}</h2>
+          <h2 className="text-base font-bold text-gold-300">{t('title')}</h2>
           <p className="mt-1 text-sm text-gold-500">{message}</p>
         </div>
         <button type="button" onClick={() => void connect()} disabled={busy || state === 'checking'} className="rounded-lg bg-gold-500 px-4 py-2 text-sm font-bold text-darkbg disabled:opacity-50">
