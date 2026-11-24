@@ -5,6 +5,15 @@ import { useLanguage } from '@/context/LanguageContext';
 import type { Lang } from '@/types/game';
 
 const copy = {
+  am: { connectionError:'የማሳወቂያ ግንኙነት ለጊዜው አልተሳካም።', denied:'ማሳወቂያዎች በBrowser ተከልክለዋል። ከBrowser Settings ይፍቀዱ።', permission:'ማሳወቂያ ለመቀበል ፈቃድ ያስፈልጋል።', success:'ማሳወቂያዎች ተከፍተዋል። የቦነስ ዜናዎችን ያገኛሉ።', failed:'ማሳወቂያዎችን ማንቃት አልተሳካም። HTTPS እና የBrowser ፈቃድ ያረጋግጡ።', title:'የቦነስ ማሳወቂያ ይቀበሉ', description:'አፑ ዝግ ሲሆንም የ10,000 ብር ቦነስ ጨዋታ ሲቃረብ እና ሲጀምር ይደርስዎታል።', busy:'በመጫን ላይ…', enable:'ማሳወቂያዎችን አንቃ' },
+  ti: { connectionError:'መራኸቢ ምልክታ ንግዚኡ ኣይሰርሐን።', denied:'ምልክታታት ብBrowser ተኸልኪሎም። ካብ Browser Settings ፍቐዱ።', permission:'ምልክታ ንምቕባል ፍቓድ የድሊ።', success:'ምልክታታት ተኸፊቶም። ዜና ቦነስ ክትረኽቡ ኢኹም።', failed:'ምልክታታት ምኽፋት ኣይተኻእለን። HTTPSን ፍቓድ Browserን ኣረጋግጹ።', title:'ምልክታ ቦነስ ተቐበሉ', description:'ኣፕ ዕጹው እኳ እንተኾነ ጸወታ ቦነስ 10,000 ብር ክጅምር ከሎ ምልክታ ክመጸኩም እዩ።', busy:'ይጽዓን ኣሎ…', enable:'ምልክታታት ኣብርህ' },
+  en: { connectionError:'The notification connection is temporarily unavailable.', denied:'Notifications are blocked in your browser. Allow them in Browser Settings.', permission:'Permission is required to receive notifications.', success:'Notifications are enabled. You will receive bonus updates.', failed:'Could not enable notifications. Check HTTPS and browser permission.', title:'Get bonus notifications', description:'Get notified when the ETB 10,000 bonus game is approaching and when it starts, even when the app is closed.', busy:'Enabling…', enable:'Enable notifications' },
+} satisfies Record<Lang, Record<string, string>>;port { useAuth } from '@/context/AuthContext';
+import { api } from '@/lib/api';
+import { useLanguage } from '@/context/LanguageContext';
+import type { Lang } from '@/types/game';
+
+const copy = {
   am: { connectionError:t.connectionError, denied:t.denied, permission:t.permission, success:t.success, failed:'ማሳወቂያዎችን ማንቃት አልተሳካም። HTTPS እና የBrowser ፈቃድ ያረጋግጡ።', title:'{t.title}', description:'{t.description}', busy:'በመጫን ላይ…', enable:'ማሳወቂያዎችን አንቃ' },
   ti: { connectionError:'መራኸቢ ምልክታ ንግዚኡ ኣይሰርሐን።', denied:'ምልክታታት ብBrowser ተኸልኪሎም። ካብ Browser Settings ፍቐዱ።', permission:'ምልክታ ንምቕባል ፍቓድ የድሊ።', success:'ምልክታታት ተኸፊቶም። ዜና ቦነስ ክትረኽቡ ኢኹም።', failed:'ምልክታታት ምኽፋት ኣይተኻእለን። HTTPSን ፍቓድ Browserን ኣረጋግጹ።', title:'ምልክታ ቦነስ ተቐበሉ', description:'ኣፕ ዕጹው እኳ እንተኾነ ጸወታ ቦነስ 10,000 ብር ክጅምር ከሎ ምልክታ ክመጸኩም እዩ።', busy:'ይጽዓን ኣሎ…', enable:'ምልክታታት ኣብርህ' },
   en: { connectionError:'The notification connection is temporarily unavailable.', denied:'Notifications are blocked in your browser. Allow them in Browser Settings.', permission:'Permission is required to receive notifications.', success:'Notifications are enabled. You will receive bonus updates.', failed:'Could not enable notifications. Check HTTPS and browser permission.', title:'Get bonus notifications', description:'Get notified when the ETB 10,000 bonus game is approaching and when it starts, even when the app is closed.', busy:'Enabling…', enable:'Enable notifications' },
