@@ -35,7 +35,10 @@ function loadMarks(userId?: string): Record<string, number[]> {
     const legacy = localStorage.getItem(LEGACY_MARKS_KEY);
     const raw = scoped ?? legacy;
     const parsed = raw ? JSON.parse(raw) as Record<string, number[]> : {};
-    if (userId && scoped === null && raw) localStorage.setItem(marksKeyFor(userId), JSON.stringify(parsed));
+    if (userId && scoped === null && raw) {
+      localStorage.setItem(marksKeyFor(userId), JSON.stringify(parsed));
+      localStorage.removeItem(LEGACY_MARKS_KEY);
+    }
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
   } catch {
     return {};
