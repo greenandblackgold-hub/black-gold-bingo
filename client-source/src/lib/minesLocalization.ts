@@ -73,6 +73,6 @@ export const minesText = {
 
 export function minesLocale(lang: Lang, key: keyof typeof minesText.en, values: Record<string, string | number> = {}): string {
   let result = minesText[lang][key] ?? minesText.en[key];
-  for (const [name, value] of Object.entries(values)) result = result.replaceAll(`{${name}}`, String(value));
+  for (const [name, value] of Object.entries(values)) result = result.split(`{${name}}`).join(String(value));
   return result;
 }
