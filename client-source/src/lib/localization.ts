@@ -529,9 +529,9 @@ export const translations = {
   en: { title: 'Bingo winner prizes', empty: 'No pending prize requests', pending: 'Pending', approve: 'Approve', reject: 'Reject', reload: 'Reload', round: 'Round', card: 'Card', player: 'Player', notice: 'Prizes are credited to the wallet balance after administrator review.', err: 'Something went wrong' },
 },
   adminWithdrawals: {
- am:{title:'የገንዘብ ማውጫ ጥያቄዎች',empty:'በመጠባበቅ ላይ ያለ የመውጫ ጥያቄ የለም',player:'ተጫዋች',method:'የመቀበያ ዘዴ',destination:'የመቀበያ መረጃ',approve:'አጽድቅ',reject:'ውድቅ አድርግ',reload:'አድስ',pending:'በመጠባበቅ ላይ',notice:'ጥያቄዎች ከአስተዳዳሪ ማረጋገጫ በኋላ ይጸድቃሉ፤ ማጽደቅ ዝውውር አያከናውንም።',err:'ስህተት ተፈጥሯል'}, 
- ti:{title:'ሕቶታት ምውጻእ',empty:'ተጸባዪ ሕቶ ምውጻእ የለን',player:'ተጻዋታይ',method:'ኣገባብ ተቐባሊ',destination:'ሓበሬታ ተቐባሊ',approve:'ኣጽድቕ',reject:'ንጸግ',reload:'ኣሐድስ',pending:'ይጽበ ኣሎ',notice:'ሕቶታት ብኣማሓዳሪ ይምርመሩ፤ ምጽዳቕ ዝውውር ኣይፍጽምን።',err:'ጌጋ ተፈጢሩ'},
- en:{title:'Pending withdrawals',empty:'No pending withdrawal requests',player:'Player',method:'Receiving method',destination:'Receiving details',approve:'Approve',reject:'Reject',reload:'Refresh',pending:'Pending',notice:'The administrator records the external bank or Telebirr reference after the transfer is sent.',err:'Something went wrong'}
+ am:{title:'የገንዘብ ማውጫ ጥያቄዎች',empty:'በመጠባበቅ ላይ ያለ የመውጫ ጥያቄ የለም',player:'ተጫዋች',method:'የመቀበያ ዘዴ',destination:'የመቀበያ መረጃ',approve:'አጽድቅ',reject:'ውድቅ አድርግ',reload:'አድስ',pending:'በመጠባበቅ ላይ',notice:'ጥያቄዎች ከአስተዳዳሪ ማረጋገጫ በኋላ ይጸድቃሉ፤ ማጽደቅ ዝውውር አያከናውንም።',currency:'ብር',err:'ስህተት ተፈጥሯል'}, 
+ ti:{title:'ሕቶታት ምውጻእ',empty:'ተጸባዪ ሕቶ ምውጻእ የለን',player:'ተጻዋታይ',method:'ኣገባብ ተቐባሊ',destination:'ሓበሬታ ተቐባሊ',approve:'ኣጽድቕ',reject:'ንጸግ',reload:'ኣሐድስ',pending:'ይጽበ ኣሎ',notice:'ሕቶታት ብኣማሓዳሪ ይምርመሩ፤ ምጽዳቕ ዝውውር ኣይፍጽምን።',currency:'ብር',err:'ጌጋ ተፈጢሩ'},
+ en:{title:'Pending withdrawals',empty:'No pending withdrawal requests',player:'Player',method:'Receiving method',destination:'Receiving details',approve:'Approve',reject:'Reject',reload:'Refresh',pending:'Pending',currency:'ETB',notice:'The administrator records the external bank or Telebirr reference after the transfer is sent.',err:'Something went wrong'}
 },
   account: { am: { out: 'ውጣ' }, ti: { out: 'ውጻእ' }, en: { out: 'Sign out' } },
   smsDeposit: {
@@ -654,9 +654,9 @@ export const translations = {
     en: { title: 'Host access required', message: 'This area is available to authorized hosts only.', back: 'Back to the game' },
   },
   navigation: {
-  am: { play: 'ጨዋታ', wallet: 'ቦርሳ', settings: 'ሴቲንግ', main: 'ዋና ማውጫ' },
-  ti: { play: 'ጸወታ', wallet: 'ቦርሳ', settings: 'ቅንብራት', main: 'ቀንዲ ምናሌ' },
-  en: { play: 'Play', wallet: 'Wallet', settings: 'Settings', main: 'Main navigation' },
+  am: { play: 'ጨዋታ', games: 'ጨዋታዎች', menu: 'ምናሌ', wallet: 'ቦርሳ', settings: 'ቅንብሮች', main: 'ዋና ማውጫ' },
+  ti: { play: 'ጸወታ', games: 'ጸወታታት', menu: 'ምናሌ', wallet: 'ቦርሳ', settings: 'ቅንብራት', main: 'ቀንዲ ምናሌ' },
+  en: { play: 'Play', games: 'Games', menu: 'Menu', wallet: 'Wallet', settings: 'Settings', main: 'Main navigation' },
 },
 } as const;
 
