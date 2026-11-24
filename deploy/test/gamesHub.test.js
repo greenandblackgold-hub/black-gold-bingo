@@ -127,6 +127,48 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   assert.equal((await f.repo.listGameHubRounds('keno', 1))[0].status, 'settled');
 });
 
+test('Keno submits multiple tickets in one atomic batch and retries idempotently', async () => {
+  const f = await fixture();
+  await f.service.getState('keno', f.user);
+  const tickets = [
+    { requestId: 'keno_batch_ticket_0001', amount: 10, selectedNumbers: [1, 8, 23] },
+    { requestId: 'keno_batch_ticket_0002', amount: 20, selectedNumbers: [2, 9, 24] },
+    { requestId: 'keno_batch_ticket_0003', amount: 30, selectedNumbers: [3, 10, 25] },
+  ];
+
+  const placed = await f.service.placeKenoBets(f.user, { tickets });
+  assert.equal(placed.bets.length, 3);
+  assert.equal(placed.duplicateCount, 0);
+  assert.equal(placed.balanceEtb, 940);
+  assert.equal((await f.repo.findUserById(f.user.id)).balance, 94000);
+  assert.equal((await f.repo.listLedger(f.user.id)).filter((entry) => entry.kind === 'game_bet').length, 3);
+  assert.equal((await f.repo.getCurrentGameHubRound('keno')).bets.length, 3);
+
+  const retried = await f.service.placeKenoBets(f.user, { tickets });
+  assert.equal(retried.bets.length, 3);
+  assert.equal(retried.duplicateCount, 3);
+  assert.equal(retried.balanceEtb, 940);
+  assert.equal((await f.repo.findUserById(f.user.id)).balance, 94000);
+  assert.equal((await f.repo.getCurrentGameHubRound('keno')).bets.length, 3);
+});
+
+test('Keno batch debit is all-or-nothing when the combined stake exceeds wallet balance', async () => {
+  const f = await fixture();
+  await f.service.getState('keno', f.user);
+  await assert.rejects(
+    f.service.placeKenoBets(f.user, {
+      tickets: [
+        { requestId: 'keno_batch_funds_0001', amount: 600, selectedNumbers: [1] },
+        { requestId: 'keno_batch_funds_0002', amount: 600, selectedNumbers: [2] },
+      ],
+    }),
+    (e) => e instanceof HttpError && e.code === 'insufficient_funds',
+  );
+  assert.equal((await f.repo.findUserById(f.user.id)).balance, 100000);
+  assert.equal((await f.repo.getCurrentGameHubRound('keno')).bets.length, 0);
+  assert.equal((await f.repo.listLedger(f.user.id)).filter((entry) => entry.kind === 'game_bet').length, 0);
+});
+
 test('Keno host draw interval is captured per round and controls the full reveal window', async () => {
   const f = await fixture();
   await f.service.updateSettings({ kenoDrawIntervalSeconds: 3 });

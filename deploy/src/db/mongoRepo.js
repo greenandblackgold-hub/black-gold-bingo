@@ -714,6 +714,72 @@ export async function createMongoRepo({ uri, dbName }) {
         return { bet, balance: wallet?.balance ?? 0, duplicate: false };
       });
     },
+    async placeGameHubBets({ game, roundId, bets, userId, acceptedAt }) {
+      return tx(async (session) => {
+        const key = game + ':' + roundId;
+        const round = await gameHubRounds.findOne({ _id: key }, { session });
+        if (!round) throw new RepoError('ROUND_NOT_OPEN');
+        if (game !== 'keno' || round.status !== 'betting' || round.bettingEndsAt <= acceptedAt) {
+          throw new RepoError('ROUND_NOT_OPEN');
+        }
+
+        const walletMode = round.walletMode === 'shared' ? 'shared' : 'legacy-demo';
+        if (walletMode === 'legacy-demo') {
+          await gameHubWallets.updateOne(
+            { _id: userId },
+            { $setOnInsert: { balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt: new Date() } },
+            { upsert: true, session },
+          );
+        }
+
+        const existingByRequest = new Map((round.bets ?? [])
+          .filter((item) => item.userId === userId)
+          .map((item) => [item.requestId, item]));
+        const entries = bets.map((item) => {
+          const existing = existingByRequest.get(item.bet.requestId);
+          return existing ? { bet: existing, duplicate: true } : { bet: item.bet, duplicate: false };
+        });
+        const newEntries = entries.filter((entry) => !entry.duplicate);
+        const total = newEntries.reduce((sum, entry) => sum + entry.bet.stake, 0);
+
+        if (total > 0) {
+          const walletCollection = walletMode === 'shared' ? users : gameHubWallets;
+          const debit = await walletCollection.updateOne(
+            { _id: userId, balance: { $gte: total } },
+            { $inc: { balance: -total } },
+            { session },
+          );
+          if (!debit.matchedCount) {
+            const exists = await walletCollection.findOne({ _id: userId }, { session, projection: { _id: 1 } });
+            throw new RepoError(exists ? 'INSUFFICIENT_FUNDS' : (walletMode === 'shared' ? 'USER_NOT_FOUND' : 'GAME_WALLET_NOT_FOUND'));
+          }
+
+          const createdAt = new Date();
+          const ledgerRows = newEntries.map(({ bet }) => ({
+            userId,
+            amount: -bet.stake,
+            kind: 'game_bet',
+            ref: 'games:keno:bet:' + bet.requestId,
+            meta: { game, roundId, betId: bet.id, requestId: bet.requestId },
+            createdAt,
+          }));
+          if (walletMode === 'shared') await ledger.insertMany(ledgerRows, { session });
+          else await gameHubLedger.insertMany(ledgerRows, { session });
+
+          const updated = await gameHubRounds.findOneAndUpdate(
+            { _id: key, version: round.version, status: 'betting', bettingEndsAt: { $gt: acceptedAt } },
+            { $push: { bets: { $each: newEntries.map((entry) => entry.bet) } }, $inc: { version: 1 } },
+            { returnDocument: 'after', session },
+          );
+          if (!updated) throw new RepoError('ROUND_NOT_OPEN');
+        }
+
+        const wallet = walletMode === 'shared'
+          ? await users.findOne({ _id: userId }, { session, projection: { balance: 1 } })
+          : await gameHubWallets.findOne({ _id: userId }, { session, projection: { balance: 1 } });
+        return { bets: entries, balance: wallet?.balance ?? 0 };
+      });
+    },
     async settleKenoGameHubRound({ roundId, drawnNumbers, results, serverSeed, settledAt, nextRoundAt }) {
       return tx(async (session) => {
         const key = 'keno:' + roundId;

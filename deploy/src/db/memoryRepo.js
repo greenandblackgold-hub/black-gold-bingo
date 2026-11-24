@@ -473,6 +473,36 @@ export function createMemoryRepo() {
       round.version += 1;
       return { bet: clone(bet), balance: movement.balance, duplicate: false };
     },
+    async placeGameHubBets({ game, roundId, bets, userId, acceptedAt }) {
+      const round = gameHubRounds.get(game + ':' + roundId);
+      if (!round) throw new RepoError('ROUND_NOT_OPEN');
+      if (game !== 'keno' || round.status !== 'betting' || round.bettingEndsAt <= acceptedAt) {
+        throw new RepoError('ROUND_NOT_OPEN');
+      }
+      const walletMode = round.walletMode === 'shared' ? 'shared' : 'legacy-demo';
+      const wallet = walletMode === 'shared' ? users.get(userId) : ensureGameHubWallet(userId);
+      const existingByRequest = new Map((round.bets ?? [])
+        .filter((item) => item.userId === userId)
+        .map((item) => [item.requestId, item]));
+      const entries = bets.map((item) => {
+        const existing = existingByRequest.get(item.bet.requestId);
+        return existing ? { bet: clone(existing), duplicate: true } : { bet: clone(item.bet), duplicate: false };
+      });
+      const newEntries = entries.filter((entry) => !entry.duplicate);
+      const total = newEntries.reduce((sum, entry) => sum + entry.bet.stake, 0);
+      if (wallet.balance < total) throw new RepoError('INSUFFICIENT_FUNDS');
+      for (const entry of newEntries) {
+        moveGameHubCredits(userId, -entry.bet.stake, 'game_bet',
+          'games:keno:bet:' + entry.bet.requestId,
+          { game, roundId, betId: entry.bet.id, requestId: entry.bet.requestId }, walletMode);
+      }
+      if (newEntries.length) {
+        round.bets.push(...newEntries.map((entry) => clone(entry.bet)));
+        round.version += 1;
+      }
+      const updatedWallet = walletMode === 'shared' ? users.get(userId) : ensureGameHubWallet(userId);
+      return { bets: entries, balance: updatedWallet.balance };
+    },
     async settleKenoGameHubRound({ roundId, drawnNumbers, results, serverSeed, settledAt, nextRoundAt }) {
       const key = 'keno:' + roundId;
       const round = gameHubRounds.get(key);

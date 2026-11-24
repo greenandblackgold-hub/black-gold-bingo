@@ -140,6 +140,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   route('GET', '/api/games/settings', 'user', 'default', ({ user }) => gamesHub.getPublicSettings(user));
   route('GET', '/api/games/keno/state', 'user', 'default', ({ user }) => gamesHub.getState('keno', user));
   route('POST', '/api/games/keno/bets', 'user', 'money', ({ user, body }) => gamesHub.placeKenoBet(user, body));
+  route('POST', '/api/games/keno/bets/batch', 'user', 'money', ({ user, body }) => gamesHub.placeKenoBets(user, body));
   route('GET', '/api/games/keno/history', 'user', 'default', ({ user, query }) => gamesHub.getHistory('keno', user, Number(query.get('limit') || 10)));
   route('GET', '/api/games/aviator/state', 'user', 'default', ({ user }) => gamesHub.getState('aviator', user));
   route('POST', '/api/games/aviator/bets', 'user', 'money', ({ user, body }) => gamesHub.placeAviatorBet(user, body));
