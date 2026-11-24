@@ -16,7 +16,8 @@ import { play } from '@/lib/audio';
 import { API_URL, api, ApiError, type ServerGameState } from '@/lib/api';
 import type { BingoCard, GameBackend, PlayerContextValue, RoundContextValue, Tx, VerifyResult, WinPattern } from '@/types/game';
 
-const MARKS_KEY = 'bgb.marks';
+const LEGACY_MARKS_KEY = 'bgb.marks';
+const marksKeyFor = (userId: string) => `bgb.marks.${userId}`;
 const NOOP_BACKEND = (canHost: boolean): GameBackend => ({
   kind: 'server',
   canHost,
@@ -28,10 +29,14 @@ const NOOP_BACKEND = (canHost: boolean): GameBackend => ({
   clearClaims: async () => undefined,
 });
 
-function loadMarks(): Record<string, number[]> {
+function loadMarks(userId?: string): Record<string, number[]> {
   try {
-    const raw = localStorage.getItem(MARKS_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, number[]>) : {};
+    const scoped = userId ? localStorage.getItem(marksKeyFor(userId)) : null;
+    const legacy = localStorage.getItem(LEGACY_MARKS_KEY);
+    const raw = scoped ?? legacy;
+    const parsed = raw ? JSON.parse(raw) as Record<string, number[]> : {};
+    if (userId && scoped === null && raw) localStorage.setItem(marksKeyFor(userId), JSON.stringify(parsed));
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
   } catch {
     return {};
   }
@@ -43,15 +48,22 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   const { user, refresh } = useAuth();
   const [cards, setCards] = useState<BingoCard[]>([]);
   const [transactions, setTransactions] = useState<Tx[]>([]);
-  const [markedByCard, setMarks] = useState<Record<string, number[]>>(loadMarks);
+  const [markedByCard, setMarks] = useState<Record<string, number[]>>(() => loadMarks(user?.id));
+  const cardsRequestInFlight = useRef(false);
+  const marksStorageKey = user?.id ? marksKeyFor(user.id) : LEGACY_MARKS_KEY;
   const marksRef = useRef(markedByCard);
   marksRef.current = markedByCard;
 
   const reloadCards = useCallback(async () => {
+    if (cardsRequestInFlight.current) return;
+    cardsRequestInFlight.current = true;
     try {
-      setCards(await api.get<BingoCard[]>('/api/cards'));
+      const latest = await api.get<BingoCard[]>('/api/cards');
+      if (Array.isArray(latest)) setCards(latest);
     } catch {
-      /* keep what we have */
+      // Preserve the last confirmed cards. Focus/online polling below retries automatically.
+    } finally {
+      cardsRequestInFlight.current = false;
     }
   }, []);
   const reloadLedger = useCallback(async () => {
@@ -63,9 +75,29 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    setCards([]);
+    setMarks(loadMarks(user?.id));
     void reloadCards();
     void reloadLedger();
-  }, [reloadCards, reloadLedger]);
+  }, [user?.id, reloadCards, reloadLedger]);
+
+  // Recover card lists after refreshes and transient API failures without ever replacing
+  // a previously confirmed list with an empty/error response.
+  useEffect(() => {
+    let active = true;
+    const refreshCards = () => { if (active && document.visibilityState !== 'hidden') void reloadCards(); };
+    const timer = window.setInterval(refreshCards, 15_000);
+    window.addEventListener('focus', refreshCards);
+    window.addEventListener('online', refreshCards);
+    document.addEventListener('visibilitychange', refreshCards);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshCards);
+      window.removeEventListener('online', refreshCards);
+      document.removeEventListener('visibilitychange', refreshCards);
+    };
+  }, [reloadCards]);
 
   // Admin-side changes can affect the player's profile, cards, or ledger.
   // Re-fetch only authorized player data after receiving the invalidation signal.
@@ -103,11 +135,11 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(MARKS_KEY, JSON.stringify(markedByCard));
+      localStorage.setItem(marksStorageKey, JSON.stringify(markedByCard));
     } catch {
       /* ignore */
     }
-  }, [markedByCard]);
+  }, [markedByCard, marksStorageKey]);
 
   // Marks are only a convenience on this device: the server decides wins from its own record.
   const toggleMark = useCallback((cardId: string, n: number) => {
@@ -120,9 +152,9 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const buyCards = useCallback(
-    async (count: number, serial?: string) => {
+    async (count: number, serial?: string, preview?: { grid: (number | null)[][]; token?: string }) => {
       try {
-        await api.post('/api/cards/buy', { count, ...(serial ? { serial } : {}) });
+        await api.post('/api/cards/buy', { count, ...(serial ? { serial } : {}), ...(preview ? { previewGrid: preview.grid, ...(preview.token ? { previewToken: preview.token } : {}) } : {}) });
         play('coin');
         await Promise.all([reloadCards(), reloadLedger(), refresh()]);
         return { ok: true };
