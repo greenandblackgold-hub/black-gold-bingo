@@ -81,7 +81,8 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
 
   const reloadCards = useCallback(async () => {
     if (cardsRequestInFlight.current) { cardsReloadQueued.current = true; return; }
-    const requestedUserId = user?.id;
+    const requestedUserId = currentUserIdRef.current;
+    if (!requestedUserId) return;
     cardsRequestInFlight.current = true;
     try {
       const latest = await api.get<BingoCard[]>('/api/cards');
@@ -98,7 +99,7 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
         void reloadCards();
       }
     }
-  }, [user?.id]);
+  }, []);
   const reloadLedger = useCallback(async () => {
     try {
       setTransactions(await api.get<Tx[]>('/api/ledger'));
