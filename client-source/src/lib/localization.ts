@@ -454,10 +454,11 @@ export const translations = {
 },
   adminDeposits: {
   am: {
+    provider: 'አቅራቢ', smsAmount: 'የSMS መጠን', sender: 'ላኪ', transactionTime: 'የግብይት ሰዓት', transactionSms: 'የግብይት SMS', currency: 'ብር',
     title: 'የገንዘብ ማስገቢያ ጥያቄዎች',
     empty: 'እስካሁን የቀረበ ጥያቄ የለም።',
-    approve: 'Approve · አጽድቅ',
-    reject: 'Reject · ውድቅ አድርግ',
+    approve: 'አጽድቅ',
+    reject: 'ውድቅ አድርግ',
     refresh: 'አድስ',
     pending: 'በመጠባበቅ ላይ',
     amount: 'መጠን',
@@ -477,10 +478,11 @@ export const translations = {
 
   },
   ti: {
+    provider: 'ኣቕራቢ', smsAmount: 'መጠን SMS', sender: 'ሰዳዲ', transactionTime: 'ግዜ ግብይት', transactionSms: 'SMS ግብይት', currency: 'ብር',
     title: 'ሕቶታት ምእታው ገንዘብ',
     empty: 'ክሳብ ሕጂ ሕቶ የለን።',
-    approve: 'Approve · ኣጽድቕ',
-    reject: 'Reject · ንጸግ',
+    approve: 'ኣጽድቕ',
+    reject: 'ንጸግ',
     refresh: 'ኣሐድስ',
     pending: 'ይጽበ ኣሎ',
     amount: 'መጠን',
@@ -500,6 +502,7 @@ export const translations = {
 
   },
   en: {
+    provider: 'Provider', smsAmount: 'SMS amount', sender: 'Sender', transactionTime: 'Transaction time', transactionSms: 'Transaction SMS', currency: 'ETB',
     title: 'Deposit requests',
     empty: 'There are no pending requests.',
     approve: 'Approve',
