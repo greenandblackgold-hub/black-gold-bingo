@@ -901,6 +901,19 @@ test('fixed prize is announced, frozen at round start, capped by gross revenue, 
 });
 
 
+
+test('Bingo preview endpoint supports a full 25-card package with unique serials', async () => {
+  await freshRound();
+  const player = await newPlayer('Twenty Five Preview Player', 0);
+  const response = await api('POST', '/api/cards/preview', { token: player.token, body: { count: 25 } });
+  assert.equal(response.status, 200, JSON.stringify(response.json));
+  assert.equal(response.json.length, 25);
+  const serials = response.json.map((card) => String(card.serial));
+  assert.equal(new Set(serials).size, 25, 'each preview must have a unique card serial');
+  assert.ok(serials.every((serial) => /^(1[0-9]{4}|2[0-4][0-9]{3})$/.test(serial)));
+  assert.equal((await api('GET', '/api/cards', { token: player.token })).json.length, 0, 'preview package must not register or charge cards');
+});
+
 test('Bingo card previews are free, registration requires funds, preserves the preview grid, and host cap is enforced', async () => {
   await freshRound();
   const player = await newPlayer('Card Preview Player', 0);
