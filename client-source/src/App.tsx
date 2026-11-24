@@ -83,15 +83,21 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
         const value = await api.get<{ generalEnabled: boolean; minesEnabled?: boolean }>('/api/games/settings');
         if (active) { setGeneralEnabled(value.generalEnabled !== false); setMinesEnabled(value.minesEnabled !== false); }
       } catch {
-        // A transient network failure must not kick a player out of the selected game.
-        // Keep the last confirmed maintenance state until the server responds again.
+        // Keep the last confirmed state during temporary network failures.
       } finally {
         pending = false;
       }
     };
+    const onAdminChange = () => void refresh();
     void refresh();
-    const poll = window.setInterval(() => void refresh(), 4000);
-    return () => { active = false; window.clearInterval(poll); };
+    window.addEventListener('bgb:admin-change', onAdminChange);
+    // Recovery fallback for missed SSE events or a temporarily disconnected network.
+    const poll = window.setInterval(() => void refresh(), 30_000);
+    return () => {
+      active = false;
+      window.clearInterval(poll);
+      window.removeEventListener('bgb:admin-change', onAdminChange);
+    };
   }, []);
   useEffect(() => {
     if (!generalEnabled) { setMenuOpen(false); setPlayerSettingsOpen(false); }
