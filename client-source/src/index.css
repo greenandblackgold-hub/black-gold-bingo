@@ -1311,3 +1311,17 @@ body { color: #f7edcf; background: #030303 !important; }
   object-position: center;
   flex: none;
 }
+
+
+/* Aviator-only artwork enlargement: preserve source aspect ratio and contain fit. */
+.premium-ui .games-center-artwork-aviator {
+  padding: 0;
+}
+.premium-ui .games-center-aviator-image {
+  width: 116%;
+  height: 116%;
+  max-width: none;
+  object-fit: contain;
+  object-position: center;
+  flex: none;
+}
