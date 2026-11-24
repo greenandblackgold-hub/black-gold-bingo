@@ -527,9 +527,9 @@ export const translations = {
   },
 },
   adminPayouts: {
-  am: { title: 'የቢንጎ አሸናፊ ሽልማቶች', empty: 'በመጠባበቅ ላይ ያለ የሽልማት ጥያቄ የለም', pending: 'በመጠባበቅ ላይ', approve: 'አጽድቅ', reject: 'ውድቅ አድርግ', reload: 'አድስ', round: 'ዙር', card: 'ካርድ', player: 'ተጫዋች', notice: 'ሽልማቱ ከአስተዳዳሪ ማረጋገጫ በኋላ ወደ ቦርሳ ባላንስ ብቻ ይጨመራል።', err: 'ስህተት ተፈጥሯል' },
-  ti: { title: 'ሽልማት ኣሸነፍቲ ቢንጎ', empty: 'ዝጽበ ዘሎ ሕቶ ሽልማት የለን', pending: 'ይጽበ ኣሎ', approve: 'ኣጽድቕ', reject: 'ንጸግ', reload: 'ኣሐድስ', round: 'ዙር', card: 'ካርድ', player: 'ተጻዋታይ', notice: 'ሽልማት ድሕሪ ምርግጋጽ ኣማሓዳሪ ናብ ሚዛን ቦርሳ ጥራይ ይውሰኽ።', err: 'ጌጋ ተፈጢሩ' },
-  en: { title: 'Bingo winner prizes', empty: 'No pending prize requests', pending: 'Pending', approve: 'Approve', reject: 'Reject', reload: 'Reload', round: 'Round', card: 'Card', player: 'Player', notice: 'Prizes are credited to the wallet balance after administrator review.', err: 'Something went wrong' },
+  am: { title: 'የቢንጎ አሸናፊ ሽልማቶች', empty: 'በመጠባበቅ ላይ ያለ የሽልማት ጥያቄ የለም', pending: 'በመጠባበቅ ላይ', approve: 'አጽድቅ', reject: 'ውድቅ አድርግ', reload: 'አድስ', round: 'ዙር', card: 'ካርድ', player: 'ተጫዋች', notice: 'ሽልማቱ ከአስተዳዳሪ ማረጋገጫ በኋላ ወደ ቦርሳ ባላንስ ብቻ ይጨመራል።', currency: 'ብር', err: 'ስህተት ተፈጥሯል' },
+  ti: { title: 'ሽልማት ኣሸነፍቲ ቢንጎ', empty: 'ዝጽበ ዘሎ ሕቶ ሽልማት የለን', pending: 'ይጽበ ኣሎ', approve: 'ኣጽድቕ', reject: 'ንጸግ', reload: 'ኣሐድስ', round: 'ዙር', card: 'ካርድ', player: 'ተጻዋታይ', notice: 'ሽልማት ድሕሪ ምርግጋጽ ኣማሓዳሪ ናብ ሚዛን ቦርሳ ጥራይ ይውሰኽ።', currency: 'ብር', err: 'ጌጋ ተፈጢሩ' },
+  en: { title: 'Bingo winner prizes', empty: 'No pending prize requests', pending: 'Pending', approve: 'Approve', reject: 'Reject', reload: 'Reload', round: 'Round', card: 'Card', player: 'Player', notice: 'Prizes are credited to the wallet balance after administrator review.', currency: 'ETB', err: 'Something went wrong' },
 },
   adminWithdrawals: {
  am:{title:'የገንዘብ ማውጫ ጥያቄዎች',empty:'በመጠባበቅ ላይ ያለ የመውጫ ጥያቄ የለም',player:'ተጫዋች',method:'የመቀበያ ዘዴ',destination:'የመቀበያ መረጃ',approve:'አጽድቅ',reject:'ውድቅ አድርግ',reload:'አድስ',pending:'በመጠባበቅ ላይ',notice:'ጥያቄዎች ከአስተዳዳሪ ማረጋገጫ በኋላ ይጸድቃሉ፤ ማጽደቅ ዝውውር አያከናውንም።',currency:'ብር',err:'ስህተት ተፈጥሯል'}, 
