@@ -63,9 +63,9 @@ export const helpTopics: HelpTopic[] = [
     id: 'aviator-how', category: 'aviator',
     question: { am: 'Aviator እንዴት ይጫወታል?', ti: 'Aviator ብኸመይ ይጽወት?', en: 'How do I play Aviator?' },
     answer: {
-      am: 'ዙሩ ከመጀመሩ በፊት የሚፈቀደውን ውርርድ ያስገቡ። አውሮፕላኑ ሲበር ብዜቱ (Multiplier) ይጨምራል። ዙሩ ከመቋረጡ (Crash) በፊት Cash Out ካደረጉ በዚያ ጊዜ በሚታየው ብዜት መሠረት ውጤት ይሰላል። Crash ከሆነ በፊት Cash Out ካላደረጉ ውርርዱ ሊጠፋ ይችላል። ጊዜውን መተንበይ አይቻልም።',
-      ti: 'ዙር ቅድሚ ምጅማሩ እቲ ዝፍቀድ ውርርድ ኣእትዉ። ነፋሪት ክትነፍር ከላ ብዜት (Multiplier) ይውስኽ። ዙር ቅድሚ ምቁራጹ (Crash) Cash Out እንተገይርኩም፣ ውጽኢት በቲ እዋን ዝርአ ብዜት ይሕሰብ። Crash ቅድሚ ምዃኑ Cash Out እንተዘይገይርኩም ውርርድኩም ክጠፍእ ይኽእል። መዓስ ከም ዝቋረጽ ምግማት ኣይከኣልን።',
-      en: 'Place an allowed stake before the round starts. As the plane flies, the multiplier rises. If you Cash Out before the round crashes, the result is calculated using the multiplier shown at that moment. If the crash happens before you cash out, the stake can be lost. The crash point cannot be predicted.'
+      am: 'በዙሩ ከመጀመሩ በፊት እስከ ሁለት የተለያዩ ውርርዶችን ማስገባት ይችላሉ፤ እያንዳንዱም የራሱ መጠን አለው። ለእያንዳንዱ ውርርድ አማራጭ Auto Cash Out ብዜት ማስቀመጥ ይችላሉ። አውሮፕላኑ ሲበር ብዜቱ ይጨምራል፤ በእጅ Cash Out ካደረጉ ወይም የተቀመጠው የAuto Cash Out ግብ ከCrash በፊት ከደረሰ ውጤቱ በዚያ ብዜት ይሰላል። Crash ቀድሞ ከሆነ ውርርዱ ሊጠፋ ይችላል፤ የCrash ጊዜ ሊተነበይ አይችልም.',
+      ti: 'ቅድሚ ዙር ምጅማሩ ክሳብ ክልተ ናጻ ውርርዳት ከእትዉ ትኽእሉ፤ ነፍሲ ወከፍ ውርርድ ናይ ባዕሉ መጠን ኣለዎ። ንነፍሲ ወከፍ ውርርድ ኣማራጺ Auto Cash Out ብዜት ክትውስኑ ትኽእሉ። ነፋሪት ክትነፍር ከላ ብዜት ይውስኽ፤ ብኢድ Cash Out እንተገይርኩም ወይ እቲ ዝተወሰነ Auto Cash Out ዕላማ ቅድሚ Crash እንተበጺሑ ውጽኢት በቲ ብዜት ይሕሰብ። Crash ቀዲሙ እንተኾይኑ ውርርድኩም ክጠፍእ ይኽእል፤ ግዜ Crash ምግማት ኣይከኣልን.',
+      en: 'You can place up to two independent bets before a round starts; each has its own stake. Each bet can also have an optional Auto Cash Out target. As the plane flies, the multiplier rises. You can cash out manually, or the server cashes out automatically if the bet target is reached before the crash. If the crash happens first, the stake can be lost. The crash point cannot be predicted.'
     },
     keywords: { am: ['aviator','አቪየተር','አውሮፕላን','cash out','ካሽ አውት','multiplier','ብዜት','crash'], ti: ['aviator','ነፋሪት','cash out','multiplier','ብዜት','crash'], en: ['aviator','plane','cash out','multiplier','crash'] }
   },
@@ -78,6 +78,16 @@ export const helpTopics: HelpTopic[] = [
       en: 'Cash Out means ending your Aviator bet at the multiplier currently shown, before the round crashes. The button is available only while the plane is flying. You cannot cash out after a crash. Check the game display for the recorded result.'
     },
     keywords: { am: ['cash out','ካሽ አውት','ገንዘብ ማውጣት','መቼ ማውጣት'], ti: ['cash out','ገንዘብ ምውጻእ','ምውጻእ'], en: ['cash out','cashout','withdraw','end bet'] }
+  },
+  {
+    id: 'auto-cashout', category: 'aviator',
+    question: { am: 'Aviator ውስጥ Auto Cash Out ምንድን ነው?', ti: 'ኣብ Aviator Auto Cash Out እንታይ እዩ?', en: 'What is Auto Cash Out in Aviator?' },
+    answer: {
+      am: 'Auto Cash Out ማለት ለአንድ ውርርድ የሚፈልጉትን ብዜት አስቀድመው ማስቀመጥ ነው። ሰርቨሩ ያ ብዜት ከCrash በፊት ከደረሰ በራስ-ሰር Cash Out ያደርጋል። Crash ቀድሞ ከሆነ ውርርዱ ሊጠፋ ይችላል። ይህ የአሸናፊነት ዋስትና አይደለም።',
+      ti: 'Auto Cash Out ማለት ንሓደ ውርርድ እትደልይዎ ብዜት ኣቐዲምኩም ምውሳን እዩ። እቲ ብዜት ቅድሚ Crash እንተበጺሑ ሰርቨር ብራስ-ሰር Cash Out ይገብር። Crash ቀዲሙ እንተኾይኑ ውርርድኩም ክጠፍእ ይኽእል። እዚ ውሕስነት ዓወት ኣይኮነን።',
+      en: 'Auto Cash Out lets you set a target multiplier for an individual bet before the round. If the target is reached before the crash, the server cashes out that bet automatically. If the crash happens first, the stake can be lost. It does not guarantee a win.'
+    },
+    keywords: { am: ['auto cash out','ራስ-ሰር ገንዘብ ማውጣት','ብዜት','crash'], ti: ['auto cash out','ብራስ-ሰር ገንዘብ ምውጻእ','ብዜት','crash'], en: ['auto cash out','automatic cashout','target multiplier','crash'] }
   },
   {
     id: 'mines-how', category: 'mines',
@@ -132,7 +142,7 @@ export const helpTopics: HelpTopic[] = [
 ];
 
 export const helpQuickQuestionIds = [
-  'how-center-works', 'bingo-how', 'keno-how', 'aviator-how', 'mines-how', 'cash-out', 'wallet-deposit', 'wallet-withdrawal',
+  'how-center-works', 'bingo-how', 'keno-how', 'aviator-how', 'mines-how', 'cash-out', 'auto-cashout', 'wallet-deposit', 'wallet-withdrawal',
 ] as const;
 
 export function findHelpAnswer(query: string, lang: Lang): HelpTopic[] {

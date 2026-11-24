@@ -689,6 +689,84 @@ body { min-height: 100vh; min-height: 100dvh; }
 }
 
 
+/* Aviator premium game surface */
+.aviator-premium { color:#f5e8c5; }
+.aviator-premium .aviator-nav,.aviator-sound,.aviator-chip { border:1px solid rgba(218,177,77,.25); border-radius:999px; padding:.55rem .9rem; font-size:.68rem; font-weight:800; letter-spacing:.08em; color:#d9c28d; background:rgba(16,14,10,.8); }
+.aviator-premium .aviator-nav.active { color:#ffe29a; border-color:rgba(246,215,122,.65); background:rgba(214,173,69,.12); }
+.aviator-premium .aviator-chip { color:#f6d77a; }
+.aviator-premium .aviator-sound { color:#d9c28d; }
+.aviator-header { display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between; gap:1.5rem; border:1px solid rgba(214,173,69,.28); border-radius:1.4rem; padding:1.4rem 1.6rem; background:radial-gradient(ellipse at 15% 0%,rgba(196,145,39,.2),transparent 55%),linear-gradient(135deg,#17140d,#080808 70%); }
+.aviator-header h1 { margin:.2rem 0; font-size:clamp(2rem,5vw,3.2rem); font-weight:950; letter-spacing:.08em; color:#fff0c6; }
+.aviator-header h1 span { color:#d9ae45; font-size:.55em; }
+.aviator-header p:not(.aviator-eyebrow) { color:rgba(243,224,179,.6); font-size:.85rem; }
+.aviator-eyebrow,.aviator-history-strip>span { color:#d5a93d; font-size:.62rem; font-weight:900; letter-spacing:.22em; text-transform:uppercase; }
+.aviator-history-strip { display:flex; flex-wrap:wrap; align-items:center; gap:.45rem; }
+.aviator-history-strip>span { width:100%; }
+.aviator-history-strip b { border:1px solid rgba(214,173,69,.22); border-radius:.55rem; padding:.4rem .55rem; font-size:.75rem; background:#090909; }
+.aviator-history-strip b.good { color:#a8e4b5; border-color:rgba(95,190,120,.35); }
+.aviator-history-strip b.low { color:#e9b7a8; }
+.aviator-alert,.aviator-notice { border-radius:.8rem; padding:.8rem 1rem; font-size:.85rem; }
+.aviator-alert { border:1px solid rgba(248,90,90,.35); background:rgba(80,12,12,.25); color:#ffc2c2; }
+.aviator-notice { border:1px solid rgba(80,190,120,.3); background:rgba(12,65,32,.22); color:#b9f0c7; }
+.aviator-flight { min-height:350px; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; isolation:isolate; border:1px solid rgba(214,173,69,.25); border-radius:1.5rem; background:radial-gradient(ellipse at 50% 90%,rgba(187,137,37,.22),transparent 55%),linear-gradient(180deg,#11120f,#050606 78%); }
+.aviator-sky-grid { position:absolute; inset:25% -20% -25%; opacity:.23; transform:perspective(240px) rotateX(58deg); transform-origin:top; background-image:linear-gradient(rgba(224,181,80,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(224,181,80,.22) 1px,transparent 1px); background-size:44px 44px; mask-image:linear-gradient(to bottom,black,transparent); }
+.aviator-stars { position:absolute; inset:0; opacity:.35; background-image:radial-gradient(#e8c978 1px,transparent 1.5px),radial-gradient(#b68d3d 1px,transparent 1.5px); background-size:87px 73px,131px 109px; background-position:10px 20px,50px 60px; }
+.aviator-flight-status { z-index:1; color:#d7b55f; font-size:.68rem; font-weight:900; letter-spacing:.25em; text-transform:uppercase; }
+.aviator-multiplier { z-index:1; margin-top:.5rem; color:#ffe7a0; font-size:clamp(3.8rem,10vw,7rem); line-height:1.1; font-weight:950; font-variant-numeric:tabular-nums; text-shadow:0 0 38px rgba(238,184,66,.28); }
+.aviator-flight.crashed .aviator-multiplier { color:#ff7777; text-shadow:0 0 35px rgba(240,55,55,.28); }
+.aviator-flight-path { position:absolute; left:12%; bottom:18%; width:76%; height:1px; background:linear-gradient(90deg,transparent,rgba(225,180,73,.6),transparent); transform:rotate(-13deg); }
+.aviator-plane { z-index:1; position:absolute; left:16%; bottom:23%; color:#ffe2a0; font-size:2.8rem; filter:drop-shadow(0 0 17px rgba(238,183,66,.5)); }
+.aviator-flight.flying .aviator-plane { animation:aviator-flight 2.8s ease-in-out infinite alternate; }
+.aviator-flight-foot { z-index:1; margin-top:1.3rem; color:rgba(241,224,181,.55); font-size:.75rem; }
+@keyframes aviator-flight { from{transform:translate(0,12px) rotate(-8deg)} to{transform:translate(48vw,-110px) rotate(-15deg)} }
+.aviator-bet-card,.aviator-live-card,.aviator-round-info,.aviator-recent { border:1px solid rgba(214,173,69,.23); border-radius:1.15rem; padding:1.1rem; background:linear-gradient(145deg,rgba(22,20,15,.98),rgba(8,8,8,.98)); box-shadow:0 14px 36px rgba(0,0,0,.24); }
+.aviator-bet-heading,.aviator-live-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+.aviator-bet-heading span:first-child { color:#cda64b; font-size:.62rem; font-weight:900; letter-spacing:.2em; }
+.aviator-bet-heading h2,.aviator-live-head h2,.aviator-recent h2 { margin-top:.2rem; color:#fff0c8; font-weight:900; letter-spacing:.08em; }
+.aviator-mode { color:#bda66f; font-size:.62rem; font-weight:800; }
+.aviator-bet-card label { display:block; margin-bottom:.4rem; color:rgba(239,222,180,.65); font-size:.72rem; }
+.aviator-amount-row { display:grid; grid-template-columns:2.8rem 1fr 2.8rem; gap:.5rem; }
+.aviator-amount-row button,.aviator-quick button { border:1px solid rgba(214,173,69,.25); border-radius:.65rem; padding:.55rem; color:#e8cf91; background:#090909; font-weight:800; }
+.aviator-amount-row input { min-width:0; width:100%; border:1px solid rgba(214,173,69,.3); border-radius:.7rem; padding:.65rem; color:#fff0c8; background:#080808; text-align:center; font-size:1.15rem; font-weight:900; }
+.aviator-quick { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.4rem; margin-top:.55rem; }
+.aviator-quick button { font-size:.72rem; }
+.aviator-amount-row button:disabled,.aviator-quick button:disabled { opacity:.35; }
+.aviator-limits { margin:.7rem 0; color:rgba(236,218,174,.5); font-size:.65rem; }
+.aviator-place,.aviator-cashout { width:100%; border-radius:.75rem; padding:.85rem; font-weight:950; letter-spacing:.07em; }
+.aviator-place { color:#171208; background:linear-gradient(110deg,#ffe9a5,#d8a934 55%,#a8751b); }
+.aviator-cashout { color:#04170b; background:linear-gradient(110deg,#c7f7d0,#58c879); }
+.aviator-place:disabled,.aviator-cashout:disabled { opacity:.4; cursor:not-allowed; }
+.aviator-bet-result { display:flex; justify-content:space-between; gap:.5rem; margin-top:.7rem; border-top:1px solid rgba(214,173,69,.15); padding-top:.65rem; color:#cbb782; font-size:.68rem; }
+.aviator-bet-result b { color:#f5d77d; }
+.aviator-live-head { flex-wrap:wrap; }
+.aviator-live-head p { margin-top:.2rem; color:rgba(235,218,178,.48); font-size:.62rem; letter-spacing:.12em; }
+.aviator-tabs { display:flex; flex-wrap:wrap; gap:.35rem; }
+.aviator-tabs button { border:1px solid rgba(214,173,69,.18); border-radius:999px; padding:.5rem .7rem; color:#bba878; font-size:.6rem; font-weight:900; letter-spacing:.06em; }
+.aviator-tabs button.selected { border-color:rgba(246,215,122,.65); color:#ffe5a0; background:rgba(214,173,69,.12); }
+.aviator-table-wrap { overflow-x:auto; }
+.aviator-table { width:100%; border-collapse:collapse; min-width:550px; text-align:left; }
+.aviator-table th { padding:.7rem .55rem; color:#b9974b; font-size:.6rem; letter-spacing:.14em; }
+.aviator-table td { border-top:1px solid rgba(214,173,69,.12); padding:.75rem .55rem; color:#e8d9b5; font-size:.72rem; }
+.aviator-empty { text-align:center; color:rgba(236,218,174,.45)!important; }
+.aviator-round-info { display:grid; grid-template-columns:1fr 2fr; gap:1rem; overflow-wrap:anywhere; }
+.aviator-round-info span { display:block; margin-bottom:.4rem; color:#bd9845; font-size:.6rem; font-weight:900; letter-spacing:.15em; text-transform:uppercase; }
+.aviator-round-info b,.aviator-round-info p { color:rgba(239,224,190,.62); font-size:.68rem; font-weight:500; }
+.aviator-recent>div { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:.5rem; margin-top:.7rem; }
+.aviator-recent article { display:flex; justify-content:space-between; gap:.5rem; border:1px solid rgba(214,173,69,.14); border-radius:.7rem; padding:.7rem; background:#080808; font-size:.7rem; }
+.aviator-recent article span { color:#bca875; }.aviator-recent article b { color:#f4d47c; }
+@media(max-width:640px){.aviator-flight{min-height:285px}.aviator-round-info{grid-template-columns:1fr}.aviator-header{padding:1.1rem}.aviator-tabs{width:100%}.aviator-tabs button{flex:1}}
+@media(prefers-reduced-motion:reduce){.aviator-flight.flying .aviator-plane{animation:none}}
+
+
+/* Aviator automatic betting controls */
+.aviator-auto-settings{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center;margin:.7rem 0;padding:.7rem;border:1px solid rgba(214,173,69,.22);border-radius:.8rem;background:rgba(214,173,69,.045)}
+.aviator-auto-settings label{grid-column:1/-1;margin:0!important;color:#d9bc73!important;font-size:.62rem!important;font-weight:900;letter-spacing:.12em}
+.aviator-auto-settings input{min-width:0;width:100%;border:1px solid rgba(214,173,69,.3);border-radius:.6rem;padding:.55rem;color:#fff0c8;background:#080808;font-weight:800}
+.aviator-auto-settings button{border:1px solid rgba(214,173,69,.45);border-radius:.6rem;padding:.55rem .7rem;color:#ffe7a0;background:#211a0b;font-size:.65rem;font-weight:900;white-space:nowrap}
+.aviator-auto-settings button.selected{border-color:#8fe0a3;color:#a8f0b8;background:rgba(28,104,48,.22)}
+.aviator-auto-settings p{grid-column:1/-1;margin:0;color:rgba(236,218,174,.55);font-size:.62rem}
+
+
 /* Unified player shell and game viewport safeguards. */
 html, body, #root {
   width: 100%;
