@@ -605,7 +605,7 @@ export const translations = {
 },
   depositHistory: {
   am: {
-    title: 'የዲፖዚት ጥያቄዎቼ',
+    title: 'የገንዘብ ማስገቢያ ጥያቄዎቼ', currency: 'ብር',
     empty: 'እስካሁን የዲፖዚት ጥያቄ የለም።',
     pending: 'በመጠባበቅ ላይ',
     success: 'ተጸድቋል · ባላንስ ጨምሯል',
@@ -617,7 +617,7 @@ export const translations = {
     refresh: 'ዝርዝሩ በየ15 ሰከንዱ ይታደሳል።',
   },
   ti: {
-    title: 'ናይ ዲፖዚት ሕቶታተይ',
+    title: 'ሕቶታተይ ምእታው ገንዘብ', currency: 'ብር',
     empty: 'ገና ናይ ዲፖዚት ሕቶ የለን።',
     pending: 'ይጽበ ኣሎ',
     success: 'ጸዲቑ · ሚዛን ተወሲኹ',
@@ -629,7 +629,7 @@ export const translations = {
     refresh: 'ዝርዝር ኣብ ነፍሲ ወከፍ 15 ካልኢት ይሕደስ።',
   },
   en: {
-    title: 'My deposit requests',
+    title: 'My deposit requests', currency: 'ETB',
     empty: 'No deposit requests yet.',
     pending: 'Pending review',
     success: 'Approved · balance credited',
