@@ -206,9 +206,9 @@ test('Admin settings are validated and persist independently of Bingo settings',
   assert.equal(settings.bingoEnabled, false);
   assert.equal(settings.kenoEnabled, false);
   assert.equal(settings.minesEnabled, false);
-  await assert.rejects(f.service.assertGameEnabled('mines'), (e) => e instanceof HttpError && e.code === 'game_disabled');
   await assert.rejects(f.service.assertGameEnabled('keno'), (e) => e instanceof HttpError && e.code === 'games_center_disabled');
   await f.service.updateSettings({ generalEnabled: true });
+  await assert.rejects(f.service.assertGameEnabled('mines'), (e) => e instanceof HttpError && e.code === 'game_disabled');
   await assert.rejects(f.service.assertGameEnabled('keno'), (e) => e instanceof HttpError && e.code === 'game_disabled');
   await assert.rejects(f.service.assertGameEnabled('bingo'), (e) => e instanceof HttpError && e.code === 'game_disabled');
   await f.service.updateSettings({ bingoEnabled: true });
