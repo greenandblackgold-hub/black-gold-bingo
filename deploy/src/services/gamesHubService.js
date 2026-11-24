@@ -158,6 +158,10 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   let timer = null;
   let ticking = false;
   const gameTickLocks = new Map();
+  // Keep the last scheduler-confirmed round ID in memory. The database transaction
+  // remains authoritative for every bet; this cache only avoids a redundant
+  // preflight round read on the latency-sensitive Keno submit path.
+  const currentRoundIds = new Map();
   const settingsDefaults = { ...DEFAULT_SETTINGS };
 
   async function settings() {
@@ -270,7 +274,11 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   async function tickGame(game, settingsSnapshot) {
     const pending = gameTickLocks.get(game);
     if (pending) return pending;
-    const task = runGameTick(game, settingsSnapshot);
+    const task = runGameTick(game, settingsSnapshot).then((round) => {
+      if (round?.roundId) currentRoundIds.set(game, round.roundId);
+      else currentRoundIds.delete(game);
+      return round;
+    });
     gameTickLocks.set(game, task);
     try { return await task; }
     finally { if (gameTickLocks.get(game) === task) gameTickLocks.delete(game); }
@@ -410,16 +418,12 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
   }
 
   async function placeKenoBets(user, input = {}) {
+    const startedAt = Date.now();
     ensureSimulationMode();
     assertVerifiedPlayer(user);
     const currentSettings = await settings();
     if (currentSettings.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
     if (!currentSettings.kenoEnabled) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
-    const round = await tickGame('keno', currentSettings);
-    const acceptedAt = now();
-    if (round.status !== 'betting' || acceptedAt >= round.bettingEndsAt) {
-      throw new HttpError(409, 'betting_closed', 'Betting for this round has closed.');
-    }
 
     const tickets = input.tickets;
     if (!Array.isArray(tickets) || tickets.length < 1 || tickets.length > 20) {
@@ -447,7 +451,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
           username: user.name,
           stake,
           status: 'active',
-          createdAt: acceptedAt,
+          createdAt: now(),
           selectedNumbers: [...selected].sort((a, b) => a - b),
         },
         amount: stake,
@@ -455,19 +459,55 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       };
     });
 
+    // The 250ms server scheduler and normal state polling keep this ID warm.
+    // The transaction below rechecks round status/deadline atomically, so a stale
+    // cache can never accept a ticket into a closed round.
+    let targetRoundId = currentRoundIds.get('keno');
+    if (!targetRoundId) {
+      const currentRound = await tickGame('keno', currentSettings);
+      targetRoundId = currentRound?.roundId;
+    }
+    if (!targetRoundId) throw new HttpError(503, 'keno_round_unavailable', 'Keno is preparing the next round. Please try again.');
+
+    const submitBatch = (roundId) => repo.placeGameHubBets({
+      game: 'keno',
+      roundId,
+      bets,
+      userId: user.id,
+      acceptedAt: now(),
+    });
+
     try {
-      const result = await repo.placeGameHubBets({
-        game: 'keno',
-        roundId: round.roundId,
-        bets,
-        userId: user.id,
-        acceptedAt,
-      });
-      return {
+      let result;
+      try {
+        result = await submitBatch(targetRoundId);
+      } catch (error) {
+        // If the scheduler rolled the round between cache refreshes, refresh once
+        // and retry only when a different, currently-open round is available.
+        if (!(error instanceof RepoError && error.code === 'ROUND_NOT_OPEN')) throw error;
+        const freshRound = await tickGame('keno', currentSettings);
+        if (!freshRound || freshRound.roundId === targetRoundId ||
+            freshRound.status !== 'betting' || now() >= freshRound.bettingEndsAt) {
+          throw error;
+        }
+        targetRoundId = freshRound.roundId;
+        result = await submitBatch(targetRoundId);
+      }
+
+      const response = {
         bets: result.bets.map((entry) => ({ ...publicBet(entry.bet), duplicate: entry.duplicate === true })),
         balanceEtb: result.balance / 100,
         duplicateCount: result.bets.filter((entry) => entry.duplicate).length,
       };
+      const durationMs = Date.now() - startedAt;
+      if (durationMs >= 750) {
+        log('games_hub_keno_bet_slow', {
+          ticketCount: tickets.length,
+          duplicateCount: response.duplicateCount,
+          durationMs,
+        });
+      }
+      return response;
     } catch (error) {
       mapRepoError(error);
     }

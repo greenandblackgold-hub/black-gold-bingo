@@ -724,14 +724,8 @@ export async function createMongoRepo({ uri, dbName }) {
         }
 
         const walletMode = round.walletMode === 'shared' ? 'shared' : 'legacy-demo';
-        if (walletMode === 'legacy-demo') {
-          await gameHubWallets.updateOne(
-            { _id: userId },
-            { $setOnInsert: { balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt: new Date() } },
-            { upsert: true, session },
-          );
-        }
-
+        const walletCollection = walletMode === 'shared' ? users : gameHubWallets;
+        const ledgerCollection = walletMode === 'shared' ? ledger : gameHubLedger;
         const existingByRequest = new Map((round.bets ?? [])
           .filter((item) => item.userId === userId)
           .map((item) => [item.requestId, item]));
@@ -741,17 +735,47 @@ export async function createMongoRepo({ uri, dbName }) {
         });
         const newEntries = entries.filter((entry) => !entry.duplicate);
         const total = newEntries.reduce((sum, entry) => sum + entry.bet.stake, 0);
+        let balance;
 
         if (total > 0) {
-          const walletCollection = walletMode === 'shared' ? users : gameHubWallets;
-          const debit = await walletCollection.updateOne(
+          // Return the post-debit balance from the atomic update itself. This
+          // avoids a separate wallet read on every successful ticket submission.
+          let walletAfter = await walletCollection.findOneAndUpdate(
             { _id: userId, balance: { $gte: total } },
             { $inc: { balance: -total } },
-            { session },
+            { returnDocument: 'after', projection: { balance: 1 }, session },
           );
-          if (!debit.matchedCount) {
-            const exists = await walletCollection.findOne({ _id: userId }, { session, projection: { _id: 1 } });
-            throw new RepoError(exists ? 'INSUFFICIENT_FUNDS' : (walletMode === 'shared' ? 'USER_NOT_FOUND' : 'GAME_WALLET_NOT_FOUND'));
+
+          if (!walletAfter) {
+            const existingWallet = await walletCollection.findOne(
+              { _id: userId },
+              { session, projection: { _id: 1 } },
+            );
+            if (existingWallet) throw new RepoError('INSUFFICIENT_FUNDS');
+            if (walletMode !== 'legacy-demo') throw new RepoError('USER_NOT_FOUND');
+
+            // The normal player flow creates the demo wallet during state load.
+            // Preserve direct-API/first-visit behavior without paying this extra
+            // initialization round trip for every ordinary bet.
+            const createdAt = new Date();
+            const initialized = await gameHubWallets.updateOne(
+              { _id: userId },
+              { $setOnInsert: { balance: 100000, currency: 'ETB', balanceType: 'SIMULATION_ONLY', createdAt } },
+              { upsert: true, session },
+            );
+            if (initialized.upsertedCount) {
+              await gameHubLedger.insertOne({
+                userId, amount: 100000, kind: 'demo_grant',
+                ref: 'games:initial-demo-credit:' + userId,
+                meta: { reason: 'initial_demo_wallet' }, createdAt,
+              }, { session });
+            }
+            walletAfter = await gameHubWallets.findOneAndUpdate(
+              { _id: userId, balance: { $gte: total } },
+              { $inc: { balance: -total } },
+              { returnDocument: 'after', projection: { balance: 1 }, session },
+            );
+            if (!walletAfter) throw new RepoError('INSUFFICIENT_FUNDS');
           }
 
           const createdAt = new Date();
@@ -763,8 +787,7 @@ export async function createMongoRepo({ uri, dbName }) {
             meta: { game, roundId, betId: bet.id, requestId: bet.requestId },
             createdAt,
           }));
-          if (walletMode === 'shared') await ledger.insertMany(ledgerRows, { session });
-          else await gameHubLedger.insertMany(ledgerRows, { session });
+          await ledgerCollection.insertMany(ledgerRows, { session });
 
           const updated = await gameHubRounds.findOneAndUpdate(
             { _id: key, version: round.version, status: 'betting', bettingEndsAt: { $gt: acceptedAt } },
@@ -772,12 +795,16 @@ export async function createMongoRepo({ uri, dbName }) {
             { returnDocument: 'after', session },
           );
           if (!updated) throw new RepoError('ROUND_NOT_OPEN');
+          balance = walletAfter.balance;
+        } else {
+          const wallet = await walletCollection.findOne(
+            { _id: userId },
+            { session, projection: { balance: 1 } },
+          );
+          balance = wallet?.balance ?? 0;
         }
 
-        const wallet = walletMode === 'shared'
-          ? await users.findOne({ _id: userId }, { session, projection: { balance: 1 } })
-          : await gameHubWallets.findOne({ _id: userId }, { session, projection: { balance: 1 } });
-        return { bets: entries, balance: wallet?.balance ?? 0 };
+        return { bets: entries, balance };
       });
     },
     async settleKenoGameHubRound({ roundId, drawnNumbers, results, serverSeed, settledAt, nextRoundAt }) {
