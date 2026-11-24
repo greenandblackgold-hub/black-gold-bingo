@@ -137,7 +137,10 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
   };
   const betRequestInFlight = useRef(false);
   const addTicket = () => {
-    if (!selected.length || !validAmount || !isBetting || busy || queuedTickets.length >= 19) return;
+    // Allow the next ticket to be prepared while the previous server transaction
+    // is confirming. The in-flight submit snapshots its own queue, so new tickets
+    // remain queued for the next tap and cannot be lost or double-submitted.
+    if (!selected.length || !validAmount || !isBetting || queuedTickets.length >= 19) return;
     setQueuedTickets(current => [...current, { requestId: requestId(), amount: numericAmount, selectedNumbers: [...selected] }]);
     setSelected([]);
     setError(''); setNotice('');
