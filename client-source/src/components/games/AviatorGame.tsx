@@ -53,6 +53,20 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
   }, [state, clock, offset]);
   const isBetting = state?.enabled === true && state.status === 'betting' && secondsLeft > 0;
   const crashed = state?.status === 'crashed';
+  // Drive the aircraft position from the live round clock, not a short CSS animation.
+  // This keeps it visible and moving for the entire flight, even when a round is brief.
+  const flightProgress = state?.startedAt
+    ? Math.min(0.9, Math.max(0, (clock + offset - state.startedAt) / 8500))
+    : 0;
+  const planeX = flightProgress * 66;
+  const planeY = -Math.sin(flightProgress * Math.PI / 2) * 168;
+  const planeAngle = -32 * (1 - Math.min(1, flightProgress * 2.4));
+  const planeStyle = {
+    '--plane-x': planeX + 'vw',
+    '--plane-y': planeY + 'px',
+    '--plane-angle': planeAngle + 'deg',
+    transform: `translate3d(${planeX}vw, ${planeY}px, 0) rotate(${planeAngle}deg)`,
+  } as React.CSSProperties;
 
   const updatePanel = (index: number, patch: Partial<BetPanel>) => {
     setPanels((old) => old.map((panel, i) => i === index ? { ...panel, ...patch } : panel) as [BetPanel, BetPanel]);
@@ -178,7 +192,8 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
         <div className="aviator-flight-status">{state?.status === 'betting' ? t.betsOpen : state?.status === 'flying' ? t.flying : crashed ? t.crashed : t.connecting}</div>
         <div className="aviator-multiplier">{state?.status === 'flying' ? multiplier.toFixed(2) + '×' : crashed ? (state?.crashMultiplier ?? 1).toFixed(2) + '×' : state?.status === 'betting' ? '1.00×' : '—'}</div>
         <div className="aviator-flight-path" />
-        <div className="aviator-plane" aria-hidden="true">
+        <div className="aviator-scenery" aria-hidden="true"><span/><span/><span/><span/></div>
+        <div className="aviator-plane" style={planeStyle} aria-hidden="true">
           <div className="aviator-exhaust"><i/><i/><i/><i/><i/><i/><i/><i/></div>
           <svg className="aviator-aircraft" viewBox="0 0 340 170" role="presentation">
             <defs>
