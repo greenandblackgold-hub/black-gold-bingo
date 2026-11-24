@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatAmount } from '@/lib/localization';
 import { gameUi } from '@/lib/gameUi';
 import { PlayerFeatures } from '@/components/play/PlayerFeatures';
@@ -164,7 +164,7 @@ type CardProps = {
   onRegister?: () => void;
 };
 
-function BingoCardView({ labels, card, index, marks, called, markColor, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister }: CardProps) {
+const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, called, markColor, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister }: CardProps) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
   const winning = useMemo(() => {
     const result = findWinningPattern(card.grid, new Set([...called].filter(n => marks.has(n))), pattern);
@@ -236,7 +236,7 @@ function BingoCardView({ labels, card, index, marks, called, markColor, pattern,
       )}
     </section>
   );
-}
+}, (previous, next) => previous.labels === next.labels && previous.card === next.card && previous.index === next.index && previous.marks === next.marks && previous.called === next.called && previous.markColor === next.markColor && previous.pattern === next.pattern && previous.claimable === next.claimable && previous.claiming === next.claiming && previous.draft === next.draft && previous.registering === next.registering);
 
 function CalledBall({ number, latest = false }: { number: number; latest?: boolean }) {
   const letter = letterFor(number);
@@ -456,12 +456,21 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     play('win');
   }, [winner, iWon]);
 
+  const claimingCardIdRef = useRef<string | null>(null);
+  const claimBingoRef = useRef(claimBingo);
+  const calledCountRef = useRef(calledNumbers.length);
+  claimBingoRef.current = claimBingo;
+  calledCountRef.current = calledNumbers.length;
   const handleClaim = useCallback(async (cardId: string) => {
-    if (claimingCardId) return;
+    if (claimingCardIdRef.current) return;
+    claimingCardIdRef.current = cardId;
     setClaimingCardId(cardId);
-    try { await claimBingo(cardId, calledNumbers.length); }
-    finally { setClaimingCardId(null); }
-  }, [claimingCardId, claimBingo, calledNumbers.length]);
+    try { await claimBingoRef.current(cardId, calledCountRef.current); }
+    finally {
+      claimingCardIdRef.current = null;
+      setClaimingCardId(null);
+    }
+  }, []);
 
   const lastCalls = calledNumbers.slice(-5).reverse();
   const patternCells = useMemo(() => getPatternCells(winPattern), [winPattern]);
@@ -493,12 +502,16 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       setQuickBuyBusy(false);
     }
   };
-  const registerDraftCard = async (card: BingoCard) => {
-    if (registeringDraftId) return;
+  const registeringDraftIdRef = useRef<string | null>(null);
+  const buyCardsRef = useRef(buyCards);
+  buyCardsRef.current = buyCards;
+  const registerDraftCard = useCallback(async (card: BingoCard) => {
+    if (registeringDraftIdRef.current) return;
+    registeringDraftIdRef.current = card.id;
     setRegisteringDraftId(card.id);
     setDraftMessage('');
     try {
-      const result = await buyCards(1, String(card.serial), { grid: card.grid, token: card.previewToken });
+      const result = await buyCardsRef.current(1, String(card.serial), { grid: card.grid, token: card.previewToken });
       if (result.ok) {
         setDraftCards(current => current.filter(item => item.id !== card.id));
         setDraftMessage('ካርቴላው ተመዝግቧል። BINGO!');
@@ -506,9 +519,10 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         setDraftMessage(result.error ?? 'በቂ ቀሪ ሂሳብ የለም። ካርቴላው አልተመዘገበም።');
       }
     } finally {
+      registeringDraftIdRef.current = null;
       setRegisteringDraftId(null);
     }
-  };
+  }, []);
   const submitQuickBuy = async () => {
     if (!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy) return;
     setQuickBuyBusy(true);

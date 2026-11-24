@@ -1392,3 +1392,37 @@ html:has(.player-play-view) {
 .player-play-view .bingo-card-surface button {
   -webkit-tap-highlight-color: transparent;
 }
+
+
+/* Bingo scroll stability follow-up.
+   Avoid promoting every card and every 25-cell grid to its own GPU layer: large
+   layer counts can exhaust the compositor during fast touch/trackpad scrolling.
+   Also neutralize the global premium section/button transitions for this dense grid. */
+.player-play-view .bingo-card-surface,
+.player-play-view .bingo-card-surface:hover {
+  transform: none !important;
+  -webkit-transform: none !important;
+  backface-visibility: visible !important;
+  -webkit-backface-visibility: visible !important;
+  isolation: auto !important;
+  contain: none !important;
+  will-change: auto !important;
+  transition: none !important;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, .34) !important;
+}
+.player-play-view .bingo-card-surface > .grid {
+  transform: none !important;
+  -webkit-transform: none !important;
+  backface-visibility: visible !important;
+  -webkit-backface-visibility: visible !important;
+}
+.player-play-view .bingo-card-surface button {
+  transition: none !important;
+  animation: none !important;
+}
+.player-play-view .bingo-card-surface:hover {
+  border-color: inherit !important;
+}
+.player-play-view {
+  overflow-anchor: none;
+}
