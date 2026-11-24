@@ -147,8 +147,8 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
           <div className="mx-auto w-full max-w-3xl rounded-xl border border-gold-700/30 bg-black/20 p-2 sm:p-2.5">
             <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
             {[
-              ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
-              ['የአሁኑ ዋና ሽልማት', SERVER_MODE && roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ETB` : '—'],
+              ['ዋጋ', `${formatAmount(lang, cardPrice)} ${translations.wallet[lang].etb}`],
+              ['የአሁኑ ዋና ሽልማት', SERVER_MODE && roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ${translations.wallet[lang].etb}` : '—'],
               ['ካርድ ግዛ', ''],
               ['ጠቅላላ ካርቴላ', String(cards.length)],
             ].map(([label, value]) => (
