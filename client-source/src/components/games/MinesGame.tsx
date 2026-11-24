@@ -167,7 +167,7 @@ export function MinesGame() {
 
       <section className="rounded-2xl border border-amber-300/20 bg-[#100e0a] p-3">
         <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500"{t('currentPrize')}</p><p className="text-2xl font-black tabular-nums text-amber-100">{formatMoney(currentWin)} <span className="text-xs text-amber-400">{t('demoCredit')}</span></p></div><div className="text-right"><p className="text-[10px] text-amber-500"{t('gemsFound')}</p><p className="text-xl font-black text-amber-200">{round?.safe ?? 0} 💎</p></div></div>
-        {round && <p className="mt-1 text-[10px] text-amber-100/40">Bet {formatMoney(round.bet)} · {currentMultiplier.toFixed(2)}×</p>}
+        {round && <p className="mt-1 text-[10px] text-amber-100/40">{t('betLabel')} {formatMoney(round.bet)} · {currentMultiplier.toFixed(2)}×</p>}
       </section>
 
       {tab === 'game' && <>
