@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatAmount } from '@/lib/localization';
 import { gameUi } from '@/lib/gameUi';
 import { PlayerFeatures } from '@/components/play/PlayerFeatures';
@@ -164,7 +164,7 @@ type CardProps = {
   onRegister?: () => void;
 };
 
-function BingoCardView({ labels, card, index, marks, called, markColor, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister }: CardProps) {
+const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, called, markColor, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister }: CardProps) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
   const winning = useMemo(() => {
     const result = findWinningPattern(card.grid, new Set([...called].filter(n => marks.has(n))), pattern);
@@ -236,7 +236,7 @@ function BingoCardView({ labels, card, index, marks, called, markColor, pattern,
       )}
     </section>
   );
-}
+}, (previous, next) => previous.labels === next.labels && previous.card === next.card && previous.index === next.index && previous.marks === next.marks && previous.called === next.called && previous.markColor === next.markColor && previous.pattern === next.pattern && previous.claimable === next.claimable && previous.claiming === next.claiming && previous.draft === next.draft && previous.registering === next.registering);
 
 function CalledBall({ number, latest = false }: { number: number; latest?: boolean }) {
   const letter = letterFor(number);
