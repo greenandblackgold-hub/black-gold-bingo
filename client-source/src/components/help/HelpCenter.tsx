@@ -6,7 +6,8 @@ const copy = {
   am: {
     eyebrow: 'BLACK GOLD · SMART HELP',
     title: 'Black Gold AI',
-    intro: 'ስለ ጨዋታዎችና ስለ መተግበሪያው ይጠይቁ። በቀላሉ እናብራራለን።',
+    intro: 'ስለ Game Center፣ ጨዋታዎች፣ ህጎች፣ መለያዎ እና የመተግበሪያው አጠቃቀም ይጠይቁኝ።',
+    welcome: 'ወደ Game Center በደህና መጡ!', greeting: 'ሰላም! እኔ Black Gold AI ነኝ።', online: 'የእገዛ ረዳት ዝግጁ ነው', prompt: 'ዛሬ ምን ላግዝዎ?', next: 'ወደ ጨዋታዎች ይግቡ',
     quick: 'ፈጣን ጥያቄዎች',
     placeholder: 'ጥያቄዎን እዚህ ይጻፉ…',
     ask: 'ጠይቅ',
@@ -21,7 +22,8 @@ const copy = {
   ti: {
     eyebrow: 'BLACK GOLD · SMART HELP',
     title: 'Black Gold AI',
-    intro: 'ብዛዕባ ጸወታታትን መተግበሪን ሕተቱ። ብቀሊሉ ክንገልጸልኩም።',
+    intro: 'ብዛዕባ Game Center፣ ጸወታታት፣ ሕግታት፣ መለያኹምን ኣጠቓቕማ መተግበሪን ሕተቱኒ።',
+    welcome: 'ናብ Game Center ብደሓን መጻእኩም!', greeting: 'ሰላም! ኣነ Black Gold AI እየ።', online: 'ረዳኢ ሓበሬታ ድሉው እዩ', prompt: 'ሎሚ ብኸመይ ክሕግዘኩም?', next: 'ናብ ጸወታታት እቶ',
     quick: 'ቅልጡፍ ሕቶታት',
     placeholder: 'ሕቶኹም ኣብዚ ጽሓፉ…',
     ask: 'ሕተት',
@@ -36,7 +38,8 @@ const copy = {
   en: {
     eyebrow: 'BLACK GOLD · SMART HELP',
     title: 'Black Gold AI',
-    intro: 'Ask about the games or the app. We explain it in simple language.',
+    intro: 'Ask me about the Game Center, games, rules, your account, and how to use the app.',
+    welcome: 'Welcome to the Game Center!', greeting: 'Hello! I’m Black Gold AI.', online: 'Help assistant is ready', prompt: 'How can I help you today?', next: 'Enter the Games',
     quick: 'Quick questions',
     placeholder: 'Type your question here…',
     ask: 'Ask',
@@ -50,7 +53,7 @@ const copy = {
   },
 } as const;
 
-export function HelpCenter() {
+export function HelpCenter({ onEnterGames }: { onEnterGames: () => void }) {
   const { lang } = useLanguage();
   const t = copy[lang];
   const [question, setQuestion] = useState('');
@@ -77,11 +80,20 @@ export function HelpCenter() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-6 pb-10">
+    <main className="relative min-h-[100dvh] w-full overflow-hidden bg-[radial-gradient(ellipse_at_50%_0%,rgba(202,158,57,.13),transparent_48%),#070707] px-4 pb-28 pt-5 sm:px-6 sm:pt-8">
+      <div className="mx-auto w-full max-w-5xl space-y-6">
       <header className="relative overflow-hidden rounded-3xl border border-amber-400/30 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.2),transparent_45%),linear-gradient(125deg,#211a0b,#090909_60%,#171106)] px-5 py-8 shadow-[0_20px_60px_rgba(0,0,0,.4)] sm:px-8 sm:py-10">
         <div aria-hidden="true" className="absolute -right-12 -top-14 h-56 w-56 rounded-full border border-amber-300/10" />
-        <p className="text-[10px] font-black uppercase tracking-[.32em] text-amber-400">{t.eyebrow}</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-amber-50 sm:text-5xl">{t.title}</h1>
+        <div className="relative mb-5 flex items-center gap-4">
+          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-amber-300/55 bg-gradient-to-br from-amber-200 via-yellow-500 to-amber-800 shadow-[0_10px_35px_rgba(212,175,55,.22)]">
+            <svg viewBox="0 0 48 48" className="h-10 w-10" fill="none" aria-hidden="true"><path d="M24 4.5 28.7 17l12.8 4.8-12.8 4.7L24 39l-4.8-12.5L6.5 21.8 19.2 17 24 4.5Z" stroke="#171208" strokeWidth="2.4" strokeLinejoin="round"/><path d="m35.5 31.5 2 5.2 5 1.8-5 1.9-2 5.1-1.9-5.1-5.1-1.9 5.1-1.8 1.9-5.2Z" fill="#171208"/></svg>
+          </div>
+          <div><p className="text-[10px] font-black uppercase tracking-[.28em] text-amber-400">{t.eyebrow}</p><p className="mt-1 text-xs font-semibold text-emerald-300">● {t.online}</p></div>
+        </div>
+        <p className="text-sm font-bold tracking-wide text-amber-200/75">{t.welcome}</p>
+        <h1 className="mt-2 text-3xl font-black tracking-tight text-amber-50 sm:text-5xl">{t.title}</h1>
+        <h2 className="mt-3 text-lg font-bold text-amber-100 sm:text-xl">{t.greeting}</h2>
+        <p className="mt-2 text-sm font-semibold text-amber-300">{t.prompt}</p>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-amber-100/70 sm:text-base">{t.intro}</p>
       </header>
 
@@ -141,6 +153,10 @@ export function HelpCenter() {
       </section>
 
       <p className="rounded-xl border border-amber-300/15 bg-amber-300/[.04] p-4 text-xs leading-6 text-amber-100/55">{t.note}</p>
+      </div>
+      <button type="button" onClick={onEnterGames} className="fixed bottom-5 right-4 z-50 inline-flex min-h-14 items-center gap-3 rounded-full border border-amber-200/70 bg-gradient-to-r from-amber-300 via-yellow-500 to-amber-600 px-5 py-3 text-sm font-black text-[#171208] shadow-[0_12px_36px_rgba(212,175,55,.28)] transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-100 sm:bottom-7 sm:right-7 sm:px-7">
+        <span>{t.next}</span><span aria-hidden="true" className="grid h-8 w-8 place-items-center rounded-full bg-black/10 text-xl">→</span>
+      </button>
     </main>
   );
 }

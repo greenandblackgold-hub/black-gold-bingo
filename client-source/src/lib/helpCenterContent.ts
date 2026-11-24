@@ -139,10 +139,35 @@ export const helpTopics: HelpTopic[] = [
     },
     keywords: { am: ['wallet','ዋሌት','ቦርሳ','ሂሳብ','ቀሪ ሂሳብ','ክፍያ'], ti: ['wallet','ቦርሳ','ሒሳብ','ክፍሊት'], en: ['wallet','balance','deposit','withdrawal','payment'] }
   },
+
+  {
+    id: 'account-access', category: 'general',
+    question: { am: 'መለያ እንዴት እከፍታለሁ ወይም እገባለሁ?', ti: 'መለያ ብኸመይ እከፍት ወይ እኣቱ?', en: 'How do I register or sign in?' },
+    answer: { am: 'አዲስ መለያ ለመፍጠር Register ይምረጡ፣ ስልክ ቁጥርዎን፣ ስምዎን እና 6 አሃዝ PIN ያስገቡ፣ ከዚያ PIN ያረጋግጡ። ነባር መለያ ካለዎት Login ይምረጡ፣ ስልክ ቁጥርና PIN ያስገቡ። PIN እንዳይጋራ ይጠብቁ።', ti: 'ሓድሽ መለያ ንምፍጣር Register ምረጹ፣ ቁጽሪ ተሌፎንኩም፣ ስምኩምን 6 ኣሃዝ PINን ኣእትዉ። ድሮ መለያ እንተሃልዩኩም Login ምረጹ፣ ቁጽሪ ተሌፎንን PINን ኣእትዉ። PINኩም ምስ ካልእ ሰብ ኣይተካፍሉ።', en: 'To create an account, choose Register, enter your phone number, name, and a six-digit PIN, then confirm the PIN. If you already have an account, choose Login and enter your phone number and PIN. Keep your PIN private.' },
+    keywords: { am: ['መለያ','register','login','መመዝገብ','መግባት','pin','ስልክ'], ti: ['መለያ','register','login','pin','ተሌፎን'], en: ['register','sign up','login','sign in','account','pin','phone'] }
+  },
+  {
+    id: 'language-settings', category: 'general',
+    question: { am: 'የመተግበሪያውን ቋንቋ እንዴት እቀይራለሁ?', ti: 'ቋንቋ እቲ መተግበሪ ብኸመይ እቕይር?', en: 'How do I change the app language?' },
+    answer: { am: 'በመግቢያ ገጹ ላይ ያለውን የቋንቋ ምርጫ ይጠቀሙ። አማርኛ፣ ትግርኛ ወይም English መምረጥ ይችላሉ።', ti: 'ኣብ ገጽ መእተዊ ዘሎ ምርጫ ቋንቋ ተጠቐሙ። ኣማርኛ፣ ትግርኛ ወይ English ክትመርጹ ትኽእሉ።', en: 'Use the language selector on the sign-in screen. You can choose Amharic, Tigrinya, or English.' },
+    keywords: { am: ['ቋንቋ','አማርኛ','ትግርኛ','እንግሊዝኛ'], ti: ['ቋንቋ','ኣማርኛ','ትግርኛ','English'], en: ['language','amharic','tigrinya','english','translation'] }
+  },
+  {
+    id: 'virtual-sports-status', category: 'general',
+    question: { am: 'Virtual Sports መቼ ነው የሚጀምረው?', ti: 'Virtual Sports መዓስ ክጅምር እዩ?', en: 'When will Virtual Sports be available?' },
+    answer: { am: 'Virtual Sports በGames Center ውስጥ ይታያል። ካርዱ Coming Soon ካለ ገና አልተከፈተም ማለት ነው። ሲነቃ በጨዋታው ካርድ ላይ ያለውን ሁኔታ ይመልከቱ።', ti: 'Virtual Sports ኣብ Games Center ይርአ። ካርዱ Coming Soon እንተበለ ገና ኣይተኸፍተን ማለት እዩ። ምስ ተኸፍተ ኣብ ካርድ ጸወታ ዘሎ ኩነታት ርኣዩ።', en: 'Virtual Sports appears in the Games Center, but if its card says Coming Soon, it is not available yet. Check the game card for its current status.' },
+    keywords: { am: ['virtual sports','ቨርቹዋል','ስፖርት','መቼ','coming soon'], ti: ['virtual sports','ስፖርት','coming soon'], en: ['virtual sports','virtual','sports','coming soon','available'] }
+  },
+  {
+    id: 'live-sports-status', category: 'general',
+    question: { am: 'Live Sports መቼ ነው የሚከፈተው?', ti: 'Live Sports መዓስ ክኽፈት እዩ?', en: 'When will Live Sports be available?' },
+    answer: { am: 'Live Sports በGames Center ውስጥ ይታያል። ካርዱ Coming Soon ካለ አገልግሎቱ ገና አልተከፈተም። የመክፈቻ ቀን በይፋ ካልተገለጸ ትክክለኛ ቀን መገመት አይቻልም።', ti: 'Live Sports ኣብ Games Center ይርአ። ካርዱ Coming Soon እንተበለ እቲ ኣገልግሎት ገና ኣይተኸፍተን። ብወግዒ ዕለት እንተዘይተገሊጹ ትኽክለኛ ዕለት ምግማት ኣይከኣልን።', en: 'Live Sports appears in the Games Center. If its card says Coming Soon, the service has not launched yet. I cannot give an exact launch date unless one is officially announced.' },
+    keywords: { am: ['live sports','ሊቭ','ስፖርት','መቼ','coming soon'], ti: ['live sports','ሊቭ','ስፖርት','coming soon'], en: ['live sports','live','sports','coming soon','launch'] }
+  },
 ];
 
 export const helpQuickQuestionIds = [
-  'how-center-works', 'bingo-how', 'keno-how', 'aviator-how', 'mines-how', 'cash-out', 'auto-cashout', 'wallet-deposit', 'wallet-withdrawal',
+  'how-center-works', 'bingo-how', 'keno-how', 'aviator-how', 'mines-how', 'cash-out', 'account-access', 'language-settings', 'virtual-sports-status', 'live-sports-status', 'auto-cashout', 'wallet-deposit', 'wallet-withdrawal',
 ] as const;
 
 export function findHelpAnswer(query: string, lang: Lang): HelpTopic[] {
