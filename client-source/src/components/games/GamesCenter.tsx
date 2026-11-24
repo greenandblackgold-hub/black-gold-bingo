@@ -12,15 +12,15 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
   title: string; subtitle: string; detail: string; icon: 'bingo' | 'keno' | 'aviator' | 'mines' | 'virtual' | 'live'; onClick: () => void; openLabel: string; featured?: boolean; disabled?: boolean; disabledLabel?: string;
 }) {
   return (
-    <button type="button" disabled={disabled} onClick={onClick} className={`group relative disabled:cursor-not-allowed disabled:opacity-100 flex min-h-64 w-full flex-col overflow-hidden rounded-3xl border text-left transition duration-300 hover:-translate-y-1 hover:border-amber-300/70 hover:shadow-[0_18px_55px_rgba(212,175,55,.16)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300 ${featured ? 'border-amber-300/50 bg-gradient-to-br from-[#28200d] via-[#100f0b] to-black' : 'border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black'} p-5 sm:p-6`}>
+    <button type="button" disabled={disabled} onClick={onClick} className={`games-center-card group relative disabled:cursor-not-allowed disabled:opacity-100 flex min-h-64 w-full flex-col overflow-hidden rounded-3xl border text-left ${featured ? 'border-amber-300/50 bg-gradient-to-br from-[#28200d] via-[#100f0b] to-black' : 'border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black'} p-5 sm:p-6`}>
       <span className="absolute -right-8 -top-12 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl transition group-hover:bg-amber-300/20" />
       {icon === 'aviator' || icon === 'bingo' || icon === 'virtual' || icon === 'live' ? (
-        <span className={`relative mt-1 flex h-36 w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl p-1 sm:h-40 ${icon === 'bingo' ? 'bg-[#12052b] shadow-[0_0_24px_rgba(168,85,247,.28)]' : icon === 'aviator' ? 'bg-[#050606] shadow-[0_0_24px_rgba(132,204,22,.24)]' : icon === 'live' ? 'bg-[#08132a] shadow-[0_0_24px_rgba(250,190,55,.24)]' : 'bg-[#09072c] shadow-[0_0_24px_rgba(34,211,238,.24)]'}`} aria-label={icon === 'bingo' ? 'Bingo PRO premium emblem' : icon === 'aviator' ? 'Aviator Antonov aircraft game artwork' : icon === 'live' ? 'Live Sports floodlit stadium and football artwork' : 'Virtual Sports holographic arena artwork'}>
-          <img src={icon === 'bingo' ? '/images/bingo-pro-premium-emblem.svg?v=2' : icon === 'aviator' ? '/images/aviator-antonov-card.webp' : icon === 'live' ? '/images/live-sports-premium.svg?v=3' : '/images/virtual-sports-premium.svg?v=4'} alt={icon === 'bingo' ? 'Bingo PRO premium crown and numbered balls emblem' : icon === 'aviator' ? 'Red Antonov aircraft with Aviator and SPRIBE branding' : icon === 'live' ? 'Live sports football in a floodlit stadium' : 'Virtual sports glowing holographic football in a futuristic arena'} className="block h-full w-full min-h-0 min-w-0 object-contain" />
+        <span className={`games-center-artwork relative mt-1 flex h-36 w-full shrink-0 items-center justify-center overflow-hidden rounded-2xl p-1 sm:h-40 ${icon === 'bingo' ? 'bg-[#12052b] shadow-[0_0_24px_rgba(168,85,247,.28)]' : icon === 'aviator' ? 'bg-[#050606] shadow-[0_0_24px_rgba(132,204,22,.24)]' : icon === 'live' ? 'bg-[#08132a] shadow-[0_0_24px_rgba(250,190,55,.24)]' : 'bg-[#09072c] shadow-[0_0_24px_rgba(34,211,238,.24)]'}`} aria-label={icon === 'bingo' ? 'Bingo PRO premium emblem' : icon === 'aviator' ? 'Aviator Antonov aircraft game artwork' : icon === 'live' ? 'Live Sports floodlit stadium and football artwork' : 'Virtual Sports holographic arena artwork'}>
+          <img loading="eager" decoding="async" draggable={false} src={icon === 'bingo' ? '/images/bingo-pro-premium-emblem.svg?v=2' : icon === 'aviator' ? '/images/aviator-antonov-card.webp' : icon === 'live' ? '/images/live-sports-premium.svg?v=3' : '/images/virtual-sports-premium.svg?v=4'} alt={icon === 'bingo' ? 'Bingo PRO premium crown and numbered balls emblem' : icon === 'aviator' ? 'Red Antonov aircraft with Aviator and SPRIBE branding' : icon === 'live' ? 'Live sports football in a floodlit stadium' : 'Virtual sports glowing holographic football in a futuristic arena'} className="block h-full w-full min-h-0 min-w-0 object-contain" />
         </span>
       ) : (
-        <span className={icon === 'keno' ? 'relative mt-1 block h-36 w-full shrink-0 overflow-hidden rounded-2xl border border-lime-400/35 bg-[#00110f] p-1 shadow-[inset_0_1px_rgba(255,255,255,.08)] sm:h-40' : 'relative mt-1 grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]'}>
-          {icon === 'keno' && <img src="/images/fast-keno-card-v4.jpg" alt="FAST KENO — Kiza.bet" className="block h-full w-full min-h-0 min-w-0 object-contain" />}
+        <span className={icon === 'keno' ? 'games-center-artwork relative mt-1 block h-36 w-full shrink-0 overflow-hidden rounded-2xl border border-lime-400/35 bg-[#00110f] p-1 shadow-[inset_0_1px_rgba(255,255,255,.08)] sm:h-40' : 'relative mt-1 grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]'}>
+          {icon === 'keno' && <img loading="eager" decoding="async" draggable={false} src="/images/fast-keno-card-v4.jpg" alt="FAST KENO — Kiza.bet" className="block h-full w-full min-h-0 min-w-0 object-contain" />}
           {icon === 'mines' && <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="6"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8m0-14.2-2.8 2.8m-8.6 8.6-2.8 2.8"/></svg>}
         </span>
       )}
@@ -42,13 +42,35 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
   useEffect(() => {
     if (!serverMode) return;
     let active = true;
-    const refreshAvailability = () => {
-      api.get<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minesEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings')
-        .then((value) => { if (active) { setAvailability(value); setAvailabilityError(''); } })
-        .catch(() => { if (active) setAvailabilityError(t.loadError); });
+    let pending = false;
+    const refreshAvailability = async () => {
+      // Never overlap settings requests: a slow response must not race a newer poll.
+      if (pending) return;
+      pending = true;
+      try {
+        const value = await api.get<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minesEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings');
+        if (!active) return;
+        setAvailability((previous) => {
+          if (previous &&
+            previous.generalEnabled === value.generalEnabled &&
+            previous.announcement === value.announcement &&
+            previous.bingoEnabled === value.bingoEnabled &&
+            previous.kenoEnabled === value.kenoEnabled &&
+            previous.aviatorEnabled === value.aviatorEnabled &&
+            previous.minesEnabled === value.minesEnabled &&
+            previous.balanceEtb === value.balanceEtb &&
+            previous.walletMode === value.walletMode) return previous;
+          return value;
+        });
+        setAvailabilityError('');
+      } catch {
+        if (active) setAvailabilityError(t.loadError);
+      } finally {
+        pending = false;
+      }
     };
-    refreshAvailability();
-    const poll = window.setInterval(refreshAvailability, 5000);
+    void refreshAvailability();
+    const poll = window.setInterval(() => void refreshAvailability(), 5000);
     return () => { active = false; window.clearInterval(poll); };
   }, [serverMode, t.loadError]);
   if (serverMode && availability?.generalEnabled === false) {
