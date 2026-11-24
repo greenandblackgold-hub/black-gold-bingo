@@ -63,7 +63,7 @@ export const helpTopics: HelpTopic[] = [
     id: 'aviator-how', category: 'aviator',
     question: { am: 'Aviator እንዴት ይጫወታል?', ti: 'Aviator ብኸመይ ይጽወት?', en: 'How do I play Aviator?' },
     answer: {
-      am: 'በዙሩ ከመጀመሩ በፊት እስከ ሁለት የተለያዩ ውርርዶችን ማስገባት ይችላሉ፤ እያንዳንዱም የራሱ መጠን አለው። ለእያንዳንዱ ውርርድ አማራጭ ራስ-ሰር ገንዘብ ማውጣት ብዜት ማስቀመጥ ይችላሉ። አውሮፕላኑ ሲበር ብዜቱ ይጨምራል፤ በእጅ ገንዘብ ማውጣት ካደረጉ ወይም የተቀመጠው የራስ-ሰር ገንዘብ ማውጣት ግብ አውሮፕላኑ ከመውደቁ በፊት ከደረሰ ውጤቱ በዚያ ብዜት ይሰላል። አውሮፕላኑ ቀድሞ ከወደቀ ከሆነ ውርርዱ ሊጠፋ ይችላል፤ የCrash ጊዜ ሊተነበይ አይችልም.',
+      am: 'በዙሩ ከመጀመሩ በፊት እስከ ሁለት የተለያዩ ውርርዶችን ማስገባት ይችላሉ፤ እያንዳንዱም የራሱ መጠን አለው። ለእያንዳንዱ ውርርድ አማራጭ ራስ-ሰር ገንዘብ ማውጣት ብዜት ማስቀመጥ ይችላሉ። አውሮፕላኑ ሲበር ብዜቱ ይጨምራል፤ በእጅ ገንዘብ ማውጣት ካደረጉ ወይም የተቀመጠው ራስ-ሰር ገንዘብ ማውጣት ግብ አውሮፕላኑ ከመውደቁ በፊት ከደረሰ ውጤቱ በዚያ ብዜት ይሰላል። አውሮፕላኑ ቀድሞ ከወደቀ ከሆነ ውርርዱ ሊጠፋ ይችላል፤ የCrash ጊዜ ሊተነበይ አይችልም.',
       ti: 'ቅድሚ ዙር ምጅማሩ ክሳብ ክልተ ናጻ ውርርዳት ከእትዉ ትኽእሉ፤ ነፍሲ ወከፍ ውርርድ ናይ ባዕሉ መጠን ኣለዎ። ንነፍሲ ወከፍ ውርርድ ኣማራጺ ራስ-ሰር ገንዘብ ማውጣት ብዜት ክትውስኑ ትኽእሉ። ነፋሪት ክትነፍር ከላ ብዜት ይውስኽ፤ ብኢድ ገንዘብ ምውጻእ እንተገይርኩም ወይ እቲ ዝተወሰነ ብራስ-ሰር ገንዘብ ምውጻእ ዕላማ ቅድሚ ምውዳቕ ነፋሪት እንተበጺሑ ውጽኢት በቲ ብዜት ይሕሰብ። ነፋሪት ቀዲማ እንተወዲቓ እንተኾይኑ ውርርድኩም ክጠፍእ ይኽእል፤ ግዜ ምውዳቕ ነፋሪት ምግማት ኣይከኣልን.',
       en: 'You can place up to two independent bets before a round starts; each has its own stake. Each bet can also have an optional Auto Cash Out target. As the plane flies, the multiplier rises. You can cash out manually, or the server cashes out automatically if the bet target is reached before the crash. If the crash happens first, the stake can be lost. The crash point cannot be predicted.'
     },
@@ -74,17 +74,17 @@ export const helpTopics: HelpTopic[] = [
     question: { am: 'ገንዘብ ማውጣት ምንድን ነው?', ti: 'ገንዘብ ምውጻእ እንታይ እዩ?', en: 'What does Cash Out mean?' },
     answer: {
       am: 'ገንዘብ ማውጣት ማለት የAviator ዙር ከመቋረጡ በፊት ያለዎትን ውርርድ በአሁኑ ብዜት ላይ ማጠናቀቅ ነው። ቁልፉ በበረራ ላይ ሳለ ብቻ ይሰራል። ከአውሮፕላኑ ከወደቀ በኋላ ማውጣት አይቻልም። የተመዘገበውን ውጤት በጨዋታው ማሳያ ያረጋግጡ።',
-      ti: 'ገንዘብ ማውጣት ማለት ዙር Aviator ቅድሚ ምቁራጹ ውርርድኩም በእቲ እዋን ዘሎ ብዜት ምዝዛም እዩ። እቲ ቁልፊ ነፋሪት ኣብ በረራ ከላ ጥራይ ይሰርሕ። ድሕሪ ምውዳቕ ነፋሪት ምውጻእ ኣይከኣልን። እቲ ዝተመዝገበ ውጽኢት ኣብ ገጽ ጸወታ ኣረጋግጹ።',
+      ti: 'ገንዘብ ምውጻእ ማለት ዙር Aviator ቅድሚ ምቁራጹ ውርርድኩም በእቲ እዋን ዘሎ ብዜት ምዝዛም እዩ። እቲ ቁልፊ ነፋሪት ኣብ በረራ ከላ ጥራይ ይሰርሕ። ድሕሪ ምውዳቕ ነፋሪት ምውጻእ ኣይከኣልን። እቲ ዝተመዝገበ ውጽኢት ኣብ ገጽ ጸወታ ኣረጋግጹ።',
       en: 'Cash Out means ending your Aviator bet at the multiplier currently shown, before the round crashes. The button is available only while the plane is flying. You cannot cash out after a crash. Check the game display for the recorded result.'
     },
     keywords: { am: ['cash out','ካሽ አውት','ገንዘብ ማውጣት','መቼ ማውጣት'], ti: ['cash out','ገንዘብ ምውጻእ','ምውጻእ'], en: ['cash out','cashout','withdraw','end bet'] }
   },
   {
     id: 'auto-cashout', category: 'aviator',
-    question: { am: 'Aviator ውስጥ Auto ገንዘብ ማውጣት ምንድን ነው?', ti: 'ኣብ Aviator Auto ገንዘብ ምውጻእ እንታይ እዩ?', en: 'What is Auto Cash Out in Aviator?' },
+    question: { am: 'Aviator ውስጥ ብራስ-ሰር ገንዘብ ምውጻእ ምንድን ነው?', ti: 'ኣብ Aviator Auto ገንዘብ ምውጻእ እንታይ እዩ?', en: 'What is Auto Cash Out in Aviator?' },
     answer: {
-      am: 'Auto ገንዘብ ማውጣት ማለት ለአንድ ውርርድ የሚፈልጉትን ብዜት አስቀድመው ማስቀመጥ ነው። ሰርቨሩ ያ ብዜት አውሮፕላኑ ከመውደቁ በፊት ከደረሰ በራስ-ሰር Cash Out ያደርጋል። አውሮፕላኑ ቀድሞ ከወደቀ ከሆነ ውርርዱ ሊጠፋ ይችላል። ይህ የአሸናፊነት ዋስትና አይደለም።',
-      ti: 'Auto ገንዘብ ማውጣት ማለት ንሓደ ውርርድ እትደልይዎ ብዜት ኣቐዲምኩም ምውሳን እዩ። እቲ ብዜት ቅድሚ ምውዳቕ ነፋሪት እንተበጺሑ ሰርቨር ብራስ-ሰር Cash Out ይገብር። ነፋሪት ቀዲማ እንተወዲቓ እንተኾይኑ ውርርድኩም ክጠፍእ ይኽእል። እዚ ውሕስነት ዓወት ኣይኮነን።',
+      am: 'ብራስ-ሰር ገንዘብ ምውጻእ ማለት ለአንድ ውርርድ የሚፈልጉትን ብዜት አስቀድመው ማስቀመጥ ነው። ሰርቨሩ ያ ብዜት አውሮፕላኑ ከመውደቁ በፊት ከደረሰ በራስ-ሰር ገንዘብ ማውጣት ያከናውናል። አውሮፕላኑ ቀድሞ ከወደቀ ከሆነ ውርርዱ ሊጠፋ ይችላል። ይህ የአሸናፊነት ዋስትና አይደለም።',
+      ti: 'ብራስ-ሰር ገንዘብ ምውጻእ ማለት ንሓደ ውርርድ እትደልይዎ ብዜት ኣቐዲምኩም ምውሳን እዩ። እቲ ብዜት ቅድሚ ምውዳቕ ነፋሪት እንተበጺሑ ሰርቨር ብራስ-ሰር ገንዘብ ምውጻእ ይገብር። ነፋሪት ቀዲማ እንተወዲቓ እንተኾይኑ ውርርድኩም ክጠፍእ ይኽእል። እዚ ውሕስነት ዓወት ኣይኮነን።',
       en: 'Auto Cash Out lets you set a target multiplier for an individual bet before the round. If the target is reached before the crash, the server cashes out that bet automatically. If the crash happens first, the stake can be lost. It does not guarantee a win.'
     },
     keywords: { am: ['auto cash out','ራስ-ሰር ገንዘብ ማውጣት','ብዜት','crash'], ti: ['auto cash out','ብራስ-ሰር ገንዘብ ምውጻእ','ብዜት','crash'], en: ['auto cash out','automatic cashout','target multiplier','crash'] }
@@ -103,29 +103,29 @@ export const helpTopics: HelpTopic[] = [
     id: 'fairness', category: 'safety',
     question: { am: 'ጨዋታዎቹ ፍትሃዊ መሆናቸውን እንዴት አውቃለሁ?', ti: 'ጸወታታት ፍትሓውያን ምዃኖም ብኸመይ እፈልጥ?', en: 'How can I understand game fairness?' },
     answer: {
-      am: 'የጨዋታ ፍትሃዊነትን ለማረጋገጥ የጨዋታውን የተለየ መረጃ፣ የውጤት ታሪክ እና የሚታዩ ማረጋገጫዎች ይመልከቱ። Aviator ላይ የየሰርቨር ዘር ሃሽ እና የተገለጠ Seed መረጃ ሊታይ ይችላል። ይህ ማዕከል የጨዋታዎችን ውጤት በተናጠል አያረጋግጥም፣ የውጤት ትንበያም አይሰጥም።',
+      am: 'የጨዋታ ፍትሃዊነትን ለማረጋገጥ የጨዋታውን የተለየ መረጃ፣ የውጤት ታሪክ እና የሚታዩ ማረጋገጫዎች ይመልከቱ። Aviator ላይ የሰርቨር ዘር ሃሽ እና የተገለጠ ዘር መረጃ ሊታይ ይችላል። ይህ ማዕከል የጨዋታዎችን ውጤት በተናጠል አያረጋግጥም፣ የውጤት ትንበያም አይሰጥም።',
       ti: 'ፍትሓውነት ጸወታ ንምርግጋጽ እቲ ፍሉይ ሓበሬታ ጸወታ፣ ታሪኽ ውጽኢትን ዝርኣዩ መረጋገጺታትን ርኣዩ። ኣብ Aviator ሓበሬታ የሰርቨር ዘር ሃሽን ዝተገልጸ ዘርን ክርአ ይኽእል። እዚ ማእከል ውጽኢት ጸወታ ብናጻ ኣየረጋግጽን፣ ትንበያ እውን ኣይህብን።',
-      en: 'To assess fairness, review each game’s own information, result history, and any verification details displayed there. Aviator may show a የሰርቨር ዘር ሃሽ and a revealed seed. This help center does not independently verify game outcomes or predict results.'
+      en: 'To assess fairness, review each game’s own information, result history, and any verification details displayed there. Aviator may show a a Server Seed Hash and a revealed seed. This help center does not independently verify game outcomes or predict results.'
     },
     keywords: { am: ['ፍትሃዊ','fair','seed','hash','ማረጋገጥ','ትንበያ'], ti: ['ፍትሓዊ','fair','seed','hash','ምርግጋጽ','ትንበያ'], en: ['fairness','fair','seed','hash','verify','predict'] }
   },
   {
     id: 'wallet-deposit', category: 'safety',
-    question: { am: 'በገንዘብ ቦርሳ የሙከራ ብር እንዴት እጨምራለሁ?', ti: 'ኣብ ቦርሳ ገንዘብ ናይ ፈተና ብር ብኸመይ እውስኽ?', en: 'How do I add test ETB to my የገንዘብ ቦርሳ?' },
+    question: { am: 'በገንዘብ ቦርሳ የሙከራ ብር እንዴት እጨምራለሁ?', ti: 'ኣብ ቦርሳ ገንዘብ ናይ ፈተና ብር ብኸመይ እውስኽ?', en: 'How do I add test ETB to my Wallet?' },
     answer: {
       am: 'በገንዘብ ቦርሳ ገጽ ላይ ገንዘብ ማስገባትን ይምረጡ፤ መጠኑንና የባንክ/Telebirr የግብይት ማጣቀሻ ቁጥሩን ያስገቡ። ጥያቄው በመጠባበቅ ላይ ሆኖ ይቆያል። የአስተዳዳሪ ስልክ SMS ማዛመድ ማስረጃ ብቻ ነው፤ ባላንስ የሚጨምረው አስተዳዳሪው ደረሰኙን አረጋግጦ አጽድቅ ሲጫን ብቻ ነው። እውነተኛ ገንዘብ ክፍያዎች ተዘግተዋል።',
       ti: 'ኣብ ገጽ ቦርሳ ገንዘብ ምእታው ምረጹ፤ መጠንን ናይ ባንክ/Telebirr መወከሲ ቁጽርን ኣእትዉ። እቲ ሕቶ ኣብ ትጽቢት ኮይኑ ይጸንሕ። ናይ ኣማሓዳሪ ስልኪ SMS ምዝማድ መርትዖ ጥራይ እዩ፤ ባላንስ ዝውስኽ ኣማሓዳሪ ደረሰኝ ኣረጋጊጹ ኣጽድቕ ምስ ጠወቐ ጥራይ እዩ። ሓቀኛ ገንዘብ ክፍሊታት ተዓጽዮም ኣለዉ።',
-      en: 'On the የገንዘብ ቦርሳ page, choose Deposit and enter the amount plus the bank/Telebirr transaction reference. The request stays pending. A matching SMS from the trusted Admin phone is evidence only; the balance increases only after an Admin independently checks the receipt and presses Approve. Real-money payments are disabled.'
+      en: 'On the Wallet page, choose Deposit and enter the amount plus the bank/Telebirr transaction reference. The request stays pending. A matching SMS from the trusted Admin phone is evidence only; the balance increases only after an Admin independently checks the receipt and presses Approve. Real-money payments are disabled.'
     },
     keywords: { am: ['deposit','ገንዘብ መጨመር','ተቀማጭ','Telebirr','CBE','SMS','Approve'], ti: ['deposit','ተቐማጢ','ገንዘብ ምውሳኽ','Telebirr','CBE','SMS','Approve'], en: ['deposit','top up','Telebirr','CBE','transaction reference','pending','admin approval'] }
   },
   {
     id: 'wallet-withdrawal', category: 'safety',
-    question: { am: 'የየገንዘብ ቦርሳ የሙከራ ብርን ማውጣት ወይም መቀበል እችላለሁ?', ti: 'ናይ ቦርሳ ገንዘብ ፈተና ብር ከውጽእ ወይ ክቕበል ይኽእል?', en: 'Can I withdraw or receive a payout from test wallet credits?' },
+    question: { am: 'የገንዘብ ቦርሳ የሙከራ ብርን ማውጣት ወይም መቀበል እችላለሁ?', ti: 'ናይ ቦርሳ ገንዘብ ፈተና ብር ከውጽእ ወይ ክቕበል ይኽእል?', en: 'Can I withdraw or receive a payout from test wallet credits?' },
     answer: {
       am: 'አይ። በዚህ የሙከራ ስሪት የየገንዘብ ቦርሳ የብር ቀሪ ሂሳብ የሙከራ ክሬዲት ብቻ ነው፤ የገንዘብ ዋጋ የለውም፣ ሊወጣ ወይም ሊከፈል አይችልም። እውነተኛ ገንዘብ ማስገባትና ማውጣት ተዘግተዋል።',
       ti: 'ኣይፋልን። ኣብዚ ናይ ፈተና ስሪት ናይ ቦርሳ ገንዘብ ሒሳብ ብር ናይ ፈተና ክሬዲት ጥራይ እዩ፤ ናይ ገንዘብ ዋጋ የብሉን፣ ክወጽእ ወይ ክኽፈል ኣይክእልን። ሓቀኛ ገንዘብ ምእታውን ምውጻእን ተዓጽዮም ኣለዉ።',
-      en: 'No. የገንዘብ ቦርሳ ETB in this test version is simulated credit only. It has no cash value and cannot be withdrawn or paid out. Real-money deposits and payouts are disabled.'
+      en: 'No. Wallet ETB in this test version is simulated credit only. It has no cash value and cannot be withdrawn or paid out. Real-money deposits and payouts are disabled.'
     },
     keywords: { am: ['withdraw','cashout','ማውጣት','ወጪ','ክፍያ','payout'], ti: ['withdraw','cashout','ምውጻእ','ወጻኢ','ክፍሊት','payout'], en: ['withdraw','withdrawal','cash out','cashout','payout','cash value'] }
   },
@@ -133,9 +133,9 @@ export const helpTopics: HelpTopic[] = [
     id: 'wallet-safety', category: 'safety',
     question: { am: 'Black Gold AI የየገንዘብ ቦርሳ ሂሳቤን ማየት ወይም መቀየር ይችላል?', ti: 'Black Gold AI ሒሳብ የገንዘብ ቦርሳ ክርኢ ወይ ክቕይር ይኽእል?', en: 'Can Black Gold AI view or change my wallet?' },
     answer: {
-      am: 'አይችልም። Black Gold AI የመረጃ እና የህግ ማብራሪያ ብቻ ይሰጣል። የግል የገንዘብ ቦርሳ ቀሪ ሂሳብ፣ ገቢ/ወጪ ግብይት ወይም የክፍያ ሁኔታ ማየት፣ መቀየር ወይም ማረጋገጥ አይችልም። ለእነዚህ የመተግበሪያውን ተዛማጅ የየገንዘብ ቦርሳ ገጽ ይጠቀሙ።',
-      ti: 'ኣይክእልን። Black Gold AI ሓበሬታን መብርህን ሕግታትን ጥራይ ይህብ። ናይ ባዕልኹም የገንዘብ ቦርሳ ሒሳብ፣ ኣታዊ/ወጻኢ ግብይት ወይ ኩነታት ክፍሊት ክርኢ፣ ክቕይር ወይ ከረጋግጽ ኣይክእልን። ነዚ ኣብ ተዛማዲ ገጽ የገንዘብ ቦርሳ እቲ መተግበሪ ተጠቐሙ።',
-      en: 'No. Black Gold AI only explains information and game rules. It cannot view, change, or verify your personal wallet balance, deposits, withdrawals, or payment status. Use the relevant የገንዘብ ቦርሳ page in the app for account-specific information.'
+      am: 'አይችልም። Black Gold AI የመረጃ እና የህግ ማብራሪያ ብቻ ይሰጣል። የግል የገንዘብ ቦርሳ ቀሪ ሂሳብ፣ ገቢ/ወጪ ግብይት ወይም የክፍያ ሁኔታ ማየት፣ መቀየር ወይም ማረጋገጥ አይችልም። ለእነዚህ የመተግበሪያውን ተዛማጅ የገንዘብ ቦርሳ ገጽ ይጠቀሙ።',
+      ti: 'ኣይክእልን። Black Gold AI ሓበሬታን መብርህን ሕግታትን ጥራይ ይህብ። ናይ ባዕልኹም ቦርሳ ገንዘብ ሒሳብ፣ ኣታዊ/ወጻኢ ግብይት ወይ ኩነታት ክፍሊት ክርኢ፣ ክቕይር ወይ ከረጋግጽ ኣይክእልን። ነዚ ኣብ ተዛማዲ ገጽ ቦርሳ ገንዘብ እቲ መተግበሪ ተጠቐሙ።',
+      en: 'No. Black Gold AI only explains information and game rules. It cannot view, change, or verify your personal wallet balance, deposits, withdrawals, or payment status. Use the relevant Wallet page in the app for account-specific information.'
     },
     keywords: { am: ['wallet','ዋሌት','ቦርሳ','ሂሳብ','ቀሪ ሂሳብ','ክፍያ'], ti: ['wallet','ቦርሳ','ሒሳብ','ክፍሊት'], en: ['wallet','balance','deposit','withdrawal','payment'] }
   },
