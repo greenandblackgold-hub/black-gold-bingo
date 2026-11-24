@@ -5,6 +5,7 @@ import { PlayerFeatures } from '@/components/play/PlayerFeatures';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
+import { useAuth } from '@/context/AuthContext';
 import { useAppSettings } from '@/context/AppSettingsContext';
 import { play } from '@/lib/audio';
 import { api } from '@/lib/api';
@@ -238,11 +239,12 @@ function CalledBall({ number, latest = false }: { number: number; latest?: boole
 }
 
 export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: { onGoToWallet: () => void; settingsOpen: boolean; onSettingsOpenChange: (open: boolean) => void }) {
+  const { user } = useAuth();
   const { lang } = useLanguage();
   const t = gameUi.bingoScreen[lang];
   const { cards, markedByCard, toggleMark, removeCards, balance, buyCards } = usePlayer();
   const {
-    phase, bonusRound = false, winPattern, calledNumbers, claimBingo, winner, roundNumber,
+    phase, bonusRound = false, winPattern, calledNumbers, claimBingo, winner, roundNumber, roomId, loaded,
     nextCallAt, roundPrizeEtb, nextRoundAt, firstCallAt, endedAt,
   } = useRound();
   const { cardPrice } = useAppSettings();
@@ -260,6 +262,8 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   });
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
   const [draftCards, setDraftCards] = useState<BingoCard[]>([]);
+  const draftCardsStorageKey = `bgb.draftCards.${user?.id ?? 'guest'}.${roomId || 'default'}.${roundNumber}`;
+  const [draftCardsLoadedFor, setDraftCardsLoadedFor] = useState<string | null>(null);
   const [registeringDraftId, setRegisteringDraftId] = useState<string | null>(null);
   const [draftMessage, setDraftMessage] = useState('');
   const [quickBuyCount, setQuickBuyCount] = useState(15);
@@ -269,7 +273,32 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   const [copyStatus, setCopyStatus] = useState('');
 
 
-  useEffect(() => { setDraftCards([]); setDraftMessage(''); }, [roundNumber]);
+  // Keep unregistered preview cards across refreshes, scoped to this player, room, and round.
+  // Registered cards and called numbers continue to come from their existing server sources.
+  useEffect(() => {
+    if (!loaded || !user?.id) return;
+    setDraftCardsLoadedFor(null);
+    try {
+      const raw = localStorage.getItem(draftCardsStorageKey);
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      setDraftCards(Array.isArray(parsed) ? parsed as BingoCard[] : []);
+    } catch {
+      setDraftCards([]);
+    }
+    setDraftCardsLoadedFor(draftCardsStorageKey);
+  }, [loaded, user?.id, draftCardsStorageKey]);
+
+  useEffect(() => {
+    if (draftCardsLoadedFor !== draftCardsStorageKey) return;
+    try {
+      if (draftCards.length) localStorage.setItem(draftCardsStorageKey, JSON.stringify(draftCards));
+      else localStorage.removeItem(draftCardsStorageKey);
+    } catch {
+      // Keep the active game usable if browser storage is unavailable or full.
+    }
+  }, [draftCards, draftCardsLoadedFor, draftCardsStorageKey]);
+
+  useEffect(() => { setDraftMessage(''); }, [roundNumber]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
