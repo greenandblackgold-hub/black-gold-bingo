@@ -41,7 +41,7 @@ before(async () => {
   // Set TEST_MONGODB_URI to run this whole suite against a real MongoDB (a throwaway database is created and dropped).
   const mongo = process.env.TEST_MONGODB_URI;
   const config = loadConfig({
-    NODE_ENV: 'test', STORAGE: mongo ? 'mongo' : 'memory', MONGODB_URI: mongo ?? '', DB_NAME: `bingo_test_${Date.now()}`, CHAPA_MOCK: 'true', CARD_PRICE_ETB: '10', PRIZE_PERCENT: '80',
+    NODE_ENV: 'test', STORAGE: mongo ? 'mongo' : 'memory', MONGODB_URI: mongo ?? '', DB_NAME: `bingo_test_${Date.now()}`, CHAPA_MOCK: 'true', CARD_PRICE_ETB: '10', PRIZE_PERCENT: '45',
     MIN_WITHDRAW_ETB: '50', RATE_LIMIT_AUTH: '100000', RATE_LIMIT_MONEY: '100000', RATE_LIMIT_DEFAULT: '100000', JWT_SECRET: 'test-secret-test-secret-test-secret-123', CLIENT_URL: 'http://web.test', CLIENT_ORIGINS: 'http://web.test',
   });
   ctx = await build(config);
@@ -624,7 +624,7 @@ test('a full round: a valid BINGO claim automatically credits the winner wallet 
   const wins = [ra, rb].filter((r) => r.json.ok === true);
   assert.equal(wins.length, 1, `expected one winner, got ${JSON.stringify([ra.json, rb.json])}`);
   const prize = wins[0].json.prize;
-  assert.equal(prize, 40); // pot = 5 cards x 10 = 50 ETB, 80% = 40
+  assert.equal(prize, 22.5); // pot = 5 cards x 10 = 50 ETB, 45% = 22.5
   assert.equal(wins[0].json.payoutStatus, 'paid');
   const g = (await api('GET', '/api/game')).json;
   assert.equal(g.phase, 'ended');
@@ -635,8 +635,8 @@ test('a full round: a valid BINGO claim automatically credits the winner wallet 
   const winnerCard = g.winner.cardId;
   const winnerToken = aWon ? a.token : b.token;
   const loserToken = aWon ? b.token : a.token;
-  assert.equal((await api('GET', '/api/me', { token: a.token })).json.balance, aWon ? 100 - 20 + 40 : 100 - 20);
-  assert.equal((await api('GET', '/api/me', { token: b.token })).json.balance, aWon ? 100 - 30 : 100 - 30 + 40);
+  assert.equal((await api('GET', '/api/me', { token: a.token })).json.balance, aWon ? 100 - 20 + 22.5 : 100 - 20);
+  assert.equal((await api('GET', '/api/me', { token: b.token })).json.balance, aWon ? 100 - 30 : 100 - 30 + 22.5);
   assert.equal((await api('GET', '/api/admin/win-payouts', { token: a.token })).status, 403);
   const queue = await api('GET', '/api/admin/win-payouts?status=pending', { token: ctx.adminToken });
   assert.equal(queue.status, 200);
@@ -646,9 +646,9 @@ test('a full round: a valid BINGO claim automatically credits the winner wallet 
   assert.equal(duplicateClaim.status, 409);
   assert.equal(duplicateClaim.json.error, 'wrong_phase');
   const winnerBalance = (await api('GET', '/api/me', { token: winnerToken })).json.balance;
-  assert.equal(winnerBalance, aWon ? 100 - 20 + 40 : 100 - 30 + 40);
+  assert.equal(winnerBalance, aWon ? 100 - 20 + 22.5 : 100 - 30 + 22.5);
   const prizeLedger = await api('GET', '/api/ledger', { token: winnerToken });
-  assert.equal(prizeLedger.json.filter((row) => row.label === 'Prize' && row.amount === 40).length, 1);
+  assert.equal(prizeLedger.json.filter((row) => row.label === 'Prize' && row.amount === 22.5).length, 1);
 
   // Verify: owner sees the grid and winner flag; others only the status.
   const mineV = (await api('POST', '/api/verify', { token: winnerToken, body: { cardId: winnerCard } })).json;
@@ -867,7 +867,7 @@ test('fixed prize is announced, frozen at round start, capped by gross revenue, 
   const player = await newPlayer('Fixed Prize Player', 100);
   const configured = await api('POST', '/api/admin/prize-schedule', {
     token: ctx.adminToken,
-    body: { prizeMode: 'fixed', fixedPrize: 15, prizePercent: 80, prizePerPlayer: 4, maxPrizeCap: 0, roundIntervalMinutes: 4 },
+    body: { prizeMode: 'fixed', fixedPrize: 15, prizePercent: 45, prizePerPlayer: 4, maxPrizeCap: 0, roundIntervalMinutes: 4 },
   });
   assert.equal(configured.status, 200, JSON.stringify(configured.json));
   assert.equal(configured.json.prizeMode, 'fixed');
@@ -883,7 +883,7 @@ test('fixed prize is announced, frozen at round start, capped by gross revenue, 
   assert.equal(state.roundPrizeEtb, 15, 'the prize remains fixed after the round starts');
   const changedDuringRound = await api('POST', '/api/admin/prize-schedule', {
     token: ctx.adminToken,
-    body: { prizeMode: 'fixed', fixedPrize: 20, prizePercent: 80, prizePerPlayer: 4, maxPrizeCap: 0, roundIntervalMinutes: 4 },
+    body: { prizeMode: 'fixed', fixedPrize: 20, prizePercent: 45, prizePerPlayer: 4, maxPrizeCap: 0, roundIntervalMinutes: 4 },
   });
   assert.equal(changedDuringRound.status, 409, 'active-round prize settings cannot be changed');
   await drawAll();

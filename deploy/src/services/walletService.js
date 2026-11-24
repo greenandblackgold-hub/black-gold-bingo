@@ -104,7 +104,7 @@ export function createWalletService({ repo, config, chapa }) {
       return { status: 'rejected' };
     },
 
-    /** Match trusted Admin-phone SMS; only exact configured Telebirr-to-CBE receipts auto-credit. */
+    /** Match trusted Admin-phone SMS to a pending simulation deposit. Matching is evidence only; a separate Admin approval is required to credit the wallet. */
     async matchSmsSimulationDeposit(event, metadata = {}) {
       const txRef = String(event.reference ?? '').trim();
       const amount = toSantim(event.amount);
@@ -127,7 +127,7 @@ export function createWalletService({ repo, config, chapa }) {
       return { ...result, status: result.matched ? 'matched' : result.mismatch ? 'amount-mismatch' : 'unmatched', approved: false, credited: false };
     },
 
-    /** Legacy authenticated SMS events are match-only; auto-approval requires trusted Admin-device recipient proof. */
+    /** Legacy authenticated SMS events are match-only; they never approve or credit a deposit. */
     async confirmSmsSimulationDeposit(event) {
       return this.matchSmsSimulationDeposit(event, { rawMessage: event.rawMessage ?? '', sender: event.sender ?? '', receivedAt: Date.now() });
     },

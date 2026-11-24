@@ -10,7 +10,7 @@ export const DEFAULT_GAME = {
   pot: 0, // santim collected from card sales this round
   roundPlayerIds: [], // private unique participant IDs; never included in public state
   prizeMode: 'revenue_percent',
-  prizePercent: 80,
+  prizePercent: 45,
   fixedPrize: 0, // santim; fixed mode only
   roundPrize: null, // frozen santim for a fixed-prize round
 
