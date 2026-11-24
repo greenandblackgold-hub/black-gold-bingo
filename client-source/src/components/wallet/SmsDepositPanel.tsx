@@ -212,7 +212,7 @@ export function SimulationDepositHistory() {
                 <p className="mt-1 text-xs text-gold-600">{formatDateTime(lang, row.at)}</p>
                 <p className="mt-1 text-xs font-semibold text-gold-400">{statusLabel(row.status)}</p>
               </div>
-              <p className="shrink-0 font-bold tabular-nums text-gold-300">{formatAmount(lang, row.amount)} ETB</p>
+              <p className="shrink-0 font-bold tabular-nums text-gold-300">{formatAmount(lang, row.amount)} {t.currency}</p>
             </li>
           ))}
         </ul>
