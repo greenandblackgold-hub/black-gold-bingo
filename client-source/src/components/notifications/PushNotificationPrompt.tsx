@@ -9,7 +9,7 @@ type PushConfig = { enabled: boolean; publicKey: string | null };
 const copy = {
   am: {
     connectionError: 'የማሳወቂያ ግንኙነት ለጊዜው አልተሳካም።',
-    denied: 'ማሳወቂያዎች በBrowser ተከልክለዋል። ከBrowser Settings ይፍቀዱ።',
+    denied: 'ማሳወቂያዎች በBrowser ተከልክለዋል። ከአሳሽ ቅንብሮች ፈቃድ ይስጡ።',
     permission: 'ማሳወቂያ ለመቀበል ፈቃድ ያስፈልጋል።',
     success: 'ማሳወቂያዎች ተከፍተዋል። የቦነስ ዜናዎችን ያገኛሉ።',
     failed: 'ማሳወቂያዎችን ማንቃት አልተሳካም። HTTPS እና የBrowser ፈቃድ ያረጋግጡ።',
@@ -20,7 +20,7 @@ const copy = {
   },
   ti: {
     connectionError: 'መራኸቢ ምልክታ ንግዚኡ ኣይሰርሐን።',
-    denied: 'ምልክታታት ብBrowser ተኸልኪሎም። ካብ Browser Settings ፍቐዱ።',
+    denied: 'ምልክታታት ብBrowser ተኸልኪሎም። ካብ ቅንብራት ኣሳሒ ፍቓድ ሃቡ።',
     permission: 'ምልክታ ንምቕባል ፍቓድ የድሊ።',
     success: 'ምልክታታት ተኸፊቶም። ዜና ቦነስ ክትረኽቡ ኢኹም።',
     failed: 'ምልክታታት ምኽፋት ኣይተኻእለን። HTTPSን ፍቓድ Browserን ኣረጋግጹ።',

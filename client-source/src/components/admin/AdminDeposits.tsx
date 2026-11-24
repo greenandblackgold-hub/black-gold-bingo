@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { translations, formatAmount, formatDateTime } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
-import { api, ApiError } from '@/lib/api';
+import { api } from '@/lib/api';
 
 const TEXT = translations.adminDeposits;
 
@@ -32,8 +32,8 @@ export function AdminDeposits() {
       const result = await api.get<DepositRow[]>('/api/admin/deposits?status=pending');
       setRows(result);
       setError('');
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : t.error);
+    } catch {
+      setError(t.error);
     }
   }, [t.error]);
 
@@ -51,8 +51,8 @@ export function AdminDeposits() {
     try {
       await api.post(`/api/admin/deposits/${encodeURIComponent(row.reference)}/${action}`, {});
       await load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : t.error);
+    } catch {
+      setError(t.error);
     } finally {
       setBusyId(null);
     }
@@ -75,26 +75,26 @@ export function AdminDeposits() {
             return (
             <li key={row.id} className={`rounded-xl p-3 ${matchedSms ? 'bg-emerald-500/[0.08] ring-1 ring-emerald-400/50' : 'bg-white/[0.04]'}`}>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-lg font-black tabular-nums text-gold-400">{formatAmount(lang, row.amount)} ETB</span>
+                <span className="text-lg font-black tabular-nums text-gold-400">{formatAmount(lang, row.amount)} {t.currency}</span>
                 <span className={`rounded-full px-2.5 py-1 text-xs ${matchedSms ? 'bg-emerald-500/20 font-bold text-emerald-200' : 'bg-amber-500/15 text-amber-200'}`}>{matchedSms ? t.smsMatchedManual : row.smsMatch?.status === 'amount-mismatch' ? t.smsAmountMismatch : t.pending}</span>
               </div>
               {/^TEST-/i.test(row.reference) && <p className="mt-2 rounded-lg bg-sky-500/10 px-3 py-2 text-xs font-bold text-sky-200">{t.testOnly}</p>}
               <dl className="mt-2 space-y-1 text-sm">
                 <div><dt className="inline text-gold-600">{t.player}: </dt><dd className="inline text-gold-300">{row.userName} · {row.userPhone}</dd></div>
                 <div><dt className="inline text-gold-600">{t.reference}: </dt><dd className="inline break-all font-mono text-gold-300">{row.reference}</dd></div>
-                {row.provider && <div><dt className="inline text-gold-600">Provider: </dt><dd className="inline text-gold-300">{row.provider}</dd></div>}
+                {row.provider && <div><dt className="inline text-gold-600">{t.provider}: </dt><dd className="inline text-gold-300">{row.provider}</dd></div>}
                 {row.source === 'automatic-sms' && (
                   <div className="mt-2 rounded-lg border border-gold-700/40 bg-black/20 p-3 text-xs">
                     <p className={row.smsMatch?.status === 'matched' ? 'font-bold text-emerald-300' : row.smsMatch?.status === 'amount-mismatch' ? 'font-bold text-red-300' : 'font-bold text-amber-200'}>
                       {row.smsMatch?.status === 'matched' ? t.smsMatchedManualHelp : row.smsMatch?.status === 'amount-mismatch' ? t.smsAmountMismatchHelp : t.manualReviewHelp}
                     </p>
-                    {row.smsMatch?.provider && <p className="mt-1 text-gold-400">Provider: {row.smsMatch.provider}</p>}
-                    {row.smsMatch?.amount !== undefined && <p className="mt-1 text-gold-300">SMS amount: {formatAmount(lang, row.smsMatch.amount / 100)} ETB</p>}
-                    {row.smsMatch?.sender && <p className="mt-1 text-gold-500">Sender: {row.smsMatch.sender}</p>}
-                    {row.smsMatch?.transactionAt && <p className="mt-1 text-gold-500">Transaction time: {formatDateTime(lang, row.smsMatch.transactionAt)}</p>}
+                    {row.smsMatch?.provider && <p className="mt-1 text-gold-400">{t.provider}: {row.smsMatch.provider}</p>}
+                    {row.smsMatch?.amount !== undefined && <p className="mt-1 text-gold-300">{t.smsAmount}: {formatAmount(lang, row.smsMatch.amount / 100)} {t.currency}</p>}
+                    {row.smsMatch?.sender && <p className="mt-1 text-gold-500">{t.sender}: {row.smsMatch.sender}</p>}
+                    {row.smsMatch?.transactionAt && <p className="mt-1 text-gold-500">{t.transactionTime}: {formatDateTime(lang, row.smsMatch.transactionAt)}</p>}
                   </div>
                 )}
-                {row.rawMessage && <div className="mt-2"><dt className="mb-1 block text-gold-600">Transaction SMS:</dt><dd className="whitespace-pre-wrap break-words rounded-lg bg-black/30 p-3 text-xs leading-relaxed text-gold-200">{row.rawMessage}</dd></div>}
+                {row.rawMessage && <div className="mt-2"><dt className="mb-1 block text-gold-600">{t.transactionSms}:</dt><dd className="whitespace-pre-wrap break-words rounded-lg bg-black/30 p-3 text-xs leading-relaxed text-gold-200">{row.rawMessage}</dd></div>}
                 <div><dt className="inline text-gold-600">{t.sent}: </dt><dd className="inline text-gold-500">{formatDateTime(lang, row.at)}</dd></div>
               </dl>
               <div className="mt-3 flex flex-wrap gap-2">

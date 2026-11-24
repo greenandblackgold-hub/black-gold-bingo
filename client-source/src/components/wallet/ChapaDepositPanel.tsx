@@ -53,7 +53,7 @@ export function ChapaDepositPanel() {
       window.location.assign(result.checkoutUrl);
     } catch (err) {
       if (err instanceof ApiError && err.code === 'real_money_disabled') setError(t.disabled);
-      else setError(err instanceof ApiError ? err.message : t.error);
+      else setError(t.error);
     } finally {
       setLoading(false);
     }

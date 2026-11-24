@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { translations, formatAmount } from '@/lib/localization';
 import { useLanguage } from '@/context/LanguageContext';
-import { api, ApiError } from '@/lib/api';
+import { api } from '@/lib/api';
 
 const TEXT = translations.adminPayouts;
 
@@ -26,8 +26,8 @@ export function AdminWinPayouts() {
     try {
       setRows(await api.get<WinPayout[]>('/api/admin/win-payouts?status=pending'));
       setError(null);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : t.err);
+    } catch {
+      setError(t.err);
     }
   }, [t.err]);
   useEffect(() => {
@@ -41,8 +41,8 @@ export function AdminWinPayouts() {
     try {
       await api.post(`/api/admin/win-payouts/${encodeURIComponent(id)}/${action}`, {});
       await load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : t.err);
+    } catch {
+      setError(t.err);
     }
   };
   const btn = 'rounded-lg px-3.5 py-2 text-sm font-semibold ring-1 active:scale-95';
@@ -59,7 +59,7 @@ export function AdminWinPayouts() {
           {rows.map((w) => (
             <li key={w.id} className="rounded-xl bg-white/[0.04] p-3">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-lg font-black tabular-nums text-gold-400">{formatAmount(lang, w.amount)} ETB</span>
+                <span className="text-lg font-black tabular-nums text-gold-400">{formatAmount(lang, w.amount)} {t.currency}</span>
                 <span className="text-xs text-gold-500">{t.pending}</span>
               </div>
               <p className="mt-1 text-sm text-gold-300">{t.player}: {w.userName} · {w.userPhone}</p>

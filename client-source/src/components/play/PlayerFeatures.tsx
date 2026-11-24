@@ -3,7 +3,7 @@ import { useAppSettings } from '@/context/AppSettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { usePlayer } from '@/context/PlayerContext';
 import { useRound } from '@/context/RoundContext';
-import { formatAmount, formatDateTime, patternNames as localizedPatternNames } from '@/lib/localization';
+import { formatAmount, formatDateTime, patternNames as localizedPatternNames, translations } from '@/lib/localization';
 import { gameUi } from '@/lib/gameUi';
 import { patternMasks } from '@/lib/bingo';
 import { WIN_PATTERN_OPTIONS } from '@/lib/patternCatalog';
@@ -147,8 +147,8 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
           <div className="mx-auto w-full max-w-3xl rounded-xl border border-gold-700/30 bg-black/20 p-2 sm:p-2.5">
             <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
             {[
-              ['ዋጋ', `${formatAmount(lang, cardPrice)} ETB`],
-              ['የአሁኑ ዋና ሽልማት', SERVER_MODE && roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ETB` : '—'],
+              ['ዋጋ', `${formatAmount(lang, cardPrice)} ${translations.wallet[lang].etb}`],
+              ['የአሁኑ ዋና ሽልማት', SERVER_MODE && roundPrizeEtb !== undefined ? `${formatAmount(lang, roundPrizeEtb)} ${translations.wallet[lang].etb}` : '—'],
               ['ካርድ ግዛ', ''],
               ['ጠቅላላ ካርቴላ', String(cards.length)],
             ].map(([label, value]) => (
@@ -174,7 +174,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                 </div>
                 <div className="rounded-xl border border-amber-400/20 bg-black/40 p-3">
                   <p className="text-xs text-amber-200/70">{t.currentBalance}</p>
-                  <p className="text-xl font-black tabular-nums text-amber-300">{formatAmount(lang, balance)} ETB</p>
+                  <p className="text-xl font-black tabular-nums text-amber-300">{formatAmount(lang, balance)} {translations.wallet[lang].etb}</p>
                 </div>
                 <div className="space-y-3 rounded-xl border border-amber-400/20 p-3">
                   <p className="text-sm font-semibold">{t.chooseCardCount}</p>
@@ -185,8 +185,8 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                       </button>
                     ))}
                   </div>
-                  <div className="flex justify-between text-sm"><span className="text-amber-100/60">{t.pricePerCard}</span><strong>{formatAmount(lang, cardPrice)} ETB</strong></div>
-                  <div className="flex justify-between border-t border-amber-400/20 pt-3"><span className="font-bold">{t.payable}</span><strong className="text-lg text-amber-300">{formatAmount(lang, purchaseCount * cardPrice)} ETB</strong></div>
+                  <div className="flex justify-between text-sm"><span className="text-amber-100/60">{t.pricePerCard}</span><strong>{formatAmount(lang, cardPrice)} {translations.wallet[lang].etb}</strong></div>
+                  <div className="flex justify-between border-t border-amber-400/20 pt-3"><span className="font-bold">{t.payable}</span><strong className="text-lg text-amber-300">{formatAmount(lang, purchaseCount * cardPrice)} {translations.wallet[lang].etb}</strong></div>
                 </div>
                 {phase !== 'waiting' && <p className="rounded-lg bg-red-950/60 p-2 text-sm text-red-200">{t.purchaseOnlyWaiting}</p>}
                 {purchaseMessage && <p role="status" className={`rounded-lg p-2 text-sm ${purchaseMessage.kind === 'ok' ? 'bg-emerald-950 text-emerald-200' : 'bg-red-950 text-red-200'}`}>{purchaseMessage.text}</p>}
@@ -221,7 +221,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                 {row.id === 'messages' && <p className={`text-sm ${muted}`}>{t.adminMessages}</p>}
                 {row.id === 'info' && <p className={`text-sm leading-6 ${muted}`}>{t.infoText}</p>}
                 {row.id === 'contact' && <p className={`text-sm ${muted}`}>{t.contactText}</p>}
-                {row.id === 'history' && <div className="space-y-2 rounded-xl border border-amber-400/25 bg-black/25 p-3"><div className="space-y-2 px-2 py-1">{(transactions ?? []).length === 0 ? <p className="py-3 text-center text-xs text-gold-600">{t.noTransactions}</p> : (transactions ?? []).slice().sort((a,b)=>b.at-a.at).map(tx => <div key={tx.id} className="flex items-center justify-between gap-3 border-b border-gold-700/20 py-2 text-xs"><div className="min-w-0"><p className="font-semibold text-gold-200">{tx.label ?? (tx.kind === 'deposit' ? t.deposit : t.cardPurchaseLabel)}</p><p className="text-[10px] text-gold-700">{formatDateTime(lang, tx.at)}</p></div><strong className={tx.amount >= 0 ? 'shrink-0 text-emerald-300' : 'shrink-0 text-amber-300'}>{tx.amount >= 0 ? '+' : '−'}{formatAmount(lang, Math.abs(tx.amount))} ETB</strong></div>)}</div><p className="px-3 py-3 text-xs leading-5 text-gold-600">{t.noPreviousRounds}</p><button type="button" onClick={onGoToWallet} className="w-full rounded-lg bg-amber-400/10 px-3 py-2 text-xs font-bold text-amber-200">{t.goWalletHistory}</button></div>}
+                {row.id === 'history' && <div className="space-y-2 rounded-xl border border-amber-400/25 bg-black/25 p-3"><div className="space-y-2 px-2 py-1">{(transactions ?? []).length === 0 ? <p className="py-3 text-center text-xs text-gold-600">{t.noTransactions}</p> : (transactions ?? []).slice().sort((a,b)=>b.at-a.at).map(tx => <div key={tx.id} className="flex items-center justify-between gap-3 border-b border-gold-700/20 py-2 text-xs"><div className="min-w-0"><p className="font-semibold text-gold-200">{tx.label ?? (tx.kind === 'deposit' ? t.deposit : t.cardPurchaseLabel)}</p><p className="text-[10px] text-gold-700">{formatDateTime(lang, tx.at)}</p></div><strong className={tx.amount >= 0 ? 'shrink-0 text-emerald-300' : 'shrink-0 text-amber-300'}>{tx.amount >= 0 ? '+' : '−'}{formatAmount(lang, Math.abs(tx.amount))} {translations.wallet[lang].etb}</strong></div>)}</div><p className="px-3 py-3 text-xs leading-5 text-gold-600">{t.noPreviousRounds}</p><button type="button" onClick={onGoToWallet} className="w-full rounded-lg bg-amber-400/10 px-3 py-2 text-xs font-bold text-amber-200">{t.goWalletHistory}</button></div>}
                 {row.id === 'wallet' && <button type="button" onClick={onGoToWallet} className="w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-600 px-4 py-3 font-bold text-zinc-950">{t.goWallet}</button>}
                 {row.id === 'gameHistory' && <p className={`text-sm ${muted}`}>{t.gameHistoryUnavailable}</p>}
                 {row.id === 'settings' && (
@@ -233,7 +233,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                         <div><p className="mb-2 font-semibold text-amber-200">{t.cardOrder}</p><div className="flex flex-wrap gap-2"><button type="button" onClick={()=>{try{localStorage.setItem('bgb.cardOrder','oldest');window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className="rounded-lg border border-amber-400/40 px-3 py-2">{t.oldestFirst}</button><button type="button" onClick={()=>{try{localStorage.setItem('bgb.cardOrder','newest');window.dispatchEvent(new Event('bgb-player-settings'));}catch{}}} className="rounded-lg border border-amber-400/40 px-3 py-2">{t.newestFirst}</button></div></div>
 
                         <label className="flex items-center justify-between gap-3"><span>{t.removeUnregistered}</span><input type="checkbox" defaultChecked={localStorage.getItem('bgb.removeUnregistered')==='on'} onChange={async e=>{localStorage.setItem('bgb.removeUnregistered',e.target.checked?'on':'off');if(e.target.checked){const results=await Promise.all(cards.map(async c=>({id:c.id,result:await verifyCard(c.id)})));removeCards(results.filter(x=>x.result.status!=='valid').map(x=>x.id));}}}/></label>
-                        <div><p className="mb-2 font-semibold text-amber-200">{t.markColor}</p><div className="flex flex-wrap gap-3">{['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'].map(color=><button key={color} type="button" aria-label={color} onClick={()=>{localStorage.setItem('bgb.markColor',color);window.dispatchEvent(new Event('bgb-player-settings'));}} className="h-9 w-9 rounded-full border-2 border-white/50" style={{backgroundColor:color}}/>)}</div></div>
+                        <div><p className="mb-2 font-semibold text-amber-200">{t.markColor}</p><div className="flex flex-wrap gap-3">{['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'].map(color=><button key={color} type="button" aria-label={`${t.markColor}: ${color}`} onClick={()=>{localStorage.setItem('bgb.markColor',color);window.dispatchEvent(new Event('bgb-player-settings'));}} className="h-9 w-9 rounded-full border-2 border-white/50" style={{backgroundColor:color}}/>)}</div></div>
                         <div><p className="mb-2 font-semibold text-amber-200">{t.chooseMultipleCards}</p><div className="mb-2 flex gap-2"><button type="button" onClick={()=>{localStorage.setItem('bgb.selectedCards',JSON.stringify(cards.map(c=>c.id)));window.dispatchEvent(new Event('bgb-player-settings'));}} className="rounded-lg border border-amber-400/40 px-3 py-2">{t.selectAll}</button><button type="button" onClick={()=>{localStorage.setItem('bgb.selectedCards','[]');window.dispatchEvent(new Event('bgb-player-settings'));}} className="rounded-lg border border-current/20 px-3 py-2">{t.clearSelection}</button></div><div className="grid grid-cols-2 gap-2">{cards.map(c=><label key={c.id} className="flex items-center gap-2 rounded-lg border border-current/15 p-2"><input type="checkbox" defaultChecked={JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]').includes(c.id)} onChange={e=>{const ids=JSON.parse(localStorage.getItem('bgb.selectedCards')||'[]');localStorage.setItem('bgb.selectedCards',JSON.stringify(e.target.checked?[...ids,c.id]:ids.filter((id:string)=>id!==c.id)));window.dispatchEvent(new Event('bgb-player-settings'));}}/><span>{t.card} #{c.serial}</span></label>)}</div></div>
                         <button type="button" onClick={()=>{clearMarks();localStorage.setItem('bgb.selectedCards','[]');window.dispatchEvent(new Event('bgb-player-settings'));}} className="w-full rounded-lg border border-amber-400/40 px-3 py-2 font-bold text-amber-200">{t.clearMarks}</button>
                       </div>
