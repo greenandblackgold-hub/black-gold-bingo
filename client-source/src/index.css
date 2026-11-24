@@ -1366,3 +1366,39 @@ body { color: #f7edcf; background: #030303 !important; }
   filter: saturate(.65);
   opacity: .62;
 }
+
+/* Bingo scroll rendering stability.
+   Keep each compact card on a predictable paint layer and remove the expensive
+   global rounded-section shadow transition from this high-density scrolling grid.
+   This is presentation-only and scoped to the Bingo play surface. */
+html:has(.player-play-view) {
+  scroll-behavior: auto !important;
+}
+.player-play-view .bingo-card-surface {
+  position: relative;
+  isolation: isolate;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  contain: layout style;
+  transition: none !important;
+  box-shadow: 0 7px 18px rgba(0, 0, 0, .42), 0 0 10px rgba(214, 173, 69, .10) !important;
+}
+.player-play-view .bingo-card-surface:hover {
+  border-color: inherit !important;
+  box-shadow: 0 7px 18px rgba(0, 0, 0, .42), 0 0 10px rgba(214, 173, 69, .10) !important;
+}
+.player-play-view .bingo-card-surface > .grid {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+.player-play-view .bingo-card-surface button {
+  -webkit-tap-highlight-color: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .player-play-view .bingo-card-surface {
+    transform: none;
+    -webkit-transform: none;
+  }
+}
