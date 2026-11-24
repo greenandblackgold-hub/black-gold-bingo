@@ -289,6 +289,10 @@ export function createGameService({ repo, config, now = Date.now }) {
       if (g.phase !== 'waiting' || g.bonusRound === true) throw new HttpError(409, 'round_not_open', 'Cards can only be prepared before a regular round starts');
       const sold = config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0;
       if (sold + n > roundCardLimit) throw new HttpError(409, 'card_pool_full', 'All available Bingo cards for this round have been taken.');
+      const expiredBefore = now() - 30 * 60 * 1000;
+      for (const [key, preview] of pendingCardPreviews) if (preview.createdAt < expiredBefore) pendingCardPreviews.delete(key);
+      const userPreviewCount = [...pendingCardPreviews.keys()].filter((key) => key.startsWith(user.id + ':')).length;
+      if (userPreviewCount + n > 20) throw new HttpError(429, 'too_many_previews', 'Register or remove your existing preview cards before adding more.');
       if (previewNextSerial === null) previewNextSerial = await repo.peekNextCardSerial();
       const previews = [];
       for (let i = 0; i < n; i++) {
@@ -338,6 +342,12 @@ export function createGameService({ repo, config, now = Date.now }) {
       let serials;
       try {
         serials = await repo.reserveCardSerials(g.roundNumber, n, requestedSerial);
+        if (requestedSerial === undefined || requestedSerial === null) {
+          const pendingSerials = new Set([...pendingCardPreviews.keys()].map((key) => key.slice(key.lastIndexOf(':') + 1)));
+          while (serials.some((serial) => pendingSerials.has(String(serial)))) {
+            serials = await repo.reserveCardSerials(g.roundNumber, n, undefined);
+          }
+        }
       } catch (e) {
         if (e instanceof RepoError && e.code === 'ROUND_NOT_OPEN') throw new HttpError(409, 'round_not_open', 'Cards can only be bought before a round starts');
         if (e instanceof RepoError && e.code === 'CARD_NUMBER_TAKEN') throw new HttpError(409, 'card_number_taken', 'That card number is already taken. Choose another number.');
