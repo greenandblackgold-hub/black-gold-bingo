@@ -6,3 +6,5 @@ interface ImportMetaEnv {
   /** "true" when this site is served by the Bingo server itself (same address, no VITE_API_URL needed). */
   readonly VITE_SERVER_MODE?: string;
 }
+
+declare const __APP_BUILD_ID__: string;
