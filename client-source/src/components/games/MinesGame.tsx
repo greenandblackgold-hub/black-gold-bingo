@@ -211,7 +211,7 @@ export function MinesGame({ onBack, onSwitchGame }: { onBack: () => void; onSwit
               <input type="number" min={MIN_BET} max={maximumBet} step="0.01" value={bet} disabled={!!active} onChange={(event) => setBet(event.target.value)} className="min-w-0 rounded-lg border border-amber-400/25 bg-black px-2 text-center text-lg font-black tabular-nums text-amber-100 disabled:opacity-50" aria-label={t('betAmountAria')} />
               <button type="button" disabled={!!active} onClick={() => adjustBet(2)} className="rounded-lg border border-amber-400/25 bg-black/60 text-xl font-black text-amber-200 disabled:opacity-40">+</button>
               <button type="button" disabled={!!active} onClick={() => adjustBet(2)} className="rounded-lg border border-amber-400/25 bg-black/60 text-xs font-black text-amber-200 disabled:opacity-40">X2</button>
-              <button type="button" disabled={!!active} onClick={() => setBet(String(maximumBet))} className="rounded-lg border border-amber-400/25 bg-black/60 text-xs font-black text-amber-200 disabled:opacity-40">{t('maximum')}</button>
+              <button type="button" disabled={!!active} onClick={() => setBet(String(maximumBet))} className="rounded-lg border border-amber-400/25 bg-black/60 text-xs font-black text-amber-200 disabled:opacity-40">{t('maxShort')}</button>
             </div>
             <p className="mt-1 text-[10px] text-amber-100/40">{t('minimum')} {formatMoney(MIN_BET)} · {t('maximum')} {formatMoney(maximumBet)} · {t('demoOnly')}</p>
           </div>
