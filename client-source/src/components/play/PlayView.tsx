@@ -173,11 +173,11 @@ function BingoCardView({ labels, card, index, marks, called, pattern, claimable,
   return (
     <section className={`relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-1 shadow-xl ${accent.glow}`}>
       {draft ? (
-        <button type="button" onClick={onRegister} disabled={registering} className={'flex w-full items-center justify-center gap-2 bg-gradient-to-r ' + accent.head + ' px-2 py-1 text-base font-black text-white sm:text-xl disabled:opacity-60'}>
+        <button type="button" onClick={onRegister} disabled={registering} className={`flex w-full items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-1 text-base font-black text-white sm:text-xl disabled:opacity-60`}>
           {registering ? '…' : 'REGISTER'} · #{String(card.serial).padStart(5, '0')}
         </button>
       ) : (
-        <div className={'flex items-center justify-center bg-gradient-to-r ' + accent.head + ' px-2 py-1 text-base font-black text-white sm:text-xl'}>
+        <div className={`flex items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-1 text-base font-black text-white sm:text-xl`}>
           {labels.card} #{String(card.serial).padStart(5, '0')} · BINGO
         </div>
       )}
@@ -202,20 +202,20 @@ function BingoCardView({ labels, card, index, marks, called, pattern, claimable,
               aria-label={free ? labels.free : `${LETTERS[c]} ${value}`}
               className={[
                 'relative grid aspect-square min-w-0 place-items-center rounded-[3px] text-[clamp(10px,2.1vw,22px)] font-black leading-none text-black transition',
-                free ? (claimable ? 'animate-pulse bg-gradient-to-br from-yellow-300 via-yellow-400 to-red-600 text-red-950 shadow-[0_0_18px_rgba(250,204,21,.9)]' : 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]') :
+                free ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
                   marked ? 'bg-lime-300 shadow-[inset_0_0_9px_rgba(255,255,255,.75)]' :
                   'bg-gradient-to-b from-white to-zinc-200',
                 inWinningLine ? 'outline outline-2 outline-yellow-300' : '',
                 wasCalled && !marked ? 'bg-blue-500 text-white' : '',
               ].join(' ')}
             >
-              {free ? (claimable ? <span className="animate-pulse rounded px-1 text-[clamp(7px,1.4vw,13px)] font-black text-yellow-100">BINGO</span> : labels.free) : value}
+              {free ? labels.free : value}
             </button>
           );
         }))}
       </div>
       {claimable && !card.locked && (
-        <button type="button" onClick={onClaim} disabled={claiming} className="mt-1 w-full animate-pulse rounded-lg bg-gradient-to-r from-yellow-200 via-red-500 to-yellow-300 py-1 text-xs font-black text-black">
+        <button type="button" onClick={onClaim} disabled={claiming} className="mt-1 w-full rounded-lg bg-gradient-to-r from-yellow-200 to-amber-500 py-1 text-xs font-black text-black">
           {claiming ? labels.claiming : 'BINGO'}
         </button>
       )}
@@ -350,20 +350,26 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   };
   const quickBuyTotal = bonusRound ? 0 : quickBuyCount * cardPrice;
   const quickBuyAllowed = bonusRound || phase === 'waiting';
-  const quickBuyInsufficient = !bonusRound && quickBuyTotal > balance;
-  const quickBuyOptions = bonusRound ? [1, 2, 3] : [1, 2, 5, 10, 15, 20, 30, 40];
+  const quickBuyInsufficient = bonusRound && quickBuyTotal > balance;
+  const quickBuyOptions = bonusRound ? [1, 2, 3] : [15, 25];
 
   useEffect(() => {
     if (bonusRound) setQuickBuyCount(count => Math.min(count, 3));
   }, [bonusRound]);
-  const addPreviewCard = async () => {
+  const addPreviewCards = async (count: number) => {
+    if (quickBuyBusy) return;
+    setQuickBuyBusy(true);
+    setQuickBuyMessage('');
     try {
-      const previews = await api.post<BingoCard[]>('/api/cards/preview', { count: 1 });
+      const previews = await api.post<BingoCard[]>('/api/cards/preview', { count });
       setDraftCards(current => [...current, ...previews]);
       setDraftMessage('');
       setQuickBuyOpen(false);
+      setQuickBuyCount(1);
     } catch (error) {
-      setQuickBuyMessage(error instanceof Error ? error.message : 'ካርቴላውን ማዘጋጀት አልተቻለም።');
+      setQuickBuyMessage(error instanceof Error ? error.message : 'ካርቴላዎቹን ማዘጋጀት አልተቻለም።');
+    } finally {
+      setQuickBuyBusy(false);
     }
   };
   const registerDraftCard = async (card: BingoCard) => {
@@ -670,33 +676,36 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               {bonusRound ? (
                 <p className="mb-3 rounded-lg border border-emerald-400/40 bg-emerald-950/40 p-2 text-center text-sm font-bold text-emerald-300">🎁 {t.bonusNotice}</p>
               ) : (
-                <p className="mb-3 text-xs text-yellow-100/80">{t.cardPrice}: {formatAmount(lang, cardPrice)} ብር</p>
+                <div className="mb-4 rounded-xl border border-yellow-500/30 bg-yellow-950/30 p-3 text-center">
+                  <p className="text-sm font-bold text-yellow-100">የካርቴላ ፓኬጅ ይምረጡ</p>
+                  <p className="mt-1 text-xs text-yellow-100/70">ካርቴላዎቹን በነፃ ይመልከቱ፤ REGISTER ሲጫኑ ብቻ የአንድ ካርቴላ ክፍያ ይፈጸማል።</p>
+                  <p className="mt-2 text-xs text-yellow-300">{t.cardPrice}: {formatAmount(lang, cardPrice)} ብር / ካርቴላ</p>
+                </div>
               )}
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {quickBuyOptions.map(count => (
-                  <button key={count} type="button" aria-pressed={quickBuyCount === count} onClick={() => setQuickBuyCount(count)} className={`rounded-xl border px-2 py-3 text-sm font-black transition ${quickBuyCount === count ? 'border-yellow-200 bg-yellow-400 text-black' : 'border-yellow-500/40 bg-black text-yellow-100 hover:bg-yellow-950'}`}>
-                    {count} {count === 1 ? t.card : t.cards}
+                  <button key={count} type="button" aria-pressed={quickBuyCount === count} onClick={() => setQuickBuyCount(count)} className={`rounded-xl border-2 px-3 py-4 text-base font-black transition ${quickBuyCount === count ? 'border-yellow-200 bg-yellow-400 text-black shadow-[0_0_18px_rgba(250,204,21,.3)]' : 'border-yellow-500/40 bg-black text-yellow-100 hover:bg-yellow-950'}`}>
+                    {count} ካርቴላ
                   </button>
                 ))}
               </div>
-              {!bonusRound && (
-                <>
-                  <div className="my-4 flex items-center justify-between border-t border-yellow-500/30 pt-3 text-sm">
-                    <span className="text-yellow-100/80">{t.totalPrice}</span>
-                    <strong className="text-xl font-black text-yellow-300">{formatAmount(lang, quickBuyTotal)} ብር</strong>
-                  </div>
-                  <div className="mb-3 flex items-center justify-between text-xs text-yellow-100/70">
-                    <span>{t.balance}</span><strong className="text-yellow-200">{formatAmount(lang, balance)} ብር</strong>
-                  </div>
-                </>
+              {bonusRound && (
+                <div className="my-4 flex items-center justify-between border-t border-yellow-500/30 pt-3 text-sm">
+                  <span className="text-yellow-100/80">{t.balance}</span><strong className="text-yellow-200">{formatAmount(lang, balance)} ብር</strong>
+                </div>
               )}
               {!quickBuyAllowed && <p role="status" className="mb-3 rounded-lg bg-amber-950/60 p-2 text-xs text-amber-200">{t.buyOnlyWaiting}</p>}
-              {!bonusRound && quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">{t.insufficient}</p>}
+              {bonusRound && quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">{t.insufficient}</p>}
               {quickBuyMessage && <p role="status" className="mb-3 text-xs font-bold text-yellow-300">{quickBuyMessage}</p>}
-              {!bonusRound && <button type="button" onClick={() => void addPreviewCard()} disabled={!quickBuyAllowed || quickBuyBusy} className="mt-2 w-full rounded-xl border border-yellow-400/60 bg-yellow-950/50 px-4 py-3 text-sm font-black text-yellow-200 disabled:opacity-40">＋ ካርቴላ አይተህ ጨምር (ነፃ ማየት)</button>}
-              <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="sticky bottom-0 z-10 mt-2 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
-                {quickBuyBusy ? t.buying : bonusRound ? t.getFreeCards : t.buyCards}
-              </button>
+              {bonusRound ? (
+                <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="sticky bottom-0 z-10 mt-3 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
+                  {quickBuyBusy ? t.buying : t.getFreeCards}
+                </button>
+              ) : (
+                <button type="button" onClick={() => void addPreviewCards(quickBuyCount)} disabled={!quickBuyAllowed || quickBuyBusy} className="sticky bottom-0 z-10 mt-3 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
+                  {quickBuyBusy ? '…' : 'ካርቴላዎቹን አሳይ'}
+                </button>
+              )}
             </section>
           </div>
         )}
@@ -719,7 +728,6 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               className="player-quick-buy-footer-cta min-w-0 shrink-0 rounded-xl px-2 py-2 text-center disabled:opacity-40"
             >
               <span className="block text-lg font-black leading-none" aria-hidden="true">＋</span>
-              <span className="block text-[9px] font-black sm:text-xs">{t.quickBuy}</span>
             </button>
             <button type="button" onClick={onGoToWallet} className="min-w-0 shrink-0 border-l border-yellow-500/50 px-2 text-left">
               <span className="flex items-center gap-1 text-lg leading-none text-yellow-400">▣ <span className="text-[9px] font-bold text-white sm:text-xs">{t.balance}</span></span>
