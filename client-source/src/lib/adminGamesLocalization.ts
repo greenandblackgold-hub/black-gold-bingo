@@ -2,7 +2,7 @@ import type { Lang } from '@/types/game';
 
 const games = {
   am: {
-    management:'የጨዋታ አስተዳደር', controls:'የጨዋታ ማዕከል ቁጥጥሮች', simulation:'የሙከራ ሁነታ ብቻ',
+    management:'የጨዋታ አስተዳደር', currency:'ብር', controls:'የጨዋታ ማዕከል ቁጥጥሮች', simulation:'የሙከራ ሁነታ ብቻ',
     maxPayout:'በእያንዳንዱ Keno ቲኬት / Aviator ውርርድ ከፍተኛ ክፍያ', enforced:'በሰርቨሩ በኩል ይተገበራል።',
     commission:'የኩባንያ ኮሚሽን', playerPool:'የተጫዋቾች ገንዘብ ገንዳ', poolNote:'Keno እና Aviator ክፍያዎች ከዙሩ ገንዘብ ገንዳ ብቻ ይከፈላሉ። የገንዘብ ማውጫ ብዜቶች ወዲያውኑ ይመዘገባሉ፤ Aviator ክፍያ ዙሩ ከተቋረጠ በኋላ ይገባል።',
     poolCap:'የዙር ገንዳ ገደብ በሰርቨሩ በኩል ተነቅቷል፤ ጠቅላላ ሽልማቶች ከተሰበሰበው ውርርድ የተጫዋቾች ድርሻ 40%–50% አይበልጡም።',
@@ -22,7 +22,7 @@ const games = {
     allUnavailable:'በአሁኑ ጊዜ ሁሉም ጨዋታዎች አይገኙም። እባክዎ ቆይተው ይመልከቱ።', statusBetting:'ውርርድ ክፍት ነው', statusSettled:'ዙሩ ተጠናቋል', statusCrashed:'ዙሩ ተቋርጧል', statusWaiting:'በመጠባበቅ ላይ', statusActive:'በሂደት ላይ', statusPending:'በመጠባበቅ ላይ', statusUnknown:'ያልታወቀ ሁኔታ', betsLabel:'ውርርዶች',
   },
   ti: {
-    management:'ምሕደራ ጸወታ', controls:'ቁጽጽር ማእከል ጸወታ', simulation:'ናይ ፈተነ ሞድ ጥራይ',
+    management:'ምሕደራ ጸወታ', currency:'ብር', controls:'ቁጽጽር ማእከል ጸወታ', simulation:'ናይ ፈተነ ሞድ ጥራይ',
     maxPayout:'ዝለዓለ ክፍሊት ንነፍሲ ወከፍ Keno ቲኬት / Aviator ውርርድ', enforced:'ብሰርቨር ይትግበር።',
     commission:'ኮሚሽን ኩባንያ', playerPool:'ገንዘብ ገንዳ ተጻወትቲ', poolNote:'ክፍሊት Kenoን Aviatorን ካብ ገንዳ ዙር ጥራይ ይኽፈል። ብዜት Cash Out ብቕጽበት ይምዝገብ፤ ክፍሊት Aviator ዙር ምስ ተቛረጸ ይኣቱ።',
     poolCap:'ገደብ ገንዳ ዙር ብሰርቨር ይትግበር፤ ድምር ሽልማት ካብ 40%–50% ድርሻ ተጻወትቲ ናይ ዝተኣከበ ውርርድ ኣይሓልፍን።',
@@ -42,7 +42,7 @@ const games = {
     allUnavailable:'ኣብዚ ሕጂ ኩሎም ጸወታታት ኣይርከቡን። በጃኹም ድሕሪ ግዜ ፈትሹ።', statusBetting:'ውርርድ ክፉት እዩ', statusSettled:'ዙር ተወዲኡ', statusCrashed:'ዙር ተቛሪጹ', statusWaiting:'ይጽበ ኣሎ', statusActive:'ኣብ ስራሕ', statusPending:'ይጽበ ኣሎ', statusUnknown:'ዘይፍለጥ ኩነታት', betsLabel:'ውርርድ',
   },
   en: {
-    management:'Games management', controls:'Games Center Controls', simulation:'SIMULATION ONLY',
+    management:'Games management', currency:'ETB', controls:'Games Center Controls', simulation:'SIMULATION ONLY',
     maxPayout:'Maximum payout per Keno ticket / Aviator bet', enforced:'Enforced server-side.',
     commission:'Company commission', playerPool:'player pool', poolNote:'Keno and Aviator pay from the round pool only. Cash Out multipliers are recorded immediately; Aviator wallet credits settle after the crash.',
     poolCap:'Round-level pool cap is enforced server-side; total prizes cannot exceed the configured 40%–50% player share of collected stakes.',
