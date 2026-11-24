@@ -6,7 +6,7 @@ import { minesLocale } from '@/lib/minesLocalization';
 
 const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-type Props = { onOpenBingo: () => void; onOpenKeno: () => void; onOpenAviator: () => void; onOpenMines: () => void; serverMode: boolean };
+type Props = { onOpenBingo: () => void; onOpenKeno: () => void; onOpenAviator: () => void; onOpenMines: () => void; onOpenHelp: () => void; serverMode: boolean };
 
 function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured = false, disabled = false, disabledLabel = '' }: {
   title: string; subtitle: string; detail: string; icon: 'bingo' | 'keno' | 'aviator' | 'mines' | 'virtual' | 'live'; onClick: () => void; openLabel: string; featured?: boolean; disabled?: boolean; disabledLabel?: string;
@@ -31,7 +31,7 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
   );
 }
 
-export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMines, serverMode }: Props) {
+export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMines, onOpenHelp, serverMode }: Props) {
   const { lang } = useLanguage();
   const t = gameUi.gamesCenter[lang];
   const mt = (key: Parameters<typeof minesLocale>[1]) => minesLocale(lang, key);
@@ -60,6 +60,11 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
         <p className="text-[10px] font-black uppercase tracking-[.34em] text-amber-400">BLACK GOLD PLC</p>
         <h1 className="mt-3 text-3xl font-black tracking-tight text-amber-50 sm:text-5xl">{t.title}</h1>
         <p className="mt-3 max-w-xl text-sm leading-6 text-amber-100/65 sm:text-base">{t.intro}</p>
+        <button type="button" onClick={onOpenHelp} className="relative mt-6 inline-flex min-h-12 items-center gap-3 rounded-xl border border-amber-300/45 bg-gradient-to-r from-amber-300/15 to-yellow-600/10 px-5 py-3 text-sm font-black text-amber-200 shadow-[0_8px_28px_rgba(212,175,55,.10)] transition hover:border-amber-200 hover:bg-amber-300/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300">
+          <span aria-hidden="true" className="grid h-7 w-7 place-items-center rounded-full border border-amber-300/40 text-base">✦</span>
+          <span>Black Gold AI</span>
+          <span aria-hidden="true" className="text-amber-400">→</span>
+        </button>
         {(!serverMode || availability) && <div className="mt-6 flex flex-wrap items-center gap-2">
           {(!serverMode || availability?.bingoEnabled) && <span className="rounded-full border border-amber-300/25 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">Bingo</span>}
           {(!serverMode || availability?.kenoEnabled) && <span className="rounded-full border border-amber-300/25 bg-black/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">Keno</span>}
