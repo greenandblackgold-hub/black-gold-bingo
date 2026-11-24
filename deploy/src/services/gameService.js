@@ -373,7 +373,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       let signedPreviewGrid = null;
       if (previewToken !== undefined && previewToken !== null) {
         const serial = String(requestedSerial ?? '');
-        if (n !== 1 || !/^\\d{5}$/.test(serial) || !isValidGrid(previewGrid) ||
+        if (n !== 1 || !/^\d{5}$/.test(serial) || !isValidGrid(previewGrid) ||
             !safeEqual(String(previewToken), signPreview(user.id, g.roundNumber, serial, previewGrid))) {
           throw new HttpError(400, 'invalid_preview', 'This prepared card could not be verified. Please prepare it again.');
         }
