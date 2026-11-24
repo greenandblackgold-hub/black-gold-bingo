@@ -42,9 +42,10 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
     if (!serverMode) return;
     let active = true;
     let pending = false;
+    let refreshQueued = false;
     const refreshAvailability = async () => {
-      // Never overlap settings requests: a slow response must not race a newer poll.
-      if (pending) return;
+      // Never overlap settings requests; queue an SSE invalidation that arrives mid-request.
+      if (pending) { refreshQueued = true; return; }
       pending = true;
       try {
         const value = await api.get<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minesEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings');
@@ -66,6 +67,10 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
         if (active) setAvailabilityError(t.loadError);
       } finally {
         pending = false;
+        if (active && refreshQueued) {
+          refreshQueued = false;
+          void refreshAvailability();
+        }
       }
     };
     const onAdminChange = () => void refreshAvailability();
