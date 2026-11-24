@@ -54,7 +54,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
     const screen = value.replace(/^#/, '');
     return screen === 'play' || screen === 'wallet' || screen === 'games' || screen === 'keno' || screen === 'aviator' || screen === 'mines' || screen === 'help'
       ? screen
-      : 'games';
+      : screen === '' ? 'help' : 'games';
   };
   const [tab, setTab] = useState<PlayerScreen>(() => readScreenFromHash(window.location.hash));
   useEffect(() => {
@@ -118,10 +118,10 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
   return (
     <div className="premium-ui min-h-screen">
       <AudioCallAnnouncer enabled={tab === 'play'} />
-      {generalEnabled && <AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} onLogout={onLogout} onOpenMenu={() => setMenuOpen(true)} onOpenSettings={() => setPlayerSettingsOpen(true)} hideControls={tab === 'play'} />}
+      {generalEnabled && tab !== 'help' && <AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} onLogout={onLogout} onOpenMenu={() => setMenuOpen(true)} onOpenSettings={() => setPlayerSettingsOpen(true)} hideControls={tab === 'play'} />}
       <main className={!generalEnabled ? 'mx-auto w-full max-w-6xl px-4 pt-4' : tab === 'keno' || tab === 'mines' ? 'mx-auto w-full max-w-none px-0 pt-0 pb-28' : tab === 'play' ? 'mx-auto w-full max-w-none px-2 pt-2 pb-28 sm:px-4 sm:pt-4' : tab === 'aviator' ? 'mx-auto w-full max-w-6xl px-3 pt-4 pb-28 sm:px-4 sm:pt-6' : 'mx-auto max-w-6xl px-4 pt-5 pb-28 sm:pt-8'}>
         {(!generalEnabled || tab === 'games') && <GamesCenter serverMode={SERVER_MODE} onOpenBingo={() => setTab('play')} onOpenKeno={() => setTab('keno')} onOpenAviator={() => setTab('aviator')} onOpenMines={() => setTab('mines')} onOpenHelp={() => setTab('help')} />}
-        {generalEnabled && tab === 'help' && <HelpCenter />}
+        {generalEnabled && tab === 'help' && <HelpCenter onEnterGames={() => setTab('games')} />}
         {generalEnabled && tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} settingsOpen={playerSettingsOpen} onSettingsOpenChange={setPlayerSettingsOpen} /></Suspense>}
         {generalEnabled && tab === 'keno' && <KenoGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} onOpenMenu={() => setMenuOpen(true)} />}
         {generalEnabled && tab === 'aviator' && <AviatorGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} />}
@@ -137,7 +137,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
           <div className="overflow-y-auto overscroll-contain px-4 pb-6"><PlayerFeatures onGoToWallet={() => { setMenuOpen(false); setTab('wallet'); }} menuOnly /></div>
         </section>
       </div>}
-      {generalEnabled && <BottomNav active={menuOpen ? 'menu' : tab === 'aviator' || tab === 'play' || tab === 'keno' || tab === 'mines' || tab === 'help' ? 'games' : tab} onChange={handleNavChange} />}
+      {generalEnabled && tab !== 'help' && <BottomNav active={menuOpen ? 'menu' : tab === 'aviator' || tab === 'play' || tab === 'keno' || tab === 'mines' || tab === 'help' ? 'games' : tab} onChange={handleNavChange} />}
     </div>
   );
 }
@@ -171,7 +171,7 @@ function ServerRouter() {
       </main>
     );
   }
-  return hash === ADMIN_HASH ? <AdminApp onExit={closeAdmin} /> : <PlayerShell onOpenAdmin={openAdmin} onLogout={logout} />;
+  return hash === ADMIN_HASH ? <AdminApp onExit={closeAdmin} /> : <PlayerShell onOpenAdmin={openAdmin} onLogout={() => { window.location.hash = ''; logout(); }} />;
 }
 
 /** Demo tree: browser-only data, no real accounts or money. */
