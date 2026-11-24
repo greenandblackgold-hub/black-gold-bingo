@@ -172,7 +172,7 @@ function BingoCardView({ labels, card, index, marks, called, pattern, claimable,
   const winningCells = useMemo(() => new Set((winning ?? []).map(([r, c]) => r + '-' + c)), [winning]);
 
   return (
-    <section className={`relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-1 shadow-xl ${accent.glow}`}>
+    <section className={`bingo-card-surface relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-1 shadow-xl ${accent.glow}`}>
       {draft ? (
         <button type="button" onClick={onRegister} disabled={registering} className={`flex w-full items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-1 text-base font-black text-white sm:text-xl disabled:opacity-60`}>
           {registering ? '…' : 'REGISTER'} · #{String(card.serial).padStart(5, '0')}
