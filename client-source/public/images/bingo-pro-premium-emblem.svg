@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 768" role="img" aria-labelledby="title desc">
+<title id="title">Bingo PRO — Play &amp; Win</title>
+<desc id="desc">Premium gold Bingo wordmark with a jeweled crown, numbered red, gold and blue bingo balls, and a red Play and Win ribbon.</desc>
+<defs>
+ <radialGradient id="bg" cx="50%" cy="44%" r="68%"><stop offset="0" stop-color="#421078"/><stop offset=".55" stop-color="#18052f"/><stop offset="1" stop-color="#080313"/></radialGradient>
+ <radialGradient id="glow"><stop stop-color="#ffdf65" stop-opacity=".42"/><stop offset="1" stop-color="#ffae00" stop-opacity="0"/></radialGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff9bd"/><stop offset=".2" stop-color="#ffdc58"/><stop offset=".52" stop-color="#ffad08"/><stop offset=".76" stop-color="#df7900"/><stop offset="1" stop-color="#fff0a0"/></linearGradient>
+ <linearGradient id="goldSide" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8a3a00"/><stop offset=".45" stop-color="#f3a000"/><stop offset="1" stop-color="#6c2700"/></linearGradient>
+ <linearGradient id="red" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ff9b86"/><stop offset=".35" stop-color="#ed252d"/><stop offset=".75" stop-color="#a90025"/><stop offset="1" stop-color="#61001d"/></linearGradient>
+ <linearGradient id="ballRed" x1=".15" y1="0" x2=".8" y2="1"><stop stop-color="#ffb2a0"/><stop offset=".32" stop-color="#f23c43"/><stop offset=".7" stop-color="#b90028"/><stop offset="1" stop-color="#510018"/></linearGradient>
+ <linearGradient id="ballBlue" x1=".15" y1="0" x2=".8" y2="1"><stop stop-color="#b6f8ff"/><stop offset=".3" stop-color="#20c8ff"/><stop offset=".7" stop-color="#0756d8"/><stop offset="1" stop-color="#071d71"/></linearGradient>
+ <linearGradient id="ballGold" x1=".15" y1="0" x2=".8" y2="1"><stop stop-color="#fff9c8"/><stop offset=".3" stop-color="#ffd74d"/><stop offset=".72" stop-color="#df8100"/><stop offset="1" stop-color="#713000"/></linearGradient>
+ <linearGradient id="ribbon" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ff6555"/><stop offset=".35" stop-color="#d80928"/><stop offset=".8" stop-color="#8f001e"/><stop offset="1" stop-color="#500018"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur in="SourceAlpha" stdDeviation="14"/><feOffset dy="13"/><feComponentTransfer><feFuncA type="linear" slope=".75"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <filter id="shine" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <filter id="soft" x="-30%" y="-30%" width="160%" height="180%"><feGaussianBlur stdDeviation="28"/></filter>
+ <radialGradient id="whiteBall"><stop stop-color="#fff"/><stop offset=".75" stop-color="#fff"/><stop offset="1" stop-color="#d9d4ff"/></radialGradient>
+</defs>
+<rect width="1024" height="768" rx="88" fill="url(#bg)"/>
+<ellipse cx="512" cy="370" rx="440" ry="330" fill="url(#glow)"/>
+<ellipse cx="512" cy="370" rx="430" ry="310" fill="none" stroke="#b65cff" stroke-opacity=".35" stroke-width="4"/>
+<g fill="#fff3b0" filter="url(#shine)">
+ <path d="M115 180l9 25 25 9-25 9-9 25-9-25-25-9 25-9z"/><path d="M906 177l7 20 20 7-20 7-7 20-7-20-20-7 20-7z"/>
+ <path d="M165 555l7 19 19 7-19 7-7 19-7-19-19-7 19-7z"/><path d="M850 555l7 19 19 7-19 7-7 19-7-19-19-7 19-7z"/>
+</g>
+<g opacity=".8" fill="#ffca47"><circle cx="88" cy="354" r="5"/><circle cx="934" cy="355" r="5"/><circle cx="245" cy="100" r="4"/><circle cx="780" cy="96" r="4"/><circle cx="290" cy="650" r="4"/><circle cx="738" cy="654" r="4"/></g>
+<!-- crown -->
+<g filter="url(#shadow)" stroke="#7c3500" stroke-width="12" stroke-linejoin="round">
+ <path d="M330 210L270 103L375 154L510 42L650 154L755 103L695 210Z" fill="url(#gold)"/>
+ <path d="M330 210Q510 265 695 210L676 270Q510 304 349 270Z" fill="url(#goldSide)"/>
+</g>
+<g fill="#fff3b0" stroke="#c56b00" stroke-width="7"><circle cx="270" cy="99" r="19"/><circle cx="375" cy="150" r="18"/><circle cx="510" cy="38" r="22"/><circle cx="650" cy="150" r="18"/><circle cx="755" cy="99" r="19"/></g>
+<g fill="#d71938" stroke="#fff1a1" stroke-width="4"><path d="M510 83l14 21-14 21-14-21z"/><path d="M375 180l12 18-12 18-12-18z"/><path d="M650 180l12 18-12 18-12-18z"/></g>
+<!-- bingo balls -->
+<g filter="url(#shadow)" stroke-width="13">
+ <circle cx="328" cy="285" r="91" fill="url(#ballRed)" stroke="#ffb1a4"/>
+ <circle cx="512" cy="268" r="98" fill="url(#ballGold)" stroke="#fff0a0"/>
+ <circle cx="696" cy="285" r="91" fill="url(#ballBlue)" stroke="#a5f6ff"/>
+</g>
+<g>
+ <circle cx="328" cy="285" r="66" fill="url(#whiteBall)" stroke="#fff" stroke-width="5"/>
+ <circle cx="512" cy="268" r="72" fill="url(#whiteBall)" stroke="#fff" stroke-width="5"/>
+ <circle cx="696" cy="285" r="66" fill="url(#whiteBall)" stroke="#fff" stroke-width="5"/>
+ <g font-family="DejaVu Sans,Arial,sans-serif" font-weight="900" fill="#141020" text-anchor="middle"><text x="328" y="312" font-size="82">7</text><text x="512" y="296" font-size="76">35</text><text x="696" y="312" font-size="82">58</text></g>
+</g>
+<!-- wordmark -->
+<g filter="url(#shadow)" text-anchor="middle" font-family="DejaVu Serif,Georgia,serif" font-weight="900" font-style="italic">
+ <text x="512" y="496" font-size="220" fill="#5b1800" stroke="#5b1800" stroke-width="24" paint-order="stroke">BINGO</text>
+ <text x="512" y="476" font-size="220" fill="url(#gold)" stroke="#a34b00" stroke-width="13" paint-order="stroke">BINGO</text>
+ <text x="512" y="465" font-size="220" fill="none" stroke="#fff4a6" stroke-opacity=".8" stroke-width="3">BINGO</text>
+</g>
+<!-- ribbon -->
+<g filter="url(#shadow)">
+ <path d="M195 535L130 577L235 593L250 668L330 630Q512 678 694 630L774 668L789 593L894 577L829 535L785 552Q512 598 239 552Z" fill="url(#ribbon)" stroke="#ffca42" stroke-width="13" stroke-linejoin="round"/>
+ <path d="M229 559Q512 620 795 559" fill="none" stroke="#ffb1a0" stroke-opacity=".75" stroke-width="7"/>
+ <text x="512" y="624" text-anchor="middle" font-family="DejaVu Sans,Arial,sans-serif" font-size="76" font-weight="900" fill="#fff" stroke="#7e001d" stroke-width="4" paint-order="stroke">PLAY &amp; WIN</text>
+</g>
+<g fill="#fff2a6" stroke="#a95000" stroke-width="5"><path d="M184 599l13 25 28 4-20 20 5 28-26-13-25 13 5-28-20-20 28-4z"/><path d="M840 599l13 25 28 4-20 20 5 28-26-13-25 13 5-28-20-20 28-4z"/></g>
+</svg>
