@@ -27,6 +27,7 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
   const c = copy[lang];
   const [state, setState] = useState<KenoState | null>(null);
   const stateRequestInFlight = useRef(false);
+  const stateRefreshQueued = useRef(false);
   const [history, setHistory] = useState<HistoryRound[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
   const [queuedTickets, setQueuedTickets] = useState<KenoTicketDraft[]>([]);
@@ -45,7 +46,11 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
   const [tab, setTab] = useState<Tab>('game');
 
   const loadState = useCallback(async () => {
-    if (stateRequestInFlight.current) return;
+    // Serialize polling and admin-triggered refreshes without losing an invalidation.
+    if (stateRequestInFlight.current) {
+      stateRefreshQueued.current = true;
+      return;
+    }
     stateRequestInFlight.current = true;
     try {
       const next = await api.get<KenoState>('/api/games/keno/state');
@@ -53,7 +58,13 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
       setOffset(next.serverTime - Date.now());
       setError('');
     } catch { setError(t.loadError); }
-    finally { stateRequestInFlight.current = false; }
+    finally {
+      stateRequestInFlight.current = false;
+      if (stateRefreshQueued.current) {
+        stateRefreshQueued.current = false;
+        void loadState();
+      }
+    }
   }, [t.loadError]);
   useEffect(() => {
     if (!state) return;
