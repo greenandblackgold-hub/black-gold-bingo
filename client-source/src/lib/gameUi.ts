@@ -6,7 +6,7 @@ export const gameUi = {
   gamesCenter: {
     am: {
       title: 'የጨዋታዎች ማዕከል',
-      intro: 'አንድ ማዕከል፣ ሦስት የጨዋታ አማራጮች። የሚፈልጉትን ጨዋታ ይምረጡና ይደሰቱ።',
+      intro: 'አንድ ማዕከል፣ አራት የጨዋታ አማራጮች። የሚፈልጉትን ጨዋታ ይምረጡና ይደሰቱ።',
       unifiedWallet: 'የBingo፣ Keno እና Aviator የጋራ ቦርሳ',
       demoWallet: 'የጨዋታ ሙከራ ቦርሳ',
       loadingBalance: 'ሂሳብ በመጫን ላይ…',
@@ -28,11 +28,11 @@ export const gameUi = {
       loadingAvailability: 'መገኘቱን በመፈተሽ ላይ…',
       openGame: 'ጨዋታውን ክፈት',
       loadError: 'የጨዋታውን መገኘት ማምጣት አልተቻለም። እባክዎ ገጹን ያድሱ።',
-      demoNotice: 'Keno እና Aviator ሊወጡ በማይችሉ የሙከራ ብድሮች ብቻ ይሰራሉ። እውነተኛ ገንዘብ ወይም የገንዘብ ሽልማት አይኖርም።',
+      demoNotice: 'Keno፣ Aviator እና Mines ሊወጡ በማይችሉ የሙከራ ብድሮች ብቻ ይሰራሉ። እውነተኛ ገንዘብ ወይም የገንዘብ ሽልማት አይኖርም።',
     },
     ti: {
       title: 'ማእከል ጸወታታት',
-      intro: 'ሓደ ማእከል፣ ሰለስተ ኣማራጺታት ጸወታ። ዝደለኹሞ ጸወታ ምረጹን ተዘናግዑን።',
+      intro: 'ሓደ ማእከል፣ ኣርባዕተ ኣማራጺታት ጸወታ። ዝደለኹሞ ጸወታ ምረጹን ተዘናግዑን።',
       unifiedWallet: 'ሓባራዊ ቦርሳ Bingo፣ Keno እና Aviator',
       demoWallet: 'ናይ ፈተነ ቦርሳ ጸወታ',
       loadingBalance: 'ሒሳብ ይጽዓን ኣሎ…',
@@ -54,11 +54,11 @@ export const gameUi = {
       loadingAvailability: 'ምርካቡ ይምርመር ኣሎ…',
       openGame: 'ጸወታ ክፈት',
       loadError: 'ምርካብ ጸወታ ምምጻእ ኣይተኻእለን። በጃኹም ገጽ ኣሐድሱ።',
-      demoNotice: 'Kenoን Aviatorን ብዘይወጽእ ናይ ፈተነ ክረዲት ጥራይ ይሰርሑ። ሓቀኛ ገንዘብ ወይ ሽልማት ገንዘብ የለን።',
+      demoNotice: 'Kenoን Aviatorን Minesን ብዘይወጽእ ናይ ፈተነ ክረዲት ጥራይ ይሰርሑ። ሓቀኛ ገንዘብ ወይ ሽልማት ገንዘብ የለን።',
     },
     en: {
       title: 'GAMES CENTER',
-      intro: 'One destination. Three experiences. Choose your game and enjoy the Black Gold experience.',
+      intro: 'One destination. Four experiences. Choose your game and enjoy the Black Gold experience.',
       unifiedWallet: 'Unified Bingo + Keno + Aviator Wallet',
       demoWallet: 'Games Demo Wallet',
       loadingBalance: 'Loading balance…',
@@ -80,7 +80,7 @@ export const gameUi = {
       loadingAvailability: 'Loading availability…',
       openGame: 'Open game',
       loadError: 'Game availability could not be loaded. Please refresh.',
-      demoNotice: 'Keno and Aviator currently use non-redeemable simulation credits. No real-money betting or cash prizes are enabled.',
+      demoNotice: 'Keno, Aviator and Mines use non-redeemable simulation credits. No real-money betting or cash prizes are enabled.',
     },
   },
   keno: {
