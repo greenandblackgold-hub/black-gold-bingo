@@ -58,7 +58,7 @@ function makeRecord(round: Round, result: 'won' | 'lost', payout: number): Round
 }
 
 export function MinesGame() {
-  const { lang } = useLanguage();
+  const { lang, setLang } = useLanguage();
   const t = (key: Parameters<typeof minesLocale>[1], values: Record<string, string | number> = {}) => minesLocale(lang, key, values);
   const formatMoney = (value: number) => money(value, lang);
   const [saved, setSaved] = useState(readSaved);
