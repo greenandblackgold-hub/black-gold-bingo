@@ -21,7 +21,6 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
       ) : (
         <span className={icon === 'keno' ? 'games-center-artwork relative mt-1 block h-36 w-full shrink-0 overflow-hidden rounded-2xl border border-lime-400/35 bg-[#00110f] p-1 shadow-[inset_0_1px_rgba(255,255,255,.08)] sm:h-40' : 'relative mt-1 grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]'}>
           {icon === 'keno' && <img loading="eager" decoding="async" draggable={false} src="/images/fast-keno-card-v4.jpg" alt="FAST KENO — Kiza.bet" className="block h-full w-full min-h-0 min-w-0 object-contain" />}
-          {icon === 'mines' && <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="6"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8m0-14.2-2.8 2.8m-8.6 8.6-2.8 2.8"/></svg>}
         </span>
       )}
       {disabled && <span className="relative mt-3 self-start rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-amber-200">{disabledLabel}</span>}
