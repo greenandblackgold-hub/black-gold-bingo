@@ -21,33 +21,29 @@ export function SmsDepositPanel() {
   const { lang } = useLanguage();
   const t = copy[lang] ?? copy.en;
   const [provider, setProvider] = useState<'Telebirr' | 'CBE'>('Telebirr');
-  const [amountText, setAmountText] = useState('100');
-  const [reference, setReference] = useState('');
+  const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [request, setRequest] = useState<DepositRequest | null>(null);
   const [status, setStatus] = useState<DepositStatus | null>(null);
 
   const submit = async () => {
-    const amount = Number(amountText);
-    if (!Number.isFinite(amount) || amount < 10 || amount > 10000 || !/^\\d+(?:\\.\\d{1,2})?$/.test(amountText)) {
-      setError(t.invalid);
-      return;
-    }
-    if (!/^[A-Za-z0-9][A-Za-z0-9_-]{5,63}$/.test(reference.trim())) {
-      setError(t.refInvalid);
+    if (message.trim().length < 20 || message.trim().length > 4000) {
+      setError(t.messageInvalid);
       return;
     }
     setBusy(true);
     setError('');
     try {
       const created = await api.post<DepositRequest>('/api/simulation/deposits', {
-        amount, reference: reference.trim(), provider,
+        provider,
+        message: message.trim(),
       });
       setRequest(created);
       setStatus('pending');
     } catch (e) {
       if (e instanceof ApiError && e.code === 'reference_used') setError(t.used);
+      else if (e instanceof ApiError && e.code === 'invalid_sms_message') setError(t.messageInvalid);
       else if (e instanceof ApiError && e.code === 'invalid_amount') setError(t.invalid);
       else if (e instanceof ApiError && e.code === 'invalid_reference') setError(t.refInvalid);
       else setError(t.generic);
@@ -71,18 +67,6 @@ export function SmsDepositPanel() {
     }
   };
 
-  useEffect(() => {
-    if (!request || status !== 'pending') return;
-    const timer = window.setInterval(() => {
-      void api.get<{ status: DepositStatus }>(`/api/simulation/deposits/${encodeURIComponent(request.reference)}`)
-        .then((result) => {
-          setStatus(result.status);
-          if (result.status === 'success') window.location.reload();
-        }).catch(() => undefined);
-    }, 5000);
-    return () => window.clearInterval(timer);
-  }, [request, status]);
-
   const statusText = status === 'success' ? t.success
     : status === 'failed' ? t.failed
     : status === 'amount_mismatch' ? t.mismatch
@@ -92,17 +76,18 @@ export function SmsDepositPanel() {
     : t.unknown;
 
   return (
-    <section className="rounded-xl border border-gold-600/30 bg-gradient-to-b from-white/[0.045] to-transparent p-3 shadow-[0_10px_28px_rgba(0,0,0,0.18)] sm:p-4" aria-labelledby="simulation-wallet-title">
-      <h2 id="simulation-wallet-title" className="mb-3 text-base font-bold text-gold-300">{t.title}</h2>
+    <section className="group relative overflow-hidden rounded-[1.5rem] border border-gold-500/25 bg-[#0b0b0b] p-4 shadow-[0_18px_55px_rgba(0,0,0,.28)] ring-1 ring-white/[0.035] sm:p-5" aria-labelledby="simulation-wallet-title">
+      <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-gold-400/[0.05] blur-3xl" />
+      <h2 id="simulation-wallet-title" className="relative mb-4 flex items-center gap-2 text-base font-extrabold tracking-wide text-gold-200 sm:text-lg"><span className="grid h-8 w-8 place-items-center rounded-xl border border-gold-400/20 bg-gold-400/10 text-sm text-gold-300">＋</span>{t.title}</h2>
       {!request ? (
-        <div className="space-y-3">
+        <div className="relative space-y-3">
           <div>
             <label htmlFor="simulation-deposit-provider" className="mb-1 block text-xs text-gold-500">{t.provider}</label>
             <select id="simulation-deposit-provider" className={inputClass} value={provider} onChange={(event) => setProvider(event.target.value as 'Telebirr' | 'CBE')} disabled={busy}>
               <option value="Telebirr">Telebirr</option><option value="CBE">Commercial Bank of Ethiopia</option>
             </select>
           </div>
-          <div className="rounded-lg border border-gold-700/40 bg-black/25 p-3 text-xs">
+          <div className="rounded-xl border border-gold-700/30 bg-black/35 p-3.5 text-xs sm:p-4">
             <p className="mb-2 font-semibold text-gold-300">{t.sendTo}</p>
             {provider === 'Telebirr' ? (
               <dl className="space-y-1">
@@ -117,15 +102,12 @@ export function SmsDepositPanel() {
             )}
           </div>
           <div>
-            <label htmlFor="simulation-deposit-amount" className="mb-1 block text-xs text-gold-500">{t.amount}</label>
-            <input id="simulation-deposit-amount" className={inputClass} inputMode="decimal" autoComplete="off" placeholder="100" value={amountText} onChange={(event) => setAmountText(event.target.value.replace(/[^0-9.]/g, '').slice(0, 10))} disabled={busy} />
-          </div>
-          <div>
-            <label htmlFor="simulation-deposit-reference" className="mb-1 block text-xs text-gold-500">{t.reference}</label>
-            <input id="simulation-deposit-reference" className={inputClass} autoComplete="off" maxLength={64} placeholder={t.placeholder} value={reference} onChange={(event) => setReference(event.target.value.replace(/[^A-Za-z0-9_-]/g, '').toUpperCase().slice(0, 64))} disabled={busy} />
+            <label htmlFor="simulation-deposit-message" className="mb-1 block text-xs text-gold-500">{t.message}</label>
+            <textarea id="simulation-deposit-message" className={`${inputClass} min-h-20 resize-y`} autoComplete="off" maxLength={4000} placeholder={t.messagePlaceholder} value={message} onChange={(event) => setMessage(event.target.value)} disabled={busy} />
+            <p className="mt-1 text-[11px] leading-snug text-gold-700">{t.messageHelp}</p>
           </div>
           {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
-          <button type="button" onClick={submit} disabled={busy} className="w-full rounded-lg bg-gradient-to-r from-gold-300 via-gold-500 to-gold-600 py-2.5 text-sm font-bold text-darkbg shadow-md shadow-gold-900/20 transition duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:ring-offset-2 focus-visible:ring-offset-darkbg">
+          <button type="button" onClick={submit} disabled={busy} className="w-full rounded-lg bg-gradient-to-r from-gold-300 via-gold-500 to-gold-600 py-2.5 text-sm font-bold text-darkbg shadow-md shadow-gold-900/20 transition duration-200 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:ring-offset-2 focus-visible:ring-offset-darkbg disabled:cursor-not-allowed disabled:opacity-50">
             {busy ? t.sending : t.submit}
           </button>
           <p className="text-[11px] leading-snug text-gold-600">{t.note}</p>
