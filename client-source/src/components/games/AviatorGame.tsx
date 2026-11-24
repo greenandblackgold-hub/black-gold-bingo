@@ -117,6 +117,42 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
     if (state?.status) setPreviousStatus(state.status);
   }, [state?.status]);
 
+  // A continuous, low-pass-filtered turbine sound runs only while the aircraft is flying.
+  useEffect(() => {
+    if (!soundOn || state?.status !== 'flying') return;
+    const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const turbine = ctx.createOscillator();
+    const lowRumble = ctx.createOscillator();
+    const filter = ctx.createBiquadFilter();
+    const engineGain = ctx.createGain();
+    turbine.type = 'sawtooth';
+    turbine.frequency.setValueAtTime(92, ctx.currentTime);
+    turbine.frequency.linearRampToValueAtTime(138, ctx.currentTime + 2);
+    lowRumble.type = 'triangle';
+    lowRumble.frequency.setValueAtTime(48, ctx.currentTime);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(320, ctx.currentTime);
+    engineGain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    engineGain.gain.linearRampToValueAtTime(0.075, ctx.currentTime + 0.35);
+    turbine.connect(filter);
+    lowRumble.connect(filter);
+    filter.connect(engineGain);
+    engineGain.connect(ctx.destination);
+    turbine.start();
+    lowRumble.start();
+    if (ctx.state === 'suspended') void ctx.resume();
+    return () => {
+      const stopAt = ctx.currentTime + 0.12;
+      engineGain.gain.cancelScheduledValues(ctx.currentTime);
+      engineGain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.035);
+      turbine.stop(stopAt);
+      lowRumble.stop(stopAt);
+      window.setTimeout(() => { void ctx.close(); }, 180);
+    };
+  }, [soundOn, state?.status]);
+
   const statusLabel = (status: string) => status === 'cashed_out' ? t.cashedOut : status === 'lost' ? t.lost : status === 'active' ? t.active : t.settling;
   const displayedBets = tab === 'mine'
     ? (state?.myBets ?? []).map((bet) => ({ player: t.you, stakeEtb: bet.stakeEtb, status: bet.status, multiplier: bet.multiplier, payoutEtb: bet.payoutEtb }))
