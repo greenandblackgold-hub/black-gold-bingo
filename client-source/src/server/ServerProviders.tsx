@@ -124,6 +124,7 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
     const hidden = loadHiddenCards(user?.id);
     hiddenCardIdsRef.current = hidden;
     setHiddenCardIds(hidden);
+    setHiddenCardsLoadedFor(user?.id ?? null);
     const cached = loadCardCache(user?.id);
     const hiddenSet = new Set(hidden);
     setCards(cached.filter(card => !hiddenSet.has(card.id)));
