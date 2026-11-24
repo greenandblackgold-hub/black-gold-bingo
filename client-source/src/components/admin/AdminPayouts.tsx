@@ -3,9 +3,9 @@ import { useLanguage } from '@/context/LanguageContext';
 import { api, ApiError } from '@/lib/api';
 
 const TEXT = {
-  am: { title: 'የገንዘብ ማውጫ ጥያቄዎች', empty: 'ምንም ጥያቄ የለም', approve: 'ላክ', reject: 'ውድቅ', refresh: 'ሁኔታ አድስ', reload: 'አድስ', stats: 'ማጠቃለያ', users: 'ተጫዋቾች', cards: 'የዚህ ዙር ካርዶች', pot: 'ድምር (ብር)', pending: 'በመጠባበቅ ላይ', processing: 'በመላክ ላይ', err: 'አልተሳካም' },
-  ti: { title: 'ሕቶታት ምውጻእ ገንዘብ', empty: 'ዝኾነ ሕቶ የለን', approve: 'ስደድ', reject: 'ንጸግ', refresh: 'ኩነታት ኣሐድስ', reload: 'ኣሐድስ', stats: 'ጸብጻብ', users: 'ተጻዋቲ', cards: 'ካርዳት እዚ ዙር', pot: 'ድምር (ብር)', pending: 'ይጽበ ኣሎ', processing: 'ይለኣኽ ኣሎ', err: 'ኣይተዓወተን' },
-  en: { title: 'Cash-out requests', empty: 'No requests', approve: 'Pay', reject: 'Reject', refresh: 'Check status', reload: 'Reload', stats: 'Overview', users: 'Players', cards: 'Cards this round', pot: 'Pot (ETB)', pending: 'Pending', processing: 'Sending', err: 'Failed' },
+  am: { title: 'የገንዘብ ማውጫ ጥያቄዎች', empty: 'ምንም ጥያቄ የለም', approve: 'ክፍያ ፈጽም', reject: 'ውድቅ አድርግ', refresh: 'ሁኔታ አድስ', reload: 'አድስ', stats: 'ማጠቃለያ', users: 'ተጫዋቾች', cards: 'የዚህ ዙር ካርዶች', pot: 'ድምር (ብር)', pending: 'በመጠባበቅ ላይ', processing: 'በመላክ ላይ', paid: 'ተከፍሏል', rejected: 'ውድቅ ተደርጓል', failed: 'አልተሳካም', bank: 'ባንክ', currency: 'ብር', err: 'አልተሳካም' },
+  ti: { title: 'ሕቶታት ምውጻእ ገንዘብ', empty: 'ዝኾነ ሕቶ የለን', approve: 'ክፍሊት ፈጽም', reject: 'ንጸግ', refresh: 'ኩነታት ኣሐድስ', reload: 'ኣሐድስ', stats: 'ጸብጻብ', users: 'ተጻዋቲ', cards: 'ካርዳት እዚ ዙር', pot: 'ድምር (ብር)', pending: 'ይጽበ ኣሎ', processing: 'ኣብ ምኽፋል ሂደት', paid: 'ተኸፊሉ', rejected: 'ተነጺጉ', failed: 'ኣይተዓወተን', bank: 'ባንኪ', currency: 'ብር', err: 'ኣይተዓወተን' },
+  en: { title: 'Cash-out requests', empty: 'No requests', approve: 'Mark paid', reject: 'Reject', refresh: 'Check status', reload: 'Reload', stats: 'Overview', users: 'Players', cards: 'Cards this round', pot: 'Pot (ETB)', pending: 'Pending', processing: 'Processing', paid: 'Paid', rejected: 'Rejected', failed: 'Failed', bank: 'Bank', currency: 'ETB', err: 'Failed' },
 } as const;
 
 interface Row {
@@ -82,10 +82,10 @@ export function AdminPayouts() {
             {rows.map((w) => (
               <li key={w.id} className="rounded-xl bg-white/[0.04] p-3">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-lg font-black tabular-nums text-gold-400">{w.amount.toFixed(2)} ETB</span>
-                  <span className="text-xs text-gold-500">{w.status === 'pending' ? t.pending : t.processing}</span>
+                  <span className="text-lg font-black tabular-nums text-gold-400">{w.amount.toFixed(2)} {t.currency}</span>
+                  <span className="text-xs text-gold-500">{w.status === 'pending' ? t.pending : w.status === 'processing' ? t.processing : w.status === 'paid' ? t.paid : w.status === 'rejected' ? t.rejected : t.failed}</span>
                 </div>
-                <p className="mt-1 text-sm text-gold-300">{w.accountName} · {w.accountNumber} · bank {w.bankCode}</p>
+                <p className="mt-1 text-sm text-gold-300">{w.accountName} · {w.accountNumber} · {t.bank} {w.bankCode}</p>
                 {w.note && <p className="mt-1 text-xs text-red-300">{w.note}</p>}
                 <div className="mt-2 flex gap-2">
                   {w.status === 'pending' ? (
