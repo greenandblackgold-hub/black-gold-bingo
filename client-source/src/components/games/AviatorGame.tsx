@@ -10,6 +10,11 @@ type BetPanel = { amount: string; requestId: string; betId: string; busy: boolea
 const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const makeRequestId = () => 'aviator_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
 const freshPanel = (): BetPanel => ({ amount: '10.00', requestId: '', betId: '', busy: false, autoCashOutMultiplier: '' });
+const AVIATOR_SOUND_KEY = 'black-gold-aviator-sound-enabled';
+const readSavedSoundPreference = () => {
+  try { return typeof window !== 'undefined' && window.localStorage.getItem(AVIATOR_SOUND_KEY) === 'true'; }
+  catch { return false; }
+};
 
 export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator' | 'mines') => void }) {
   const { lang } = useLanguage();
@@ -22,7 +27,7 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [tab, setTab] = useState<'all' | 'mine' | 'top'>('all');
-  const [soundOn, setSoundOn] = useState(false);
+  const [soundOn, setSoundOn] = useState(readSavedSoundPreference);
   const audioContextRef = useRef<AudioContext | null>(null);
   const getAudioContext = () => {
     const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -31,11 +36,31 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
     return audioContextRef.current;
   };
   const toggleSound = () => {
-    if (!soundOn) {
+    const next = !soundOn;
+    if (next) {
       try { const ctx = getAudioContext(); if (ctx?.state === 'suspended') void ctx.resume(); } catch { /* browser audio may be unavailable */ }
-      setSoundOn(true);
-    } else setSoundOn(false);
+    }
+    try { window.localStorage.setItem(AVIATOR_SOUND_KEY, String(next)); } catch { /* storage may be unavailable */ }
+    setSoundOn(next);
   };
+
+  // Browsers may block audio autoplay after a full refresh. Keep the saved ON
+  // preference and resume the audio context on the player's first interaction.
+  useEffect(() => {
+    if (!soundOn) return;
+    const resumeAudio = () => {
+      try {
+        const ctx = getAudioContext();
+        if (ctx?.state === 'suspended') void ctx.resume().catch(() => undefined);
+      } catch { /* browser audio may be unavailable */ }
+    };
+    window.addEventListener('pointerdown', resumeAudio, { once: true });
+    window.addEventListener('keydown', resumeAudio, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', resumeAudio);
+      window.removeEventListener('keydown', resumeAudio);
+    };
+  }, [soundOn]);
 
   const loadState = useCallback(async () => {
     try {
