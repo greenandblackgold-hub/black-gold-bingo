@@ -28,6 +28,19 @@ async function fixture() {
   return { repo, user, service, advance: (ms) => { clock += ms; }, time: () => clock };
 }
 
+test('Keno state reuses its settings snapshot for the round tick', async () => {
+  const f = await fixture();
+  const originalGetSettings = f.repo.getGameHubSettings.bind(f.repo);
+  let settingsReads = 0;
+  f.repo.getGameHubSettings = async () => {
+    settingsReads += 1;
+    return originalGetSettings();
+  };
+
+  await f.service.getState('keno', f.user);
+  assert.equal(settingsReads, 1, 'one state poll should read the Keno settings document once');
+});
+
 test('Keno uses ETB 2 minimum while Aviator keeps its independent ETB 5 minimum', async () => {
   const f = await fixture();
   const keno = await f.service.getState('keno', f.user);
