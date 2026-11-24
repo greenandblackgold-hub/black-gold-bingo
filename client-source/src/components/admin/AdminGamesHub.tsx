@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, ApiError } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import { adminGamesLocale } from '@/lib/adminGamesLocalization';
 
@@ -40,13 +40,13 @@ export function AdminGamesHub({ activeGame }: { activeGame: HostGameSection }) {
       setAviatorSeconds(String(next.settings.aviatorBettingSeconds));
       setAnnouncementText(next.settings.announcementText ?? '');
       setError('');
-    } catch (e) { setError(e instanceof ApiError ? e.message : t('loadError')); }
+    } catch { setError(t('loadError')); }
   }, [lang]);
   useEffect(() => { void load(); }, [load]);
   const save = async (patch: Record<string, unknown>) => {
     setBusy(true); setError(''); setNotice('');
     try { await api.post('/api/admin/games/settings', patch); setNotice(t('saved')); await load(); }
-    catch (e) { setError(e instanceof ApiError ? e.message : t('saveError')); }
+    catch { setError(t('saveError')); }
     finally { setBusy(false); }
   };
   const card = 'rounded-xl border border-amber-400/15 bg-black/40 p-3';
