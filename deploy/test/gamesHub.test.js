@@ -38,7 +38,27 @@ test('Keno state reuses its settings snapshot for the round tick', async () => {
   };
 
   await f.service.getState('keno', f.user);
-  assert.equal(settingsReads, 1, 'one state poll should read the Keno settings document once');
+  await f.service.getState('keno', f.user);
+  assert.equal(settingsReads, 1, 'repeated Keno state requests reuse the short-lived settings cache');
+});
+
+test('Keno scheduler does not poll MongoDB on every 250ms Aviator tick', async () => {
+  const f = await fixture();
+  const originalGetCurrentRound = f.repo.getCurrentGameHubRound.bind(f.repo);
+  let kenoRoundReads = 0;
+  f.repo.getCurrentGameHubRound = async (game) => {
+    if (game === 'keno') kenoRoundReads += 1;
+    return originalGetCurrentRound(game);
+  };
+
+  try {
+    await f.service.resume();
+    assert.equal(kenoRoundReads, 1, 'startup initializes the active Keno round once');
+    await new Promise((resolve) => setTimeout(resolve, 650));
+    assert.equal(kenoRoundReads, 1, 'the 250ms scheduler skips Keno until its next round boundary');
+  } finally {
+    f.service.stop();
+  }
 });
 
 test('Keno bet submission reuses the scheduler-confirmed round ID without a preflight database read', async () => {
