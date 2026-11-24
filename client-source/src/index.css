@@ -602,15 +602,15 @@ body { min-height: 100vh; min-height: 100dvh; }
   color: #100c04 !important;
   box-shadow: 0 0 10px rgba(246,215,122,.42), inset 0 1px 0 rgba(255,255,255,.7) !important;
 }
-.premium-ui .keno-reference-page .keno-drawn-ball:last-child {
-  animation: keno-latest-gold-flash 900ms ease-in-out infinite !important;
+.premium-ui .keno-reference-page .keno-drawn-ball.is-latest {
+  animation: keno-latest-gold-flash 480ms ease-out 1 both !important;
   border-color: #fff0b8 !important;
 }
 .premium-ui .keno-reference-page .keno-live-ball {
   border-color: #fff0b8 !important;
   background: radial-gradient(circle at 32% 22%, #fff0b8, #d6ad45 48%, #5b3e0d 82%) !important;
   color: #100c04 !important;
-  animation: keno-latest-gold-flash 900ms ease-in-out infinite !important;
+  animation: keno-latest-gold-flash 480ms ease-out 1 both !important;
 }
 @keyframes keno-latest-gold-flash {
   0%, 100% {
@@ -639,11 +639,11 @@ body { min-height: 100vh; min-height: 100dvh; }
   background: linear-gradient(145deg, #211b0e, #100e09) !important;
   border-color: rgba(214,173,69,.26) !important;
 }
-.premium-ui .keno-reference-page .keno-drawn-ball:last-child {
+.premium-ui .keno-reference-page .keno-drawn-ball.is-latest {
   background: radial-gradient(circle at 32% 22%, #fff0b8, #d6ad45 48%, #5b3e0d 82%) !important;
   color: #100c04 !important;
   border-color: #fff0b8 !important;
-  animation: keno-latest-gold-flash 900ms ease-in-out infinite !important;
+  animation: keno-latest-gold-flash 480ms ease-out 1 both !important;
 }
 .premium-ui .keno-reference-page [class*="text-emerald-"],
 .premium-ui .keno-reference-page [class*="text-green-"] {
@@ -1262,7 +1262,7 @@ body { color: #f7edcf; background: #030303 !important; }
 .premium-ui .keno-reference-page .keno-tabs button[aria-current=page]{border-color:#f4d47c!important;color:#f4d47c!important}.premium-ui .keno-reference-page .keno-tabs button{color:#bfae83}
 .premium-ui .keno-reference-page .keno-counts{background:#080806!important;color:#b8b2a5!important}.premium-ui .keno-reference-page .keno-counts b{color:#f4d47c!important}
 .premium-ui .keno-reference-page article{border-color:rgba(214,173,69,.19)!important;background:#100f0c!important}
-.premium-ui .keno-reference-page .keno-live-ball,.premium-ui .keno-reference-page .keno-drawn-ball:last-child{background:radial-gradient(circle at 32% 22%,#fff0b8,#d6ad45 48%,#5b3e0d 82%)!important;color:#100c04!important;border-color:#fff0b8!important}
+.premium-ui .keno-reference-page .keno-live-ball,.premium-ui .keno-reference-page .keno-drawn-ball.is-latest{background:radial-gradient(circle at 32% 22%,#fff0b8,#d6ad45 48%,#5b3e0d 82%)!important;color:#100c04!important;border-color:#fff0b8!important}
 .premium-ui .keno-reference-page .keno-selection-count{background:radial-gradient(circle at 30% 25%,#fff0b8,#d6ad45 55%,#5b3e0d)!important;color:#100c04!important}
 @media(max-width:380px){.premium-ui .keno-reference-page{padding-inline:6px}.premium-ui .keno-reference-page .keno-topbar{grid-template-columns:62px minmax(0,1fr) 32px;gap:5px;padding-inline:7px}.keno-account{gap:4px;padding-inline:5px;font-size:9px}.premium-ui .keno-reference-page .keno-stake-controls{grid-template-columns:minmax(0,1fr) 66px 66px}.premium-ui .keno-reference-page .keno-tabs{gap:9px;font-size:10px}}
 @media(min-width:600px){.premium-ui .keno-reference-page{max-width:480px!important}}
