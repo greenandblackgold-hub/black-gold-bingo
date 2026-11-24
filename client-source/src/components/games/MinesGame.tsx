@@ -86,7 +86,7 @@ export function MinesGame() {
 
   const visibleTiles = useMemo(() => {
     if (!round) return new Set<number>();
-    if (round.status !== 'active') return new Set<number>([...round.opened, ...round.mineTiles]);
+    if (round.status !== 'active') return new Set<number>(Array.from({ length: 25 }, (_, index) => index));
     return new Set(round.opened);
   }, [round]);
 
@@ -146,6 +146,8 @@ export function MinesGame() {
     setMineCount(next);
     setCustomMines(String(next));
   };
+
+  const ruleItems = [t('rule1'), t('rule2'), t('rule3'), t('rule4'), t('rule5'), t('rule6'), t('rule7')];
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'game', label: t('game') }, { id: 'bets', label: t('bets') },
@@ -216,14 +218,14 @@ export function MinesGame() {
 
       {tab === 'history' && <section className="rounded-2xl border border-amber-300/20 bg-[#100e0a] p-4"><h2 className="font-black text-amber-100">{t('history')}</h2><div className="mt-3 space-y-2">{saved.history.length ? saved.history.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-amber-300/10 bg-black/40 p-3"><div className="min-w-0"><p className="truncate font-mono text-[11px] text-amber-300">{item.id}</p><p className="mt-1 text-[10px] text-amber-100/45">{new Date(item.date).toLocaleString(lang === 'am' ? 'am-ET' : lang === 'ti' ? 'ti-ER' : 'en-ET')} · {item.mines} {t('mines')} · {item.safe} {t('gems')}</p></div><div className="shrink-0 text-right"><p className={`text-xs font-black ${item.result === 'won' ? 'text-emerald-300' : 'text-red-300'}`}>{item.result === 'won' ? t('won') : t('lostStatus')}</p><p className="text-sm font-bold text-amber-100">{formatMoney(item.payout)}</p></div></div>) : <p className="text-sm text-amber-100/50">{t('noHistory')}</p>}</div></section>}
 
-      {tab === 'rules' && <section className="space-y-3 rounded-2xl border border-amber-300/20 bg-[#100e0a] p-4"><h2 className="font-black text-amber-100">{t('rulesTitle')}</h2><ol className="list-decimal space-y-2 pl-5 text-sm leading-6 text-amber-100/75"><li>{t('rule1')}</li><li>{t('rule2')}</li><li>{t('rule3')}</li><li>{t('rule4')}</li><li>{t('rule5')}</li></ol><p className="rounded-xl border border-amber-300/15 bg-black/40 p-3 text-xs leading-5 text-amber-100/50">{t('disclaimer')}</p></section>}
+      {tab === 'rules' && <section className="space-y-3 rounded-2xl border border-amber-300/20 bg-[#100e0a] p-4"><h2 className="font-black text-amber-100">{t('rulesTitle')}</h2><ol className="list-decimal space-y-3 pl-5 text-sm leading-6 text-amber-100/75">{ruleItems.map((rule, index) => <li key={index}>{rule}</li>)}</ol><p className="rounded-xl border border-amber-300/15 bg-black/40 p-3 text-xs leading-5 text-amber-100/50">{t('disclaimer')}</p></section>}
 
       {notice && tab === 'game' && <p role="status" className="rounded-xl border border-amber-300/20 bg-black/50 p-3 text-center text-xs text-amber-200">{notice}</p>}
       <nav aria-label={t('tabsAria')} className="grid grid-cols-4 gap-1 rounded-xl border border-amber-300/20 bg-black/70 p-1">
         {tabs.map((item) => <button key={item.id} type="button" onClick={() => setTab(item.id)} aria-current={tab === item.id ? 'page' : undefined} className={`rounded-lg px-1 py-3 text-[11px] font-black ${tab === item.id ? 'bg-amber-300 text-black' : 'text-amber-200/65 hover:bg-amber-300/10'}`}>{item.label}</button>)}
       </nav>
 
-      {helpOpen && <div className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="mines-help-title"><section className="w-full max-w-sm rounded-2xl border border-amber-300/30 bg-[#100e0a] p-5"><div className="flex items-center justify-between"><h2 id="mines-help-title" className="font-black text-amber-100">Mines · {t('help')}</h2><button type="button" onClick={() => setHelpOpen(false)} aria-label={t('closeHelp')} className="rounded-lg border border-amber-300/20 px-3 py-1 text-amber-200">✕</button></div><p className="mt-3 text-sm leading-6 text-amber-100/70">{t('helpText')}</p><button type="button" onClick={() => setHelpOpen(false)} className="mt-4 w-full rounded-xl bg-amber-300 py-2 font-black text-black">{t('understood')}</button></section></div>}
+      {helpOpen && <div className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-labelledby="mines-help-title"><section className="w-full max-w-sm rounded-2xl border border-amber-300/30 bg-[#100e0a] p-5"><div className="flex items-center justify-between"><h2 id="mines-help-title" className="font-black text-amber-100">Mines · {t('help')}</h2><button type="button" onClick={() => setHelpOpen(false)} aria-label={t('closeHelp')} className="rounded-lg border border-amber-300/20 px-3 py-1 text-amber-200">✕</button></div><p className="mt-3 text-sm leading-6 text-amber-100/70">{t('helpText')}</p><ol className="mt-3 max-h-[55vh] list-decimal space-y-3 overflow-y-auto pl-5 text-xs leading-5 text-amber-100/75">{ruleItems.map((rule, index) => <li key={index}>{rule}</li>)}</ol><button type="button" onClick={() => setHelpOpen(false)} className="mt-4 w-full rounded-xl bg-amber-300 py-2 font-black text-black">{t('understood')}</button></section></div>}
     </main>
   );
 }
