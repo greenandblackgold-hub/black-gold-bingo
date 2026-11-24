@@ -20,7 +20,7 @@ export const minesText = {
     rule4: 'ቢያንስ አንድ አልማዝ ከከፈቱ በኋላ በፈለጉት ጊዜ CASH OUT ይጫኑ። የሚመለሰው ሽልማት = ውርርድ × የአሁኑ ማባዣ ነው፤ በDemo Credit ሂሳብዎ ላይ ይጨመራል።',
     rule5: '💣 ፈንጂ ከነኩ ዙሩ ወዲያውኑ ያበቃል፣ የተያዘው Demo Credit ውርርድ ይጠፋል እና ሰሌዳው ሙሉ በሙሉ ይገለጣል።',
     rule6: 'ይህ አሁን Demo/Test Credit ብቻ የሚጠቀም የሙከራ ጨዋታ ነው። Wallet፣ እውነተኛ ገንዘብ ወይም እውነተኛ ክፍያ አይጠቀምም። ወደ Real Money ለመሸጋገር የተለየ የServer ውርርድና የክፍያ ማረጋገጫ ያስፈልጋል።',
-    rule7: 'የሳጥኖች ውጤት በዘፈቀደ ይመረጣል። ያለፉ ዙሮችን በHistory እና My Bets ታቦች ውስጥ ይመልከቱ። በዚህ የMines ገጽ ላይ Wallet/ቀሪ ሂሳብ ወይም Exit አይታይም።'
+    rule7: 'የሳጥኖች ውጤት በዘፈቀደ ይመረጣል። ያለፉ ዙሮችን በHistory እና My Bets ታቦች ውስጥ ይመልከቱ። በዚህ የMines ገጽ ላይ Wallet/ቀሪ ሂሳብ ወይም Exit አይታይም።',
     disclaimer: 'የሙከራ ሁነታ ብቻ · የሙከራ ክሬዲት ብቻ ነው። እውነተኛ ገንዘብ፣ Wallet ግንኙነት ወይም የገንዘብ ክፍያ የለም።',
     help: 'እገዛ', helpText: 'ፈንጂዎችን ይምረጡ፣ ውርርድዎን ያስገቡ፣ አልማዝ ይፈልጉ። ፈንጂ ከመንካትዎ በፊት CASH OUT ያድርጉ።',
     understood: 'ገባኝ', closeHelp: 'እገዛን ዝጋ', betAmountAria: 'የውርርድ መጠን', tabsAria: 'የMines ትሮች',
@@ -45,7 +45,7 @@ export const minesText = {
     rule4: 'ብውሑዱ ሓደ ኣልማዝ ምስ ከፈትኩም ኣብ ዝደለኹምዎ ግዜ CASH OUT ጠውቑ። ዝምለስ ሽልማት = ውርርድ × ናይ ሕጂ ብዜት እዩ፤ ኣብ Demo Credit ሒሳብኩም ይውሰኽ።',
     rule5: '💣 ፈንጂ እንተተንኪፍኩም ዙር ብቕጽበት ይውዳእ፣ እቲ ዝተታሕዘ Demo Credit ውርርድ ይጠፍእ እሞ ሰሌዳ ምሉእ ብምሉእ ይግለጽ።',
     rule6: 'እዚ ሕጂ Demo/Test Credit ጥራይ ዝጥቀም ናይ ፈተነ ጸወታ እዩ። Wallet፣ ሓቀኛ ገንዘብ ወይ ሓቀኛ ክፍሊት ኣይጥቀምን። ናብ Real Money ንምስግጋር ፍሉይ ናይ Server ውርርድን ክፍሊትን ምርግጋጽ የድሊ።',
-    rule7: 'ውጽኢት ሳጹናት ብዕጫ ይውሰን። ዝሓለፉ ዙራት ኣብ Historyን My Betsን ታቦታት ርኣዩ። ኣብዚ ገጽ Mines Wallet/ሒሳብ ወይ Exit ኣይርአን።'
+    rule7: 'ውጽኢት ሳጹናት ብዕጫ ይውሰን። ዝሓለፉ ዙራት ኣብ Historyን My Betsን ታቦታት ርኣዩ። ኣብዚ ገጽ Mines Wallet/ሒሳብ ወይ Exit ኣይርአን።',
     disclaimer: 'ናይ ፈተነ ሞድ ጥራይ · ናይ ፈተነ ክረዲት ጥራይ። ሓቀኛ ገንዘብ፣ ምትእስሳር Wallet ወይ ክፍሊት የለን።',
     help: 'ሓገዝ', helpText: 'ፈንጂታት ምረጹ፣ ውርርድኩም ኣእትዉ፣ ኣልማዝ ድለዩ። ፈንጂ ቅድሚ ምትንካፍኩም CASH OUT ግበሩ።',
     understood: 'ተረዲአ', closeHelp: 'ሓገዝ ዕጸዉ', betAmountAria: 'መጠን ውርርድ', tabsAria: 'ትሮታት Mines',
@@ -69,7 +69,7 @@ export const minesText = {
     rule4: 'After opening at least one gem, press CASH OUT whenever you choose. Your payout is Bet × Current Multiplier and is returned to your demo-credit balance.',
     rule5: '💣 If you hit a mine, the round ends immediately, your reserved demo-credit stake is lost, and the entire board is revealed.',
     rule6: 'This is currently a Demo/Test Credit game only. It does not use the Wallet, real money or real-money payouts. Any future Real Money version requires a separately verified server-side betting and payout flow.',
-    rule7: 'Tile outcomes are randomly selected. Review completed rounds in the History and My Bets tabs. The Mines page does not display a Wallet/balance or an Exit control.'
+    rule7: 'Tile outcomes are randomly selected. Review completed rounds in the History and My Bets tabs. The Mines page does not display a Wallet/balance or an Exit control.',
     disclaimer: 'DEMO ONLY · Non-redeemable demo credits only. No real money, Wallet connection, or cash payout.',
     help: 'Help', helpText: 'Choose mines, place your bet, and find gems. Cash out before you hit a mine.',
     understood: 'Got it', closeHelp: 'Close help', betAmountAria: 'Bet amount', tabsAria: 'Mines tabs',
