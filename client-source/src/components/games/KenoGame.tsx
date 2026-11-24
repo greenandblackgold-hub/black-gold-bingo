@@ -165,24 +165,30 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
     setError(''); setNotice('');
   };
   const submit = async () => {
-    const selectedSnapshot = selected.length && validAmount ? selected : [];
-    const queuedSnapshot = queuedTickets;
+    // Freeze this submission's ticket data, then clear the live selection immediately.
+    // Any numbers picked while the request is in flight belong to the next ticket only.
+    const selectedSnapshot = selected.length && validAmount ? [...selected] : [];
+    const queuedSnapshot = [...queuedTickets];
     const tickets = [
       ...queuedSnapshot,
-      ...(selectedSnapshot.length ? [{ requestId: requestId(), amount: numericAmount, selectedNumbers: [...selectedSnapshot] }] : []),
+      ...(selectedSnapshot.length ? [{ requestId: requestId(), amount: numericAmount, selectedNumbers: selectedSnapshot }] : []),
     ];
     if (!tickets.length || tickets.length > 20 || !isBetting || busy || betRequestInFlight.current) return;
     betRequestInFlight.current = true;
+    if (selectedSnapshot.length) setSelected([]);
     setBusy(true); setError(''); setNotice('');
     try {
       const response = await api.post<KenoBatchResponse>('/api/games/keno/bets/batch', { tickets });
       const queuedIds = new Set(queuedSnapshot.map(ticket => ticket.requestId));
       setQueuedTickets(current => current.filter(ticket => !queuedIds.has(ticket.requestId)));
-      if (selectedSnapshot.length) setSelected(current => current === selectedSnapshot ? [] : current);
       setNotice(`${response.bets.length} ${c.betsConfirmed}`);
       void loadState();
       void loadHistory();
-    } catch { setError(t.betError); }
+    } catch {
+      // Restore the submitted picks only when the player has not started a new ticket.
+      if (selectedSnapshot.length) setSelected(current => current.length ? current : selectedSnapshot);
+      setError(t.betError);
+    }
     finally { betRequestInFlight.current = false; setBusy(false); }
   };
   const adjustBet = (delta:number) => setAmount(old => {
