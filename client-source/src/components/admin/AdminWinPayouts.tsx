@@ -41,8 +41,8 @@ export function AdminWinPayouts() {
     try {
       await api.post(`/api/admin/win-payouts/${encodeURIComponent(id)}/${action}`, {});
       await load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : t.err);
+    } catch {
+      setError(t.err);
     }
   };
   const btn = 'rounded-lg px-3.5 py-2 text-sm font-semibold ring-1 active:scale-95';
