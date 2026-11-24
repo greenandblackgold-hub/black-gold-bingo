@@ -99,7 +99,7 @@ function RoomBadge({ roomId, t }: { roomId: string; t: (k: StringKey) => string 
 function BigBall({ n, empty }: { n: number | null; empty: string }) {
   if (n === null) {
     return (
-      <div className="grid h-48 w-48 place-items-center rounded-full border-2 border-dashed border-gold-700 px-6 text-center text-sm text-gold-500 sm:h-60 sm:w-60">
+      <div className="grid h-28 w-28 place-items-center rounded-full border-2 border-dashed border-gold-700 px-3 text-center text-xs text-gold-500 sm:h-36 sm:w-36">
         {empty}
       </div>
     );
@@ -108,7 +108,7 @@ function BigBall({ n, empty }: { n: number | null; empty: string }) {
     <div
       key={n}
       className={[
-        'host-anim grid h-48 w-48 place-items-center rounded-full text-darkbg sm:h-60 sm:w-60',
+        'host-anim grid h-28 w-28 place-items-center rounded-full text-darkbg sm:h-36 sm:w-36',
         'bg-[radial-gradient(circle_at_30%_25%,#FFE57F,#D4AF37_55%,#855A00)]',
         'shadow-[0_0_0_3px_rgba(255,215,0,0.35),0_20px_70px_-10px_rgba(212,175,55,0.7)]',
         'animate-[hostPop_500ms_cubic-bezier(.2,1.4,.4,1)]',
@@ -117,9 +117,9 @@ function BigBall({ n, empty }: { n: number | null; empty: string }) {
       aria-label={`${letterFor(n)}-${n}`}
     >
       <span className="flex items-baseline gap-1 font-black tabular-nums leading-none">
-        <span className="text-5xl opacity-70 sm:text-6xl">{letterFor(n)}</span>
-        <span className="text-6xl opacity-70 sm:text-7xl">-</span>
-        <span className="text-7xl sm:text-8xl">{n}</span>
+        <span className="text-3xl opacity-70 sm:text-4xl">{letterFor(n)}</span>
+        <span className="text-4xl opacity-70 sm:text-5xl">-</span>
+        <span className="text-5xl sm:text-6xl">{n}</span>
       </span>
     </div>
   );
@@ -171,14 +171,14 @@ export function HostView() {
   const smallGhost = ghostBtn.replace('px-5 py-3.5', 'px-4 py-2.5');
 
   return (
-    <div className="space-y-5">
+    <div className="grid grid-cols-1 items-start gap-3 xl:grid-cols-2">
       <style>{`
         @keyframes hostPop { 0% { transform: scale(.3) rotate(-18deg); opacity: 0 } 100% { transform: scale(1) rotate(0); opacity: 1 } }
         @media (prefers-reduced-motion: reduce) { .host-anim { animation: none !important } }
       `}</style>
 
       {/* Top bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 xl:col-span-2">
         <RoomBadge roomId={h.roomId} t={t} />
         <span
           className={[
@@ -191,7 +191,7 @@ export function HostView() {
       </div>
 
       {/* Host announcement is persisted on the shared round state and streamed to every player. */}
-      <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
+      <section className="rounded-xl bg-cardbg p-3 ring-1 ring-gold-700/50 sm:p-4">
         <label htmlFor="player-announcement" className="mb-2 block text-sm font-semibold text-gold-300">{x('announcementLabel')}</label>
         <textarea
           id="player-announcement"
@@ -213,7 +213,7 @@ export function HostView() {
       </section>
 
       {/* Winning pattern is selected before a round starts and enforced by the server. */}
-      <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
+      <section className="rounded-xl bg-cardbg p-3 ring-1 ring-gold-700/50 sm:p-4">
         <label htmlFor="win-pattern" className="mb-2 block text-sm font-semibold text-gold-300">{x('winningPattern')}</label>
         <select id="win-pattern" value={h.winPattern} disabled={h.phase === 'running'}
           onChange={(e) => h.setWinPattern(e.target.value as WinPattern)}
@@ -225,7 +225,7 @@ export function HostView() {
       </section>
 
       {/* Prize calculation and automatic next-round interval are server controlled. */}
-      <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
+      <section className="rounded-xl bg-cardbg p-3 ring-1 ring-gold-700/50 sm:p-4">
         <h2 className="mb-3 text-lg font-bold text-gold-300">{x('prizeSchedule')}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm text-gold-300">{x('prizeMode')}
@@ -267,8 +267,8 @@ export function HostView() {
       </section>
 
       {/* Stage */}
-      <section className="rounded-3xl bg-cardbg px-4 py-8 ring-1 ring-gold-700/50 sm:py-10">
-        <div className="flex flex-col items-center gap-6">
+      <section className="rounded-2xl bg-cardbg px-3 py-4 ring-1 ring-gold-700/50">
+        <div className="flex flex-col items-center gap-3">
           <BigBall n={current} empty={t('none')} />
 
           <div className="flex min-h-10 flex-wrap items-center justify-center gap-2" aria-label={t('recent')}>
@@ -282,7 +282,7 @@ export function HostView() {
             ))}
           </div>
 
-          <div className="grid w-full max-w-md gap-3">
+          <div className="grid w-full max-w-md gap-2">
             {h.phase === 'waiting' ? (
               <button type="button" onClick={h.startRound} className={primaryBtn}>
                 {t('start')}
@@ -314,7 +314,7 @@ export function HostView() {
 
       {/* Claims (hosted demo: the host reviews them; in server mode the server decides instantly) */}
       {!SERVER_MODE && (
-      <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
+      <section className="rounded-xl bg-cardbg p-3 ring-1 ring-gold-700/50 sm:p-4">
         <h2 className="mb-3 text-lg font-bold text-gold-300">
           {t('claims')}
           {h.claims.length > 0 && <span className="text-gold-500"> ({h.claims.length})</span>}
@@ -360,7 +360,7 @@ export function HostView() {
       )}
 
       {/* Auto-call */}
-      <section className="rounded-2xl bg-cardbg p-4 ring-1 ring-gold-700/50 sm:p-5">
+      <section className="rounded-xl bg-cardbg p-3 ring-1 ring-gold-700/50 sm:p-4">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold text-gold-300">{t('auto')}</h2>
