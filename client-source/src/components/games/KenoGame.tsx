@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import { gameUi } from '@/lib/gameUi';
@@ -53,7 +53,8 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
   useEffect(() => {
     void loadState(); void loadHistory();
     const poll = window.setInterval(() => void loadState(), 1000);
-    const tick = window.setInterval(() => setClock(Date.now()), 100);
+    // The visible countdown changes once per second; avoid 10 full screen renders per second.
+    const tick = window.setInterval(() => setClock(Date.now()), 1000);
     return () => { window.clearInterval(poll); window.clearInterval(tick); };
   }, [loadState, loadHistory]);
 
@@ -74,7 +75,7 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
     return { rounds: history.length, tickets: bets.length, wagered: bets.reduce((sum,b) => sum+b.stakeEtb,0), won: bets.reduce((sum,b) => sum+b.payoutEtb,0), hits: bets.reduce((sum,b) => sum+b.hits,0) };
   }, [history]);
 
-  const toggle = (n: number) => setSelected(old => old.includes(n) ? old.filter(v => v !== n) : old.length >= 10 ? old : [...old,n].sort((a,b)=>a-b));
+  const toggle = useCallback((n: number) => setSelected(old => old.includes(n) ? old.filter(v => v !== n) : old.length >= 10 ? old : [...old,n].sort((a,b)=>a-b)), []);
   const quickPick = () => {
     const pool = Array.from({length:80},(_,i)=>i+1);
     for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
@@ -133,15 +134,7 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
             <p className="mt-2 text-[10px] font-semibold text-emerald-100/55">{selected.length}/10 {c.selectedCount}</p>
           </div>
         </div>
-        <div className="keno-number-grid grid grid-cols-10 gap-[3px] bg-[#090909] p-[3px]">
-          {Array.from({length:80},(_,i)=>i+1).map(n=>{
-            const chosen=selected.includes(n);
-            const previous=history[0]?.drawnNumbers?.includes(n) ?? false;
-            return <button key={n} type="button" disabled={!isBetting} onClick={()=>toggle(n)} aria-pressed={chosen} aria-label={c.number+' '+n+(chosen?', '+c.selectedState:'')} className={'relative grid aspect-square min-w-0 place-items-center border text-[clamp(11px,3.6vw,17px)] font-black tabular-nums shadow-[inset_0_1px_0_rgba(255,255,255,.05)] '+(chosen?'border-emerald-200 bg-emerald-400 text-[#061c14]':'border-[#35413f] bg-[linear-gradient(145deg,#394442,#242d2b)] text-slate-300 hover:bg-[#46524f]')}>
-              {n}{previous&&<span className="absolute right-[2px] top-[2px] h-[5px] w-[5px] rounded-full bg-sky-300 shadow-[0_0_5px_rgba(125,211,252,.6)]"/>}
-            </button>;
-          })}
-        </div>
+        <KenoNumberGrid selected={selected} isBetting={isBetting} previousDrawnNumbers={history[0]?.drawnNumbers} onToggle={toggle} labels={c} />
         <div className="keno-stake-controls grid grid-cols-[minmax(0,1fr)_66px_66px] items-stretch gap-[3px] bg-[#090909] p-[3px]">
           <div className="flex h-[58px] items-center justify-between rounded-sm bg-[#253330] px-3">
             <button type="button" disabled={!isBetting||Number(amount)<=minBet} onClick={()=>adjustBet(-1)} aria-label={c.decreaseBet} className="text-3xl font-black text-slate-300 disabled:opacity-30">−</button>
@@ -163,7 +156,7 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
           <span>{visibleDrawnNumbers.length} <i className="px-1 text-emerald-300">/</i> 20</span>
         </div>
         <div aria-label={c.drawnNumbersAria} aria-live="polite" className="relative grid grid-cols-10 gap-1.5 sm:gap-2">
-          {Array.from({length:20},(_,i)=>visibleDrawnNumbers[i] ?? null).map((n,i)=><span key={i} className={'keno-drawn-ball grid aspect-square min-w-0 place-items-center rounded-full border text-[11px] font-black tabular-nums shadow-[inset_0_2px_4px_rgba(255,255,255,.18),0_3px_8px_rgba(0,0,0,.45)] sm:text-sm '+(n===null?'border-emerald-300/10 bg-[#0a1210]/60 text-transparent':'border-slate-500/70 bg-[radial-gradient(circle_at_35%_25%,#536873,#1c303b_58%,#07141b)] text-white')}>{n ?? '·'}</span>)}
+          {Array.from({length:20},(_,i)=>visibleDrawnNumbers[i] ?? null).map((n,i)=><span key={i} className={'keno-drawn-ball grid aspect-square min-w-0 place-items-center rounded-full border text-[11px] font-black tabular-nums shadow-[inset_0_2px_4px_rgba(255,255,255,.18),0_3px_8px_rgba(0,0,0,.45)] sm:text-sm '+(n===null?'border-emerald-300/10 bg-[#0a1210]/60 text-transparent':'border-slate-500/70 bg-[radial-gradient(circle_at_35%_25%,#536873,#1c303b_58%,#07141b)] text-white')+(n!==null&&i===visibleDrawCount-1?' is-latest':'')}>{n ?? '·'}</span>)}
         </div>
       </section>}
 
@@ -196,6 +189,46 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
     </main>
   );
 }
+
+
+type KenoNumberGridProps = {
+  selected: number[];
+  isBetting: boolean;
+  previousDrawnNumbers?: number[];
+  onToggle: (number: number) => void;
+  labels: Pick<(typeof copy)['en'], 'number' | 'selectedState'>;
+};
+
+// Isolate the 80 interactive cells from countdown, balance, and round-state renders.
+const KenoNumberGrid = memo(function KenoNumberGrid({
+  selected, isBetting, previousDrawnNumbers, onToggle, labels,
+}: KenoNumberGridProps) {
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+  const previousSet = useMemo(() => new Set(previousDrawnNumbers ?? []), [previousDrawnNumbers]);
+
+  return (
+    <div className="keno-number-grid grid grid-cols-10 gap-[3px] bg-[#090909] p-[3px]">
+      {Array.from({ length: 80 }, (_, index) => index + 1).map(number => {
+        const chosen = selectedSet.has(number);
+        const previous = previousSet.has(number);
+        return (
+          <button
+            key={number}
+            type="button"
+            disabled={!isBetting}
+            onClick={() => onToggle(number)}
+            aria-pressed={chosen}
+            aria-label={labels.number + ' ' + number + (chosen ? ', ' + labels.selectedState : '')}
+            className={'relative grid aspect-square min-w-0 place-items-center border text-[clamp(11px,3.6vw,17px)] font-black tabular-nums shadow-[inset_0_1px_0_rgba(255,255,255,.05)] ' + (chosen ? 'border-emerald-200 bg-emerald-400 text-[#061c14]' : 'border-[#35413f] bg-[linear-gradient(145deg,#394442,#242d2b)] text-slate-300 hover:bg-[#46524f]')}
+          >
+            {number}
+            {previous && <span className="absolute right-[2px] top-[2px] h-[5px] w-[5px] rounded-full bg-sky-300 shadow-[0_0_5px_rgba(125,211,252,.6)]" />}
+          </button>
+        );
+      })}
+    </div>
+  );
+});
 
 function BetCard({ bet, labels, revealComplete }: { bet: KenoBet; labels: (typeof copy)['en'] | (typeof copy)['am'] | (typeof copy)['ti']; revealComplete: boolean }) {
   return <article className={'overflow-hidden rounded-lg border p-1.5 '+(bet.payoutEtb>0?'border-emerald-400/40 bg-[#16432f]':'border-white/5 bg-[#172421]')}>
