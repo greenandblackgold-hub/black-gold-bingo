@@ -29,6 +29,8 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
   const { lang } = useLanguage();
   const t = gameUi.aviator[lang];
   const [state, setState] = useState<AviatorState | null>(null);
+  const stateRequestInFlight = useRef(false);
+  const stateRefreshQueued = useRef(false);
   const [history, setHistory] = useState<HistoryRound[]>([]);
   const [panels, setPanels] = useState<[BetPanel, BetPanel]>([freshPanel(), freshPanel()]);
   const [clock, setClock] = useState(Date.now());
@@ -72,10 +74,23 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
   }, [soundOn]);
 
   const loadState = useCallback(async () => {
+    // One request at a time; retain an admin-change refresh that arrives mid-poll.
+    if (stateRequestInFlight.current) {
+      stateRefreshQueued.current = true;
+      return;
+    }
+    stateRequestInFlight.current = true;
     try {
       const next = await api.get<AviatorState>('/api/games/aviator/state');
       setState(next); setOffset(next.serverTime - Date.now()); setError('');
     } catch { setError(t.loadError); }
+    finally {
+      stateRequestInFlight.current = false;
+      if (stateRefreshQueued.current) {
+        stateRefreshQueued.current = false;
+        void loadState();
+      }
+    }
   }, [t.loadError]);
   const loadHistory = useCallback(async () => {
     try { setHistory(await api.get<HistoryRound[]>('/api/games/aviator/history?limit=8')); } catch { /* optional */ }
