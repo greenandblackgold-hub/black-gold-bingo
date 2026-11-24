@@ -2,7 +2,7 @@ import type { Lang } from '@/types/game';
 
 export const minesText = {
   am: {
-    mineCount: 'የፈንጂ ብዛት', nextMultiplier: 'ቀጣይ ማባዣ', currentPrize: 'የአሁኑ ሽልማት', demoCredit: 'የሙከራ ክሬዲት',
+    cardSubtitle: 'አልማዞችን ፈልጉ', cardDetail: 'ደህንነቱ የተጠበቁ ሳጥኖችን ይክፈቱ፣ ማባዣዎን ያሳድጉና የሙከራ ክሬዲትዎን ያውጡ።', walletBalance: 'የቦርሳ ሂሳብ', allUnavailable: 'በአሁኑ ጊዜ ሁሉም ጨዋታዎች አይገኙም። እባክዎ ቆይተው ይመልከቱ።', mineCount: 'የፈንጂ ብዛት', nextMultiplier: 'ቀጣይ ማባዣ', currentPrize: 'የአሁኑ ሽልማት', demoCredit: 'የሙከራ ክሬዲት',
     gemsFound: 'የተገኙ አልማዞች', chooseMines: 'የፈንጂዎች ምርጫ', betAmount: 'የውርርድ መጠን',
     game: 'ጨዋታ', bets: 'ውርርዶቼ', history: 'ታሪክ', rules: 'ህጎች', ready: 'ዝግጁ', pickTile: 'ሳጥን ይምረጡ',
     lost: 'ዙሩ ተሸንፏል', complete: 'ዙሩ ተጠናቋል', roundStarted: 'ዙሩ ተጀምሯል። የተዘጉ ሳጥኖችን ይምረጡ።',
@@ -25,7 +25,7 @@ export const minesText = {
     closedTile: 'የተዘጋ ሳጥን {number}', mineTile: 'ፈንጂ', gemTile: 'አልማዝ',
   },
   ti: {
-    mineCount: 'ብዝሒ ፈንጂ', nextMultiplier: 'ዝቕጽል ብዜት', currentPrize: 'ናይ ሕጂ ሽልማት', demoCredit: 'ናይ ፈተነ ክረዲት',
+    cardSubtitle: 'ኣልማዛት ድለዩ', cardDetail: 'ውሑሳት ሳጹናት ክፈቱ፣ ብዜትኩም ወስኹን ናይ ፈተነ ክረዲትኩም ኣውጽኡን።', walletBalance: 'ሒሳብ ቦርሳ', allUnavailable: 'ኣብዚ ሕጂ ኩሎም ጸወታታት ኣይርከቡን። በጃኹም ድሕሪ ግዜ ፈትሹ።', mineCount: 'ብዝሒ ፈንጂ', nextMultiplier: 'ዝቕጽል ብዜት', currentPrize: 'ናይ ሕጂ ሽልማት', demoCredit: 'ናይ ፈተነ ክረዲት',
     gemsFound: 'ዝተረኽቡ ኣልማዛት', chooseMines: 'ፈንጂታት ምረጹ', betAmount: 'መጠን ውርርድ',
     game: 'ጸወታ', bets: 'ውርርደይ', history: 'ታሪኽ', rules: 'ሕግታት', ready: 'ድሉው', pickTile: 'ሳጹን ምረጹ',
     lost: 'ዙር ተሳዒሩ', complete: 'ዙር ተወዲኡ', roundStarted: 'ዙር ጀሚሩ። ዝተዓጽዉ ሳጹናት ምረጹ።',
@@ -48,7 +48,7 @@ export const minesText = {
     closedTile: 'ዝተዓጽወ ሳጹን {number}', mineTile: 'ፈንጂ', gemTile: 'ኣልማዝ',
   },
   en: {
-    mineCount: 'Mine count', nextMultiplier: 'Next multiplier', currentPrize: 'Current prize', demoCredit: 'Demo credits',
+    cardSubtitle: 'FIND THE GEMS', cardDetail: 'Open safe tiles, grow your multiplier and cash out your demo credits.', walletBalance: 'Wallet Balance', allUnavailable: 'All games are currently unavailable. Please check again later.', mineCount: 'Mine count', nextMultiplier: 'Next multiplier', currentPrize: 'Current prize', demoCredit: 'Demo credits',
     gemsFound: 'Gems found', chooseMines: 'Choose mines', betAmount: 'Bet amount',
     game: 'Game', bets: 'My bets', history: 'History', rules: 'Rules', ready: 'READY', pickTile: 'PICK A TILE',
     lost: 'ROUND LOST', complete: 'ROUND COMPLETE', roundStarted: 'Round started. Choose a covered tile.',
