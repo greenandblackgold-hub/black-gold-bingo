@@ -139,15 +139,16 @@ Cash-outs are disabled. Do not promise or send payouts through the old site. Exi
 Automated test files are included in `deploy/test/`, and a GitHub Actions workflow has been added to run them on pushes and pull requests. Do not assume tests have passed until the workflow shows a successful result. The real MongoDB Atlas connection, Chapa test checkout, Render deployment, and full browser journey still need to be verified using your own service accounts. Complete Step 6 with test money before considering a live launch.
 
 
-## SMS-backed ETB simulation wallet (updated)
+## Admin-phone SMS Bridge for the simulation wallet
 
-The server-mode wallet now supports a **simulation-only** top-up flow:
+1. The player submits only an ETB amount and bank transaction reference. Do not ask players to paste SMS messages.
+2. The API creates a pending request; the wallet balance does not change.
+3. On the trusted Admin Android APK, open **Admin → SMS Sync**, tap **Reconnect**, and grant SMS permission. The app obtains a scoped token and configures the native bridge.
+4. The trusted phone forwards incoming SMS to `/api/webhooks/sms/device`. The server matches the transaction reference and amount to the pending request.
+5. **SMS matching never credits a wallet.** Admin independently verifies the bank/Telebirr receipt and explicitly clicks **Approve**. Mismatches remain pending for review or are rejected.
+6. Duplicate SMS events and repeated approvals cannot credit the same request twice.
 
-1. A signed-in player submits an amount in ETB and their transaction reference.
-2. The API stores it as pending. The balance is not changed at this stage.
-3. A trusted SMS-forwarding adapter posts a normalized event to `POST /api/webhooks/sms`.
-4. The adapter signs the exact raw JSON request body with HMAC-SHA256 using `SMS_WEBHOOK_SECRET`, and sends the hex digest in `X-SMS-Signature`.
-5. The server checks the signature, pending reference, `ETB` currency, successful status, and exact amount. A unique ledger reference prevents duplicate credits.
+The signed `/api/webhooks/sms` route is retained for trusted external adapters. It also matches evidence only and never bypasses Admin approval.
 
 ### Local setup
 
@@ -194,7 +195,7 @@ Open `http://localhost:8080`. Memory storage is for local testing only; its data
 npm run simulate:sms -- TXN123456789 100
 ```
 
-Use the same reference and amount entered in the wallet. The wallet page checks the status and refreshes the displayed balance after confirmation. This command is only a local test tool; it does not read a real phone SMS or contact a bank.
+Use the same reference and amount entered in the wallet. The SMS only matches the pending request; an Admin must approve it before the balance changes. This command is only a local test tool; it does not read a real phone SMS or contact a bank.
 
 ### Webhook event format
 
@@ -250,31 +251,15 @@ The Render build command installs the backend and frontend dependencies, builds 
 
 Production registration is enabled by the Blueprint default. Players can create an account with their phone number, name and PIN without receiving an SMS verification code. The phone number is therefore a login identifier only; it is **not proof that the player owns that number**. Use unique PINs and keep the real-money functions disabled.
 
-### Android SMS Forwarder
+### Android SMS Bridge
 
-The webhook accepts a signed or token-authenticated JSON request from an Android SMS-forwarding app. The forwarding app must support HTTPS POST, JSON body fields, and a custom HTTP header.
+The Android APK includes the native Admin SMS Bridge. Sign in as Admin, open **Admin → SMS Sync**, tap **Reconnect**, and grant SMS permission. The app requests a scoped token from `/api/admin/sms-device/token` and configures forwarding to `/api/webhooks/sms/device` automatically.
 
-1. In Render, open **Environment** and copy the value of `SMS_WEBHOOK_SECRET`. Do not post it in a chat or put it in a public repository.
-2. In the Android SMS Forwarder app, create a rule for messages from Telebirr, CBE and Lion Bank. Set the destination to:
-   `https://YOUR-SERVICE.onrender.com/api/webhooks/sms`
-3. Choose **POST** and JSON body. Map the app's sender field and message text into this shape. If the sender is a short code or number, set the fixed `provider` field in each rule to `telebirr`, `cbe`, or `lion-bank` respectively:
+Keep this bridge on the trusted Admin phone. Do not forward outgoing/debit notifications. Incoming SMS is matched to a pending amount/reference request as evidence only; Admin must independently verify the receipt and press **Approve** before the wallet balance changes.
 
-```json
-{
-  "provider": "telebirr",
-  "sender": "Telebirr",
-  "text": "the full incoming SMS text",
-  "eventId": "a unique message ID from the forwarding app"
-}
-```
+For a separate trusted adapter, use the signed `POST /api/webhooks/sms` endpoint with HMAC-SHA256 and `SMS_WEBHOOK_SECRET`. Never put a token or secret in the browser, APK source, public repository, or chat.
 
-4. Add this custom header:
-   `X-SMS-Token: YOUR_SMS_WEBHOOK_SECRET`
-   The app may instead calculate HMAC-SHA256 over the exact raw JSON body and send `X-SMS-Signature: sha256=HEX_DIGEST`.
-5. Save the rule. Do not forward outgoing/debit notifications as deposits. The server independently rejects messages that do not look like incoming credits, do not contain one clear ETB amount and a transaction reference, or come from an unsupported provider label.
-6. In the website, first submit a pending simulation deposit using the same transaction reference and amount as the SMS. Only then can the matching forwarded notification confirm it. A duplicate SMS will not credit twice.
-
-**Important integration limit:** SMS Forwarder apps have different screens and field names. This server-side parser supports common English notification patterns for Telebirr, CBE and Lion Bank, but banks can change their wording or use account-specific templates. I cannot confirm the exact SMS template or the options in the Android app without seeing them. If a real notification is not parsed, redact names, phone numbers, account numbers and balances before sharing a sample; never share your Render secret. This is a simulation credit receiver, not bank-grade proof of payment. Do not use it to handle real deposits or payouts.
+This is a simulation evidence matcher, not bank-grade proof of payment. Real-money deposits and payouts remain disabled.
 
 ### What to expect after deployment
 
