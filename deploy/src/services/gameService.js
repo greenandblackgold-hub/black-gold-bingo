@@ -284,7 +284,7 @@ export function createGameService({ repo, config, now = Date.now }) {
     async previewCards(user, count = 1) {
       const n = Number(count);
       if (user.role !== 'player' || user.phoneVerified !== true) throw new HttpError(403, 'player_only', 'Verified player accounts only');
-      if (!Number.isInteger(n) || n < 1 || n > 10) throw new HttpError(400, 'invalid_count', 'Preview 1 to 10 cards at a time');
+      if (!Number.isInteger(n) || n < 1 || n > 25) throw new HttpError(400, 'invalid_count', 'Preview 1 to 25 cards at a time');
       const g = await repo.getGame();
       if (g.phase !== 'waiting' || g.bonusRound === true) throw new HttpError(409, 'round_not_open', 'Cards can only be prepared before a regular round starts');
       const sold = config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0;
@@ -292,7 +292,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       const expiredBefore = now() - 30 * 60 * 1000;
       for (const [key, preview] of pendingCardPreviews) if (preview.createdAt < expiredBefore) pendingCardPreviews.delete(key);
       const userPreviewCount = [...pendingCardPreviews.keys()].filter((key) => key.startsWith(user.id + ':')).length;
-      if (userPreviewCount + n > 20) throw new HttpError(429, 'too_many_previews', 'Register or remove your existing preview cards before adding more.');
+      if (userPreviewCount + n > 50) throw new HttpError(429, 'too_many_previews', 'You can keep up to 50 preview cards. Register or remove existing previews before adding more.');
       if (previewNextSerial === null) previewNextSerial = await repo.peekNextCardSerial();
       const usedSerials = new Set(await repo.listUsedCardSerials());
       const previews = [];
