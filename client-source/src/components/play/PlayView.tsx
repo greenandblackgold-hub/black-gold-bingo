@@ -262,6 +262,38 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
   );
 }, sameBingoCardProps);
 
+function formatClock(milliseconds: number): string {
+  const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+function RoundCallTimer({
+  phase, nextRoundAt, nextCallAt, calledCount, firstCallAt, endedAt,
+}: {
+  phase: string;
+  nextRoundAt: number | null;
+  nextCallAt: number | null;
+  calledCount: number;
+  firstCallAt: number | null;
+  endedAt: number | null;
+}) {
+  // Keep the one-second clock isolated from the card list. Updating the
+  // countdown must not reconcile thousands of card-list children.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const value = phase === 'waiting' && nextRoundAt !== null
+    ? formatClock(nextRoundAt - now)
+    : phase === 'running' && calledCount === 0 && nextCallAt !== null
+      ? formatClock(nextCallAt - now)
+      : calledCount > 0 && firstCallAt !== null
+        ? formatClock((phase === 'ended' && endedAt !== null ? endedAt : now) - firstCallAt)
+        : '0:00';
+  return <>{value}</>;
+}
+
 function CalledBall({ number, latest = false }: { number: number; latest?: boolean }) {
   const letter = letterFor(number);
   const color = letter === 'N' ? 'from-green-400 to-green-700' :
@@ -286,7 +318,6 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     nextCallAt, roundPrizeEtb, nextRoundAt, firstCallAt, endedAt,
   } = useRound();
   const { cardPrice } = useAppSettings();
-  const [now, setNow] = useState(() => Date.now());
   const [autoMark, setAutoMark] = useState(true);
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
   const [patternOpen, setPatternOpen] = useState(false);
@@ -406,12 +437,8 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       localStorage.setItem('bgb.numberBoardMode', numberBoardMode);
       localStorage.setItem('bgb.numberBoardExpanded', numberBoardExpanded ? 'on' : 'off');
     } catch { /* keep the live board usable when storage is unavailable */ }
+    window.dispatchEvent(new Event('bgb-player-settings'));
   }, [numberBoardMode, numberBoardExpanded]);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     try { setAutoMark(localStorage.getItem('bgb.autoMark') !== 'off'); } catch { /* use default */ }
@@ -426,6 +453,9 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         setMarkColor(['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'].includes(color ?? '') ? color! : '#d4af37');
         setCardOrder(localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest');
         setPlayerTheme(localStorage.getItem('bgb.playerTheme') === 'light' ? 'light' : 'dark');
+        setAutoMark(localStorage.getItem('bgb.autoMark') !== 'off');
+        setNumberBoardMode(localStorage.getItem('bgb.numberBoardMode') === 'called' ? 'called' : 'all');
+        setNumberBoardExpanded(localStorage.getItem('bgb.numberBoardExpanded') !== 'off');
       } catch { /* Keep the current settings if storage is unavailable. */ }
     };
     window.addEventListener('bgb-player-settings', syncCardSettings);
@@ -505,10 +535,6 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
 
   const lastCalls = calledNumbers.slice(-5).reverse();
   const patternCells = useMemo(() => getPatternCells(winPattern), [winPattern]);
-  const formatClock = (milliseconds: number) => {
-    const seconds = Math.max(0, Math.floor(milliseconds / 1000));
-    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-  };
   const quickBuyTotal = bonusRound ? 0 : quickBuyCount * cardPrice;
   const quickBuyAllowed = bonusRound || phase === 'waiting';
   const quickBuyInsufficient = bonusRound && quickBuyTotal > balance;
@@ -573,14 +599,6 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       setQuickBuyBusy(false);
     }
   };
-  const callTimer = phase === 'waiting' && nextRoundAt !== null
-    ? formatClock(nextRoundAt - now)
-    : phase === 'running' && calledNumbers.length === 0 && nextCallAt !== null
-      ? formatClock(nextCallAt - now)
-      : calledNumbers.length > 0 && firstCallAt !== null
-        ? formatClock((phase === 'ended' && endedAt !== null ? endedAt : now) - firstCallAt)
-        : '0:00';
-
   return (
     <main data-player-theme={playerTheme} className="player-play-view relative mx-auto min-h-full w-full max-w-[1100px] overflow-visible rounded-[2rem] border-2 border-zinc-500/80 bg-[#030303] px-2 pb-32 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
       <div className="pointer-events-none absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_50%_12%,rgba(255,196,0,.17),transparent_36%),radial-gradient(ellipse_at_50%_100%,rgba(255,196,0,.13),transparent_38%)]" />
@@ -760,7 +778,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               {lastCalls.length ? lastCalls.map((number, index) => <CalledBall key={number} number={number} latest={index === 0} />) : <span className="text-xs text-yellow-100/60">—</span>}
             </div>
             <div className="ml-auto mt-1 w-fit rounded-lg border border-red-500 bg-red-950 px-4 py-0.5 text-lg font-black leading-none text-red-500 shadow-[0_0_12px_rgba(239,68,68,.5)]">
-              {callTimer}
+              <RoundCallTimer phase={phase} nextRoundAt={nextRoundAt} nextCallAt={nextCallAt} calledCount={calledNumbers.length} firstCallAt={firstCallAt} endedAt={endedAt} />
             </div>
           </div>
         </section>
@@ -903,6 +921,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               const next = !autoMark;
               setAutoMark(next);
               try { localStorage.setItem('bgb.autoMark', next ? 'on' : 'off'); } catch { /* ignore */ }
+              window.dispatchEvent(new Event('bgb-player-settings'));
             }} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
               <span className="text-[10px] font-black text-white sm:text-xs">{t.autoMark}</span>
               <span className={`relative h-6 w-10 shrink-0 rounded-full ${autoMark ? 'bg-green-500' : 'bg-zinc-600'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${autoMark ? 'translate-x-5' : 'translate-x-1'}`} /></span>
