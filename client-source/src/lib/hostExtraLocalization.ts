@@ -2,7 +2,7 @@ import type { Lang } from '@/types/game';
 
 const copy = {
   am: {
-    announcementLabel:'ለተጫዋቾች ቀጥታ ማስታወቂያ', announcementPlaceholder:'ማስታወቂያዎን እዚህ ይጻፉ…', clear:'ማጥፋት', send:'ማስታወቂያ ላክ', playerDisplay:'በPlayer ገጽ ላይ የሚታየው፦',
+    announcementLabel:'ለተጫዋቾች ቀጥታ ማስታወቂያ', announcementPlaceholder:'ማስታወቂያዎን እዚህ ይጻፉ…', clear:'ማጥፋት', send:'ማስታወቂያ ላክ', playerDisplay:'በተጫዋች ገጽ ላይ የሚታየው፦',
     winningPattern:'የዙሩ የBingo አሸናፊነት ቅጥ', prizeSchedule:'የሽልማት እና የቀጣይ ዙር ቅንብር',
     prizeMode:'የሽልማት ስሌት', revenuePercent:'ከጠቅላላ ገቢ መቶኛ', perPlayer:'ለእያንዳንዱ ተጫዋች', fixedPrize:'ቋሚ ሽልማት (ብር)',
     interval:'የዙር መጠበቂያ ጊዜ', minutes4:'4 ደቂቃ', minutes5:'5 ደቂቃ', minutes10:'10 ደቂቃ',
@@ -13,7 +13,7 @@ const copy = {
     grossLabel:'ጠቅላላ ገቢ', uniquePlayers:'ልዩ ተጫዋቾች', calculatedPrize:'አሁን የተሰላ ሽልማት'
   },
   ti: {
-    announcementLabel:'ቀጥታዊ ሓበሬታ ንተጻወትቲ', announcementPlaceholder:'ሓበሬታኹም ኣብዚ ጽሓፉ…', clear:'ኣጥፍእ', send:'ሓበሬታ ስደድ', playerDisplay:'ኣብ ገጽ Player ዝርአ፦',
+    announcementLabel:'ቀጥታዊ ሓበሬታ ንተጻወትቲ', announcementPlaceholder:'ሓበሬታኹም ኣብዚ ጽሓፉ…', clear:'ኣጥፍእ', send:'ሓበሬታ ስደድ', playerDisplay:'ኣብ ገጽ ተጻዋታይ ዝርአ፦',
     winningPattern:'ናይ ዙር Bingo ዓወት ቅርጺ', prizeSchedule:'ቅንብር ሽልማትን ዝቕጽል ዙርን',
     prizeMode:'ስሌት ሽልማት', revenuePercent:'ሚእታዊ ጠቕላላ ኣታዊ', perPlayer:'ንነፍሲ ወከፍ ተጻዋታይ', fixedPrize:'ቀዋሚ ሽልማት (ብር)',
     interval:'ግዜ ምጽባይ ዙር', minutes4:'4 ደቓይቕ', minutes5:'5 ደቓይቕ', minutes10:'10 ደቓይቕ',
