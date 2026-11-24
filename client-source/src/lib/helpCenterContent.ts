@@ -100,6 +100,26 @@ export const helpTopics: HelpTopic[] = [
     keywords: { am: ['ፍትሃዊ','fair','seed','hash','ማረጋገጥ','ትንበያ'], ti: ['ፍትሓዊ','fair','seed','hash','ምርግጋጽ','ትንበያ'], en: ['fairness','fair','seed','hash','verify','predict'] }
   },
   {
+    id: 'wallet-deposit', category: 'safety',
+    question: { am: 'Wallet ላይ የሙከራ ብር እንዴት እጨምራለሁ?', ti: 'ኣብ Wallet ናይ ፈተና ብር ብኸመይ እውስኽ?', en: 'How do I add test ETB to my Wallet?' },
+    answer: {
+      am: 'በWallet ገጽ ላይ Deposit ይምረጡ፤ መጠኑንና የባንክ/Telebirr የግብይት ማጣቀሻ ቁጥሩን ያስገቡ። ጥያቄው Pending ሆኖ ይቆያል። የAdmin ስልክ SMS ማዛመድ ማስረጃ ብቻ ነው፤ ባላንስ የሚጨምረው Admin ደረሰኙን አረጋግጦ Approve ሲጫን ብቻ ነው። Real-money ክፍያዎች ተዘግተዋል።',
+      ti: 'ኣብ ገጽ Wallet Deposit ምረጹ፤ መጠንን ናይ ባንክ/Telebirr መወከሲ ቁጽርን ኣእትዉ። እቲ ሕቶ Pending ኮይኑ ይጸንሕ። ናይ Admin ስልኪ SMS ምዝማድ መርትዖ ጥራይ እዩ፤ ባላንስ ዝውስኽ Admin ደረሰኝ ኣረጋጊጹ Approve ምስ ጠውቐ ጥራይ እዩ። Real-money ክፍሊታት ተዓጽዮም ኣለዉ።',
+      en: 'On the Wallet page, choose Deposit and enter the amount plus the bank/Telebirr transaction reference. The request stays pending. A matching SMS from the trusted Admin phone is evidence only; the balance increases only after an Admin independently checks the receipt and presses Approve. Real-money payments are disabled.'
+    },
+    keywords: { am: ['deposit','ገንዘብ መጨመር','ተቀማጭ','Telebirr','CBE','SMS','Approve'], ti: ['deposit','ተቐማጢ','ገንዘብ ምውሳኽ','Telebirr','CBE','SMS','Approve'], en: ['deposit','top up','Telebirr','CBE','transaction reference','pending','admin approval'] }
+  },
+  {
+    id: 'wallet-withdrawal', category: 'safety',
+    question: { am: 'የWallet የሙከራ ብርን ማውጣት ወይም መቀበል እችላለሁ?', ti: 'ናይ Wallet ፈተና ብር ከውጽእ ወይ ክቕበል ይኽእል?', en: 'Can I withdraw or receive a payout from test wallet credits?' },
+    answer: {
+      am: 'አይ። በዚህ የሙከራ ስሪት የWallet ETB ቀሪ ሂሳብ የሙከራ ክሬዲት ብቻ ነው፤ የገንዘብ ዋጋ የለውም፣ ሊወጣ ወይም ሊከፈል አይችልም። Real-money deposits እና payouts ተዘግተዋል።',
+      ti: 'ኣይፋልን። ኣብዚ ናይ ፈተና ስሪት ናይ Wallet ETB ሒሳብ ናይ ፈተና ክሬዲት ጥራይ እዩ፤ ናይ ገንዘብ ዋጋ የብሉን፣ ክወጽእ ወይ ክኽፈል ኣይክእልን። Real-money depositsን payoutsን ተዓጽዮም ኣለዉ።',
+      en: 'No. Wallet ETB in this test version is simulated credit only. It has no cash value and cannot be withdrawn or paid out. Real-money deposits and payouts are disabled.'
+    },
+    keywords: { am: ['withdraw','cashout','ማውጣት','ወጪ','ክፍያ','payout'], ti: ['withdraw','cashout','ምውጻእ','ወጻኢ','ክፍሊት','payout'], en: ['withdraw','withdrawal','cash out','cashout','payout','cash value'] }
+  },
+  {
     id: 'wallet-safety', category: 'safety',
     question: { am: 'Black Gold AI የWallet ሂሳቤን ማየት ወይም መቀየር ይችላል?', ti: 'Black Gold AI ሒሳብ Wallet ክርኢ ወይ ክቕይር ይኽእል?', en: 'Can Black Gold AI view or change my wallet?' },
     answer: {
@@ -112,7 +132,7 @@ export const helpTopics: HelpTopic[] = [
 ];
 
 export const helpQuickQuestionIds = [
-  'how-center-works', 'bingo-how', 'keno-how', 'aviator-how', 'mines-how', 'cash-out',
+  'how-center-works', 'bingo-how', 'keno-how', 'aviator-how', 'mines-how', 'cash-out', 'wallet-deposit', 'wallet-withdrawal',
 ] as const;
 
 export function findHelpAnswer(query: string, lang: Lang): HelpTopic[] {
