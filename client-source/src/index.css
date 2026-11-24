@@ -897,7 +897,7 @@ body, #root { min-height: 100dvh; }
   animation:aviator-antonov-flight 10s cubic-bezier(.42,.02,.58,.98) 1 both;
 }
 @keyframes aviator-antonov-flight {
-  0% { transform:translate(0,92px) rotate(-32deg) scale(.88); }
+  0% { transform:translate(0,30px) rotate(-32deg) scale(.88); }
   19% { transform:translate(8vw,28px) rotate(-24deg) scale(.94); }
   38% { transform:translate(18vw,-78px) rotate(-7deg) scale(1); }
   50% { transform:translate(25vw,-104px) rotate(0deg) scale(1.04); }
@@ -934,11 +934,11 @@ body, #root { min-height: 100dvh; }
   .aviator-premium .aviator-flight { min-height:330px; }
   .aviator-premium .aviator-plane { width:clamp(190px,62vw,260px); left:1%; bottom:8%; }
   @keyframes aviator-antonov-flight {
-    0% { transform:translate(0,72px) rotate(-32deg) scale(.84); }
+    0% { transform:translate(0,22px) rotate(-32deg) scale(.84); }
     22% { transform:translate(4vw,15px) rotate(-23deg) scale(.9); }
     42% { transform:translate(12vw,-65px) rotate(-5deg) scale(.95); }
     54% { transform:translate(16vw,-82px) rotate(0deg) scale(.98); }
-    100% { transform:translate(36vw,-82px) rotate(0deg) scale(.98); }
+    100% { transform:translate(30vw,-82px) rotate(0deg) scale(.98); }
   }
 }
 @media(prefers-reduced-motion:reduce) {
