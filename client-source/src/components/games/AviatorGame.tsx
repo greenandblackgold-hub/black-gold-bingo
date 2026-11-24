@@ -101,8 +101,8 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
       oscillator.frequency.setValueAtTime(kind === 'takeoff' ? 240 : 180, ctx.currentTime);
       oscillator.frequency.exponentialRampToValueAtTime(kind === 'takeoff' ? 720 : 55, ctx.currentTime + 0.35);
       gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      const soundDuration = kind === 'crash' ? 0.62 : 0.38;
-      gain.gain.exponentialRampToValueAtTime(kind === 'crash' ? 0.18 : 0.08, ctx.currentTime + 0.04);
+      const soundDuration = kind === 'crash' ? 0.78 : 0.42;
+      gain.gain.exponentialRampToValueAtTime(kind === 'crash' ? 0.22 : 0.10, ctx.currentTime + 0.04);
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + soundDuration);
       oscillator.connect(gain); gain.connect(ctx.destination);
       oscillator.start(); oscillator.stop(ctx.currentTime + soundDuration + 0.04);
@@ -136,7 +136,7 @@ export function AviatorGame(_props: { onBack: () => void; onSwitchGame: (game: '
     filter.type = 'lowpass';
     filter.frequency.setValueAtTime(320, ctx.currentTime);
     engineGain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    engineGain.gain.linearRampToValueAtTime(0.075, ctx.currentTime + 0.35);
+    engineGain.gain.linearRampToValueAtTime(0.105, ctx.currentTime + 0.35);
     turbine.connect(filter);
     lowRumble.connect(filter);
     filter.connect(engineGain);
