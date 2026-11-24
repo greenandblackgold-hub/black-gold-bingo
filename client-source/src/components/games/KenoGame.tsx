@@ -18,7 +18,7 @@ const copy = {
   en: { title: 'BLACK GOLD KENO', rules: 'RULES', sound: 'SOUND', turbo: 'TURBO', draw: 'DRAWN NUMBERS', picks: 'PICKS', hits: 'HITS', bet: 'BET', total: 'TOTAL', game: 'GAME', history: 'HISTORY', results: 'RESULTS', stats: 'STATISTICS', live: 'MY TICKETS', clear: 'CLEAR', quick: 'QUICK PICK', selected: 'SELECTED NUMBERS', play: 'BET NOW', waiting: 'Waiting for draw', noTickets: 'No tickets in this round yet', noHistory: 'No completed rounds yet', rounds: 'Rounds', tickets: 'Tickets', wagered: 'Total wagered', won: 'Total returned', count: 'Count', status: 'Status', payout: 'Payout', noWin: 'No prize', minMax: 'Allowed', round: 'Round', drawComplete: 'DRAW COMPLETE', recent: 'RECENT RESULTS', poolNote: 'Final payouts may be adjusted by the round pool and the maximum payout cap.', simulation: 'DEMO CREDITS ONLY', boardClosed: 'All 20 numbers have been drawn. The board will return automatically when the next round opens.', fast:'FAST', chooseTen:'Choose 10 numbers', fromTo:'From 1 to 80', selectedCount:'selected', decreaseBet:'Decrease bet', increaseBet:'Increase bet', openMenu:'Open player menu', timeRemaining:'Time remaining in this round', drawnNumbersAria:'Drawn Keno numbers', number:'Number', selectedState:'selected', betButton:'BET', all:'All', myTickets:'My Tickets', myBets:'My Bets', ticket:'Ticket', waitingBet:'Waiting' },
 } as const;
 
-export function KenoGame({ onBack, onSwitchGame, onOpenMenu }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator' | 'mines') => void; onOpenMenu: () => void }) {
+export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (game: 'bingo' | 'keno' | 'aviator' | 'mines') => void; onOpenMenu: () => void }) {
   const { lang } = useLanguage();
   const { user } = useAuth();
   const t = gameUi.keno[lang];
@@ -216,7 +216,7 @@ export function KenoGame({ onBack, onSwitchGame, onOpenMenu }: { onBack: () => v
 
 function BetCard({ bet, labels }: { bet: KenoBet; labels: (typeof copy)['en'] | (typeof copy)['am'] | (typeof copy)['ti'] }) {
   return <article className={'overflow-hidden rounded-lg border p-1.5 '+(bet.payoutEtb>0?'border-emerald-400/40 bg-[#16432f]':'border-white/5 bg-[#172421]')}>
-    <div className="px-1 pb-1 text-[11px] font-black text-emerald-300">{labels.ticket} #{bet.id.slice(-5)}</div>
+    <div className="px-1 pb-1 text-[11px] font-black text-emerald-300">{labels.ticket} {bet.id.slice(0,1)}***{bet.id.slice(-1)}</div>
     <div className="grid grid-cols-10 gap-1">{Array.from({length:10},(_,i)=>{const n=bet.selectedNumbers[i];return <div key={i} className={'grid aspect-square min-w-0 place-items-center rounded-sm border border-white/5 text-xs font-black tabular-nums '+(n===undefined?'bg-[#101b19]':bet.matchedNumbers.includes(n)?'bg-emerald-400 text-[#062014]':'bg-[#34484a] text-white')}>{n??''}</div>})}</div>
     <div className="mt-1 flex items-center justify-between gap-2 border-t border-white/5 px-1 pt-1 text-[10px]"><span className="font-bold text-slate-100">{labels.bet} {money(bet.stakeEtb)} ETB</span><span className="font-black text-emerald-300">{bet.payoutEtb>0?money(bet.payoutEtb):['active','pending','waiting'].includes(bet.status.toLowerCase())?labels.waitingBet:bet.hits+' '+labels.hits}</span></div>
   </article>;
