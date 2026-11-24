@@ -152,6 +152,7 @@ type CardProps = {
   index: number;
   marks: Set<number>;
   called: Set<number>;
+  markColor: string;
   pattern: WinPattern;
   claimable: boolean;
   claiming: boolean;
@@ -163,7 +164,7 @@ type CardProps = {
   onRegister?: () => void;
 };
 
-function BingoCardView({ labels, card, index, marks, called, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister }: CardProps) {
+function BingoCardView({ labels, card, index, marks, called, markColor, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister }: CardProps) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
   const winning = useMemo(() => {
     const result = findWinningPattern(card.grid, new Set([...called].filter(n => marks.has(n))), pattern);
@@ -201,10 +202,23 @@ function BingoCardView({ labels, card, index, marks, called, pattern, claimable,
               onClick={() => { if (value !== null && wasCalled) onToggle(value); }}
               aria-pressed={marked}
               aria-label={free ? labels.free : `${LETTERS[c]} ${value}`}
+              style={marked && !free ? {
+                backgroundColor: markColor,
+                color: (() => {
+                  const hex = markColor.replace('#', '');
+                  if (!/^[0-9a-f]{6}$/i.test(hex)) return '#111827';
+                  const r = parseInt(hex.slice(0, 2), 16) / 255;
+                  const g = parseInt(hex.slice(2, 4), 16) / 255;
+                  const b = parseInt(hex.slice(4, 6), 16) / 255;
+                  const linear = (v: number) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+                  return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b) > 0.42 ? '#111827' : '#ffffff';
+                })(),
+                boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.18), inset 0 0 9px rgba(255,255,255,.22)',
+              } : undefined}
               className={[
                 'relative grid aspect-square min-w-0 place-items-center rounded-[3px] text-[clamp(10px,2.1vw,22px)] font-black leading-none text-black transition',
                 free ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
-                  marked ? '!bg-lime-300 !shadow-[inset_0_0_9px_rgba(255,255,255,.75)]' :
+                  marked ? 'border border-black/20' :
                   'bg-gradient-to-b from-white to-zinc-200',
                 inWinningLine ? 'outline outline-2 outline-yellow-300' : '',
                 wasCalled && !marked ? 'bg-blue-500 text-white' : '',
@@ -263,6 +277,15 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       const saved = Number(localStorage.getItem('bgb.cardsPerRow'));
       return Number.isInteger(saved) && saved >= 2 && saved <= 4 ? saved : 2;
     } catch { return 2; }
+  });
+  const [markColor, setMarkColor] = useState(() => {
+    try {
+      const saved = localStorage.getItem('bgb.markColor');
+      return ['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'].includes(saved ?? '') ? saved! : '#d4af37';
+    } catch { return '#d4af37'; }
+  });
+  const [cardOrder, setCardOrder] = useState<'oldest' | 'newest'>(() => {
+    try { return localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest'; } catch { return 'oldest'; }
   });
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
   const [draftCards, setDraftCards] = useState<BingoCard[]>([]);
@@ -368,22 +391,33 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   }, []);
 
   useEffect(() => {
-    const syncCardLayout = () => {
+    const syncCardSettings = () => {
       try {
-        const saved = Number(localStorage.getItem('bgb.cardsPerRow'));
-        setCardsPerRow(Number.isInteger(saved) && saved >= 2 && saved <= 4 ? saved : 2);
-      } catch { setCardsPerRow(2); }
+        const layout = Number(localStorage.getItem('bgb.cardsPerRow'));
+        setCardsPerRow(Number.isInteger(layout) && layout >= 2 && layout <= 4 ? layout : 2);
+        const color = localStorage.getItem('bgb.markColor');
+        setMarkColor(['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'].includes(color ?? '') ? color! : '#d4af37');
+        setCardOrder(localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest');
+      } catch { /* Keep the current settings if storage is unavailable. */ }
     };
-    window.addEventListener('bgb-player-settings', syncCardLayout);
-    window.addEventListener('storage', syncCardLayout);
-    syncCardLayout();
+    window.addEventListener('bgb-player-settings', syncCardSettings);
+    window.addEventListener('storage', syncCardSettings);
+    syncCardSettings();
     return () => {
-      window.removeEventListener('bgb-player-settings', syncCardLayout);
-      window.removeEventListener('storage', syncCardLayout);
+      window.removeEventListener('bgb-player-settings', syncCardSettings);
+      window.removeEventListener('storage', syncCardSettings);
     };
   }, []);
 
   const called = useMemo(() => new Set(calledNumbers), [calledNumbers]);
+  const orderedCards = useMemo(() => [...cards].sort((a, b) => {
+    const difference = Number(a.serial) - Number(b.serial);
+    return cardOrder === 'newest' ? -difference : difference;
+  }), [cards, cardOrder]);
+  const orderedDraftCards = useMemo(() => [...draftCards].sort((a, b) => {
+    const difference = Number(a.serial) - Number(b.serial);
+    return cardOrder === 'newest' ? -difference : difference;
+  }), [draftCards, cardOrder]);
   const markSets = useMemo(() => {
     const result: Record<string, Set<number>> = {};
     cards.forEach(card => { result[card.id] = new Set(markedByCard[card.id] ?? []); });
@@ -727,7 +761,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
 
         {(draftCards.length > 0 || cards.length > 0) && (
           <section className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))` }}>
-            {draftCards.map((card, index) => (
+            {orderedDraftCards.map((card, index) => (
               <BingoCardView
                 labels={t}
                 key={card.id}
@@ -735,6 +769,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 index={index}
                 marks={new Set<number>()}
                 called={called}
+                markColor={markColor}
                 pattern={winPattern}
                 claimable={false}
                 claiming={false}
@@ -757,7 +792,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 }}
               />
             ))}
-            {cards.map((card, index) => (
+            {orderedCards.map((card, index) => (
               <BingoCardView
                 labels={t}
                 key={card.id}
@@ -765,6 +800,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 index={draftCards.length + index}
                 marks={markSets[card.id] ?? new Set<number>()}
                 called={called}
+                markColor={markColor}
                 pattern={winPattern}
                 claimable={claimableCards.some(candidate => candidate.id === card.id)}
                 claiming={claimingCardId === card.id}
