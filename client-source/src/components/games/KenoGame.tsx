@@ -5,7 +5,7 @@ import { gameUi } from '@/lib/gameUi';
 import { useAuth } from '@/context/AuthContext';
 
 type KenoBet = { id: string; status: string; stakeEtb: number; selectedNumbers: number[]; matchedNumbers: number[]; hits: number; payoutEtb: number; createdAt: number; settledAt?: number | null };
-type KenoState = { payoutTable: Record<string, Record<string, number>>; enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; drawnNumbers?: number[]; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string };
+type KenoState = { payoutTable: Record<string, Record<string, number>>; enabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo'; game: 'keno'; roundId: string; status: 'betting' | 'settled'; bettingEndsAt: number; serverTime: number; serverSeedHash: string; drawIntervalSeconds?: number; drawnNumbers?: number[]; serverSeed?: string; myBets: KenoBet[]; minBetEtb: number; maxBetEtb: number; maxPayoutEtb: number; mode: string };
 type HistoryRound = { roundId: string; status: string; drawnNumbers?: number[]; serverSeedHash: string; serverSeed?: string; myBets: KenoBet[] };
 type Tab = 'game' | 'history' | 'results' | 'statistics' | 'live';
 
@@ -67,11 +67,18 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
       revealRoundRef.current = state.roundId;
       setVisibleDrawCount(0);
     }
+    if (state.status !== 'settled') {
+      setVisibleDrawCount(0);
+      return;
+    }
     const target = Math.min(20, state.drawnNumbers?.length ?? 0);
-    if (!target) { setVisibleDrawCount(0); return; }
-    const reveal = window.setInterval(() => setVisibleDrawCount(current => Math.min(target, current + 1)), 115);
+    if (!target) return;
+    const intervalMs = Math.max(1000, Math.min(10000, Number(state.drawIntervalSeconds ?? 1) * 1000));
+    const reveal = window.setInterval(() => {
+      setVisibleDrawCount(current => Math.min(target, current + 1));
+    }, intervalMs);
     return () => window.clearInterval(reveal);
-  }, [state?.roundId, drawSequenceKey]);
+  }, [state?.roundId, state?.status, state?.drawIntervalSeconds, drawSequenceKey]);
 
   const visibleDrawnNumbers = (state?.drawnNumbers ?? []).slice(0, visibleDrawCount);
   const secondsLeft = state?.status === 'betting' ? Math.max(0, Math.ceil((state.bettingEndsAt - (clock + offset)) / 1000)) : 0;
@@ -114,9 +121,6 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
   const tabs: {id:Tab;label:string}[] = [
     {id:'game',label:c.game},{id:'history',label:c.history},{id:'results',label:c.results},{id:'statistics',label:c.stats},{id:'live',label:c.live}
   ];
-  const inDrawPhase = !isBetting && visibleDrawnNumbers.length > 0;
-  const liveBall = visibleDrawnNumbers[visibleDrawnNumbers.length-1];
-  const previousBalls = visibleDrawnNumbers.slice(-8,-1);
 
   return (
     <main className="keno-reference-page mx-auto min-h-[100dvh] w-full max-w-[480px] space-y-2 bg-[#050505] px-2 text-[#f3dfad] sm:px-3">
@@ -170,21 +174,18 @@ export function KenoGame({ onOpenMenu }: { onBack: () => void; onSwitchGame: (ga
         <div className="flex justify-between px-2 py-1 text-[9px] text-emerald-100/50"><span>Minimum {money(minBet)} ETB</span><span>Maximum {money(maxBet)} ETB</span><button type="button" onClick={()=>document.getElementById('keno-rules')?.scrollIntoView({behavior:'smooth',block:'center'})}>{c.rules}</button></div>
       </section>}
 
-      {inDrawPhase && <section className="keno-draw-stage relative flex min-h-[188px] flex-col items-center justify-center overflow-hidden rounded-lg bg-[#101b19] px-2 py-2">
-        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/10 shadow-[0_0_0_18px_rgba(16,185,129,.025),0_0_0_38px_rgba(16,185,129,.02),0_0_0_58px_rgba(16,185,129,.015)]"/>
-        <div className="relative mb-1 flex h-[90px] w-full items-center justify-center"><span key={liveBall} className="keno-live-ball grid h-[88px] w-[88px] place-items-center rounded-full border border-slate-500/70 bg-[radial-gradient(circle_at_32%_22%,#84949a,#304550_48%,#0b1720_76%)] text-[42px] font-black text-white shadow-[inset_0_3px_8px_rgba(255,255,255,.3),0_8px_25px_rgba(0,0,0,.65)]">{liveBall}</span><span className="absolute right-2 top-0 font-mono text-xs font-black text-white">{visibleDrawnNumbers.length} <i className="text-emerald-300">/</i> 20</span></div>
-        <div className="relative flex min-h-9 max-w-full items-center justify-center gap-1.5 overflow-hidden">{previousBalls.map((n,i)=><span key={n} className="keno-drawn-preview-ball grid h-9 w-9 shrink-0 place-items-center rounded-full border border-slate-500/60 bg-[radial-gradient(circle_at_35%_25%,#536873,#1c303b_58%,#07141b)] text-[11px] font-black text-white">{n}</span>)}</div>
-      </section>}
-
-      {!isBetting && state?.status === 'settled' && <section className="keno-draw-stage relative overflow-hidden rounded-lg bg-[#101b19] px-1 py-3">
+      {!isBetting && state?.status === 'settled' && <section className="keno-draw-stage relative overflow-hidden rounded-lg bg-[#101b19] px-2 py-3">
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-110px] h-64 w-64 -translate-x-1/2 rounded-full border border-emerald-300/10 shadow-[0_0_0_22px_rgba(16,185,129,.025),0_0_0_44px_rgba(16,185,129,.02)]"/>
-        <div className="relative mb-2 flex justify-end pr-2 font-mono text-xs font-black text-white">{visibleDrawnNumbers.length} <span className="px-1 text-emerald-300">/</span> 20</div>
+        <div className="relative mb-3 flex items-center justify-between px-1 font-mono text-xs font-black text-white">
+          <span>{c.draw}</span>
+          <span>{visibleDrawnNumbers.length} <i className="px-1 text-emerald-300">/</i> 20</span>
+        </div>
         <div aria-label={c.drawnNumbersAria} aria-live="polite" className="relative grid grid-cols-10 gap-1.5 sm:gap-2">
-          {visibleDrawnNumbers.map((n,i)=><span key={n} className="keno-drawn-ball grid aspect-square min-w-0 place-items-center rounded-full border border-slate-500/70 bg-[radial-gradient(circle_at_35%_25%,#536873,#1c303b_58%,#07141b)] text-[11px] font-black tabular-nums text-white shadow-[inset_0_2px_4px_rgba(255,255,255,.18),0_3px_8px_rgba(0,0,0,.45)] sm:text-sm" style={{animationDelay:(i%10)*18+'ms'}}>{n}</span>)}
+          {Array.from({length:20},(_,i)=>visibleDrawnNumbers[i] ?? null).map((n,i)=><span key={i} className={'keno-drawn-ball grid aspect-square min-w-0 place-items-center rounded-full border text-[11px] font-black tabular-nums shadow-[inset_0_2px_4px_rgba(255,255,255,.18),0_3px_8px_rgba(0,0,0,.45)] sm:text-sm '+(n===null?'border-emerald-300/10 bg-[#0a1210]/60 text-transparent':'border-slate-500/70 bg-[radial-gradient(circle_at_35%_25%,#536873,#1c303b_58%,#07141b)] text-white')}>{n ?? '·'}</span>)}
         </div>
       </section>}
 
-      {!isBetting && !inDrawPhase && state?.status !== 'settled' && <section className="grid min-h-[120px] place-items-center rounded-lg bg-[#101b19] text-sm text-emerald-100/60">{t.waitingDraw}</section>}
+      {!isBetting && state?.status !== 'settled' && <section className="grid min-h-[120px] place-items-center rounded-lg bg-[#101b19] text-sm text-emerald-100/60">{t.waitingDraw}</section>}
 
       <nav aria-label="Keno sections" className="keno-tabs flex items-center gap-4 overflow-x-auto border-b border-emerald-400/20 bg-[#101b19] px-1 py-2 text-[11px] font-black uppercase tracking-wide [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map(item=><button key={item.id} type="button" onClick={()=>setTab(item.id)} aria-current={tab===item.id?'page':undefined} className={'flex shrink-0 items-center gap-1 whitespace-nowrap border-b-2 pb-1 '+(tab===item.id?'border-emerald-300 text-emerald-300':'border-transparent text-emerald-100/55')}><span aria-hidden="true">{item.id==='game'?'▶':item.id==='history'?'◴':item.id==='results'?'✓':item.id==='statistics'?'▥':'♛'}</span>{item.label}</button>)}

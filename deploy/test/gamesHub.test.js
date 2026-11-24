@@ -83,6 +83,9 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   const settled = await f.service.getState('keno', f.user);
   assert.equal(settled.status, 'settled');
   assert.equal(settled.drawnNumbers.length, 20);
+  assert.equal(settled.drawIntervalSeconds, 1);
+  const settledRound = await f.repo.getCurrentGameHubRound('keno');
+  assert.equal(settledRound.nextRoundAt, settledRound.settledAt + 22_000, 'the round remains visible for all 20 one-second reveals plus a short finish pause');
   assert.equal(new Set(settled.drawnNumbers).size, 20);
   assert.ok(settled.drawnNumbers.every((n) => Number.isInteger(n) && n >= 1 && n <= 80));
   assert.equal(settled.serverSeed.length, 64);
@@ -90,6 +93,22 @@ test('Keno accepts a valid selection, debits once and settles a committed 20-num
   assert.ok(['won', 'lost'].includes(settled.myBets[0].status));
   assert.ok(settled.myBets.reduce((sum, bet) => sum + Math.round(bet.payoutEtb * 100), 0) <= 450, 'Keno payouts cannot exceed 45% of this round stake');
   assert.equal((await f.repo.listGameHubRounds('keno', 1))[0].status, 'settled');
+});
+
+test('Keno host draw interval is captured per round and controls the full reveal window', async () => {
+  const f = await fixture();
+  await f.service.updateSettings({ kenoDrawIntervalSeconds: 3 });
+  const opening = await f.service.getState('keno', f.user);
+  assert.equal(opening.drawIntervalSeconds, 3);
+  const round = await f.repo.getCurrentGameHubRound('keno');
+  assert.equal(round.kenoDrawIntervalSeconds, 3);
+  await f.service.updateSettings({ kenoDrawIntervalSeconds: 1 });
+  f.advance(21_000);
+  const settled = await f.service.getState('keno', f.user);
+  assert.equal(settled.status, 'settled');
+  assert.equal(settled.drawIntervalSeconds, 3, 'changing host settings does not speed up a round already in progress');
+  const completedRound = await f.repo.getCurrentGameHubRound('keno');
+  assert.equal(completedRound.nextRoundAt, completedRound.settledAt + 62_000, 'the 20-number reveal gets 60 seconds plus a 2-second pause');
 });
 
 test('legacy Keno rounds finish on their original demo wallet without touching Bingo balance', async () => {
@@ -222,6 +241,10 @@ test('Admin settings are validated and persist independently of Bingo settings',
   await assert.rejects(f.service.updateSettings({ aviatorBettingSeconds: 61 }), (e) => e instanceof HttpError && e.code === 'invalid_aviator_timer');
   assert.equal(settings.maxBet, 20000);
   assert.equal(settings.kenoBettingSeconds, 30);
+  const drawPaceSettings = await f.service.updateSettings({ kenoDrawIntervalSeconds: 3 });
+  assert.equal(drawPaceSettings.kenoDrawIntervalSeconds, 3, 'Keno number reveal interval is saved independently');
+  await assert.rejects(f.service.updateSettings({ kenoDrawIntervalSeconds: 0 }), (e) => e instanceof HttpError && e.code === 'invalid_keno_draw_interval');
+  await assert.rejects(f.service.updateSettings({ kenoDrawIntervalSeconds: 11 }), (e) => e instanceof HttpError && e.code === 'invalid_keno_draw_interval');
   const twoMinuteSettings = await f.service.updateSettings({ kenoBettingSeconds: 120 });
   assert.equal(twoMinuteSettings.kenoBettingSeconds, 120, 'Keno accepts minute-based betting windows');
   const tenMinuteSettings = await f.service.updateSettings({ kenoBettingSeconds: 600 });
