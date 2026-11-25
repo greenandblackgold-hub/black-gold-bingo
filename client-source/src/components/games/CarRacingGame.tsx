@@ -192,7 +192,7 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
                 <p className="mt-1 text-center font-mono text-lg font-black tracking-widest text-amber-300">{room.settlement.winnerPlateNumber}</p>
                 <p className="mt-2 text-center text-2xl font-black text-emerald-300">{room.winner.payoutEtb.toFixed(2)} ETB</p>
                 <p className="text-center text-[10px] uppercase tracking-widest text-amber-100/50">Simulation prize · 45% player pool</p>
-                <p className="mt-2 text-center text-xs font-bold text-amber-100/80">Winner position: #{room.settlement.finishOrder.find((item) => item.plateNumber === room.settlement.winnerPlateNumber)?.position ?? '—'}</p>
+                <p className="mt-2 text-center text-xs font-bold text-amber-100/80">Winner position: #{room.settlement?.finishOrder.find((item) => item.plateNumber === room.settlement?.winnerPlateNumber)?.position ?? '—'}</p>
                 {state?.simulationOnly && <div className="mt-4 rounded-xl border border-sky-400/30 bg-sky-950/40 p-3 text-center"><p className="text-xs font-black uppercase tracking-widest text-sky-200">SIMULATION / TEST MODE</p><p className="mt-1 font-mono text-[11px] font-bold text-sky-100">REAL_MONEY_ENABLED=false</p><p className="mt-1 text-[10px] text-sky-100/70">Demo credits only · No real-money payment or wallet settlement</p></div>}
                 <div className="mt-4 rounded-xl border border-amber-300/20 bg-black/45 p-3 text-xs">
                   <p className="font-black uppercase tracking-wider text-amber-200">How the pool is calculated</p>
