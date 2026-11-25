@@ -76,7 +76,7 @@ export function CarRacing3DViewport(p:Props) {
     const scenery:THREE.Object3D[]=[];
     for(let i=0;i<16;i++){const z=-i*15-5;if(p.track.environment==='city'){scenery.push(building(-13-(i%3),z,i),building(13+(i%2),z-6,i+1));}else if(p.track.environment==='rocky'){for(const side of [-1,1]){const r=new THREE.Mesh(new THREE.DodecahedronGeometry(2+i%3),new THREE.MeshStandardMaterial({color:'#68635d'}));r.position.set(side*(13+i%2*2),2+i%3,z);r.scale.set(1.5,1.3,1.2);scenery.push(r);}}else{scenery.push(tree(-13-(i%3),z),tree(13+(i%2),z-5));}}
     scenery.forEach(x=>scene.add(x));
-    const own=makeCar('#e9ad3b','BGB-CAR');scene.add(own.group);
+    const ownColor=p.cars.find(c=>c.id===p.me.carId)?.color||'#e9ad3b';const own=makeCar(ownColor,p.me.plateNumber);scene.add(own.group);
     const opponents=new Map<string,CarModel>();
     const cockpit=new THREE.Group(),dash=new THREE.Mesh(new THREE.BoxGeometry(4.8,.62,1.1),new THREE.MeshStandardMaterial({color:'#101316',metalness:.42}));dash.position.set(0,-.95,-1.55);cockpit.add(dash);
     const steering=new THREE.Group(),rim=new THREE.Mesh(new THREE.TorusGeometry(.48,.075,12,40),new THREE.MeshStandardMaterial({color:'#b6b9bb',metalness:.8}));steering.add(rim);
