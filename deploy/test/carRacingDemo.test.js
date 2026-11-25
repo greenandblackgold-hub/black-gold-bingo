@@ -74,10 +74,13 @@ test('server derives payout and enforces ETB 20,000 cap without touching wallet'
   assert.ok(state.winner.payoutEtb <= 20_000);
 });
 
-test('production real-money environment cannot use the car racing demo endpoints', () => {
-  const service = createCarRacingDemoService({ prod: true });
-  assert.equal(service.getCatalog().enabled, false);
-  assert.throws(() => service.getState({ id: 'driver-a' }), (error) => error instanceof HttpError && error.code === 'car_racing_demo_only');
+test('production simulation mode can use Car Racing, but real-money mode cannot', () => {
+  const simulation = createCarRacingDemoService({ realMoneyEnabled: false });
+  assert.equal(simulation.getCatalog().enabled, true);
+  assert.equal(simulation.getState({ id: 'driver-a' }).simulationOnly, true);
+  const realMoney = createCarRacingDemoService({ realMoneyEnabled: true });
+  assert.equal(realMoney.getCatalog().enabled, false);
+  assert.throws(() => realMoney.getState({ id: 'driver-a' }), (error) => error instanceof HttpError && error.code === 'car_racing_demo_only');
 });
 
 test('leaving an unstarted lobby refunds only simulation credits', () => {
