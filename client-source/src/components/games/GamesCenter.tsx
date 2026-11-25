@@ -37,15 +37,8 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
   const { lang } = useLanguage();
   const t = gameUi.gamesCenter[lang];
   const mt = (key: Parameters<typeof minesLocale>[1]) => minesLocale(lang, key);
-  const [availability, setAvailability] = useState<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minesEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' } | null>(null);
+  const [availability, setAvailability] = useState<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minesEnabled: boolean; carRacingEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' } | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
-  const [carRacingEnabled, setCarRacingEnabled] = useState(false);
-  useEffect(() => {
-    if (!serverMode) return;
-    let catalogActive = true;
-    void api.get<{ enabled: boolean }>('/api/games/car-racing/catalog').then((value) => { if (catalogActive) setCarRacingEnabled(value.enabled === true); }).catch(() => { if (catalogActive) setCarRacingEnabled(false); });
-    return () => { catalogActive = false; };
-  }, [serverMode]);
   useEffect(() => {
     if (!serverMode) return;
     let active = true;
@@ -56,7 +49,7 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
       if (pending) { refreshQueued = true; return; }
       pending = true;
       try {
-        const value = await api.get<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minesEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings');
+        const value = await api.get<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minesEnabled: boolean; carRacingEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' }>('/api/games/settings');
         if (!active) return;
         setAvailability((previous) => {
           if (previous &&
@@ -66,6 +59,7 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
             previous.kenoEnabled === value.kenoEnabled &&
             previous.aviatorEnabled === value.aviatorEnabled &&
             previous.minesEnabled === value.minesEnabled &&
+            previous.carRacingEnabled === value.carRacingEnabled &&
             previous.balanceEtb === value.balanceEtb &&
             previous.walletMode === value.walletMode) return previous;
           return value;
@@ -135,7 +129,7 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
         {(!serverMode || availability?.kenoEnabled === true) && <GameCard title="Keno" subtitle={t.kenoSubtitle} detail={t.kenoDetail} icon="keno" onClick={onOpenKeno} openLabel={t.openGame} />}
         {(!serverMode || availability?.aviatorEnabled === true) && <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} openLabel={t.openGame} />}
         {(!serverMode || availability?.minesEnabled === true) && <GameCard title="Mines" subtitle={mt('cardSubtitle')} detail={mt('cardDetail')} icon="mines" onClick={onOpenMines} openLabel={t.openGame} /> }
-        {serverMode && carRacingEnabled && <GameCard title="Multiplayer Car Racing" subtitle="LIVE MULTIPLAYER · DEMO ONLY" detail="Choose a car, join a room and race across changing tracks. Simulation credits only." icon="racing" onClick={onOpenCarRacing} openLabel={t.openGame} featured />}
+        {serverMode && availability?.carRacingEnabled === true && <GameCard title="Multiplayer Car Racing" subtitle="LIVE MULTIPLAYER · DEMO ONLY" detail="Choose a car, join a room and race across changing tracks. Simulation credits only." icon="racing" onClick={onOpenCarRacing} openLabel={t.openGame} featured />}
         <GameCard title="Virtual Sports" subtitle={t.virtualSportsSubtitle} detail={t.virtualSportsDetail} icon="virtual" onClick={() => {}} openLabel={t.openGame} disabled disabledLabel={t.comingSoon} />
         <GameCard title="Live Sports" subtitle={t.liveSportsSubtitle} detail={t.liveSportsDetail} icon="live" onClick={() => {}} openLabel={t.openGame} disabled disabledLabel={t.comingSoon} />
         </div>
