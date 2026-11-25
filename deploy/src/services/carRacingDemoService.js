@@ -107,8 +107,9 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       const reverse = controlFresh && p.reverse;
       const boost = controlFresh && p.boost;
       const curveWave = room.track.curveType === 's-bend' ? Math.sin((p.progress / 1000) * Math.PI * 2) : 1;
+      const damagePenalty = Math.max(0.55, 1 - (p.damage ?? 0) * 0.004);
       const curveForce = (room.track.curveType === 'left' ? -1 : room.track.curveType === 'right' ? 1 : room.track.curveType === 's-bend' ? curveWave : 0) * room.track.curveIntensity;
-      p.lane += steer * car.handling * dt * 1.7 - curveForce * dt * 0.1;
+      p.lane += steer * car.handling * damagePenalty * dt * 1.7 - curveForce * dt * 0.1;
       if (Math.abs(p.lane) >= room.track.wallLimit) {
         const severity = Math.abs(p.velocity) >= 0.72 ? 'severe' : 'medium';
         const event = { id: `${at}-${p.userId}-wall`, at, type: 'wall', severity, participants: [p.userId] };
@@ -117,7 +118,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
         p.velocity *= severity === 'severe' ? 0 : 0.28; p.throttle = 0; p.steer = 0; p.reverse = false; p.boost = false;
         continue;
       }
-      const gripPenalty = Math.abs(p.lane) > room.track.grip ? 0.62 : 1;
+      const gripPenalty = (Math.abs(p.lane) > room.track.grip ? 0.62 : 1) * damagePenalty;
       const acceleration = throttle * (reverse ? 1.05 : boost ? 1.3 : 0.8);
       const drag = throttle ? 0 : dt * 0.7;
       const nextVelocity = p.velocity + (reverse ? -acceleration : acceleration) * dt + (p.velocity > 0 ? -drag : p.velocity < 0 ? drag : 0);
@@ -161,14 +162,15 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
         p.collisionEvent = event; p.lastCollisionAt = at;
         p.damage = Math.min(100, (p.damage ?? 0) + (severity === 'severe' ? 100 : severity === 'medium' ? 32 : 8));
         p.velocity *= severity === 'severe' ? 0 : severity === 'medium' ? 0.42 : 0.78;
-        p.lane += p === a ? -0.08 : 0.08;
+        p.lane += p === a ? -0.14 : 0.14;
         p.throttle = 0; p.boost = false;
         if (severity === 'severe' || p.damage >= 100) { p.eliminated = true; p.eliminationReason = 'car-to-car'; p.eliminatedAt = at; p.steer = 0; p.reverse = false; }
       }
     }
     if (room.collisionEvents.length > 40) room.collisionEvents.splice(0, room.collisionEvents.length - 40);
     finishers.sort((a, b) => a.at - b.at);
-    if (finishers.length) settle(room, finishers[0].player, finishers[0].at);
+    const validFinishers = finishers.filter(({ player: finisher }) => !finisher.eliminated);
+    if (validFinishers.length) settle(room, validFinishers[0].player, validFinishers[0].at);
     if (room.status === 'racing' && room.players.every((p) => p.finished || p.eliminated)) {
       room.status = 'finished'; room.finishedAt = at; room.endReason = 'all_eliminated';
     }
