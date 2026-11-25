@@ -660,7 +660,8 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
       if (!['bingo', 'keno', 'aviator', 'mines', 'car-racing'].includes(game)) throw new HttpError(404, 'game_not_found', 'Unknown game.');
       const current = await settings();
       if (current.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
-      if (current[game + 'Enabled'] !== true) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
+      const settingKey = game === 'car-racing' ? 'carRacingEnabled' : game + 'Enabled';
+      if (current[settingKey] !== true) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
     },
     async getPublicSettings(user) {
       ensureSimulationMode();
