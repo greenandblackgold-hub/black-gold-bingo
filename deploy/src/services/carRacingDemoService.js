@@ -147,7 +147,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
         finishers.push({ player: p, at: crossing });
       } else p.progress = next;
     }
-    // Server-authoritative body overlap: 4.2 progress units long and 0.34 lane units wide.
+    // Server-authoritative body overlap uses 4.2 longitudinal units and 0.18 lateral center spacing.
     const active = room.players.filter((p) => !p.finished && !p.eliminated);
     for (let i = 0; i < active.length; i += 1) for (let j = i + 1; j < active.length; j += 1) {
       const a = active[i], b = active[j];
