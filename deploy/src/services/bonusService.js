@@ -7,10 +7,11 @@ const BONUS_PRIZE_SANTIM = 1_000_000;
 
 export function createBonusService({ repo, game, config, push }) {
   async function announce(message) {
-    // General OFF suppresses all customer-facing Bingo bonus announcements and push notifications.
-    // The bonus-cycle bookkeeping and game state continue unchanged.
+    // Respect the Games Center master switch, Bingo Host switch, and all-games-off state.
     const hubSettings = await repo.getGameHubSettings();
-    if (hubSettings.generalEnabled === false) return;
+    const allGamesOff = ['bingoEnabled', 'kenoEnabled', 'aviatorEnabled', 'minesEnabled', 'carRacingEnabled']
+      .every((key) => hubSettings[key] === false);
+    if (hubSettings.generalEnabled === false || hubSettings.bingoEnabled === false || allGamesOff) return;
     await game.setAnnouncement(message);
     if (push?.isEnabled()) await push.notifyPlayers({ title: 'BLACK GOLD BINGO', body: message, tag: `bgb-bonus-${Date.now()}` }).catch((error) => console.error('bonus push delivery failed', error));
   }
@@ -117,7 +118,7 @@ export function createBonusService({ repo, game, config, push }) {
       maxPrizeCap: saved.maxPrizeCap ?? 0,
     });
     if (restored) {
-      await game.setAnnouncement('🏁 የቦነስ ጨዋታው ተጠናቋል። የመደበኛ ጨዋታዎች 10 ዙር ዑደት እንደገና ተጀምሯል።');
+      await announce('🏁 የቦነስ ጨዋታው ተጠናቋል። የመደበኛ ጨዋታዎች 10 ዙር ዑደት እንደገና ተጀምሯል።');
       return true;
     }
     return false;
@@ -138,7 +139,7 @@ export function createBonusService({ repo, game, config, push }) {
     if (g.phase === 'waiting' && g.bonusRound && g.bonusRoundPrepared) {
       await grantFreeCards(g);
       await game.startRound();
-      await game.setAnnouncement('🎉 ነፃ የቦነስ ጨዋታ ተጀምሯል! የሽልማቱ መጠን 10,000 ብር ነው። ለእያንዳንዱ ተጫዋች እስከ 3 ነፃ ካርቴላ ተሰጥቷል።');
+      await announce('🎉 ነፃ የቦነስ ጨዋታ ተጀምሯል! የሽልማቱ መጠን 10,000 ብር ነው። ለእያንዳንዱ ተጫዋች እስከ 3 ነፃ ካርቴላ ተሰጥቷል።');
     }
   }
 
