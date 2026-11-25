@@ -55,7 +55,7 @@ function CarPreview({ car, view }: { car: Car; view: 'exterior' | 'interior' }) 
 }
 
 function DrivingScene({ view, players, me, cars, speed, steer, track }: { view: DrivingView; players: Player[]; me: Player; cars: Car[]; speed: number; steer: number; track: Track }) {
-  const others = players.filter((p) => !p.isMe && !p.finished && !p.eliminated);
+  const others = players.filter((p) => !p.isMe && !p.finished);
   const roadPath = track.curveType === 'left' ? 'M360 160 C345 245 245 330 105 460 L505 460 C600 340 610 245 575 160 Z' : track.curveType === 'right' ? 'M325 160 C290 245 300 330 395 460 L795 460 C650 330 600 245 575 160 Z' : track.curveType === 's-bend' ? 'M310 160 C430 230 250 330 370 460 L770 460 C640 330 820 230 590 160 Z' : 'M310 160 L590 160 L850 460 L50 460 Z';
   const centerPath = track.curveType === 'left' ? 'M468 160 C465 245 360 330 305 460' : track.curveType === 'right' ? 'M432 160 C420 245 500 330 595 460' : track.curveType === 's-bend' ? 'M450 160 C535 230 365 330 570 460' : 'M450 160 L450 460';
   const sprite = (p: Player, index: number, own = false) => {
@@ -69,6 +69,7 @@ function DrivingScene({ view, players, me, cars, speed, steer, track }: { view: 
       <path d="M-27 -18 Q-22 -34 -12 -34 L12 -34 Q22 -34 27 -18 L25 -5 L-25 -5Z" fill="#152330" stroke="#b7c9d7" strokeWidth="2" />
       <rect x="-38" y="15" width="12" height="8" rx="2" fill="#fff0b9" /><rect x="26" y="15" width="12" height="8" rx="2" fill="#fff0b9" />
       <rect x="-16" y="26" width="32" height="8" rx="2" fill="#f8f2dc" /><text x="0" y="32" textAnchor="middle" fontSize="6" fontWeight="bold" fill="#111">{p.plateNumber.slice(-6)}</text>
+      {p.eliminated && <><path d="M-24 -48 L24 -48" stroke="#ef4444" strokeWidth="7" strokeLinecap="round" /><text x="0" y="-57" textAnchor="middle" fontSize="13" fontWeight="black" fill="#fecaca">CRASH</text></>}
     </g>;
   };
   return <svg viewBox="0 0 900 460" role="img" aria-label={view === 'chase' ? 'Outside chase driving view' : 'Inside cockpit driving view'} className="h-auto max-h-[58vh] w-full rounded-2xl">
