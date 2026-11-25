@@ -353,7 +353,7 @@ test('Aviator commits a round before betting and reveals its seed only after cra
 
 test('Admin settings are validated and persist independently of Bingo settings', async () => {
   const f = await fixture();
-  const settings = await f.service.updateSettings({ generalEnabled: false, announcementText: 'Maintenance window', announcementVisible: true, bingoEnabled: false, kenoEnabled: false, minesEnabled: false, minBetEtb: 8, kenoMinBetEtb: 2, maxBetEtb: 200, houseEdgePercent: 60, kenoBettingSeconds: 30, aviatorBettingSeconds: 60 });
+  const settings = await f.service.updateSettings({ generalEnabled: false, announcementText: 'Maintenance window', announcementVisible: true, bingoEnabled: false, kenoEnabled: false, minesEnabled: false, carRacingEnabled: false, minBetEtb: 8, kenoMinBetEtb: 2, maxBetEtb: 200, houseEdgePercent: 60, kenoBettingSeconds: 30, aviatorBettingSeconds: 60 });
   assert.equal(settings.generalEnabled, false);
   assert.equal(settings.announcementText, 'Maintenance window');
   assert.equal(settings.announcementVisible, true);
@@ -361,7 +361,13 @@ test('Admin settings are validated and persist independently of Bingo settings',
   assert.equal(settings.kenoEnabled, false);
   assert.equal(settings.minesEnabled, false);
   await assert.rejects(f.service.assertGameEnabled('keno'), (e) => e instanceof HttpError && e.code === 'games_center_disabled');
+  await assert.rejects(f.service.assertGameEnabled('car-racing'), (e) => e instanceof HttpError && e.code === 'games_center_disabled');
   await f.service.updateSettings({ generalEnabled: true });
+  await assert.rejects(f.service.assertGameEnabled('car-racing'), (e) => e instanceof HttpError && e.code === 'game_disabled');
+  await f.service.updateSettings({ carRacingEnabled: true });
+  await f.service.assertGameEnabled('car-racing');
+  await f.service.updateSettings({ carRacingEnabled: false });
+  await assert.rejects(f.service.assertGameEnabled('car-racing'), (e) => e instanceof HttpError && e.code === 'game_disabled');
   await assert.rejects(f.service.assertGameEnabled('mines'), (e) => e instanceof HttpError && e.code === 'game_disabled');
   await assert.rejects(f.service.assertGameEnabled('keno'), (e) => e instanceof HttpError && e.code === 'game_disabled');
   await assert.rejects(f.service.assertGameEnabled('bingo'), (e) => e instanceof HttpError && e.code === 'game_disabled');
