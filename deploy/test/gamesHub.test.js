@@ -12,7 +12,7 @@ test('Keno and Aviator payouts are capped at ETB 20,000 per bet', () => {
   assert.equal(capGamesHubPayout(-100), 0);
 });
 
-async function fixture() {
+async function fixture(configOverrides = {}) {
   let clock = Date.now();
   const repo = createMemoryRepo();
   const user = await repo.createUser({
@@ -22,11 +22,27 @@ async function fixture() {
   await repo.applyLedger({ userId: user.id, amount: 100000, kind: 'deposit', ref: 'seed:games-test' });
   const service = createGamesHubService({
     repo,
-    config: { prod: false, realMoneyEnabled: false, gamesHubSharedWalletEnabled: true },
+    config: { prod: false, realMoneyEnabled: false, gamesHubSharedWalletEnabled: true, ...configOverrides },
     now: () => clock,
   });
   return { repo, user, service, advance: (ms) => { clock += ms; }, time: () => clock };
 }
+
+test('Car Racing is available in production simulation mode and blocked in real-money mode', async () => {
+  const simulation = await fixture({ prod: true, realMoneyEnabled: false });
+  await simulation.service.updateSettings({ carRacingEnabled: true, generalEnabled: true });
+  await simulation.service.assertGameEnabled('car-racing');
+  const settings = await simulation.service.getPublicSettings(simulation.user);
+  assert.equal(settings.carRacingEnabled, true);
+  assert.equal(settings.mode, 'SIMULATION_ONLY');
+
+  const realMoney = await fixture({ prod: true, realMoneyEnabled: true });
+  await realMoney.service.updateSettings({ carRacingEnabled: true, generalEnabled: true });
+  await assert.rejects(realMoney.service.assertGameEnabled('car-racing'), (error) =>
+    error instanceof HttpError && error.code === 'car_racing_demo_only');
+  const hidden = await realMoney.service.getPublicSettings(realMoney.user);
+  assert.equal(hidden.carRacingEnabled, false);
+});
 
 test('Keno state reuses its settings snapshot for the round tick', async () => {
   const f = await fixture();
