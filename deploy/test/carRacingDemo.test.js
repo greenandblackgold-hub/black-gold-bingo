@@ -358,3 +358,14 @@ test('settlement is plate-identified, identical across racer views and never acc
   assert.equal(a.settlement.companyShareEtb, 38.5);
   assert.equal(a.settlement.prizePoolEtb, 31.5);
 });
+
+
+test('finished result screen explains pool arithmetic, cap semantics, winner rank and simulation-only mode', () => {
+  const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacingGame.tsx', import.meta.url), 'utf8');
+  assert.match(frontend, /How the pool is calculated/);
+  assert.match(frontend, /Maximum current room example: 8 × 500 ETB = 4,000 ETB total; company 55% = 2,200 ETB; prize pool 45% = 1,800 ETB/);
+  assert.match(frontend, /upper payout limit, not a guaranteed prize/);
+  assert.match(frontend, /REAL_MONEY_ENABLED=false/);
+  assert.match(frontend, /Winner position:/);
+  assert.match(frontend, /Demo credits only/);
+});
