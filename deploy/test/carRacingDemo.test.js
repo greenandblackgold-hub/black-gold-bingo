@@ -19,6 +19,8 @@ test('car racing is a demo-only isolated catalog with rotating tracks and car ch
   assert.equal(catalog.poolPercent, 45);
   assert.equal(catalog.maxPrizeEtb, 20_000);
   assert.equal(catalog.tracks.length, 4);
+  assert.deepEqual(catalog.tracks.map((track) => track.curveType), ['straight', 'right', 'left', 's-bend']);
+  assert.ok(catalog.tracks.every((track) => track.curveIntensity >= 0 && track.wallLimit > 0));
   assert.equal(catalog.cars.length, 4);
   assert.equal(f.service.createRoom(f.a, { entryFeeEtb: 10 }).track.id, 'city');
   f.service.leave(f.a);
@@ -139,4 +141,59 @@ test('leaving an unstarted lobby refunds only simulation credits', () => {
   assert.equal(f.service.getState(f.a).balanceEtb, before - 25);
   f.service.leave(f.a);
   assert.equal(f.service.getState(f.a).balanceEtb, before);
+});
+
+
+test('server eliminates a driver on obstacle impact and locks their controls', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  f.service.joinRoom(f.b, { code: room.code });
+  f.service.setReady(f.a, {});
+  f.service.setReady(f.b, {});
+  f.advance(3_100);
+  f.service.getState(f.a);
+  f.service.control(f.a, { throttle: 1, steer: 1 });
+  f.advance(250);
+  f.service.getState(f.a);
+  f.service.control(f.a, { throttle: 1, steer: 0.5 });
+  f.advance(250);
+  f.service.getState(f.a);
+  for (let i = 0; i < 30; i++) {
+    f.service.control(f.a, { throttle: 1, steer: 0 });
+    f.service.control(f.b, { throttle: 1, steer: 0 });
+    f.advance(250);
+    const state = f.service.getState(f.a).room;
+    if (state.players.find((p) => p.isMe).eliminated) break;
+  }
+  const state = f.service.getState(f.a).room;
+  const eliminated = state.players.find((p) => p.isMe);
+  assert.equal(eliminated.eliminated, true);
+  assert.equal(eliminated.eliminationReason, 'barrier');
+  assert.equal(eliminated.speed, 0);
+  const frozenProgress = eliminated.progress;
+  f.advance(2_000);
+  assert.equal(f.service.getState(f.a).room.players.find((p) => p.isMe).progress, frozenProgress);
+  assert.throws(() => f.service.control(f.a, { throttle: 1 }), (error) => error instanceof HttpError && error.code === 'driver_eliminated');
+  assert.equal(f.service.getState(f.b).room.players.find((p) => p.userId === f.a.id).eliminated, true);
+});
+
+test('server eliminates a driver who crosses the track wall', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  f.service.joinRoom(f.b, { code: room.code });
+  f.service.setReady(f.a, {});
+  f.service.setReady(f.b, {});
+  f.advance(3_100);
+  f.service.getState(f.a);
+  for (let i = 0; i < 4; i++) {
+    f.service.control(f.a, { throttle: 0, steer: 1 });
+    f.advance(250);
+    f.service.getState(f.a);
+  }
+  const state = f.service.getState(f.a).room;
+  const eliminated = state.players.find((p) => p.isMe);
+  assert.equal(eliminated.eliminated, true);
+  assert.equal(eliminated.eliminationReason, 'wall');
+  assert.equal(eliminated.speed, 0);
+  assert.equal(state.status, 'racing', 'the remaining driver continues the race');
 });
