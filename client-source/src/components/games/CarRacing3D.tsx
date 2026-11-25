@@ -4,7 +4,7 @@ import * as THREE from 'three';
 // Rendering-only layer: server-authoritative race state continues to come from CarRacingGame/API.
 export type RacingCar = { id: string; name: string; color: string };
 export type RacingPlayer = { userId: string; name: string; carId: string; plateNumber: string; progress: number; lane: number; speed: number; finished: boolean; eliminated: boolean; isMe: boolean };
-export type RacingTrack = { name: string; environment: 'city' | 'country' | 'rocky' | 'coastal'; curveType: 'straight' | 'left' | 'right' | 's-bend' };
+export type RacingTrack = { name: string; environment: 'city' | 'country' | 'rocky' | 'coastal'; curveType: 'straight' | 'left' | 'right' | 's-bend'; obstacles: { at: number; lane: number; width: number; type: string }[] };
 export type RacingView = 'chase' | 'cockpit';
 type Props = { view: RacingView; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; track: RacingTrack; boost: boolean; rank: number; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean) => void };
 type CarModel = { group: THREE.Group; wheels: THREE.Mesh[] };
@@ -77,6 +77,26 @@ export function CarRacing3DViewport(p:Props) {
     const scenery:THREE.Object3D[]=[];
     for(let i=0;i<16;i++){const z=-i*15-5;if(p.track.environment==='city'){scenery.push(building(-13-(i%3),z,i),building(13+(i%2),z-6,i+1));}else if(p.track.environment==='rocky'){for(const side of [-1,1]){const r=new THREE.Mesh(new THREE.DodecahedronGeometry(2+i%3),new THREE.MeshStandardMaterial({color:'#68635d'}));r.position.set(side*(13+i%2*2),2+i%3,z);r.scale.set(1.5,1.3,1.2);scenery.push(r);}}else{scenery.push(tree(-13-(i%3),z),tree(13+(i%2),z-5));}}
     scenery.forEach(x=>scene.add(x));
+    const obstacleModels = p.track.obstacles.map(obstacle => {
+      const group = new THREE.Group();
+      const laneX = obstacle.lane * 3.45;
+      const warning = new THREE.MeshStandardMaterial({color:'#f4e8c8', roughness:.75});
+      const hazard = new THREE.MeshStandardMaterial({color:'#d33b32', roughness:.8});
+      if (obstacle.type === 'barrier') {
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(2.5, .8, .45), warning); beam.position.y=.55; group.add(beam);
+        for(let stripe=-1;stripe<=1;stripe++){const band=new THREE.Mesh(new THREE.BoxGeometry(.42,.84,.48),hazard);band.position.set(stripe*.72,.55,0);band.rotation.z=-.45;group.add(band);}
+        const legMat=new THREE.MeshStandardMaterial({color:'#42464a',metalness:.4});
+        [-.8,.8].forEach(x=>{const leg=new THREE.Mesh(new THREE.BoxGeometry(.18,.7,.2),legMat);leg.position.set(x,.2,0);group.add(leg);});
+      } else if (obstacle.type === 'logs') {
+        for(let n=0;n<2;n++){const log=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,2.2,12),new THREE.MeshStandardMaterial({color:'#80532f',roughness:.95}));log.rotation.z=Math.PI/2;log.position.set(0,.35+n*.38,n*.35);group.add(log);}
+      } else {
+        const count=obstacle.type==='rockfall'?6:obstacle.type==='boulder'?1:3;
+        for(let n=0;n<count;n++){const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(obstacle.type==='boulder'?1.15:.48+(n%2)*.25),new THREE.MeshStandardMaterial({color:'#77736c',roughness:1}));rock.position.set((n%3-1)*.58,.35+(n%2)*.28,Math.floor(n/3)*.55);rock.rotation.set(n*.2,n*.4,n*.15);group.add(rock);}
+      }
+      group.position.set(laneX,0,-20);
+      scene.add(group);
+      return {group, obstacle};
+    });
     const ownColor=p.cars.find(c=>c.id===p.me.carId)?.color||'#e9ad3b';const own=makeCar(ownColor,p.me.plateNumber);scene.add(own.group);
     const opponents=new Map<string,CarModel>();
     const cockpit=new THREE.Group(),dash=new THREE.Mesh(new THREE.BoxGeometry(4.8,.62,1.1),new THREE.MeshStandardMaterial({color:'#101316',metalness:.42}));dash.position.set(0,-.95,-1.55);cockpit.add(dash);
@@ -90,6 +110,7 @@ export function CarRacing3DViewport(p:Props) {
     const animate=(now:number)=>{raf=requestAnimationFrame(animate);const dt=Math.min((now-last)/1000,.05);last=now;const s=latest.current,velocity=Math.max(.4,s.speed/90);travel+=dt*velocity*(s.boost?2.2:1);
       markers.forEach(m=>{m.position.z+=dt*velocity*34;if(m.position.z>15)m.position.z-=240;});
       scenery.forEach(o=>{o.position.z+=dt*velocity*25;if(o.position.z>18)o.position.z-=240;});
+      obstacleModels.forEach(({group,obstacle})=>{const ahead=obstacle.at/10-latest.current.me.progress;group.position.set(obstacle.lane*3.45,0,THREE.MathUtils.clamp(-ahead*3.2,-220,18));group.visible=ahead>-2&&ahead<72;});
       const bend=s.track.curveType==='left'?.22:s.track.curveType==='right'?-.22:s.track.curveType==='s-bend'?Math.sin(travel*.2)*.2:0,offset=s.steer*1.05;
       own.group.position.set(offset*.7,0,4.5);own.group.rotation.y=-s.steer*.16-bend*.16;own.group.visible=s.view==='chase';own.wheels.forEach(w=>{w.rotation.x+=dt*velocity*3;});
       steering.rotation.z=-s.steer*.55;cockpit.visible=s.view==='cockpit';
