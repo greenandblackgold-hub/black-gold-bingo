@@ -157,6 +157,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   route('POST', '/api/games/car-racing/join', 'user', 'money', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.joinRoom(user, body); });
   route('POST', '/api/games/car-racing/car', 'user', 'default', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.chooseCar(user, body); });
   route('POST', '/api/games/car-racing/ready', 'user', 'default', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.setReady(user, body); });
+  route('POST', '/api/games/car-racing/host-control', 'user', 'default', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.hostControl(user, body); });
   route('POST', '/api/games/car-racing/control', 'user', 'car-racing', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.control(user, body); });
   route('POST', '/api/games/car-racing/leave', 'user', 'default', async ({ user }) => { await assertCarRacingAvailable(); return carRacing.leave(user); });
 
