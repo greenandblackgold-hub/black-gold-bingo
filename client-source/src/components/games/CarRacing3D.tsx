@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 // Rendering-only layer: server-authoritative race state continues to come from CarRacingGame/API.
 export type RacingCar = { id: string; name: string; color: string };
-export type RacingPlayer = { userId: string; name: string; carId: string; plateNumber: string; progress: number; lane: number; speed: number; finished: boolean; eliminated: boolean; isMe: boolean };
+export type RacingPlayer = { userId: string; name: string; carId: string; plateNumber: string; progress: number; lane: number; speed: number; finished: boolean; eliminated: boolean; isMe: boolean; collisionEvent: { id: string; at: number; type: string; severity: 'light' | 'medium' | 'severe'; participants: string[] } | null };
 export type RacingTrack = { name: string; environment: 'city' | 'country' | 'rocky' | 'coastal'; curveType: 'straight' | 'left' | 'right' | 's-bend'; obstacles: { at: number; lane: number; width: number; type: string }[] };
 export type RacingView = 'chase' | 'cockpit';
 type Props = { view: RacingView; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; track: RacingTrack; boost: boolean; rank: number; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean) => void };
@@ -140,6 +140,7 @@ export function CarRacing3DViewport(p:Props) {
       <div className="flex items-end gap-2">{control('▼','BRAKE / REV','muted',()=>p.onThrottle(1,true,false),()=>p.onThrottle(0,false,false))}{control('▲','GAS','gold',()=>p.onThrottle(1,false,false),()=>p.onThrottle(0,false,false))}{control('N₂O','NITRO','nitro',()=>p.onThrottle(1,false,true),()=>p.onThrottle(0,false,false))}</div>
     </div>
     <div className="pointer-events-none absolute bottom-[88px] left-1/2 -translate-x-1/2 rounded-full border border-white/15 bg-black/60 px-3 py-1 text-[9px] font-black tracking-[.2em] text-white/75">{p.view==='cockpit'?'3D COCKPIT · LIVE DASH':'3D CHASE CAMERA'}</div>
+    {p.me.collisionEvent && Date.now()-p.me.collisionEvent.at<2200 && <div role="status" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-orange-300/70 bg-red-950/85 px-5 py-3 text-center text-sm font-black tracking-widest text-orange-100 shadow-[0_0_30px_rgba(255,90,30,.45)]">IMPACT · {p.me.collisionEvent.severity.toUpperCase()}</div>}
     <div className="sr-only" aria-live="polite">{Math.round(p.speed)} kilometers per hour, position {p.rank} of {p.players.length}</div>
   </div>;
 }
