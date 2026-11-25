@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createCarRacingDemoService, CAR_RACING_COMPANY_PERCENT, CAR_RACING_POOL_PERCENT, CAR_RACING_MAX_PRIZE_ETB } from '../src/services/carRacingDemoService.js';
+import { createCarRacingDemoService, calculateCarRacingSettlement, CAR_RACING_COMPANY_PERCENT, CAR_RACING_POOL_PERCENT, CAR_RACING_MAX_PRIZE_ETB } from '../src/services/carRacingDemoService.js';
 import { HttpError } from '../src/util/errors.js';
 
 function fixture() {
@@ -61,7 +61,20 @@ test('two authenticated drivers join, choose cars and race on server-controlled 
   assert.match(state.room.winner.plateNumber, /^BGB-[A-Z0-9]+-[A-Z0-9]+$/);
   assert.equal(state.room.prizePoolEtb, 18);
   assert.equal(state.room.companyShareEtb, 22);
+  assert.ok(state.room.settlement.verified);
+  assert.equal(state.room.settlement.verificationMethod, 'server-authoritative');
+  assert.equal(state.room.settlement.reason, 'finish_line');
+  assert.match(state.room.settlement.resultId, /^BGR-[A-F0-9]{16}$/);
+  assert.equal(state.room.settlement.winnerPlateNumber, state.room.winner.plateNumber);
+  assert.equal(state.room.settlement.totalEntryPoolEtb, 40);
+  assert.equal(state.room.settlement.companyShareEtb, 22);
+  assert.equal(state.room.settlement.prizePoolEtb, 18);
+  assert.equal(state.room.settlement.payoutCapEtb, 20_000);
   const winner = state.room.winner.userId === f.a.id ? f.a : f.b;
+  const loser = winner.id === f.a.id ? f.b : f.a;
+  assert.deepEqual(f.service.getState(loser).room.settlement, state.room.settlement, 'every racer receives the identical server result snapshot');
+  assert.equal(state.room.settlement.finishOrder[0].plateNumber, state.room.winner.plateNumber);
+  assert.equal(state.room.settlement.finishOrder[0].status, 'winner');
   const credited = f.service.getState(winner).balanceEtb;
   f.service.getState(f.a); f.service.getState(f.b);
   assert.equal(f.service.getState(winner).balanceEtb, credited, 're-reading a settled race never credits the winner twice');
@@ -125,6 +138,10 @@ test('server derives payout and enforces ETB 20,000 cap without touching wallet'
   const state = f.service.getState(f.a).room;
   assert.equal(state.status, 'finished');
   assert.ok(state.winner.payoutEtb <= 20_000);
+  assert.equal(state.settlement.reason, 'time_limit');
+  assert.equal(state.settlement.winnerPlateNumber, state.winner.plateNumber);
+  assert.equal(state.settlement.prizePoolEtb, 450);
+  assert.equal(state.settlement.companyShareEtb, 550);
 });
 
 test('production simulation mode can use Car Racing, but real-money mode cannot', () => {
@@ -230,6 +247,7 @@ test('race ends cleanly when every driver is eliminated', () => {
   assert.equal(state.winner, null);
   assert.equal(state.endReason, 'all_eliminated');
   assert.ok(state.players.every((p) => p.eliminated));
+  assert.equal(state.settlement, null, 'an all-eliminated race cannot issue a winner or payout settlement');
 });
 
 
@@ -295,4 +313,44 @@ test('frontend source includes all four track scenes, modeled obstacles and both
   assert.match(frontend, /view === 'cockpit'/);
   assert.match(frontend, /p\.collisionEvent/);
   assert.match(frontend, /Vehicle damage/);
+});
+
+
+test('settlement calculator preserves the 55/45 split and hard ETB 20,000 cap', () => {
+  assert.deepEqual(calculateCarRacingSettlement(10_000), {
+    grossSantim: 10_000,
+    companyShareSantim: 5_500,
+    prizePoolSantim: 4_500,
+  });
+  const capped = calculateCarRacingSettlement(10_000_000);
+  assert.equal(capped.companyShareSantim, 5_500_000);
+  assert.equal(capped.prizePoolSantim, 2_000_000);
+  assert.ok(capped.prizePoolSantim <= CAR_RACING_MAX_PRIZE_ETB * 100);
+});
+
+test('settlement is plate-identified, identical across racer views and never accepts client payout fields', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 35 });
+  f.service.joinRoom(f.b, { code: room.code });
+  f.service.setReady(f.a, {}); f.service.setReady(f.b, {});
+  f.advance(3_100);
+  f.service.control(f.a, { throttle: 1, progress: 1000, payoutEtb: 999_999, winnerPlateNumber: 'FAKE-PLATE' });
+  for (let i = 0; i < 300; i++) {
+    f.service.control(f.a, { throttle: 1, progress: 1000, payoutEtb: 999_999 });
+    f.service.control(f.b, { throttle: 1, progress: 0, payoutEtb: 999_999 });
+    f.advance(250);
+    const state = f.service.getState(f.a).room;
+    if (state.status === 'finished') break;
+  }
+  const a = f.service.getState(f.a).room;
+  const b = f.service.getState(f.b).room;
+  assert.equal(a.status, 'finished');
+  assert.ok(a.settlement.verified);
+  assert.equal(a.settlement.winnerPlateNumber, a.winner.plateNumber);
+  assert.deepEqual(a.settlement, b.settlement);
+  assert.notEqual(a.winner.plateNumber, 'FAKE-PLATE');
+  assert.equal(a.winner.payoutEtb, a.settlement.prizePoolEtb);
+  assert.equal(a.settlement.totalEntryPoolEtb, 70);
+  assert.equal(a.settlement.companyShareEtb, 38.5);
+  assert.equal(a.settlement.prizePoolEtb, 31.5);
 });
