@@ -7,6 +7,10 @@ const BONUS_PRIZE_SANTIM = 1_000_000;
 
 export function createBonusService({ repo, game, config, push }) {
   async function announce(message) {
+    // General OFF suppresses all customer-facing Bingo bonus announcements and push notifications.
+    // The bonus-cycle bookkeeping and game state continue unchanged.
+    const hubSettings = await repo.getGameHubSettings();
+    if (hubSettings.generalEnabled === false) return;
     await game.setAnnouncement(message);
     if (push?.isEnabled()) await push.notifyPlayers({ title: 'BLACK GOLD BINGO', body: message, tag: `bgb-bonus-${Date.now()}` }).catch((error) => console.error('bonus push delivery failed', error));
   }
