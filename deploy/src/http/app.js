@@ -26,7 +26,7 @@ const PAGE_CSP = [
   "base-uri 'self'", "form-action 'self'",
 ].join('; ');
 
-export function createApp({ config, auth, game, wallet, chapa, repo, push, gamesHub }) {
+export function createApp({ config, auth, game, wallet, chapa, repo, push, gamesHub, carRacing }) {
   /* ───────────── rate limiting (per IP, in memory: fine for a single instance) ───────────── */
   const hits = new Map();
   const sweep = setInterval(() => {
@@ -148,7 +148,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   route('POST', '/api/games/aviator/cashout', 'user', 'money', ({ user, body }) => gamesHub.cashOutAviator(user, body.betId));
   route('GET', '/api/games/aviator/history', 'user', 'default', ({ user, query }) => gamesHub.getHistory('aviator', user, Number(query.get('limit') || 10)));
 
-  /* opt-in Web Push subscriptions */
+  /* Multiplayer Car Racing is an isolated in-memory simulation. It never calls the wallet or payment services. */\n  route('GET', '/api/games/car-racing/catalog', 'user', 'default', () => carRacing.getCatalog());\n  route('GET', '/api/games/car-racing/state', 'user', 'default', ({ user }) => carRacing.getState(user));\n  route('POST', '/api/games/car-racing/rooms', 'user', 'money', ({ user, body }) => carRacing.createRoom(user, body));\n  route('POST', '/api/games/car-racing/join', 'user', 'money', ({ user, body }) => carRacing.joinRoom(user, body));\n  route('POST', '/api/games/car-racing/car', 'user', 'default', ({ user, body }) => carRacing.chooseCar(user, body));\n  route('POST', '/api/games/car-racing/ready', 'user', 'default', ({ user, body }) => carRacing.setReady(user, body));\n  route('POST', '/api/games/car-racing/control', 'user', 'default', ({ user, body }) => carRacing.control(user, body));\n  route('POST', '/api/games/car-racing/leave', 'user', 'default', ({ user }) => carRacing.leave(user));\n\n  /* opt-in Web Push subscriptions */
   route('GET', '/api/push/public-key', 'public', 'default', () => ({ enabled: push.isEnabled(), publicKey: push.getPublicKey() }));
   route('POST', '/api/push/subscribe', 'user', 'default', async ({ user, body }) => {
     if (user.role !== 'player' || user.phoneVerified !== true) throw new HttpError(403, 'player_only', 'Verified player accounts only');
