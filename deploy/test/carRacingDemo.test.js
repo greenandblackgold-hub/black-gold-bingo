@@ -63,6 +63,35 @@ test('two authenticated drivers join, choose cars and race on server-controlled 
   assert.equal(f.service.getState(winner).balanceEtb, credited, 're-reading a settled race never credits the winner twice');
 });
 
+test('reverse gear reduces race progress and nitro increases acceleration', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  f.service.joinRoom(f.b, { code: room.code });
+  f.service.setReady(f.a, {});
+  f.service.setReady(f.b, {});
+  f.advance(3_100);
+  f.service.control(f.a, { throttle: 1 });
+  f.advance(1_000);
+  const forwardState = f.service.getState(f.a).room;
+  const forwardProgress = forwardState.players.find((p) => p.isMe).progress;
+  assert.ok(forwardProgress > 0, 'forward drive advances the car');
+  f.service.control(f.a, { throttle: 1, reverse: true });
+  f.advance(1_000);
+  const reverseState = f.service.getState(f.a).room;
+  assert.ok(reverseState.players.find((p) => p.isMe).progress < forwardProgress, 'reverse gear moves the car back');
+
+  const boosted = fixture();
+  const boostedRoom = boosted.service.createRoom(boosted.a, { entryFeeEtb: 10 });
+  boosted.service.joinRoom(boosted.b, { code: boostedRoom.code });
+  boosted.service.setReady(boosted.a, {});
+  boosted.service.setReady(boosted.b, {});
+  boosted.advance(3_100);
+  boosted.service.control(boosted.a, { throttle: 1, boost: true });
+  boosted.advance(500);
+  const boostedSpeed = boosted.service.getState(boosted.a).room.players.find((p) => p.isMe).speed;
+  assert.ok(boostedSpeed > 30, 'nitro provides additional acceleration');
+});
+
 test('a returning driver keeps the same demo plate across rooms', () => {
   const f = fixture();
   f.service.createRoom(f.a, { entryFeeEtb: 10 });
