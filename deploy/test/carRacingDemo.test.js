@@ -348,7 +348,7 @@ test('frontend source includes all four Three.js track scenes, 3D obstacles and 
   const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacingGame.tsx', import.meta.url), 'utf8');
   const scene = readFileSync(new URL('../../client-source/src/components/games/CarRacing3D.tsx', import.meta.url), 'utf8');
   for (const environment of ['city', 'country', 'rocky', 'coastal']) {
-    assert.ok(scene.includes(`p.track.environment === '${environment}'`), `missing ${environment} 3D environment scene`);
+    assert.ok(scene.includes(`p.track.environment==='${environment}'`), `missing ${environment} 3D environment scene`);
   }
   for (const obstacle of ['barrier', 'logs', 'boulder', 'rockfall']) {
     assert.ok(scene.includes(`obstacle.type === '${obstacle}'`), `missing modeled 3D ${obstacle} obstacle`);
