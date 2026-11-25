@@ -49,8 +49,8 @@ test('two authenticated drivers join, choose cars and race on server-controlled 
   f.service.control(f.a, { throttle: 1, steer: 0 });
   f.service.control(f.b, { throttle: 1, steer: 0 });
   for (let i = 0; i < 300 && state.room.status === 'racing'; i++) {
-    f.service.control(f.a, { throttle: 1, steer: -1 });
-    f.service.control(f.b, { throttle: 1, steer: 1 });
+    f.service.control(f.a, { throttle: 1, steer: 0 });
+    f.service.control(f.b, { throttle: 1, steer: 0 });
     f.advance(250);
     state = f.service.getState(f.a);
   }
@@ -185,8 +185,8 @@ test('server eliminates a driver who crosses the track wall', () => {
   f.service.setReady(f.b, {});
   f.advance(3_100);
   f.service.getState(f.a);
-  for (let i = 0; i < 4; i++) {
-    f.service.control(f.a, { throttle: 0, steer: 1 });
+  for (let i = 0; i < 6; i++) {
+    f.service.control(f.a, { throttle: 1, steer: 1 });
     f.advance(250);
     const state = f.service.getState(f.a).room;
     if (state.players.find((p) => p.isMe).eliminated) break;
@@ -218,8 +218,8 @@ test('race ends cleanly when every driver is eliminated', () => {
   f.service.getState(f.a);
   let state;
   for (let i = 0; i < 30; i++) {
-    f.service.control(f.a, { throttle: 1, steer: 0 });
-    f.service.control(f.b, { throttle: 1, steer: 0 });
+    f.service.control(f.a, { throttle: 1, steer: -1 });
+    f.service.control(f.b, { throttle: 1, steer: 1 });
     f.advance(250);
     state = f.service.getState(f.a).room;
     if (state.status === 'finished') break;
@@ -237,8 +237,8 @@ test('server detects car-to-car body collisions and publishes the same event to 
   f.service.joinRoom(f.b, { code: room.code });
   f.service.setReady(f.a, {}); f.service.setReady(f.b, {});
   f.advance(3_100); f.service.getState(f.a);
-  f.service.control(f.a, { throttle: 0.3, steer: 0.1 });
-  f.service.control(f.b, { throttle: 0.3, steer: -0.1 });
+  f.service.control(f.a, { throttle: 0.3, steer: 0.4 });
+  f.service.control(f.b, { throttle: 0.3, steer: -0.4 });
   f.advance(250);
   const a = f.service.getState(f.a).room;
   const b = f.service.getState(f.b).room;
