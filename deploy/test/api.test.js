@@ -164,15 +164,21 @@ test('Car Racing is controlled by both Host game availability and General Games 
   assert.equal(state.json.simulationOnly, true);
 
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: false } });
+  const generalOffSettings = await api('GET', '/api/games/settings', { token: p.token });
+  assert.equal(generalOffSettings.json.carRacingEnabled, false, 'General OFF hides Car Racing from public player settings');
   const generalOff = await api('GET', '/api/games/car-racing/catalog', { token: p.token });
   assert.equal(generalOff.status, 503);
   assert.equal(generalOff.json.error, 'games_center_disabled');
 
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: true } });
+  const enabledSettings = await api('GET', '/api/games/settings', { token: p.token });
+  assert.equal(enabledSettings.json.carRacingEnabled, true, 'Car Racing becomes visible when General and its own Host switch are ON');
   const enabled = await api('GET', '/api/games/car-racing/catalog', { token: p.token });
   assert.equal(enabled.status, 200, JSON.stringify(enabled.json));
 
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { carRacingEnabled: false } });
+  const switchedOffSettings = await api('GET', '/api/games/settings', { token: p.token });
+  assert.equal(switchedOffSettings.json.carRacingEnabled, false, 'the dedicated Car Racing Host switch hides the game');
   const switchedOff = await api('GET', '/api/games/car-racing/state', { token: p.token });
   assert.equal(switchedOff.status, 503);
   assert.equal(switchedOff.json.error, 'game_disabled');
