@@ -122,12 +122,12 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
     return () => window.clearInterval(poll);
   }, [load]);
   useEffect(() => {
-    if (!room || room.status !== 'racing') { setThrottle(0); setSteer(0); setReverse(false); setBoost(false); return; }
+    if (!room || room.status !== 'racing' || me?.eliminated) { setThrottle(0); setSteer(0); setReverse(false); setBoost(false); return; }
     const send = () => void api.post('/api/games/car-racing/control', { roomId: room.roomId, throttle, steer, reverse, boost }).catch(() => undefined);
     send();
     const timer = window.setInterval(send, 650);
     return () => window.clearInterval(timer);
-  }, [room?.roomId, room?.status, throttle, steer, reverse, boost]);
+  }, [room?.roomId, room?.status, me?.eliminated, throttle, steer, reverse, boost]);
   const act = async (path: string, body: unknown) => {
     setBusy(true); setError('');
     try { await api.post(path, body); await load(); }
