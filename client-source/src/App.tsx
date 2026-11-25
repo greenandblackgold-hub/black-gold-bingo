@@ -72,7 +72,8 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
   }, [tab]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [playerSettingsOpen, setPlayerSettingsOpen] = useState(false);
-  const [generalEnabled, setGeneralEnabled] = useState(true);
+  const [generalEnabled, setGeneralEnabled] = useState(!SERVER_MODE);
+  const [settingsLoaded, setSettingsLoaded] = useState(!SERVER_MODE);
   const [minesEnabled, setMinesEnabled] = useState(true);
   useEffect(() => {
     if (!SERVER_MODE) return;
@@ -84,7 +85,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
       pending = true;
       try {
         const value = await api.get<{ generalEnabled: boolean; minesEnabled?: boolean }>('/api/games/settings');
-        if (active) { setGeneralEnabled(value.generalEnabled !== false); setMinesEnabled(value.minesEnabled !== false); }
+        if (active) { setGeneralEnabled(value.generalEnabled !== false); setMinesEnabled(value.minesEnabled !== false); setSettingsLoaded(true); }
       } catch {
         // Keep the last confirmed state during temporary network failures.
       } finally {
@@ -107,7 +108,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
     };
   }, []);
   useEffect(() => {
-    if (!generalEnabled) { setMenuOpen(false); setPlayerSettingsOpen(false); }
+    if (!generalEnabled) { setMenuOpen(false); setPlayerSettingsOpen(false); setTab('games'); }
   }, [generalEnabled]);
   useEffect(() => {
     if (SERVER_MODE && !minesEnabled && tab === 'mines') setTab('games');
@@ -117,13 +118,16 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
     setMenuOpen(false);
     setTab(next);
   };
+  if (SERVER_MODE && !settingsLoaded) {
+    return <div className="premium-ui grid min-h-screen place-items-center text-gold-400" role="status" aria-live="polite">…</div>;
+  }
   return (
     <div className="premium-ui min-h-screen">
       <AudioCallAnnouncer enabled={tab === 'play' && soundEnabled} />
       {generalEnabled && tab !== 'help' && <AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} onLogout={onLogout} onOpenMenu={() => setMenuOpen(true)} onOpenSettings={() => setPlayerSettingsOpen(true)} hideControls={tab === 'play'} />}
       <main className={!generalEnabled ? 'mx-auto w-full max-w-6xl px-4 pt-4' : tab === 'help' ? 'mx-auto w-full max-w-none px-0 pt-0 pb-0' : tab === 'keno' || tab === 'mines' ? 'mx-auto w-full max-w-none px-0 pt-0 pb-28' : tab === 'play' ? 'mx-auto w-full max-w-none px-2 pt-2 pb-28 sm:px-4 sm:pt-4' : tab === 'aviator' ? 'mx-auto w-full max-w-6xl px-3 pt-4 pb-28 sm:px-4 sm:pt-6' : 'mx-auto max-w-6xl px-4 pt-5 pb-28 sm:pt-8'}>
         {(tab === 'games' || (!generalEnabled && tab !== 'help')) && <GamesCenter serverMode={SERVER_MODE} onOpenBingo={() => setTab('play')} onOpenKeno={() => setTab('keno')} onOpenAviator={() => setTab('aviator')} onOpenMines={() => setTab('mines')} onOpenCarRacing={() => setTab('car-racing')} onOpenHelp={() => setTab('help')} />}
-        {tab === 'help' && <HelpCenter onEnterGames={() => setTab('games')} />}
+        {generalEnabled && tab === 'help' && <HelpCenter onEnterGames={() => setTab('games')} />}
         {generalEnabled && tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} settingsOpen={playerSettingsOpen} onSettingsOpenChange={setPlayerSettingsOpen} /></Suspense>}
         {generalEnabled && tab === 'keno' && <KenoGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} onOpenMenu={() => setMenuOpen(true)} />}
         {generalEnabled && tab === 'aviator' && <AviatorGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} />}
