@@ -55,7 +55,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       players: room.players.map((p) => ({
         userId: p.userId, name: p.name, car: cars.find((c) => c.id === p.carId)?.name ?? 'GT Sport',
         carId: p.carId, plateNumber: p.plateNumber, ready: p.ready, progress: Math.min(100, Math.round(p.progress / 10)),
-        lane: p.lane, speed: Math.round(p.velocity * 100), finished: p.finished,
+        lane: p.lane, speed: Math.round(Math.abs(p.velocity) * 100), finished: p.finished,
         isMe: p.userId === userId,
       })),
     };
@@ -100,18 +100,23 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       const controlFresh = at - p.controlAt < 1500;
       const throttle = controlFresh ? p.throttle : 0;
       const steer = controlFresh ? p.steer : 0;
+      const reverse = controlFresh && p.reverse;
+      const boost = controlFresh && p.boost;
       p.lane = Math.max(-1, Math.min(1, p.lane + steer * car.handling * dt * 1.7));
       const gripPenalty = Math.abs(p.lane) > room.track.grip ? 0.62 : 1;
-      p.velocity = Math.max(0, Math.min(1, p.velocity + throttle * dt * 0.8 - (throttle ? 0 : dt * 0.7)));
+      const acceleration = throttle * (reverse ? 1.05 : boost ? 1.3 : 0.8);
+      const drag = throttle ? 0 : dt * 0.7;
+      const nextVelocity = p.velocity + (reverse ? -acceleration : acceleration) * dt + (p.velocity > 0 ? -drag : p.velocity < 0 ? drag : 0);
+      p.velocity = Math.max(-0.55, Math.min(boost ? 1.35 : 1, nextVelocity));
       let obstaclePenalty = 1;
       const obstacle = room.track.obstacles[p.obstacleIndex];
-      if (obstacle && p.progress < obstacle && p.progress + p.velocity * car.speed * room.track.speedFactor * dt * 145 >= obstacle) {
+      if (p.velocity > 0 && obstacle && p.progress < obstacle && p.progress + p.velocity * car.speed * room.track.speedFactor * dt * 145 >= obstacle) {
         p.obstacleIndex += 1;
         if (Math.abs(p.lane) < 0.32) obstaclePenalty = 0.55;
       }
-      const gain = p.velocity * car.speed * room.track.speedFactor * gripPenalty * obstaclePenalty * dt * 145;
-      const next = p.progress + gain;
-      if (next >= 1000) {
+      const gain = p.velocity * car.speed * room.track.speedFactor * gripPenalty * (p.velocity > 0 ? obstaclePenalty : 1) * dt * 145;
+      const next = Math.max(0, p.progress + gain);
+      if (gain > 0 && next >= 1000) {
         const crossing = at - dt * ((1000 - p.progress) / Math.max(gain, 0.001));
         p.progress = 1000;
         finishers.push({ player: p, at: crossing });
@@ -145,7 +150,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     if (balance(user.id) < fee) throw new HttpError(400, 'insufficient_demo_credits', 'Not enough simulation credits.');
     balances.set(user.id, balance(user.id) - fee);
     room.poolSantim += fee;
-    room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: 'sport', plateNumber: plateFor(user.id), ready: false, progress: 0, lane: 0, velocity: 0, throttle: 0, steer: 0, controlAt: 0, obstacleIndex: 0, finished: false });
+    room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: 'sport', plateNumber: plateFor(user.id), ready: false, progress: 0, lane: 0, velocity: 0, throttle: 0, steer: 0, reverse: false, boost: false, controlAt: 0, obstacleIndex: 0, finished: false });
     playerRooms.set(user.id, room.id);
   }
 
@@ -211,6 +216,8 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       const p = player(room, user.id);
       p.throttle = Math.max(0, Math.min(1, Number(input.throttle) || 0));
       p.steer = Math.max(-1, Math.min(1, Number(input.steer) || 0));
+      p.reverse = input.reverse === true;
+      p.boost = input.boost === true && !p.reverse;
       p.controlAt = now();
       return { ok: true };
     },
