@@ -188,7 +188,8 @@ test('server eliminates a driver who crosses the track wall', () => {
   for (let i = 0; i < 4; i++) {
     f.service.control(f.a, { throttle: 0, steer: 1 });
     f.advance(250);
-    f.service.getState(f.a);
+    const state = f.service.getState(f.a).room;
+    if (state.players.find((p) => p.isMe).eliminated) break;
   }
   const state = f.service.getState(f.a).room;
   const eliminated = state.players.find((p) => p.isMe);
