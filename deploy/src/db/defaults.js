@@ -3,6 +3,7 @@ export const DEFAULT_GAME = {
   winPattern: 'any_line',
   roundNumber: 1,
   calledNumbers: [],
+  soundEnabled: true,
   autoCall: false,
   callIntervalSec: 5,
   nextCallAt: null,
