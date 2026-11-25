@@ -90,7 +90,7 @@ export function CarRacing3DViewport(p:Props) {
       } else if (obstacle.type === 'logs') {
         for(let n=0;n<2;n++){const log=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,2.2,12),new THREE.MeshStandardMaterial({color:'#80532f',roughness:.95}));log.rotation.z=Math.PI/2;log.position.set(0,.35+n*.38,n*.35);group.add(log);}
       } else {
-        const count=obstacle.type==='rockfall'?6:obstacle.type==='boulder'?1:3;
+        const count=obstacle.type === 'rockfall'?6:obstacle.type === 'boulder'?1:3;
         for(let n=0;n<count;n++){const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(obstacle.type==='boulder'?1.15:.48+(n%2)*.25),new THREE.MeshStandardMaterial({color:'#77736c',roughness:1}));rock.position.set((n%3-1)*.58,.35+(n%2)*.28,Math.floor(n/3)*.55);rock.rotation.set(n*.2,n*.4,n*.15);group.add(rock);}
       }
       group.position.set(laneX,0,-20);
