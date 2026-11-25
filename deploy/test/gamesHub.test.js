@@ -43,6 +43,22 @@ test('Car Racing is available in production simulation mode and blocked in real-
     error instanceof HttpError && error.code === 'games_hub_demo_only');
 });
 
+test('Car Racing host runtime ON/OFF is independent of player visibility and notifies the live race service', async () => {
+  const changes = [];
+  const repo = createMemoryRepo();
+  const service = createGamesHubService({ repo, config: { prod: false, realMoneyEnabled: false }, onCarRacingRunningChanged: (enabled) => changes.push(enabled) });
+  const before = await service.getSettings();
+  assert.equal(before.carRacingRunning, true);
+  await service.updateSettings({ carRacingEnabled: false });
+  assert.deepEqual(changes, [], 'visibility toggle does not stop race operations');
+  const off = await service.updateSettings({ carRacingRunning: false });
+  assert.equal(off.carRacingRunning, false);
+  assert.deepEqual(changes, [false]);
+  const on = await service.updateSettings({ carRacingRunning: true });
+  assert.equal(on.carRacingRunning, true);
+  assert.deepEqual(changes, [false, true]);
+});
+
 test('Keno state reuses its settings snapshot for the round tick', async () => {
   const f = await fixture();
   const originalGetSettings = f.repo.getGameHubSettings.bind(f.repo);
