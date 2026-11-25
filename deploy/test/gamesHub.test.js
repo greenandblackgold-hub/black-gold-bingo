@@ -29,14 +29,14 @@ async function fixture(configOverrides = {}) {
 }
 
 test('Car Racing is available in production simulation mode and blocked in real-money mode', async () => {
-  const simulation = await fixture({ prod: true, realMoneyEnabled: false });
+  const simulation = await fixture({ prod: true, realMoneyEnabled: false, gamesHubSharedWalletEnabled: false });
   await simulation.service.updateSettings({ carRacingEnabled: true, generalEnabled: true });
   await simulation.service.assertGameEnabled('car-racing');
   const settings = await simulation.service.getPublicSettings(simulation.user);
   assert.equal(settings.carRacingEnabled, true);
   assert.equal(settings.mode, 'SIMULATION_ONLY');
 
-  const realMoney = await fixture({ prod: true, realMoneyEnabled: true });
+  const realMoney = await fixture({ prod: true, realMoneyEnabled: true, gamesHubSharedWalletEnabled: false });
   await realMoney.service.updateSettings({ carRacingEnabled: true, generalEnabled: true });
   await assert.rejects(realMoney.service.assertGameEnabled('car-racing'), (error) =>
     error instanceof HttpError && error.code === 'car_racing_demo_only');
