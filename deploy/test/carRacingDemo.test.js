@@ -258,7 +258,7 @@ test('car-to-car collision severity separates light, medium and severe impacts',
     f.service.joinRoom(f.b, { code: room.code });
     f.service.setReady(f.a, {}); f.service.setReady(f.b, {});
     f.advance(3_100); f.service.getState(f.a);
-    const steer = duration === 250 ? 0.4 : 0.15;
+    const steer = duration === 250 ? 0.45 : 0.15;
     f.service.control(f.a, { throttle, boost, steer });
     f.service.control(f.b, { throttle, boost, steer: -steer });
     f.advance(duration);
