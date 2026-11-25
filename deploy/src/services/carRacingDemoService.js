@@ -110,7 +110,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       const curveForce = (room.track.curveType === 'left' ? -1 : room.track.curveType === 'right' ? 1 : room.track.curveType === 's-bend' ? curveWave : 0) * room.track.curveIntensity;
       p.lane += steer * car.handling * dt * 1.7 - curveForce * dt * 0.1;
       if (Math.abs(p.lane) >= room.track.wallLimit) {
-        const severity = Math.abs(p.velocity) >= 0.82 ? 'severe' : 'medium';
+        const severity = Math.abs(p.velocity) >= 0.72 ? 'severe' : 'medium';
         const event = { id: `${at}-${p.userId}-wall`, at, type: 'wall', severity, participants: [p.userId] };
         room.collisionEvents.push(event); p.collisionEvent = event; p.damage = Math.min(100, (p.damage ?? 0) + (severity === 'severe' ? 100 : 38));
         if (severity === 'severe' || p.damage >= 100) { p.eliminated = true; p.eliminationReason = 'wall'; p.eliminatedAt = at; }
