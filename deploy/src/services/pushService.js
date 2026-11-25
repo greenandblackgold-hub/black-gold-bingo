@@ -74,7 +74,7 @@ export function createPushService({ repo, config }) {
         }
       }));
       return {
-        sent: results.filter((r) => r.status === 'fulfilled').length,
+        sent: results.filter((r) => r.status === 'fulfilled' && r.value === true).length,
         failed: results.filter((r) => r.status === 'rejected').length,
         disabled: false,
       };
