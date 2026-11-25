@@ -46,3 +46,20 @@ test('push subscriptions reject non-HTTPS and untrusted push endpoints', async (
   }), /Invalid push subscription/);
   await repo.close();
 });
+
+
+test('player notifications are suppressed when Bingo is OFF or all games are OFF', async () => {
+  const repo = createMemoryRepo();
+  await repo.init();
+  const keys = webpush.generateVAPIDKeys();
+  const push = createPushService({ repo, config: { pushVapidPublicKey: keys.publicKey, pushVapidPrivateKey: keys.privateKey, pushVapidSubject: 'mailto:test@example.com' } });
+  await repo.updateGameHubSettings({ generalEnabled: true, bingoEnabled: false, kenoEnabled: true, aviatorEnabled: true, minesEnabled: true, carRacingEnabled: true });
+  const bingoOff = await push.notifyPlayers({ title: 'test', body: 'must not send' });
+  assert.equal(bingoOff.suppressed, true);
+  assert.equal(bingoOff.sent, 0);
+  await repo.updateGameHubSettings({ generalEnabled: true, bingoEnabled: false, kenoEnabled: false, aviatorEnabled: false, minesEnabled: false, carRacingEnabled: false });
+  const allOff = await push.notifyPlayers({ title: 'test', body: 'must not send' });
+  assert.equal(allOff.suppressed, true);
+  assert.equal(allOff.sent, 0);
+  await repo.close();
+});
