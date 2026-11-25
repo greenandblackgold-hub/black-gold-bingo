@@ -56,8 +56,8 @@ export function AdminGamesHub({ activeGame }: { activeGame: HostGameSection }) {
     <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.25em] text-amber-500">{t('management')}</p><h2 className="mt-1 text-lg font-black text-amber-100">{t('controls')}</h2></div><span className="rounded-full border border-amber-400/20 px-3 py-1 text-[10px] font-bold uppercase text-amber-300">{activeGame}</span></div>
     {error && <p role="alert" className="mt-3 text-sm text-red-300">{error}</p>}
     {notice && <p role="status" className="mt-3 text-sm text-emerald-300">{notice}</p>}
-    {activeGame === 'bingo' && <>
     <div className={card + ' mt-4'}><div className="flex items-center justify-between gap-3"><div><p className="font-bold text-amber-100">{t('general')}</p><p className="text-xs text-amber-100/45">{overview?.settings.generalEnabled ? t('allOn') : t('allOff')}</p></div><button disabled={busy || !overview} onClick={() => { if (!overview) return; if (overview.settings.generalEnabled && !window.confirm(t('confirmOff'))) return; void save({ generalEnabled: !overview.settings.generalEnabled }); }} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.generalEnabled ? t('generalOff') : t('generalOn')}</button></div></div>
+    {activeGame === 'bingo' && <>
     <div className={card + ' mt-4'}>
       <p className="text-xs font-semibold text-amber-100/60">{t('maxPayout')}</p>
       <p className="mt-1 text-2xl font-black text-amber-200">{overview ? Number(overview.settings.maxPayoutEtb).toLocaleString() : '20,000'} {t('currency')}</p>
