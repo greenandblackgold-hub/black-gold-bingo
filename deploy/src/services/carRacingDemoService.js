@@ -30,6 +30,23 @@ export function calculateCarRacingSettlement(totalEntryPoolSantim) {
 
 export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMoneyEnabled, now = Date.now } = {}) {
   const realMoneyIsEnabled = typeof isRealMoneyEnabled === 'function' ? isRealMoneyEnabled : () => realMoneyEnabled;
+  let gameRunning = true;
+  function assertRunning() {
+    if (!gameRunning) throw new HttpError(503, 'car_racing_stopped', 'Car Racing is currently stopped by the host.');
+  }
+  function stopAllRooms(reason = 'host_stopped') {
+    const at = now();
+    for (const room of rooms.values()) {
+      if (room.status === 'finished') continue;
+      room.status = 'finished';
+      room.endReason = reason;
+      room.finishedAt = at;
+      room.countdownEndsAt = null;
+      for (const p of room.players) {
+        p.throttle = 0; p.steer = 0; p.reverse = false; p.boost = false; p.velocity = 0;
+      }
+    }
+  }
   const rooms = new Map();
   const playerRooms = new Map();
   const balances = new Map();
@@ -270,6 +287,11 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
   }
 
   return {
+    setRunning(enabled) {
+      gameRunning = enabled === true;
+      if (!gameRunning) stopAllRooms('host_stopped');
+      return gameRunning;
+    },
     getCatalog() {
       return { enabled: !realMoneyIsEnabled(), simulationOnly: true, currency: 'DEMO ETB', maxPlayers: 8, minPlayers: 2, maxPrizeEtb: CAR_RACING_MAX_PRIZE_ETB, companyPercent: 55, poolPercent: 45, tracks: clone(tracks.map(({ obstacles, ...t }) => t)), cars: clone(cars) };
     },
@@ -287,6 +309,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     },
     createRoom(user, input = {}) {
       assertDemo();
+      assertRunning();
       if (playerRooms.has(user.id)) throw new HttpError(409, 'already_in_race', 'Leave your current race before creating another.');
       const fee = Number(input.entryFeeEtb);
       if (!Number.isInteger(fee) || fee < 5 || fee > 500) throw new HttpError(400, 'invalid_entry_fee', 'Entry fee must be between 5 and 500 simulation ETB.');
@@ -301,6 +324,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     },
     joinRoom(user, input = {}) {
       assertDemo();
+      assertRunning();
       const code = String(input.code || '').trim().toUpperCase();
       const room = [...rooms.values()].find((r) => r.code === code);
       if (!room) throw new HttpError(404, 'room_not_found', 'Race code not found.');
@@ -308,6 +332,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       return publicRoom(room, user.id);
     },
     chooseCar(user, input = {}) {
+      assertRunning();
       const room = findRoom(user.id, input.roomId);
       if (room.status !== 'lobby') throw new HttpError(409, 'race_started', 'Car selection is closed after the race starts.');
       const p = player(room, user.id);
@@ -315,6 +340,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       return publicRoom(room, user.id);
     },
     setReady(user, input = {}) {
+      assertRunning();
       const room = findRoom(user.id, input.roomId);
       if (room.status !== 'lobby') throw new HttpError(409, 'race_started', 'This race is no longer in the lobby.');
       const p = player(room, user.id);
@@ -326,6 +352,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       return publicRoom(room, user.id);
     },
     control(user, input = {}) {
+      assertRunning();
       const room = findRoom(user.id, input.roomId);
       if (room.status !== 'racing') throw new HttpError(409, 'race_not_running', 'The race is not running.');
       const p = player(room, user.id);
