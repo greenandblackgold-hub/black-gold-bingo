@@ -121,12 +121,12 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     room.status = 'finished';
     room.finishedAt = at;
     const finishOrder = [...room.players]
-      .sort((a, b) => b.progress - a.progress)
+      .sort((a, b) => (a.userId === verifiedWinner.userId ? -1 : b.userId === verifiedWinner.userId ? 1 : b.progress - a.progress))
       .map((p, index) => ({
         position: index + 1,
         plateNumber: p.plateNumber,
         progress: Math.min(100, Math.round(p.progress / 10)),
-        status: p.eliminated ? 'eliminated' : p.userId === verifiedWinner.userId ? 'winner' : p.finished ? 'finished' : 'racing',
+        status: p.eliminated ? 'eliminated' : p.userId === verifiedWinner.userId ? 'winner' : p.finished || p.progress >= 1000 ? 'finished' : 'racing',
       }));
     room.settlement = {
       resultId: `BGR-${randomBytes(8).toString('hex').toUpperCase()}`,
