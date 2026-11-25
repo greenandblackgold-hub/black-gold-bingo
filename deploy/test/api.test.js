@@ -983,13 +983,13 @@ test('public push availability follows live Host switches for each player servic
   assert.equal((await read()).json.allowed, true, 'notifications are allowed when Games Center and Bingo are ON');
 
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: false } });
-  assert.equal((await read()).json.allowed, false, 'General OFF suppresses every player's notification');
+  assert.equal((await read()).json.allowed, false, 'General OFF suppresses all player notifications');
 
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: true, bingoEnabled: false } });
-  assert.equal((await read()).json.allowed, false, 'Bingo Host OFF suppresses every player's notification');
+  assert.equal((await read()).json.allowed, false, 'Bingo Host OFF suppresses all player notifications');
 
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: true, bingoEnabled: false, kenoEnabled: false, aviatorEnabled: false, minesEnabled: false, carRacingEnabled: false } });
-  assert.equal((await read()).json.allowed, false, 'all games OFF suppresses every player's notification');
+  assert.equal((await read()).json.allowed, false, 'all games OFF suppresses all player notifications');
 
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: true, bingoEnabled: true, kenoEnabled: true, aviatorEnabled: true, minesEnabled: true, carRacingEnabled: true } });
   assert.equal((await read()).json.allowed, true, 'notifications resume after Host re-enables the Games Center and Bingo');
