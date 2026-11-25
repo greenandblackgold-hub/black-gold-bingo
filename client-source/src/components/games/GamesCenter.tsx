@@ -38,6 +38,13 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
   const mt = (key: Parameters<typeof minesLocale>[1]) => minesLocale(lang, key);
   const [availability, setAvailability] = useState<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minesEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' } | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
+  const [carRacingEnabled, setCarRacingEnabled] = useState(false);
+  useEffect(() => {
+    if (!serverMode) return;
+    let catalogActive = true;
+    void api.get<{ enabled: boolean }>('/api/games/car-racing/catalog').then((value) => { if (catalogActive) setCarRacingEnabled(value.enabled === true); }).catch(() => { if (catalogActive) setCarRacingEnabled(false); });
+    return () => { catalogActive = false; };
+  }, [serverMode]);
   useEffect(() => {
     if (!serverMode) return;
     let active = true;
@@ -126,7 +133,7 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
         {(!serverMode || availability?.bingoEnabled === true) && <GameCard title="Bingo PRO" subtitle={t.bingoSubtitle} detail={t.bingoDetail} icon="bingo" onClick={onOpenBingo} openLabel={t.openGame} featured />}
         {(!serverMode || availability?.kenoEnabled === true) && <GameCard title="Keno" subtitle={t.kenoSubtitle} detail={t.kenoDetail} icon="keno" onClick={onOpenKeno} openLabel={t.openGame} />}
         {(!serverMode || availability?.aviatorEnabled === true) && <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} openLabel={t.openGame} />}
-        {(!serverMode || availability?.minesEnabled === true) && <GameCard title="Mines" subtitle={mt('cardSubtitle')} detail={mt('cardDetail')} icon="mines" onClick={onOpenMines} openLabel={t.openGame} /> }\n        {serverMode && <GameCard title="Multiplayer Car Racing" subtitle="LIVE MULTIPLAYER · DEMO ONLY" detail="Choose a car, join a room and race across changing tracks. Simulation credits only." icon="racing" onClick={onOpenCarRacing} openLabel={t.openGame} featured />}
+        {(!serverMode || availability?.minesEnabled === true) && <GameCard title="Mines" subtitle={mt('cardSubtitle')} detail={mt('cardDetail')} icon="mines" onClick={onOpenMines} openLabel={t.openGame} /> }\n        {serverMode && carRacingEnabled && <GameCard title="Multiplayer Car Racing" subtitle="LIVE MULTIPLAYER · DEMO ONLY" detail="Choose a car, join a room and race across changing tracks. Simulation credits only." icon="racing" onClick={onOpenCarRacing} openLabel={t.openGame} featured />}
         <GameCard title="Virtual Sports" subtitle={t.virtualSportsSubtitle} detail={t.virtualSportsDetail} icon="virtual" onClick={() => {}} openLabel={t.openGame} disabled disabledLabel={t.comingSoon} />
         <GameCard title="Live Sports" subtitle={t.liveSportsSubtitle} detail={t.liveSportsDetail} icon="live" onClick={() => {}} openLabel={t.openGame} disabled disabledLabel={t.comingSoon} />
         </div>

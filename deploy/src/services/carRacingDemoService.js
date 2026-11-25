@@ -74,7 +74,6 @@ export function createCarRacingDemoService({ prod = false, now = Date.now } = {}
       payoutCapSantim: CAR_RACING_MAX_PRIZE_ETB * 100,
       winnerUserId: winner.userId,
     };
-    for (const p of room.players) playerRooms.delete(p.userId);
   }
   function advance(room, at = now()) {
     if (room.status === 'countdown' && at >= room.countdownEndsAt) {
@@ -83,7 +82,7 @@ export function createCarRacingDemoService({ prod = false, now = Date.now } = {}
       room.lastTickAt = room.startedAt;
     }
     if (room.status !== 'racing') return;
-    const dt = Math.min(0.25, Math.max(0, (at - room.lastTickAt) / 1000));
+    const dt = Math.min(1, Math.max(0, (at - room.lastTickAt) / 1000));
     if (!dt) return;
     room.lastTickAt = at;
     const finishers = [];
@@ -213,9 +212,9 @@ export function createCarRacingDemoService({ prod = false, now = Date.now } = {}
       const room = rooms.get(roomId);
       if (room && room.status === 'lobby') {
         room.players = room.players.filter((p) => p.userId !== user.id);
-        playerRooms.delete(user.id);
         if (!room.players.length) rooms.delete(roomId);
       }
+      playerRooms.delete(user.id);
       return { ok: true };
     },
   };
