@@ -10,6 +10,7 @@ import { createBonusService } from './services/bonusService.js';
 import { createPushService } from './services/pushService.js';
 import { createWalletService } from './services/walletService.js';
 import { createGamesHubService } from './services/gamesHubService.js';
+import { createCarRacingDemoService } from './services/carRacingDemoService.js';
 import { createChapa } from './payments/chapa.js';
 import { createApp } from './http/app.js';
 
@@ -36,6 +37,7 @@ export async function build(config = loadConfig()) {
     const chapa = createChapa({ ...config.chapa, publicApiUrl: config.publicApiUrl });
     const wallet = createWalletService({ repo, config, chapa });
     gamesHub = createGamesHubService({ repo, config });
+    const carRacing = createCarRacingDemoService({ isRealMoneyEnabled: () => config.realMoneyEnabled === true });
 
     // Bootstrap the one owner account from private Render environment variables.
     // Never promote an existing player account; ensureAdmin deliberately fails closed.
@@ -49,8 +51,8 @@ export async function build(config = loadConfig()) {
     await game.resume();
     await bonus.resume();
     await gamesHub.resume();
-    const app = createApp({ config, auth, game, wallet, chapa, repo, push, gamesHub });
-    return { config, repo, auth, game, bonus, push, wallet, chapa, gamesHub, app };
+    const app = createApp({ config, auth, game, wallet, chapa, repo, push, gamesHub, carRacing });
+    return { config, repo, auth, game, bonus, push, wallet, chapa, gamesHub, carRacing, app };
   } catch (error) {
     gamesHub?.stop();
     gameStopIfCreated();
