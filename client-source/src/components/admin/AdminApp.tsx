@@ -25,7 +25,7 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
   const backend = useBackend();
   const { lang, setLang } = useLanguage();
   const t = TEXT[lang];
-  const [activeGame, setActiveGame] = useState<'bingo' | 'keno' | 'aviator' | 'mines'>('bingo');
+  const [activeGame, setActiveGame] = useState<'bingo' | 'keno' | 'aviator' | 'mines' | 'car-racing'>('bingo');
 
   const backBtn = (
     <button
@@ -106,12 +106,13 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
               </div>
               <span className="rounded-full border border-gold-500/25 bg-black/30 px-3 py-1 text-[10px] font-bold text-gold-300">{t.gamesCount}</span>
             </div>
-            <nav aria-label={t.gameSections} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <nav aria-label={t.gameSections} className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
               {([
                 ['bingo', '01', 'BINGO'],
                 ['keno', '02', 'KENO'],
                 ['aviator', '03', 'AVIATOR'],
                 ['mines', '04', 'MINES'],
+                ['car-racing', '05', 'CAR RACING'],
               ] as const).map(([id, number, label]) => (
                 <button
                   key={id}
