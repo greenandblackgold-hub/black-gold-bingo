@@ -5,7 +5,7 @@ import { HttpError } from '../src/util/errors.js';
 
 function fixture() {
   let clock = 1_800_000_000_000;
-  const service = createCarRacingDemoService({ prod: false, now: () => clock });
+  const service = createCarRacingDemoService({ realMoneyEnabled: false, now: () => clock });
   const a = { id: 'driver-a', name: 'Driver A' };
   const b = { id: 'driver-b', name: 'Driver B' };
   return { service, a, b, advance: (ms) => { clock += ms; } };
