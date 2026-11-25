@@ -165,10 +165,11 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       for (const p of [a, b]) {
         p.collisionEvent = event; p.lastCollisionAt = at;
         p.damage = Math.min(100, (p.damage ?? 0) + (severity === 'severe' ? 100 : severity === 'medium' ? 32 : 8));
-        p.velocity = p.eliminated ? 0 : p.velocity * (severity === 'medium' ? 0.42 : 0.78);
+        const eliminated = severity === 'severe' || p.damage >= 100;
+        if (eliminated) { p.eliminated = true; p.eliminationReason = 'car-to-car'; p.eliminatedAt = at; p.steer = 0; p.reverse = false; }
+        p.velocity = eliminated ? 0 : p.velocity * (severity === 'medium' ? 0.42 : 0.78);
         p.lane += p === a ? -0.14 : 0.14;
         p.throttle = 0; p.boost = false;
-        if (severity === 'severe' || p.damage >= 100) { p.eliminated = true; p.eliminationReason = 'car-to-car'; p.eliminatedAt = at; p.steer = 0; p.reverse = false; }
       }
     }
     if (room.collisionEvents.length > 40) room.collisionEvents.splice(0, room.collisionEvents.length - 40);
