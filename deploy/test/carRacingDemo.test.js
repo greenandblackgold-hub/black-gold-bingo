@@ -344,22 +344,23 @@ test('each dynamic track exposes distinct environment and scenery metadata', () 
 });
 
 
-test('frontend source includes all four track scenes, modeled obstacles and both driving views', () => {
+test('frontend source includes all four Three.js track scenes, 3D obstacles and both driving views', () => {
   const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacingGame.tsx', import.meta.url), 'utf8');
+  const scene = readFileSync(new URL('../../client-source/src/components/games/CarRacing3D.tsx', import.meta.url), 'utf8');
   for (const environment of ['city', 'country', 'rocky', 'coastal']) {
-    assert.ok(frontend.includes(`track.environment === '${environment}'`), `missing ${environment} environment scene`);
+    assert.ok(scene.includes(`p.track.environment === '${environment}'`), `missing ${environment} 3D environment scene`);
   }
   for (const obstacle of ['barrier', 'logs', 'boulder', 'rockfall']) {
-    assert.ok(frontend.includes(`obstacle.type === '${obstacle}'`), `missing modeled ${obstacle} obstacle`);
+    assert.ok(scene.includes(`obstacle.type === '${obstacle}'`), `missing modeled 3D ${obstacle} obstacle`);
   }
-  assert.match(frontend, /view === 'chase'/);
-  assert.match(frontend, /view === 'cockpit'/);
-  assert.match(frontend, /p\.collisionEvent/);
+  assert.match(scene, /s\.view==='chase'/);
+  assert.match(scene, /s\.view==='cockpit'/);
+  assert.match(scene, /p\.me\.collisionEvent/);
   assert.match(frontend, /Vehicle damage/);
   assert.match(frontend, /SERVER VERIFIED/);
   assert.match(frontend, /winnerPlateNumber/);
   assert.match(frontend, /Final plate order/);
-  assert.match(frontend, /N₂O Nitro/);
+  assert.match(frontend, /55% company \/ 45% pool/);
 });
 
 
