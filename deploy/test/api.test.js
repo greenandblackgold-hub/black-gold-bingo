@@ -149,6 +149,7 @@ test('Host can hide Bingo, Keno and Aviator from player access while keeping the
 
 test('Car Racing is controlled by both Host game availability and General Games Center switches', async () => {
   const p = await newPlayer('Car Racing availability player', 100);
+  await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { carRacingEnabled: true, generalEnabled: true } });
   const initial = await api('GET', '/api/games/settings', { token: p.token });
   assert.equal(initial.status, 200);
   assert.equal(initial.json.carRacingEnabled, true, 'Car Racing defaults ON in simulation mode');
