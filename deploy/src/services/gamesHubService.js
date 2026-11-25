@@ -676,7 +676,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
         kenoEnabled: current.kenoEnabled === true,
         aviatorEnabled: current.aviatorEnabled === true,
         minesEnabled: current.minesEnabled === true,
-        carRacingEnabled: current.carRacingEnabled === true && config.realMoneyEnabled !== true,
+        carRacingEnabled: current.generalEnabled !== false && current.carRacingEnabled === true && config.realMoneyEnabled !== true,
         minBetEtb: current.minBet / 100,
         maxBetEtb: current.maxBet / 100,
         balanceEtb: wallet.balance / 100,
