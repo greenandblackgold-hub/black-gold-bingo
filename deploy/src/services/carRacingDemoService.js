@@ -18,6 +18,16 @@ const cars = [
 ];
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
+export function calculateCarRacingSettlement(totalEntryPoolSantim) {
+  const grossSantim = Math.max(0, Math.floor(Number(totalEntryPoolSantim) || 0));
+  const companyShareSantim = Math.floor(grossSantim * CAR_RACING_COMPANY_PERCENT / 100);
+  const prizePoolSantim = Math.min(
+    Math.floor(grossSantim * CAR_RACING_POOL_PERCENT / 100),
+    CAR_RACING_MAX_PRIZE_ETB * 100,
+  );
+  return { grossSantim, companyShareSantim, prizePoolSantim };
+}
+
 export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMoneyEnabled, now = Date.now } = {}) {
   const realMoneyIsEnabled = typeof isRealMoneyEnabled === 'function' ? isRealMoneyEnabled : () => realMoneyEnabled;
   const rooms = new Map();
@@ -52,6 +62,22 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       prizePoolEtb: room.prizeSantim / 100, payoutCapEtb: CAR_RACING_MAX_PRIZE_ETB,
       countdownEndsAt: room.countdownEndsAt, startedAt: room.startedAt, finishedAt: room.finishedAt, endReason: room.endReason ?? null,
       winner: room.winner ? { userId: room.winner.userId, name: room.winner.name, plateNumber: room.winner.plateNumber, payoutEtb: room.winner.payoutSantim / 100 } : null,
+      settlement: room.settlement ? {
+        resultId: room.settlement.resultId,
+        verified: true,
+        verificationMethod: 'server-authoritative',
+        reason: room.settlement.reason,
+        settledAt: room.settlement.settledAt,
+        winnerUserId: room.settlement.winnerUserId,
+        winnerPlateNumber: room.settlement.winnerPlateNumber,
+        totalEntryPoolEtb: room.settlement.totalEntryPoolSantim / 100,
+        companyShareEtb: room.settlement.companyShareSantim / 100,
+        prizePoolEtb: room.settlement.prizePoolSantim / 100,
+        companyPercent: room.settlement.companyPercent,
+        poolPercent: room.settlement.poolPercent,
+        payoutCapEtb: room.settlement.payoutCapSantim / 100,
+        finishOrder: clone(room.settlement.finishOrder),
+      } : null,
       collisionEvents: clone((room.collisionEvents ?? []).slice(-12)),
       players: room.players.map((p) => ({
         userId: p.userId, name: p.name, car: cars.find((c) => c.id === p.carId)?.name ?? 'GT Sport',
@@ -63,27 +89,58 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       })),
     };
   }
-  function settle(room, winner, at) {
+  function settle(room, winner, at, reason = 'finish_line') {
     if (room.status === 'finished') return;
-    // One synchronous server-side settlement: no awaits or client-supplied result/payout.
-    const grossSantim = room.poolSantim;
-    room.companyShareSantim = Math.floor(grossSantim * CAR_RACING_COMPANY_PERCENT / 100);
-    room.prizeSantim = Math.min(Math.floor(grossSantim * CAR_RACING_POOL_PERCENT / 100), CAR_RACING_MAX_PRIZE_ETB * 100);
-    winner.payoutSantim = room.prizeSantim;
-    winner.finished = true;
-    winner.finishedAt = at;
-    balances.set(winner.userId, balance(winner.userId) + room.prizeSantim);
-    room.winner = { userId: winner.userId, name: winner.name, plateNumber: winner.plateNumber, payoutSantim: room.prizeSantim };
+    // Winner identity is verified against the unique, server-issued BGB plate roster.
+    const plateMatches = room.players.filter((p) => p.plateNumber === winner?.plateNumber);
+    const verifiedWinner = room.players.find((p) =>
+      p.userId === winner?.userId && p.plateNumber === winner?.plateNumber
+    );
+    const platesAreUnique = new Set(room.players.map((p) => p.plateNumber)).size === room.players.length;
+    if (!platesAreUnique || plateMatches.length !== 1 || !verifiedWinner || verifiedWinner.eliminated) {
+      throw new HttpError(409, 'invalid_race_winner', 'The server could not verify a unique eligible winner plate.');
+    }
+    if (reason === 'finish_line' && verifiedWinner.progress < 1000) {
+      throw new HttpError(409, 'winner_not_at_finish', 'A finish-line winner must cross the server-verified finish line.');
+    }
+
+    // One synchronous, idempotent simulation-only settlement; no client-supplied result or payout is accepted.
+    const { grossSantim, companyShareSantim, prizePoolSantim } = calculateCarRacingSettlement(room.poolSantim);
+    room.companyShareSantim = companyShareSantim;
+    room.prizeSantim = prizePoolSantim;
+    verifiedWinner.payoutSantim = prizePoolSantim;
+    verifiedWinner.finished = true;
+    verifiedWinner.finishedAt = at;
+    balances.set(verifiedWinner.userId, balance(verifiedWinner.userId) + prizePoolSantim);
+    room.winner = {
+      userId: verifiedWinner.userId,
+      name: verifiedWinner.name,
+      plateNumber: verifiedWinner.plateNumber,
+      payoutSantim: prizePoolSantim,
+    };
     room.status = 'finished';
     room.finishedAt = at;
+    const finishOrder = [...room.players]
+      .sort((a, b) => (a.userId === verifiedWinner.userId ? -1 : b.userId === verifiedWinner.userId ? 1 : b.progress - a.progress))
+      .map((p, index) => ({
+        position: index + 1,
+        plateNumber: p.plateNumber,
+        progress: Math.min(100, Math.round(p.progress / 10)),
+        status: p.eliminated ? 'eliminated' : p.userId === verifiedWinner.userId ? 'winner' : p.finished || p.progress >= 1000 ? 'finished' : 'racing',
+      }));
     room.settlement = {
+      resultId: `BGR-${randomBytes(8).toString('hex').toUpperCase()}`,
+      reason,
+      settledAt: at,
       totalEntryPoolSantim: grossSantim,
-      companyShareSantim: room.companyShareSantim,
-      prizePoolSantim: room.prizeSantim,
+      companyShareSantim,
+      prizePoolSantim,
       companyPercent: CAR_RACING_COMPANY_PERCENT,
       poolPercent: CAR_RACING_POOL_PERCENT,
       payoutCapSantim: CAR_RACING_MAX_PRIZE_ETB * 100,
-      winnerUserId: winner.userId,
+      winnerUserId: verifiedWinner.userId,
+      winnerPlateNumber: verifiedWinner.plateNumber,
+      finishOrder,
     };
   }
   function advance(room, at = now()) {
@@ -175,13 +232,13 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     if (room.collisionEvents.length > 40) room.collisionEvents.splice(0, room.collisionEvents.length - 40);
     finishers.sort((a, b) => a.at - b.at);
     const validFinishers = finishers.filter(({ player: finisher }) => !finisher.eliminated);
-    if (validFinishers.length) settle(room, validFinishers[0].player, validFinishers[0].at);
+    if (validFinishers.length) settle(room, validFinishers[0].player, validFinishers[0].at, 'finish_line');
     if (room.status === 'racing' && room.players.every((p) => p.finished || p.eliminated)) {
       room.status = 'finished'; room.finishedAt = at; room.endReason = 'all_eliminated';
     }
     if (room.status === 'racing' && at - room.startedAt > 90_000) {
       const leader = room.players.filter((p) => !p.eliminated).sort((a, b) => b.progress - a.progress)[0];
-      if (leader) settle(room, leader, at);
+      if (leader) settle(room, leader, at, 'time_limit');
       else { room.status = 'finished'; room.finishedAt = at; room.endReason = 'all_eliminated'; }
     }
   }
