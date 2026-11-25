@@ -32,6 +32,13 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     if (!balances.has(userId)) balances.set(userId, 100_000);
     return balances.get(userId);
   }
+  function plateFor(userId) {
+    // Stable, collision-free encoding of the account ID; survives restarts without a schema change.
+    const id = String(userId);
+    const bytes = /^[a-f0-9]{24}$/i.test(id) ? Buffer.from(id, 'hex') : Buffer.from(id, 'utf8');
+    const encoded = BigInt(`0x${bytes.toString('hex') || '0'}`).toString(36).toUpperCase();
+    return `BGB-${bytes.length.toString(36).toUpperCase()}-${encoded}`;
+  }
   function player(room, userId) {
     const found = room.players.find((item) => item.userId === userId);
     if (!found) throw new HttpError(403, 'not_in_race', 'You are not a member of this race.');
@@ -44,10 +51,10 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       poolEtb: room.poolSantim / 100, companyShareEtb: room.companyShareSantim / 100,
       prizePoolEtb: room.prizeSantim / 100, payoutCapEtb: CAR_RACING_MAX_PRIZE_ETB,
       countdownEndsAt: room.countdownEndsAt, startedAt: room.startedAt, finishedAt: room.finishedAt,
-      winner: room.winner ? { userId: room.winner.userId, name: room.winner.name, payoutEtb: room.winner.payoutSantim / 100 } : null,
+      winner: room.winner ? { userId: room.winner.userId, name: room.winner.name, plateNumber: room.winner.plateNumber, payoutEtb: room.winner.payoutSantim / 100 } : null,
       players: room.players.map((p) => ({
         userId: p.userId, name: p.name, car: cars.find((c) => c.id === p.carId)?.name ?? 'GT Sport',
-        carId: p.carId, ready: p.ready, progress: Math.min(100, Math.round(p.progress / 10)),
+        carId: p.carId, plateNumber: p.plateNumber, ready: p.ready, progress: Math.min(100, Math.round(p.progress / 10)),
         lane: p.lane, speed: Math.round(p.velocity * 100), finished: p.finished,
         isMe: p.userId === userId,
       })),
@@ -63,7 +70,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     winner.finished = true;
     winner.finishedAt = at;
     balances.set(winner.userId, balance(winner.userId) + room.prizeSantim);
-    room.winner = { userId: winner.userId, name: winner.name, payoutSantim: room.prizeSantim };
+    room.winner = { userId: winner.userId, name: winner.name, plateNumber: winner.plateNumber, payoutSantim: room.prizeSantim };
     room.status = 'finished';
     room.finishedAt = at;
     room.settlement = {
@@ -138,7 +145,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     if (balance(user.id) < fee) throw new HttpError(400, 'insufficient_demo_credits', 'Not enough simulation credits.');
     balances.set(user.id, balance(user.id) - fee);
     room.poolSantim += fee;
-    room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: 'sport', ready: false, progress: 0, lane: 0, velocity: 0, throttle: 0, steer: 0, controlAt: 0, obstacleIndex: 0, finished: false });
+    room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: 'sport', plateNumber: plateFor(user.id), ready: false, progress: 0, lane: 0, velocity: 0, throttle: 0, steer: 0, controlAt: 0, obstacleIndex: 0, finished: false });
     playerRooms.set(user.id, room.id);
   }
 

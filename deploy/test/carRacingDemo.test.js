@@ -37,6 +37,11 @@ test('two authenticated drivers join, choose cars and race on server-controlled 
   assert.equal(state.room.status, 'racing');
   assert.equal(state.room.players.length, 2);
   assert.equal(state.room.players.find((p) => p.userId === f.b.id).carId, 'rally');
+  const plateA = state.room.players.find((p) => p.userId === f.a.id).plateNumber;
+  const plateB = state.room.players.find((p) => p.userId === f.b.id).plateNumber;
+  assert.match(plateA, /^BGB-[A-Z0-9]+-[A-Z0-9]+$/);
+  assert.match(plateB, /^BGB-[A-Z0-9]+-[A-Z0-9]+$/);
+  assert.notEqual(plateA, plateB, 'each driver receives a unique plate');
   f.service.control(f.a, { throttle: 0, steer: 0, progress: 1000, payoutEtb: 20_000 });
   assert.equal(f.service.getState(f.a).room.players.find((p) => p.isMe).progress, 0, 'client-supplied progress and payout are ignored');
   f.service.control(f.a, { throttle: 1, steer: 0 });
@@ -49,12 +54,27 @@ test('two authenticated drivers join, choose cars and race on server-controlled 
   }
   assert.equal(state.room.status, 'finished');
   assert.ok(state.room.winner);
+  assert.match(state.room.winner.plateNumber, /^BGB-[A-Z0-9]+-[A-Z0-9]+$/);
   assert.equal(state.room.prizePoolEtb, 18);
   assert.equal(state.room.companyShareEtb, 22);
   const winner = state.room.winner.userId === f.a.id ? f.a : f.b;
   const credited = f.service.getState(winner).balanceEtb;
   f.service.getState(f.a); f.service.getState(f.b);
   assert.equal(f.service.getState(winner).balanceEtb, credited, 're-reading a settled race never credits the winner twice');
+});
+
+test('a returning driver keeps the same demo plate across rooms', () => {
+  const f = fixture();
+  f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  const plate = f.service.getState(f.a).room.players.find((p) => p.isMe).plateNumber;
+  f.service.leave(f.a);
+  f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  const next = f.service.getState(f.a).room.players.find((p) => p.isMe).plateNumber;
+  assert.equal(next, plate);
+  const restartedService = createCarRacingDemoService({ realMoneyEnabled: false });
+  restartedService.createRoom(f.a, { entryFeeEtb: 10 });
+  const afterRestart = restartedService.getState(f.a).room.players.find((p) => p.isMe).plateNumber;
+  assert.equal(afterRestart, plate, 'account plate remains stable after service restart');
 });
 
 test('server derives payout and enforces ETB 20,000 cap without touching wallet', () => {
