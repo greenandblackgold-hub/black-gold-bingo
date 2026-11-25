@@ -36,7 +36,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   sweep.unref?.();
 
   function rateLimit(ip, bucket) {
-    const max = config.rateLimits[bucket];
+    // Multiplayer race state/control heartbeats have their own bounded per-IP budget.\n    const max = bucket === 'car-racing' ? 2000 : config.rateLimits[bucket];
     const windowMs = 60_000;
     const key = `${ip}|${bucket}`;
     const t = Date.now();
@@ -150,12 +150,12 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
 
   /* Multiplayer Car Racing is an isolated in-memory simulation. It never calls the wallet or payment services. */
   route('GET', '/api/games/car-racing/catalog', 'user', 'default', () => carRacing.getCatalog());
-  route('GET', '/api/games/car-racing/state', 'user', 'default', ({ user }) => carRacing.getState(user));
+  route('GET', '/api/games/car-racing/state', 'user', 'car-racing', ({ user }) => carRacing.getState(user));
   route('POST', '/api/games/car-racing/rooms', 'user', 'money', ({ user, body }) => carRacing.createRoom(user, body));
   route('POST', '/api/games/car-racing/join', 'user', 'money', ({ user, body }) => carRacing.joinRoom(user, body));
   route('POST', '/api/games/car-racing/car', 'user', 'default', ({ user, body }) => carRacing.chooseCar(user, body));
   route('POST', '/api/games/car-racing/ready', 'user', 'default', ({ user, body }) => carRacing.setReady(user, body));
-  route('POST', '/api/games/car-racing/control', 'user', 'default', ({ user, body }) => carRacing.control(user, body));
+  route('POST', '/api/games/car-racing/control', 'user', 'car-racing', ({ user, body }) => carRacing.control(user, body));
   route('POST', '/api/games/car-racing/leave', 'user', 'default', ({ user }) => carRacing.leave(user));
 
   /* opt-in Web Push subscriptions */

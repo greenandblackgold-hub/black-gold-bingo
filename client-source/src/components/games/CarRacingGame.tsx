@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -19,7 +19,6 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
   const [state, setState] = useState<State | null>(null);
   const [entryFee, setEntryFee] = useState(10);
   const [roomCode, setRoomCode] = useState('');
-  const [selectedCar, setSelectedCar] = useState('sport');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [throttle, setThrottle] = useState(0);
@@ -49,7 +48,6 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
     catch (e) { setError(e instanceof Error ? e.message : t.error); }
     finally { setBusy(false); }
   };
-  const car = useMemo(() => state?.cars.find((c) => c.id === selectedCar), [state?.cars, selectedCar]);
   const progress = me?.progress ?? 0;
   const countdown = room?.countdownEndsAt ? Math.max(0, Math.ceil((room.countdownEndsAt - clock) / 1000)) : 0;
   return (
@@ -89,7 +87,7 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
             <div className="mt-5 h-3 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-200 transition-all" style={{ width: progress + '%' }} /></div>
             <div className="mt-2 flex justify-between text-[10px] text-amber-100/45"><span>START</span><span>{progress}%</span><span>FINISH</span></div>
             <div className="mt-5 space-y-2">{room.players.map((p) => <div key={p.userId} className="rounded-xl border border-white/10 bg-black/40 p-3"><div className="flex justify-between gap-2 text-xs"><b>{p.name} · {p.car}</b><span>{p.finished ? 'FINISHED' : p.ready ? 'READY' : 'WAITING'}</span></div><div className="mt-2 h-2 overflow-hidden rounded bg-white/10"><div className="h-full bg-amber-400" style={{ width: p.progress + '%' }} /></div></div>)}</div>
-            {room.status === 'lobby' && <div className="mt-5"><h3 className="font-bold">{t.choose}</h3><div className="mt-3 grid grid-cols-2 gap-2">{state?.cars.map((c) => <button key={c.id} onClick={() => { setSelectedCar(c.id); void act('/api/games/car-racing/car', { roomId: room.roomId, carId: c.id }); }} className={`rounded-xl border p-3 text-left text-xs ${me?.carId === c.id ? 'border-amber-300 bg-amber-300/10' : 'border-white/10'}`}><span className="block text-base">🏎️</span><b>{c.name}</b><span className="mt-1 block text-amber-100/50">Speed {Math.round(c.speed * 100)} · Handling {Math.round(c.handling * 100)}</span></button>)}</div><button disabled={busy || room.players.length < 2} onClick={() => void act('/api/games/car-racing/ready', { roomId: room.roomId, ready: true })} className="mt-4 w-full rounded-xl bg-amber-300 p-3 font-black text-black disabled:opacity-40">{t.ready}</button><p className="mt-2 text-center text-xs text-amber-100/45">{room.players.length < 2 ? t.waiting : t.start}</p></div>}
+            {room.status === 'lobby' && <div className="mt-5"><h3 className="font-bold">{t.choose}</h3><div className="mt-3 grid grid-cols-2 gap-2">{state?.cars.map((c) => <button key={c.id} onClick={() => void act('/api/games/car-racing/car', { roomId: room.roomId, carId: c.id })} className={`rounded-xl border p-3 text-left text-xs ${me?.carId === c.id ? 'border-amber-300 bg-amber-300/10' : 'border-white/10'}`}><span className="block text-base">🏎️</span><b>{c.name}</b><span className="mt-1 block text-amber-100/50">Speed {Math.round(c.speed * 100)} · Handling {Math.round(c.handling * 100)}</span></button>)}</div><button disabled={busy || room.players.length < 2} onClick={() => void act('/api/games/car-racing/ready', { roomId: room.roomId, ready: true })} className="mt-4 w-full rounded-xl bg-amber-300 p-3 font-black text-black disabled:opacity-40">{t.ready}</button><p className="mt-2 text-center text-xs text-amber-100/45">{room.players.length < 2 ? t.waiting : t.start}</p></div>}
             {room.status === 'countdown' && <p className="mt-6 text-center text-4xl font-black text-amber-300">{countdown || t.countdown}</p>}
             {room.status === 'racing' && <div className="mt-5"><div className="relative h-44 overflow-hidden rounded-2xl border border-amber-300/20 bg-[repeating-linear-gradient(0deg,#242424_0_30px,#1a1a1a_30px_60px)]"><div className="absolute inset-y-0 left-1/2 border-l-2 border-dashed border-white/30" /><div className="absolute inset-0 flex items-center justify-center text-6xl opacity-80">🏎️</div><div className="absolute bottom-2 left-3 text-[10px] font-bold text-white/60">{room.track.name.toUpperCase()}</div></div><div className="mt-4 grid grid-cols-3 gap-3"><button onPointerDown={() => setSteer(-1)} onPointerUp={() => setSteer(0)} onPointerLeave={() => setSteer(0)} className="rounded-xl border border-amber-300/40 py-5 font-black text-amber-200">← {t.left}</button><button onPointerDown={() => setThrottle(1)} onPointerUp={() => setThrottle(0)} onPointerLeave={() => setThrottle(0)} className="rounded-xl bg-amber-300 py-5 font-black text-black">▲ {t.drive}</button><button onPointerDown={() => setSteer(1)} onPointerUp={() => setSteer(0)} onPointerLeave={() => setSteer(0)} className="rounded-xl border border-amber-300/40 py-5 font-black text-amber-200">{t.right} →</button></div></div>}
             {room.status === 'finished' && <div className="mt-6 rounded-2xl border border-amber-300/40 bg-amber-300/10 p-5 text-center"><p className="text-xs uppercase tracking-widest text-amber-300">{t.result}</p><h3 className="mt-2 text-2xl font-black">{room.winner?.name}</h3><p className="mt-2 text-lg text-amber-100">{t.payout}: {room.winner?.payoutEtb.toFixed(2)} ETB</p></div>}
