@@ -371,6 +371,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   admin('POST', '/api/admin/pattern', async ({ body }) => (await game.setWinPattern(body.pattern), game.getPublicState()));
   admin('POST', '/api/admin/card-limit', async ({ body }) => (await game.setRoundCardLimit(body.count), game.getPublicState()));
   admin('POST', '/api/admin/announcement', async ({ body }) => (await game.setAnnouncement(body.message), game.getPublicState()));
+  admin('POST', '/api/admin/sound', async ({ body }) => (await game.setSoundEnabled(body.on === true), game.getPublicState()));
   admin('POST', '/api/admin/prize-schedule', async ({ body }) => (await game.setPrizeScheduleSettings(body), game.getPublicState()));
   admin('GET', '/api/admin/withdrawals', async ({ query }) =>
     (await wallet.listWithdrawals({ status: query.get('status') || undefined })).map((w) => ({
