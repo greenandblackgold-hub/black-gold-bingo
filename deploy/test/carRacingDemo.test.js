@@ -229,3 +229,52 @@ test('race ends cleanly when every driver is eliminated', () => {
   assert.equal(state.endReason, 'all_eliminated');
   assert.ok(state.players.every((p) => p.eliminated));
 });
+
+
+test('server detects car-to-car body collisions and publishes the same event to both drivers', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  f.service.joinRoom(f.b, { code: room.code });
+  f.service.setReady(f.a, {}); f.service.setReady(f.b, {});
+  f.advance(3_100); f.service.getState(f.a);
+  f.service.control(f.a, { throttle: 0.3, steer: 0.1 });
+  f.service.control(f.b, { throttle: 0.3, steer: -0.1 });
+  f.advance(250);
+  const a = f.service.getState(f.a).room;
+  const b = f.service.getState(f.b).room;
+  const event = a.collisionEvents.find((item) => item.type === 'car-to-car');
+  assert.ok(event, 'overlapping server-side vehicle bodies create a collision');
+  assert.equal(event.severity, 'light');
+  assert.deepEqual(b.collisionEvents.find((item) => item.id === event.id), event);
+  assert.ok(a.players.find((p) => p.isMe).damage > 0);
+  assert.ok(b.players.find((p) => p.userId === f.b.id).damage > 0);
+});
+
+test('car-to-car collision severity separates light, medium and severe impacts', () => {
+  const runImpact = (throttle, boost, duration) => {
+    const f = fixture();
+    const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+    f.service.joinRoom(f.b, { code: room.code });
+    f.service.setReady(f.a, {}); f.service.setReady(f.b, {});
+    f.advance(3_100); f.service.getState(f.a);
+    f.service.control(f.a, { throttle, boost, steer: 0.1 });
+    f.service.control(f.b, { throttle, boost, steer: -0.1 });
+    f.advance(duration);
+    return f.service.getState(f.a).room;
+  };
+  const light = runImpact(0.3, false, 250);
+  const medium = runImpact(0.6, false, 1_000);
+  const severe = runImpact(1, true, 1_000);
+  assert.equal(light.collisionEvents.find((e) => e.type === 'car-to-car')?.severity, 'light');
+  assert.equal(medium.collisionEvents.find((e) => e.type === 'car-to-car')?.severity, 'medium');
+  assert.equal(severe.collisionEvents.find((e) => e.type === 'car-to-car')?.severity, 'severe');
+  assert.ok(severe.players.every((p) => p.eliminated && p.speed === 0));
+  assert.ok(medium.players.every((p) => !p.eliminated && p.damage > 0 && p.speed < 100));
+});
+
+test('each dynamic track exposes distinct environment and scenery metadata', () => {
+  const tracks = fixture().service.getCatalog().tracks;
+  assert.deepEqual(tracks.map((track) => track.environment), ['city', 'country', 'rocky', 'coastal']);
+  assert.ok(tracks.every((track) => Array.isArray(track.scenery) && track.scenery.length >= 3));
+  assert.equal(new Set(tracks.map((track) => track.scenery.join(','))).size, 4);
+});
