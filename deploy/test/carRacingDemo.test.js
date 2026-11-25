@@ -293,6 +293,6 @@ test('frontend source includes all four track scenes, modeled obstacles and both
   }
   assert.match(frontend, /view === 'chase'/);
   assert.match(frontend, /view === 'cockpit'/);
-  assert.match(frontend, /me\.collisionEvent/);
+  assert.match(frontend, /p\.collisionEvent/);
   assert.match(frontend, /Vehicle damage/);
 });
