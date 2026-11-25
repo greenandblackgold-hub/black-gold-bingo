@@ -83,7 +83,7 @@ export function RoundProvider({ children }: { children: ReactNode }) {
   const len = game.calledNumbers.length;
   useEffect(() => {
     if (!loaded) return;
-    if (prevLen.current !== null && len > prevLen.current) play('call');
+    if (prevLen.current !== null && len > prevLen.current && game.soundEnabled !== false) play('call');
     prevLen.current = len;
   }, [loaded, len]);
 
@@ -266,6 +266,11 @@ export function RoundProvider({ children }: { children: ReactNode }) {
       },
       roundNumber: game.roundNumber,
       calledNumbers: game.calledNumbers,
+      soundEnabled: game.soundEnabled !== false,
+      setSoundEnabled: (on) => {
+        const current = gameRef.current;
+        if (canHost) commit({ ...current, soundEnabled: on });
+      },
       winner: game.winner,
       claims,
       startRound,
