@@ -41,7 +41,7 @@ before(async () => {
   // Set TEST_MONGODB_URI to run this whole suite against a real MongoDB (a throwaway database is created and dropped).
   const mongo = process.env.TEST_MONGODB_URI;
   const config = loadConfig({
-    NODE_ENV: 'test', STORAGE: mongo ? 'mongo' : 'memory', MONGODB_URI: mongo ?? '', DB_NAME: `bingo_test_${Date.now()}`, CHAPA_MOCK: 'true', REAL_MONEY_ENABLED: 'false', CARD_PRICE_ETB: '10', PRIZE_PERCENT: '45',
+    NODE_ENV: 'test', STORAGE: mongo ? 'mongo' : 'memory', MONGODB_URI: mongo ?? '', DB_NAME: `bingo_test_${Date.now()}`, CHAPA_MOCK: 'true', CARD_PRICE_ETB: '10', PRIZE_PERCENT: '45',
     MIN_WITHDRAW_ETB: '50', RATE_LIMIT_AUTH: '100000', RATE_LIMIT_MONEY: '100000', RATE_LIMIT_DEFAULT: '100000', JWT_SECRET: 'test-secret-test-secret-test-secret-123', CLIENT_URL: 'http://web.test', CLIENT_ORIGINS: 'http://web.test',
   });
   ctx = await build(config);
@@ -148,6 +148,9 @@ test('Host can hide Bingo, Keno and Aviator from player access while keeping the
 });
 
 test('Car Racing is controlled by both Host game availability and General Games Center switches', async () => {
+  const originalRealMoneyEnabled = ctx.config.realMoneyEnabled;
+  ctx.config.realMoneyEnabled = false;
+  try {
   const p = await newPlayer('Car Racing availability player', 100);
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { carRacingEnabled: true, generalEnabled: true } });
   const initial = await api('GET', '/api/games/settings', { token: p.token });
@@ -173,6 +176,9 @@ test('Car Racing is controlled by both Host game availability and General Games 
   const switchedOff = await api('GET', '/api/games/car-racing/state', { token: p.token });
   assert.equal(switchedOff.status, 503);
   assert.equal(switchedOff.json.error, 'game_disabled');
+  } finally {
+    ctx.config.realMoneyEnabled = originalRealMoneyEnabled;
+  }
 });
 
 test('register, login, wrong PIN, lockout after 5 failures', async () => {
