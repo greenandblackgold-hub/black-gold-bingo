@@ -34,6 +34,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   aviatorEnabled: true,
   minesEnabled: true,
   carRacingEnabled: true,
+  carRacingRunning: true,
   minBet: 500,
   kenoMinBet: 200,
   maxBet: 100000,
@@ -155,7 +156,7 @@ function mapRepoError(error) {
   throw error;
 }
 
-export function createGamesHubService({ repo, config, now = Date.now }) {
+export function createGamesHubService({ repo, config, now = Date.now, onCarRacingRunningChanged = () => {} }) {
   let timer = null;
   let ticking = false;
   const gameTickLocks = new Map();
@@ -596,6 +597,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     if (input.aviatorEnabled !== undefined) next.aviatorEnabled = input.aviatorEnabled === true;
     if (input.minesEnabled !== undefined) next.minesEnabled = input.minesEnabled === true;
     if (input.carRacingEnabled !== undefined) next.carRacingEnabled = input.carRacingEnabled === true;
+    if (input.carRacingRunning !== undefined) next.carRacingRunning = input.carRacingRunning === true;
     if (input.minBetEtb !== undefined) {
       const n = Number(input.minBetEtb);
       if (!Number.isFinite(n) || n < 1 || n > 1000 || Math.abs(n * 100 - Math.round(n * 100)) > 1e-7) {
@@ -641,6 +643,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     const saved = await repo.updateGameHubSettings(next);
     settingsCache = { ...settingsDefaults, ...saved };
     settingsCacheExpiresAt = Date.now() + 5000;
+    if (current.carRacingRunning !== settingsCache.carRacingRunning) onCarRacingRunningChanged(settingsCache.carRacingRunning === true);
     return settingsCache;
   }
 
@@ -723,6 +726,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
         settings: {
           ...currentSettings,
           generalEnabled: currentSettings.generalEnabled !== false,
+          carRacingRunning: currentSettings.carRacingRunning !== false,
           announcementText: currentSettings.announcementText ?? '',
           announcementVisible: currentSettings.announcementVisible === true,
           minBetEtb: currentSettings.minBet / 100,
