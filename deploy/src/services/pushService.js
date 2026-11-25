@@ -21,6 +21,13 @@ function validSubscription(value) {
 }
 
 export function createPushService({ repo, config }) {
+  const notificationGameKeys = ['bingoEnabled', 'kenoEnabled', 'aviatorEnabled', 'minesEnabled', 'carRacingEnabled'];
+  async function notificationsAllowed() {
+    const settings = await repo.getGameHubSettings();
+    if (settings.generalEnabled === false || settings.bingoEnabled === false) return false;
+    return !notificationGameKeys.every((key) => settings[key] === false);
+  }
+
   const enabled = Boolean(config.pushVapidPublicKey && config.pushVapidPrivateKey && config.pushVapidSubject);
   if (enabled) {
     webpush.setVapidDetails(config.pushVapidSubject, config.pushVapidPublicKey, config.pushVapidPrivateKey);
@@ -47,15 +54,17 @@ export function createPushService({ repo, config }) {
 
     async notifyPlayers({ title, body, tag }) {
       if (!enabled) return { sent: 0, failed: 0, disabled: true };
+      if (!(await notificationsAllowed())) return { sent: 0, failed: 0, disabled: true, suppressed: true };
       const subscriptions = await repo.listPushSubscriptions();
       const results = await Promise.allSettled(subscriptions.map(async (item) => {
         try {
+          if (!(await notificationsAllowed())) return false;
           await webpush.sendNotification(item.subscription, JSON.stringify({
             title: String(title).slice(0, 80),
             body: String(body).slice(0, 240),
             tag: String(tag ?? 'black-gold-bingo').slice(0, 100),
             url: '/',
-          }), { TTL: 3600, urgency: 'high' });
+          }), { TTL: 0, urgency: 'high' });
           return true;
         } catch (error) {
           if (error?.statusCode === 404 || error?.statusCode === 410) {
