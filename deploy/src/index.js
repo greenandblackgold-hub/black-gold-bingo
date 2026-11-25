@@ -37,7 +37,7 @@ export async function build(config = loadConfig()) {
     const chapa = createChapa({ ...config.chapa, publicApiUrl: config.publicApiUrl });
     const wallet = createWalletService({ repo, config, chapa });
     gamesHub = createGamesHubService({ repo, config });
-    const carRacing = createCarRacingDemoService({ prod: config.prod });
+    const carRacing = createCarRacingDemoService({ realMoneyEnabled: config.realMoneyEnabled });
 
     // Bootstrap the one owner account from private Render environment variables.
     // Never promote an existing player account; ensureAdmin deliberately fails closed.
