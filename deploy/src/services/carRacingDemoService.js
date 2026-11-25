@@ -5,16 +5,16 @@ export const CAR_RACING_MAX_PRIZE_ETB = 20_000;
 export const CAR_RACING_COMPANY_PERCENT = 55;
 export const CAR_RACING_POOL_PERCENT = 45;
 const tracks = [
-  { id: 'city', name: 'City Circuit', terrain: 'Asphalt', speedFactor: 1, grip: 1, obstacles: [180, 430, 690, 860] },
-  { id: 'country', name: 'Country Run', terrain: 'Rural dirt', speedFactor: 0.92, grip: 0.88, obstacles: [130, 350, 590, 810] },
-  { id: 'rocky', name: 'Rocky Ridge', terrain: 'Rough mountain', speedFactor: 0.78, grip: 0.68, obstacles: [100, 270, 470, 720, 900] },
-  { id: 'coast', name: 'Coastal Highway', terrain: 'Mixed tarmac', speedFactor: 1.08, grip: 0.94, obstacles: [240, 510, 780] },
+  { id: 'city', name: 'City Circuit', terrain: 'Urban asphalt', surface: 'Asphalt', environment: 'city', scenery: ['buildings', 'streetlights', 'lane-markings'], speedFactor: 1, grip: 1, curveType: 'straight', curveIntensity: 0, wallLimit: 1.04, obstacles: [{ at: 180, lane: 0.5, width: 0.24, type: 'barrier' }, { at: 430, lane: -0.55, width: 0.28, type: 'debris' }, { at: 690, lane: 0.55, width: 0.28, type: 'barrier' }, { at: 860, lane: -0.5, width: 0.24, type: 'debris' }] },
+  { id: 'country', name: 'Country Run', terrain: 'Rural dirt', surface: 'Loose dirt', environment: 'country', scenery: ['green-fields', 'trees', 'fences'], speedFactor: 0.92, grip: 0.88, curveType: 'right', curveIntensity: 0.48, wallLimit: 1.02, obstacles: [{ at: 130, lane: -0.48, width: 0.3, type: 'rocks' }, { at: 350, lane: 0.48, width: 0.3, type: 'logs' }, { at: 590, lane: 0, width: 0.28, type: 'rocks' }, { at: 810, lane: -0.5, width: 0.3, type: 'logs' }] },
+  { id: 'rocky', name: 'Rocky Ridge', terrain: 'Rough mountain', surface: 'Rock and gravel', environment: 'rocky', scenery: ['mountains', 'boulders', 'cliffs'], speedFactor: 0.78, grip: 0.68, curveType: 'left', curveIntensity: 0.82, wallLimit: 0.98, obstacles: [{ at: 100, lane: 0.48, width: 0.3, type: 'boulder' }, { at: 270, lane: -0.48, width: 0.3, type: 'boulder' }, { at: 470, lane: 0, width: 0.34, type: 'rockfall' }, { at: 720, lane: 0.5, width: 0.3, type: 'boulder' }, { at: 900, lane: -0.45, width: 0.3, type: 'rockfall' }] },
+  { id: 'coast', name: 'Coastal Highway', terrain: 'Wet coastal tarmac', surface: 'Wet asphalt', environment: 'coastal', scenery: ['ocean', 'shoreline', 'waves'], speedFactor: 1.08, grip: 0.94, curveType: 's-bend', curveIntensity: 0.62, wallLimit: 1.02, obstacles: [{ at: 240, lane: -0.5, width: 0.3, type: 'debris' }, { at: 510, lane: 0.5, width: 0.3, type: 'barrier' }, { at: 780, lane: 0, width: 0.32, type: 'debris' }] },
 ];
 const cars = [
-  { id: 'sport', name: 'GT Sport', speed: 1.18, handling: 0.88, color: '#f4b942' },
-  { id: 'rally', name: 'Rally X', speed: 1.02, handling: 1.2, color: '#53c7a5' },
-  { id: 'muscle', name: 'Muscle V8', speed: 1.12, handling: 0.82, color: '#e76f51' },
-  { id: 'electric', name: 'Volt GT', speed: 1.08, handling: 1.08, color: '#65a9ff' },
+  { id: 'sport', name: 'GT Sport', length: 4.2, width: 0.36, speed: 1.18, handling: 0.88, color: '#f4b942' },
+  { id: 'rally', name: 'Rally X', length: 4.4, width: 0.38, speed: 1.02, handling: 1.2, color: '#53c7a5' },
+  { id: 'muscle', name: 'Muscle V8', length: 4.6, width: 0.4, speed: 1.12, handling: 0.82, color: '#e76f51' },
+  { id: 'electric', name: 'Volt GT', length: 4.1, width: 0.36, speed: 1.08, handling: 1.08, color: '#65a9ff' },
 ];
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
@@ -50,12 +50,15 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       entryFeeEtb: room.entryFeeEtb, playerCount: room.players.length, maxPlayers: 8,
       poolEtb: room.poolSantim / 100, companyShareEtb: room.companyShareSantim / 100,
       prizePoolEtb: room.prizeSantim / 100, payoutCapEtb: CAR_RACING_MAX_PRIZE_ETB,
-      countdownEndsAt: room.countdownEndsAt, startedAt: room.startedAt, finishedAt: room.finishedAt,
+      countdownEndsAt: room.countdownEndsAt, startedAt: room.startedAt, finishedAt: room.finishedAt, endReason: room.endReason ?? null,
       winner: room.winner ? { userId: room.winner.userId, name: room.winner.name, plateNumber: room.winner.plateNumber, payoutEtb: room.winner.payoutSantim / 100 } : null,
+      collisionEvents: clone((room.collisionEvents ?? []).slice(-12)),
       players: room.players.map((p) => ({
         userId: p.userId, name: p.name, car: cars.find((c) => c.id === p.carId)?.name ?? 'GT Sport',
         carId: p.carId, plateNumber: p.plateNumber, ready: p.ready, progress: Math.min(100, Math.round(p.progress / 10)),
         lane: p.lane, speed: Math.round(Math.abs(p.velocity) * 100), finished: p.finished,
+        damage: p.damage ?? 0, collisionEvent: p.collisionEvent ?? null,
+        eliminated: p.eliminated === true, eliminationReason: p.eliminationReason ?? null, eliminatedAt: p.eliminatedAt ?? null,
         isMe: p.userId === userId,
       })),
     };
@@ -94,27 +97,49 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     if (!dt) return;
     room.lastTickAt = at;
     const finishers = [];
+    room.collisionEvents ??= [];
     for (const p of room.players) {
-      if (p.finished) continue;
+      if (p.finished || p.eliminated) continue;
       const car = cars.find((item) => item.id === p.carId) ?? cars[0];
       const controlFresh = at - p.controlAt < 1500;
       const throttle = controlFresh ? p.throttle : 0;
       const steer = controlFresh ? p.steer : 0;
       const reverse = controlFresh && p.reverse;
       const boost = controlFresh && p.boost;
-      p.lane = Math.max(-1, Math.min(1, p.lane + steer * car.handling * dt * 1.7));
-      const gripPenalty = Math.abs(p.lane) > room.track.grip ? 0.62 : 1;
+      const curveWave = room.track.curveType === 's-bend' ? Math.sin((p.progress / 1000) * Math.PI * 2) : 1;
+      const damagePenalty = Math.max(0.55, 1 - (p.damage ?? 0) * 0.004);
+      const curveForce = (room.track.curveType === 'left' ? -1 : room.track.curveType === 'right' ? 1 : room.track.curveType === 's-bend' ? curveWave : 0) * room.track.curveIntensity;
+      p.lane += steer * car.handling * damagePenalty * dt * 1.7 - curveForce * dt * 0.1;
+      if (Math.abs(p.lane) >= room.track.wallLimit) {
+        const severity = Math.abs(p.velocity) >= 0.72 ? 'severe' : 'medium';
+        const event = { id: `${at}-${p.userId}-wall`, at, type: 'wall', severity, participants: [p.userId] };
+        room.collisionEvents.push(event); p.collisionEvent = event; p.damage = Math.min(100, (p.damage ?? 0) + (severity === 'severe' ? 100 : 38));
+        if (severity === 'severe' || p.damage >= 100) { p.eliminated = true; p.eliminationReason = 'wall'; p.eliminatedAt = at; }
+        p.velocity = p.eliminated ? 0 : p.velocity * 0.28; p.throttle = 0; p.steer = 0; p.reverse = false; p.boost = false;
+        continue;
+      }
+      const gripPenalty = (Math.abs(p.lane) > room.track.grip ? 0.62 : 1) * damagePenalty;
       const acceleration = throttle * (reverse ? 1.05 : boost ? 1.3 : 0.8);
       const drag = throttle ? 0 : dt * 0.7;
       const nextVelocity = p.velocity + (reverse ? -acceleration : acceleration) * dt + (p.velocity > 0 ? -drag : p.velocity < 0 ? drag : 0);
       p.velocity = Math.max(-0.55, Math.min(boost ? 1.35 : 1, nextVelocity));
-      let obstaclePenalty = 1;
       const obstacle = room.track.obstacles[p.obstacleIndex];
-      if (p.velocity > 0 && obstacle && p.progress < obstacle && p.progress + p.velocity * car.speed * room.track.speedFactor * dt * 145 >= obstacle) {
+      const nextProgress = p.progress + p.velocity * car.speed * room.track.speedFactor * gripPenalty * dt * 145;
+      if (p.velocity > 0 && obstacle && p.progress < obstacle.at && nextProgress >= obstacle.at) {
         p.obstacleIndex += 1;
-        if (Math.abs(p.lane) < 0.32) obstaclePenalty = 0.55;
+        if (Math.abs(p.lane - obstacle.lane) <= obstacle.width) {
+          p.progress = obstacle.at;
+          const impact = Math.abs(p.velocity); const severity = impact >= 0.82 ? 'severe' : impact >= 0.42 ? 'medium' : 'light';
+          const event = { id: `${at}-${p.userId}-${obstacle.at}`, at, type: obstacle.type || 'obstacle', severity, participants: [p.userId] };
+          room.collisionEvents.push(event); p.collisionEvent = event;
+          p.damage = Math.min(100, (p.damage ?? 0) + (severity === 'severe' ? 100 : severity === 'medium' ? 38 : 12));
+          if (severity === 'severe' || p.damage >= 100) { p.eliminated = true; p.eliminationReason = obstacle.type || 'obstacle'; p.eliminatedAt = at; }
+          p.velocity = p.eliminated ? 0 : p.velocity * (severity === 'medium' ? 0.24 : 0.72);
+          p.throttle = 0; p.boost = false;
+          if (p.eliminated) { p.steer = 0; p.reverse = false; continue; }
+        }
       }
-      const gain = p.velocity * car.speed * room.track.speedFactor * gripPenalty * (p.velocity > 0 ? obstaclePenalty : 1) * dt * 145;
+      const gain = p.velocity * car.speed * room.track.speedFactor * gripPenalty * dt * 145;
       const next = Math.max(0, p.progress + gain);
       if (gain > 0 && next >= 1000) {
         const crossing = at - dt * ((1000 - p.progress) / Math.max(gain, 0.001));
@@ -122,11 +147,42 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
         finishers.push({ player: p, at: crossing });
       } else p.progress = next;
     }
+    // Server-authoritative oriented body bounds use each selected car's length and width.
+    const active = room.players.filter((p) => !p.finished && !p.eliminated);
+    for (let i = 0; i < active.length; i += 1) for (let j = i + 1; j < active.length; j += 1) {
+      const a = active[i], b = active[j];
+      const carA = cars.find((item) => item.id === a.carId) ?? cars[0];
+      const carB = cars.find((item) => item.id === b.carId) ?? cars[0];
+      const longitudinalOverlap = (carA.length + carB.length) / 2;
+      const lateralOverlap = (carA.width + carB.width) / 2;
+      if (Math.abs(a.progress - b.progress) > longitudinalOverlap || Math.abs(a.lane - b.lane) > lateralOverlap) continue;
+      if (a.lastCollisionAt && at - a.lastCollisionAt < 850) continue;
+      const closingSpeed = Math.abs(a.velocity - b.velocity);
+      const impact = Math.max(closingSpeed, Math.min(Math.abs(a.velocity), Math.abs(b.velocity)) * 0.9);
+      const severity = impact >= 0.82 ? 'severe' : impact >= 0.42 ? 'medium' : 'light';
+      const event = { id: `${at}-${a.userId}-${b.userId}`, at, type: 'car-to-car', severity, participants: [a.userId, b.userId] };
+      room.collisionEvents.push(event);
+      for (const p of [a, b]) {
+        p.collisionEvent = event; p.lastCollisionAt = at;
+        p.damage = Math.min(100, (p.damage ?? 0) + (severity === 'severe' ? 100 : severity === 'medium' ? 32 : 8));
+        const eliminated = severity === 'severe' || p.damage >= 100;
+        if (eliminated) { p.eliminated = true; p.eliminationReason = 'car-to-car'; p.eliminatedAt = at; p.steer = 0; p.reverse = false; }
+        p.velocity = eliminated ? 0 : p.velocity * (severity === 'medium' ? 0.42 : 0.78);
+        p.lane += p === a ? -0.14 : 0.14;
+        p.throttle = 0; p.boost = false;
+      }
+    }
+    if (room.collisionEvents.length > 40) room.collisionEvents.splice(0, room.collisionEvents.length - 40);
     finishers.sort((a, b) => a.at - b.at);
-    if (finishers.length) settle(room, finishers[0].player, finishers[0].at);
+    const validFinishers = finishers.filter(({ player: finisher }) => !finisher.eliminated);
+    if (validFinishers.length) settle(room, validFinishers[0].player, validFinishers[0].at);
+    if (room.status === 'racing' && room.players.every((p) => p.finished || p.eliminated)) {
+      room.status = 'finished'; room.finishedAt = at; room.endReason = 'all_eliminated';
+    }
     if (room.status === 'racing' && at - room.startedAt > 90_000) {
-      const leader = [...room.players].sort((a, b) => b.progress - a.progress)[0];
+      const leader = room.players.filter((p) => !p.eliminated).sort((a, b) => b.progress - a.progress)[0];
       if (leader) settle(room, leader, at);
+      else { room.status = 'finished'; room.finishedAt = at; room.endReason = 'all_eliminated'; }
     }
   }
   function findRoom(userId, roomId) {
@@ -150,7 +206,9 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     if (balance(user.id) < fee) throw new HttpError(400, 'insufficient_demo_credits', 'Not enough simulation credits.');
     balances.set(user.id, balance(user.id) - fee);
     room.poolSantim += fee;
-    room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: 'sport', plateNumber: plateFor(user.id), ready: false, progress: 0, lane: 0, velocity: 0, throttle: 0, steer: 0, reverse: false, boost: false, controlAt: 0, obstacleIndex: 0, finished: false });
+    const seat = room.players.length;
+    const startingLane = (seat % 2 === 0 ? -1 : 1) * (Math.floor(seat / 2) + 1) * 0.24;
+    room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: 'sport', plateNumber: plateFor(user.id), ready: false, progress: 0, lane: startingLane, velocity: 0, throttle: 0, steer: 0, reverse: false, boost: false, controlAt: 0, obstacleIndex: 0, damage: 0, collisionEvent: null, lastCollisionAt: 0, finished: false, eliminated: false, eliminationReason: null, eliminatedAt: null });
     playerRooms.set(user.id, room.id);
   }
 
@@ -179,7 +237,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       const track = tracks[roundSequence % tracks.length];
       roundSequence += 1;
       const id = randomBytes(12).toString('hex');
-      const room = { id, code: randomBytes(3).toString('hex').toUpperCase(), status: 'lobby', track: clone(track), entryFeeEtb: fee, poolSantim: 0, companyShareSantim: 0, prizeSantim: 0, players: [], createdAt: now(), countdownEndsAt: null, startedAt: null, finishedAt: null, winner: null };
+      const room = { id, code: randomBytes(3).toString('hex').toUpperCase(), status: 'lobby', track: clone(track), entryFeeEtb: fee, poolSantim: 0, companyShareSantim: 0, prizeSantim: 0, players: [], createdAt: now(), countdownEndsAt: null, startedAt: null, finishedAt: null, winner: null, collisionEvents: [] };
       rooms.set(id, room);
       joinPlayer(room, user);
       return publicRoom(room, user.id);
@@ -214,6 +272,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       const room = findRoom(user.id, input.roomId);
       if (room.status !== 'racing') throw new HttpError(409, 'race_not_running', 'The race is not running.');
       const p = player(room, user.id);
+      if (p.eliminated) throw new HttpError(409, 'driver_eliminated', 'You have been eliminated from this race.');
       p.throttle = Math.max(0, Math.min(1, Number(input.throttle) || 0));
       p.steer = Math.max(-1, Math.min(1, Number(input.steer) || 0));
       p.reverse = input.reverse === true;

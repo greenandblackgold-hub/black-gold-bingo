@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createCarRacingDemoService, CAR_RACING_COMPANY_PERCENT, CAR_RACING_POOL_PERCENT, CAR_RACING_MAX_PRIZE_ETB } from '../src/services/carRacingDemoService.js';
 import { HttpError } from '../src/util/errors.js';
 
@@ -19,7 +20,10 @@ test('car racing is a demo-only isolated catalog with rotating tracks and car ch
   assert.equal(catalog.poolPercent, 45);
   assert.equal(catalog.maxPrizeEtb, 20_000);
   assert.equal(catalog.tracks.length, 4);
+  assert.deepEqual(catalog.tracks.map((track) => track.curveType), ['straight', 'right', 'left', 's-bend']);
+  assert.ok(catalog.tracks.every((track) => track.curveIntensity >= 0 && track.wallLimit > 0));
   assert.equal(catalog.cars.length, 4);
+  assert.ok(catalog.cars.every((car) => car.length > 0 && car.width > 0));
   assert.equal(f.service.createRoom(f.a, { entryFeeEtb: 10 }).track.id, 'city');
   f.service.leave(f.a);
   assert.equal(f.service.createRoom(f.a, { entryFeeEtb: 10 }).track.id, 'country');
@@ -139,4 +143,156 @@ test('leaving an unstarted lobby refunds only simulation credits', () => {
   assert.equal(f.service.getState(f.a).balanceEtb, before - 25);
   f.service.leave(f.a);
   assert.equal(f.service.getState(f.a).balanceEtb, before);
+});
+
+
+test('server eliminates a driver on obstacle impact and locks their controls', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  f.service.joinRoom(f.b, { code: room.code });
+  f.service.setReady(f.a, {});
+  f.service.setReady(f.b, {});
+  f.advance(3_100);
+  f.service.getState(f.a);
+  f.service.control(f.a, { throttle: 1, steer: 1 });
+  f.advance(250);
+  f.service.getState(f.a);
+  f.service.control(f.a, { throttle: 1, steer: 0.5 });
+  f.advance(250);
+  f.service.getState(f.a);
+  for (let i = 0; i < 30; i++) {
+    f.service.control(f.a, { throttle: 1, steer: 0 });
+    f.service.control(f.b, { throttle: 1, steer: 0 });
+    f.advance(250);
+    const state = f.service.getState(f.a).room;
+    if (state.players.find((p) => p.isMe).eliminated) break;
+  }
+  const state = f.service.getState(f.a).room;
+  const eliminated = state.players.find((p) => p.isMe);
+  assert.equal(eliminated.eliminated, true);
+  assert.equal(eliminated.eliminationReason, 'barrier');
+  assert.equal(eliminated.speed, 0);
+  const frozenProgress = eliminated.progress;
+  f.advance(2_000);
+  assert.equal(f.service.getState(f.a).room.players.find((p) => p.isMe).progress, frozenProgress);
+  assert.throws(() => f.service.control(f.a, { throttle: 1 }), (error) => error instanceof HttpError && error.code === 'driver_eliminated');
+  assert.equal(f.service.getState(f.b).room.players.find((p) => p.userId === f.a.id).eliminated, true);
+});
+
+test('server eliminates a driver who crosses the track wall', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  f.service.joinRoom(f.b, { code: room.code });
+  f.service.setReady(f.a, {});
+  f.service.setReady(f.b, {});
+  f.advance(3_100);
+  f.service.getState(f.a);
+  for (let i = 0; i < 6; i++) {
+    f.service.control(f.a, { throttle: 1, steer: 1 });
+    f.advance(250);
+    const state = f.service.getState(f.a).room;
+    if (state.players.find((p) => p.isMe).eliminated) break;
+  }
+  const state = f.service.getState(f.a).room;
+  const eliminated = state.players.find((p) => p.isMe);
+  assert.equal(eliminated.eliminated, true);
+  assert.equal(eliminated.eliminationReason, 'wall');
+  assert.equal(eliminated.speed, 0);
+  assert.equal(state.status, 'racing', 'the remaining driver continues the race');
+});
+
+
+test('race ends cleanly when every driver is eliminated', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  f.service.joinRoom(f.b, { code: room.code });
+  f.service.setReady(f.a, {});
+  f.service.setReady(f.b, {});
+  f.advance(3_100);
+  f.service.getState(f.a);
+  f.service.control(f.a, { throttle: 1, steer: -1 });
+  f.service.control(f.b, { throttle: 1, steer: 1 });
+  f.advance(250);
+  f.service.getState(f.a);
+  f.service.control(f.a, { throttle: 1, steer: -1 });
+  f.service.control(f.b, { throttle: 1, steer: 1 });
+  f.advance(250);
+  f.service.getState(f.a);
+  let state;
+  for (let i = 0; i < 30; i++) {
+    f.service.control(f.a, { throttle: 1, steer: -1 });
+    f.service.control(f.b, { throttle: 1, steer: 1 });
+    f.advance(250);
+    state = f.service.getState(f.a).room;
+    if (state.status === 'finished') break;
+  }
+  assert.equal(state.status, 'finished');
+  assert.equal(state.winner, null);
+  assert.equal(state.endReason, 'all_eliminated');
+  assert.ok(state.players.every((p) => p.eliminated));
+});
+
+
+test('server detects car-to-car body collisions and publishes the same event to both drivers', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  f.service.joinRoom(f.b, { code: room.code });
+  f.service.setReady(f.a, {}); f.service.setReady(f.b, {});
+  f.advance(3_100); f.service.getState(f.a);
+  f.service.control(f.a, { throttle: 0.3, steer: 0.45 });
+  f.service.control(f.b, { throttle: 0.3, steer: -0.45 });
+  f.advance(250);
+  const a = f.service.getState(f.a).room;
+  const b = f.service.getState(f.b).room;
+  const event = a.collisionEvents.find((item) => item.type === 'car-to-car');
+  assert.ok(event, 'overlapping server-side vehicle bodies create a collision');
+  assert.equal(event.severity, 'light');
+  assert.deepEqual(b.collisionEvents.find((item) => item.id === event.id), event);
+  assert.ok(a.players.find((p) => p.isMe).damage > 0);
+  assert.ok(b.players.find((p) => p.userId === f.b.id).damage > 0);
+});
+
+test('car-to-car collision severity separates light, medium and severe impacts', () => {
+  const runImpact = (throttle, boost, duration) => {
+    const f = fixture();
+    const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+    f.service.joinRoom(f.b, { code: room.code });
+    f.service.setReady(f.a, {}); f.service.setReady(f.b, {});
+    f.advance(3_100); f.service.getState(f.a);
+    const steer = duration === 250 ? 0.45 : 0.15;
+    f.service.control(f.a, { throttle, boost, steer });
+    f.service.control(f.b, { throttle, boost, steer: -steer });
+    f.advance(duration);
+    return f.service.getState(f.a).room;
+  };
+  const light = runImpact(0.3, false, 250);
+  const medium = runImpact(0.6, false, 1_000);
+  const severe = runImpact(1, true, 1_000);
+  assert.equal(light.collisionEvents.find((e) => e.type === 'car-to-car')?.severity, 'light');
+  assert.equal(medium.collisionEvents.find((e) => e.type === 'car-to-car')?.severity, 'medium');
+  assert.equal(severe.collisionEvents.find((e) => e.type === 'car-to-car')?.severity, 'severe');
+  assert.ok(severe.players.every((p) => p.eliminated && p.speed === 0));
+  assert.ok(medium.players.every((p) => !p.eliminated && p.damage > 0 && p.speed < 100));
+});
+
+test('each dynamic track exposes distinct environment and scenery metadata', () => {
+  const tracks = fixture().service.getCatalog().tracks;
+  assert.deepEqual(tracks.map((track) => track.environment), ['city', 'country', 'rocky', 'coastal']);
+  assert.ok(tracks.every((track) => Array.isArray(track.scenery) && track.scenery.length >= 3));
+  assert.equal(new Set(tracks.map((track) => track.scenery.join(','))).size, 4);
+});
+
+
+test('frontend source includes all four track scenes, modeled obstacles and both driving views', () => {
+  const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacingGame.tsx', import.meta.url), 'utf8');
+  for (const environment of ['city', 'country', 'rocky', 'coastal']) {
+    assert.ok(frontend.includes(`track.environment === '${environment}'`), `missing ${environment} environment scene`);
+  }
+  for (const obstacle of ['barrier', 'logs', 'boulder', 'rockfall']) {
+    assert.ok(frontend.includes(`obstacle.type === '${obstacle}'`), `missing modeled ${obstacle} obstacle`);
+  }
+  assert.match(frontend, /view === 'chase'/);
+  assert.match(frontend, /view === 'cockpit'/);
+  assert.match(frontend, /p\.collisionEvent/);
+  assert.match(frontend, /Vehicle damage/);
 });
