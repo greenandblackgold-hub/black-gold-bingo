@@ -36,8 +36,11 @@ export async function build(config = loadConfig()) {
     const bonus = createBonusService({ repo, game, config, push });
     const chapa = createChapa({ ...config.chapa, publicApiUrl: config.publicApiUrl });
     const wallet = createWalletService({ repo, config, chapa });
-    gamesHub = createGamesHubService({ repo, config });
-    const carRacing = createCarRacingDemoService({ isRealMoneyEnabled: () => config.realMoneyEnabled === true });
+    let carRacing = null;
+    gamesHub = createGamesHubService({ repo, config, onCarRacingRunningChanged: (enabled) => carRacing?.setRunning(enabled) });
+    carRacing = createCarRacingDemoService({ isRealMoneyEnabled: () => config.realMoneyEnabled === true });
+    const carRacingSettings = await gamesHub.getSettings();
+    carRacing.setRunning(carRacingSettings.carRacingRunning !== false);
 
     // Bootstrap the one owner account from private Render environment variables.
     // Never promote an existing player account; ensureAdmin deliberately fails closed.

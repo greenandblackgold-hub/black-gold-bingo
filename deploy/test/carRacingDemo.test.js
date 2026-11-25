@@ -144,6 +144,27 @@ test('server derives payout and enforces ETB 20,000 cap without touching wallet'
   assert.equal(state.settlement.companyShareEtb, 550);
 });
 
+test('host OFF immediately stops active races without winner or payout and blocks new races until ON', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 20 });
+  f.service.joinRoom(f.b, { code: room.code });
+  f.service.setReady(f.a, {});
+  f.service.setReady(f.b, {});
+  f.advance(3_100);
+  f.service.control(f.a, { throttle: 1, boost: true });
+  f.service.setRunning(false);
+  const stopped = f.service.getState(f.a).room;
+  assert.equal(stopped.status, 'finished');
+  assert.equal(stopped.endReason, 'host_stopped');
+  assert.equal(stopped.winner, null);
+  assert.equal(stopped.settlement, null);
+  assert.ok(stopped.players.every((p) => p.speed === 0));
+  assert.throws(() => f.service.createRoom({ id: 'driver-c' }, { entryFeeEtb: 10 }), (e) => e instanceof HttpError && e.code === 'car_racing_stopped');
+  assert.throws(() => f.service.control(f.a, { throttle: 1 }), (e) => e instanceof HttpError && e.code === 'car_racing_stopped');
+  f.service.setRunning(true);
+  assert.equal(f.service.createRoom({ id: 'driver-c' }, { entryFeeEtb: 10 }).status, 'lobby');
+});
+
 test('production simulation mode can use Car Racing, but real-money mode cannot', () => {
   const simulation = createCarRacingDemoService({ realMoneyEnabled: false });
   assert.equal(simulation.getCatalog().enabled, true);
