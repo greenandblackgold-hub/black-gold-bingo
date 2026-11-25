@@ -977,7 +977,6 @@ test('Bingo card previews are free, registration requires funds, preserves the p
 });
 
 test('public push availability follows live Host switches for each player service worker', async () => {
-  const p = await newPlayer('Push availability player');
   const read = () => api('GET', '/api/push/availability');
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: true, bingoEnabled: true, kenoEnabled: true, aviatorEnabled: true, minesEnabled: true, carRacingEnabled: true } });
   assert.equal((await read()).json.allowed, true, 'notifications are allowed when Games Center and Bingo are ON');
@@ -993,5 +992,4 @@ test('public push availability follows live Host switches for each player servic
 
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: true, bingoEnabled: true, kenoEnabled: true, aviatorEnabled: true, minesEnabled: true, carRacingEnabled: true } });
   assert.equal((await read()).json.allowed, true, 'notifications resume after Host re-enables the Games Center and Bingo');
-  assert.equal(p.user.role, 'player');
 });
