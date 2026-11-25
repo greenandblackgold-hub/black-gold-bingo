@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createCarRacingDemoService, CAR_RACING_COMPANY_PERCENT, CAR_RACING_POOL_PERCENT, CAR_RACING_MAX_PRIZE_ETB } from '../src/services/carRacingDemoService.js';
 import { HttpError } from '../src/util/errors.js';
 
@@ -237,8 +238,8 @@ test('server detects car-to-car body collisions and publishes the same event to 
   f.service.joinRoom(f.b, { code: room.code });
   f.service.setReady(f.a, {}); f.service.setReady(f.b, {});
   f.advance(3_100); f.service.getState(f.a);
-  f.service.control(f.a, { throttle: 0.3, steer: 0.4 });
-  f.service.control(f.b, { throttle: 0.3, steer: -0.4 });
+  f.service.control(f.a, { throttle: 0.3, steer: 0.45 });
+  f.service.control(f.b, { throttle: 0.3, steer: -0.45 });
   f.advance(250);
   const a = f.service.getState(f.a).room;
   const b = f.service.getState(f.b).room;
@@ -278,4 +279,19 @@ test('each dynamic track exposes distinct environment and scenery metadata', () 
   assert.deepEqual(tracks.map((track) => track.environment), ['city', 'country', 'rocky', 'coastal']);
   assert.ok(tracks.every((track) => Array.isArray(track.scenery) && track.scenery.length >= 3));
   assert.equal(new Set(tracks.map((track) => track.scenery.join(','))).size, 4);
+});
+
+
+test('frontend source includes all four track scenes, modeled obstacles and both driving views', () => {
+  const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacingGame.tsx', import.meta.url), 'utf8');
+  for (const environment of ['city', 'country', 'rocky', 'coastal']) {
+    assert.ok(frontend.includes(`track.environment === '${environment}'`), `missing ${environment} environment scene`);
+  }
+  for (const obstacle of ['barrier', 'logs', 'boulder', 'rockfall']) {
+    assert.ok(frontend.includes(`obstacle.type === '${obstacle}'`), `missing modeled ${obstacle} obstacle`);
+  }
+  assert.match(frontend, /view === 'chase'/);
+  assert.match(frontend, /view === 'cockpit'/);
+  assert.match(frontend, /me\.collisionEvent/);
+  assert.match(frontend, /Vehicle damage/);
 });
