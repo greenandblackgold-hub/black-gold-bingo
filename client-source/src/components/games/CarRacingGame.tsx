@@ -40,7 +40,7 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
     if (!room || room.status !== 'racing') { setThrottle(0); setSteer(0); return; }
     const send = () => void api.post('/api/games/car-racing/control', { roomId: room.roomId, throttle, steer }).catch(() => undefined);
     send();
-    const timer = window.setInterval(send, 220);
+    const timer = window.setInterval(send, 650);
     return () => window.clearInterval(timer);
   }, [room?.roomId, room?.status, throttle, steer]);
   const act = async (path: string, body: unknown) => {

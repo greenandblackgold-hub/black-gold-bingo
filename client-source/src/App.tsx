@@ -10,7 +10,8 @@ import { BottomNav } from '@/components/layout/BottomNav';
 import { HelpCenter } from '@/components/help/HelpCenter';
 import { KenoGame } from '@/components/games/KenoGame';
 import { AviatorGame } from '@/components/games/AviatorGame';
-import { MinesGame } from '@/components/games/MinesGame';\nimport { CarRacingGame } from '@/components/games/CarRacingGame';
+import { MinesGame } from '@/components/games/MinesGame';
+import { CarRacingGame } from '@/components/games/CarRacingGame';
 import type { TabId } from '@/components/layout/BottomNav';
 import { AppSettingsProvider } from '@/context/AppSettingsContext';
 import { BackendProvider } from '@/context/BackendContext';
@@ -126,7 +127,8 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
         {generalEnabled && tab === 'play' && <Suspense fallback={<RouteLoading />}><PlayView onGoToWallet={() => setTab('wallet')} settingsOpen={playerSettingsOpen} onSettingsOpenChange={setPlayerSettingsOpen} /></Suspense>}
         {generalEnabled && tab === 'keno' && <KenoGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} onOpenMenu={() => setMenuOpen(true)} />}
         {generalEnabled && tab === 'aviator' && <AviatorGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} />}
-        {generalEnabled && tab === 'mines' && <MinesGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} />}\n        {generalEnabled && tab === 'car-racing' && <CarRacingGame onBack={() => setTab('games')} />}
+        {generalEnabled && tab === 'mines' && <MinesGame onBack={() => setTab('games')} onSwitchGame={(game) => setTab(game === 'bingo' ? 'play' : game)} />}
+        {generalEnabled && tab === 'car-racing' && <CarRacingGame onBack={() => setTab('games')} />}
         {generalEnabled && tab === 'wallet' && <Suspense fallback={<RouteLoading />}><WalletView onGoToPlay={() => setTab('play')} /></Suspense>}
       </main>
       {generalEnabled && menuOpen && <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={appText("menu")}>

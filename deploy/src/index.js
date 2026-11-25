@@ -9,7 +9,8 @@ import { createGameService } from './services/gameService.js';
 import { createBonusService } from './services/bonusService.js';
 import { createPushService } from './services/pushService.js';
 import { createWalletService } from './services/walletService.js';
-import { createGamesHubService } from './services/gamesHubService.js';\nimport { createCarRacingDemoService } from './services/carRacingDemoService.js';
+import { createGamesHubService } from './services/gamesHubService.js';
+import { createCarRacingDemoService } from './services/carRacingDemoService.js';
 import { createChapa } from './payments/chapa.js';
 import { createApp } from './http/app.js';
 
@@ -35,7 +36,8 @@ export async function build(config = loadConfig()) {
     const bonus = createBonusService({ repo, game, config, push });
     const chapa = createChapa({ ...config.chapa, publicApiUrl: config.publicApiUrl });
     const wallet = createWalletService({ repo, config, chapa });
-    gamesHub = createGamesHubService({ repo, config });\n    const carRacing = createCarRacingDemoService({ prod: config.prod });
+    gamesHub = createGamesHubService({ repo, config });
+    const carRacing = createCarRacingDemoService({ prod: config.prod });
 
     // Bootstrap the one owner account from private Render environment variables.
     // Never promote an existing player account; ensureAdmin deliberately fails closed.

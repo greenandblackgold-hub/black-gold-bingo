@@ -20,7 +20,8 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
         </span>
       ) : (
         <span className={icon === 'keno' ? 'games-center-artwork relative mt-1 block w-full shrink-0 overflow-hidden rounded-2xl border border-lime-400/35 bg-[#00110f] shadow-[inset_0_1px_rgba(255,255,255,.08)]' : 'relative mt-1 grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]'}>
-          {icon === 'racing' && <span className="grid h-full w-full place-items-center text-6xl" aria-hidden="true">🏎️</span>}\n          {icon === 'keno' && <img loading="eager" decoding="async" draggable={false} src="/images/fast-keno-card-v4.jpg" alt="FAST KENO — Kiza.bet" className="block h-full w-full min-h-0 min-w-0 object-contain object-center" />}
+          {icon === 'racing' && <span className="grid h-full w-full place-items-center text-6xl" aria-hidden="true">🏎️</span>}
+          {icon === 'keno' && <img loading="eager" decoding="async" draggable={false} src="/images/fast-keno-card-v4.jpg" alt="FAST KENO — Kiza.bet" className="block h-full w-full min-h-0 min-w-0 object-contain object-center" />}
         </span>
       )}
       {disabled && <span className="relative mt-3 self-start rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-amber-200">{disabledLabel}</span>}
@@ -133,7 +134,8 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
         {(!serverMode || availability?.bingoEnabled === true) && <GameCard title="Bingo PRO" subtitle={t.bingoSubtitle} detail={t.bingoDetail} icon="bingo" onClick={onOpenBingo} openLabel={t.openGame} featured />}
         {(!serverMode || availability?.kenoEnabled === true) && <GameCard title="Keno" subtitle={t.kenoSubtitle} detail={t.kenoDetail} icon="keno" onClick={onOpenKeno} openLabel={t.openGame} />}
         {(!serverMode || availability?.aviatorEnabled === true) && <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} openLabel={t.openGame} />}
-        {(!serverMode || availability?.minesEnabled === true) && <GameCard title="Mines" subtitle={mt('cardSubtitle')} detail={mt('cardDetail')} icon="mines" onClick={onOpenMines} openLabel={t.openGame} /> }\n        {serverMode && carRacingEnabled && <GameCard title="Multiplayer Car Racing" subtitle="LIVE MULTIPLAYER · DEMO ONLY" detail="Choose a car, join a room and race across changing tracks. Simulation credits only." icon="racing" onClick={onOpenCarRacing} openLabel={t.openGame} featured />}
+        {(!serverMode || availability?.minesEnabled === true) && <GameCard title="Mines" subtitle={mt('cardSubtitle')} detail={mt('cardDetail')} icon="mines" onClick={onOpenMines} openLabel={t.openGame} /> }
+        {serverMode && carRacingEnabled && <GameCard title="Multiplayer Car Racing" subtitle="LIVE MULTIPLAYER · DEMO ONLY" detail="Choose a car, join a room and race across changing tracks. Simulation credits only." icon="racing" onClick={onOpenCarRacing} openLabel={t.openGame} featured />}
         <GameCard title="Virtual Sports" subtitle={t.virtualSportsSubtitle} detail={t.virtualSportsDetail} icon="virtual" onClick={() => {}} openLabel={t.openGame} disabled disabledLabel={t.comingSoon} />
         <GameCard title="Live Sports" subtitle={t.liveSportsSubtitle} detail={t.liveSportsDetail} icon="live" onClick={() => {}} openLabel={t.openGame} disabled disabledLabel={t.comingSoon} />
         </div>

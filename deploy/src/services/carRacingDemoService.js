@@ -89,7 +89,7 @@ export function createCarRacingDemoService({ prod = false, now = Date.now } = {}
     for (const p of room.players) {
       if (p.finished) continue;
       const car = cars.find((item) => item.id === p.carId) ?? cars[0];
-      const controlFresh = at - p.controlAt < 900;
+      const controlFresh = at - p.controlAt < 1500;
       const throttle = controlFresh ? p.throttle : 0;
       const steer = controlFresh ? p.steer : 0;
       p.lane = Math.max(-1, Math.min(1, p.lane + steer * car.handling * dt * 1.7));
