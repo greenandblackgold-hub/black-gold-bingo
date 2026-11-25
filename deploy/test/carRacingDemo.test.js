@@ -49,8 +49,8 @@ test('two authenticated drivers join, choose cars and race on server-controlled 
   f.service.control(f.a, { throttle: 1, steer: 0 });
   f.service.control(f.b, { throttle: 1, steer: 0 });
   for (let i = 0; i < 300 && state.room.status === 'racing'; i++) {
-    f.service.control(f.a, { throttle: 1, steer: 0 });
-    f.service.control(f.b, { throttle: 1, steer: 0 });
+    f.service.control(f.a, { throttle: 1, steer: -1 });
+    f.service.control(f.b, { throttle: 1, steer: 1 });
     f.advance(250);
     state = f.service.getState(f.a);
   }
@@ -208,12 +208,12 @@ test('race ends cleanly when every driver is eliminated', () => {
   f.service.setReady(f.b, {});
   f.advance(3_100);
   f.service.getState(f.a);
-  f.service.control(f.a, { throttle: 1, steer: 1 });
+  f.service.control(f.a, { throttle: 1, steer: -1 });
   f.service.control(f.b, { throttle: 1, steer: 1 });
   f.advance(250);
   f.service.getState(f.a);
-  f.service.control(f.a, { throttle: 1, steer: 0.5 });
-  f.service.control(f.b, { throttle: 1, steer: 0.5 });
+  f.service.control(f.a, { throttle: 1, steer: -1 });
+  f.service.control(f.b, { throttle: 1, steer: 1 });
   f.advance(250);
   f.service.getState(f.a);
   let state;
@@ -257,8 +257,9 @@ test('car-to-car collision severity separates light, medium and severe impacts',
     f.service.joinRoom(f.b, { code: room.code });
     f.service.setReady(f.a, {}); f.service.setReady(f.b, {});
     f.advance(3_100); f.service.getState(f.a);
-    f.service.control(f.a, { throttle, boost, steer: 0.1 });
-    f.service.control(f.b, { throttle, boost, steer: -0.1 });
+    const steer = duration === 250 ? 0.4 : 0.15;
+    f.service.control(f.a, { throttle, boost, steer });
+    f.service.control(f.b, { throttle, boost, steer: -steer });
     f.advance(duration);
     return f.service.getState(f.a).room;
   };
