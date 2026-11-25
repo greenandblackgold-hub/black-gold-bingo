@@ -30,7 +30,6 @@ async function fixture(configOverrides = {}) {
 
 test('Car Racing is available in production simulation mode and blocked in real-money mode', async () => {
   const simulation = await fixture({ prod: true, realMoneyEnabled: false, gamesHubSharedWalletEnabled: false });
-  await simulation.service.updateSettings({ carRacingEnabled: true, generalEnabled: true });
   await simulation.service.assertGameEnabled('car-racing');
   const settings = await simulation.service.getPublicSettings(simulation.user);
   assert.equal(settings.carRacingEnabled, true);
@@ -40,8 +39,8 @@ test('Car Racing is available in production simulation mode and blocked in real-
   await realMoney.service.updateSettings({ carRacingEnabled: true, generalEnabled: true });
   await assert.rejects(realMoney.service.assertGameEnabled('car-racing'), (error) =>
     error instanceof HttpError && error.code === 'car_racing_demo_only');
-  const hidden = await realMoney.service.getPublicSettings(realMoney.user);
-  assert.equal(hidden.carRacingEnabled, false);
+  await assert.rejects(realMoney.service.getPublicSettings(realMoney.user), (error) =>
+    error instanceof HttpError && error.code === 'games_hub_demo_only');
 });
 
 test('Keno state reuses its settings snapshot for the round tick', async () => {
