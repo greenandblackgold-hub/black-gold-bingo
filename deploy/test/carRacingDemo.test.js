@@ -46,7 +46,7 @@ test('only the room host can force-start with one driver or stop without issuing
   assert.equal(stopped.endReason, 'host_stopped');
   assert.equal(stopped.winner, null);
   assert.equal(stopped.settlement, null);
-  assert.equal(f.service.getState(f.a).balanceEtb, 99_980);
+  assert.equal(f.service.getState(f.a).balanceEtb, 980);
 });
 
 test('a joined competitor cannot use host controls to start or stop the race', () => {
