@@ -33,6 +33,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   kenoEnabled: true,
   aviatorEnabled: true,
   minesEnabled: true,
+  carRacingEnabled: false,
   minBet: 500,
   kenoMinBet: 200,
   maxBet: 100000,
@@ -594,6 +595,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     if (input.kenoEnabled !== undefined) next.kenoEnabled = input.kenoEnabled === true;
     if (input.aviatorEnabled !== undefined) next.aviatorEnabled = input.aviatorEnabled === true;
     if (input.minesEnabled !== undefined) next.minesEnabled = input.minesEnabled === true;
+    if (input.carRacingEnabled !== undefined) next.carRacingEnabled = input.carRacingEnabled === true;
     if (input.minBetEtb !== undefined) {
       const n = Number(input.minBetEtb);
       if (!Number.isFinite(n) || n < 1 || n > 1000 || Math.abs(n * 100 - Math.round(n * 100)) > 1e-7) {
@@ -655,7 +657,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     },
     getSettings: settings,
     async assertGameEnabled(game) {
-      if (!['bingo', 'keno', 'aviator', 'mines'].includes(game)) throw new HttpError(404, 'game_not_found', 'Unknown game.');
+      if (!['bingo', 'keno', 'aviator', 'mines', 'car-racing'].includes(game)) throw new HttpError(404, 'game_not_found', 'Unknown game.');
       const current = await settings();
       if (current.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
       if (current[game + 'Enabled'] !== true) throw new HttpError(503, 'game_disabled', 'This game is temporarily unavailable.');
@@ -672,6 +674,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
         kenoEnabled: current.kenoEnabled === true,
         aviatorEnabled: current.aviatorEnabled === true,
         minesEnabled: current.minesEnabled === true,
+        carRacingEnabled: current.carRacingEnabled === true,
         minBetEtb: current.minBet / 100,
         maxBetEtb: current.maxBet / 100,
         balanceEtb: wallet.balance / 100,
