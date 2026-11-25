@@ -29,6 +29,28 @@ test('car racing is a demo-only isolated catalog with rotating tracks and car ch
   assert.equal(f.service.createRoom(f.a, { entryFeeEtb: 10 }).track.id, 'country');
 });
 
+test('a driver can mark ready before the room is full; the second driver then starts the countdown', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 20 });
+  const firstReady = f.service.setReady(f.a, { ready: true, roomId: room.roomId });
+  assert.equal(firstReady.status, 'lobby');
+  assert.equal(firstReady.players.length, 1);
+  assert.equal(firstReady.players[0].ready, true);
+
+  f.service.joinRoom(f.b, { code: room.code });
+  const secondSeesRoom = f.service.getState(f.b).room;
+  assert.equal(secondSeesRoom.players.length, 2);
+  assert.equal(secondSeesRoom.players.find((p) => p.userId === f.a.id).ready, true);
+  assert.equal(secondSeesRoom.players.find((p) => p.userId === f.b.id).ready, false);
+
+  const countdown = f.service.setReady(f.b, { ready: true, roomId: room.roomId });
+  assert.equal(countdown.status, 'countdown');
+  assert.equal(countdown.players.every((p) => p.ready), true);
+  assert.equal(countdown.countdownEndsAt, 1_800_000_003_000);
+  f.advance(3_100);
+  assert.equal(f.service.getState(f.a).room.status, 'racing');
+});
+
 test('two authenticated drivers join, choose cars and race on server-controlled progress', () => {
   const f = fixture();
   const room = f.service.createRoom(f.a, { entryFeeEtb: 20 });
