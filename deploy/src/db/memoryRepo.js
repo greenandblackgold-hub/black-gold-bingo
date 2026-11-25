@@ -23,7 +23,7 @@ export function createMemoryRepo() {
   const gameHubCurrent = new Map();
   const gameHubWallets = new Map();
   const gameHubLedger = new Map();
-  let gameHubSettings = { kenoEnabled: true, aviatorEnabled: true, minBet: 500, maxBet: 100000, kenoBettingSeconds: 20, aviatorBettingSeconds: 8 };
+  let gameHubSettings = { carRacingEnabled: true, kenoEnabled: true, aviatorEnabled: true, minBet: 500, maxBet: 100000, kenoBettingSeconds: 20, aviatorBettingSeconds: 8 };
   let game = { ...DEFAULT_GAME, calledNumbers: [] };
   let nextCardSerial = 10000;
 
