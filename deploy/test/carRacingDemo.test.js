@@ -29,6 +29,38 @@ test('car racing is a demo-only isolated catalog with rotating tracks and car ch
   assert.equal(f.service.createRoom(f.a, { entryFeeEtb: 10 }).track.id, 'country');
 });
 
+test('only the room host can force-start with one driver or stop without issuing a payout', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 20 });
+  assert.equal(f.service.getState(f.a).room.isHost, true);
+  assert.throws(
+    () => f.service.hostControl(f.b, { roomId: room.roomId, action: 'start' }),
+    (error) => error instanceof HttpError && error.code === 'not_in_race',
+  );
+  const started = f.service.hostControl(f.a, { roomId: room.roomId, action: 'start' });
+  assert.equal(started.status, 'racing');
+  assert.equal(started.players.length, 1);
+  assert.equal(started.players[0].ready, true);
+  const stopped = f.service.hostControl(f.a, { roomId: room.roomId, action: 'stop' });
+  assert.equal(stopped.status, 'finished');
+  assert.equal(stopped.endReason, 'host_stopped');
+  assert.equal(stopped.winner, null);
+  assert.equal(stopped.settlement, null);
+  assert.equal(f.service.getState(f.a).balanceEtb, 99_980);
+});
+
+test('a joined competitor cannot use host controls to start or stop the race', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  f.service.joinRoom(f.b, { code: room.code });
+  assert.equal(f.service.getState(f.b).room.isHost, false);
+  assert.throws(
+    () => f.service.hostControl(f.b, { roomId: room.roomId, action: 'start' }),
+    (error) => error instanceof HttpError && error.code === 'host_only',
+  );
+  assert.equal(f.service.getState(f.a).room.status, 'lobby');
+});
+
 test('two authenticated drivers join, choose cars and race on server-controlled progress', () => {
   const f = fixture();
   const room = f.service.createRoom(f.a, { entryFeeEtb: 20 });
