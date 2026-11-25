@@ -198,3 +198,34 @@ test('server eliminates a driver who crosses the track wall', () => {
   assert.equal(eliminated.speed, 0);
   assert.equal(state.status, 'racing', 'the remaining driver continues the race');
 });
+
+
+test('race ends cleanly when every driver is eliminated', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  f.service.joinRoom(f.b, { code: room.code });
+  f.service.setReady(f.a, {});
+  f.service.setReady(f.b, {});
+  f.advance(3_100);
+  f.service.getState(f.a);
+  f.service.control(f.a, { throttle: 1, steer: 1 });
+  f.service.control(f.b, { throttle: 1, steer: 1 });
+  f.advance(250);
+  f.service.getState(f.a);
+  f.service.control(f.a, { throttle: 1, steer: 0.5 });
+  f.service.control(f.b, { throttle: 1, steer: 0.5 });
+  f.advance(250);
+  f.service.getState(f.a);
+  let state;
+  for (let i = 0; i < 30; i++) {
+    f.service.control(f.a, { throttle: 1, steer: 0 });
+    f.service.control(f.b, { throttle: 1, steer: 0 });
+    f.advance(250);
+    state = f.service.getState(f.a).room;
+    if (state.status === 'finished') break;
+  }
+  assert.equal(state.status, 'finished');
+  assert.equal(state.winner, null);
+  assert.equal(state.endReason, 'all_eliminated');
+  assert.ok(state.players.every((p) => p.eliminated));
+});
