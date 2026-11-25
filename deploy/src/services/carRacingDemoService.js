@@ -11,10 +11,10 @@ const tracks = [
   { id: 'coast', name: 'Coastal Highway', terrain: 'Wet coastal tarmac', surface: 'Wet asphalt', environment: 'coastal', scenery: ['ocean', 'shoreline', 'waves'], speedFactor: 1.08, grip: 0.94, curveType: 's-bend', curveIntensity: 0.62, wallLimit: 1.02, obstacles: [{ at: 240, lane: -0.5, width: 0.3, type: 'debris' }, { at: 510, lane: 0.5, width: 0.3, type: 'barrier' }, { at: 780, lane: 0, width: 0.32, type: 'debris' }] },
 ];
 const cars = [
-  { id: 'sport', name: 'GT Sport', speed: 1.18, handling: 0.88, color: '#f4b942' },
-  { id: 'rally', name: 'Rally X', speed: 1.02, handling: 1.2, color: '#53c7a5' },
-  { id: 'muscle', name: 'Muscle V8', speed: 1.12, handling: 0.82, color: '#e76f51' },
-  { id: 'electric', name: 'Volt GT', speed: 1.08, handling: 1.08, color: '#65a9ff' },
+  { id: 'sport', name: 'GT Sport', length: 4.2, width: 0.36, speed: 1.18, handling: 0.88, color: '#f4b942' },
+  { id: 'rally', name: 'Rally X', length: 4.4, width: 0.38, speed: 1.02, handling: 1.2, color: '#53c7a5' },
+  { id: 'muscle', name: 'Muscle V8', length: 4.6, width: 0.4, speed: 1.12, handling: 0.82, color: '#e76f51' },
+  { id: 'electric', name: 'Volt GT', length: 4.1, width: 0.36, speed: 1.08, handling: 1.08, color: '#65a9ff' },
 ];
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
@@ -147,11 +147,15 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
         finishers.push({ player: p, at: crossing });
       } else p.progress = next;
     }
-    // Server-authoritative body overlap uses 4.2 longitudinal units and 0.18 lateral center spacing.
+    // Server-authoritative oriented body bounds use each selected car's length and width.
     const active = room.players.filter((p) => !p.finished && !p.eliminated);
     for (let i = 0; i < active.length; i += 1) for (let j = i + 1; j < active.length; j += 1) {
       const a = active[i], b = active[j];
-      if (Math.abs(a.progress - b.progress) > 4.2 || Math.abs(a.lane - b.lane) > 0.18) continue;
+      const carA = cars.find((item) => item.id === a.carId) ?? cars[0];
+      const carB = cars.find((item) => item.id === b.carId) ?? cars[0];
+      const longitudinalOverlap = (carA.length + carB.length) / 2;
+      const lateralOverlap = (carA.width + carB.width) / 2;
+      if (Math.abs(a.progress - b.progress) > longitudinalOverlap || Math.abs(a.lane - b.lane) > lateralOverlap) continue;
       if (a.lastCollisionAt && at - a.lastCollisionAt < 850) continue;
       const closingSpeed = Math.abs(a.velocity - b.velocity);
       const impact = Math.max(closingSpeed, Math.min(Math.abs(a.velocity), Math.abs(b.velocity)) * 0.9);
