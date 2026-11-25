@@ -23,9 +23,6 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
   const rooms = new Map();
   const playerRooms = new Map();
   const balances = new Map();
-  // Isolated in-memory registry: no shared database or schema changes.
-  const platesByUser = new Map();
-  const issuedPlates = new Set();
   let roundSequence = 0;
 
   function assertDemo() {
@@ -36,14 +33,11 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     return balances.get(userId);
   }
   function plateFor(userId) {
-    const existing = platesByUser.get(userId);
-    if (existing) return existing;
-    let plateNumber;
-    do { plateNumber = `BGB-${randomBytes(3).toString('hex').toUpperCase()}`; }
-    while (issuedPlates.has(plateNumber));
-    issuedPlates.add(plateNumber);
-    platesByUser.set(userId, plateNumber);
-    return plateNumber;
+    // Stable, collision-free encoding of the account ID; survives restarts without a schema change.
+    const id = String(userId);
+    const bytes = /^[a-f0-9]{24}$/i.test(id) ? Buffer.from(id, 'hex') : Buffer.from(id, 'utf8');
+    const encoded = BigInt(`0x${bytes.toString('hex') || '0'}`).toString(36).toUpperCase();
+    return `BGB-${bytes.length.toString(36).toUpperCase()}-${encoded}`;
   }
   function player(room, userId) {
     const found = room.players.find((item) => item.userId === userId);
