@@ -77,6 +77,8 @@ function CarRacing3DViewportInner(p:Props) {
     const onContextRestored=()=>{if(contextLost){setRendererStatus('ready');setRendererAttempt(value=>value+1);}};
     renderer.domElement.addEventListener('webglcontextlost',onContextLost,false);
     renderer.domElement.addEventListener('webglcontextrestored',onContextRestored,false);
+    let observer:ResizeObserver|undefined;
+    try{
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
     const scene=new THREE.Scene();scene.background=new THREE.Color('#91a9b4');scene.fog=new THREE.Fog('#91a9b4',75,230);
     const camera=new THREE.PerspectiveCamera(62,1,.1,320);camera.position.set(0,6.2,13);camera.lookAt(0,.8,-24);
@@ -119,7 +121,7 @@ function CarRacing3DViewportInner(p:Props) {
     for(let i=0;i<3;i++){const spoke=new THREE.Mesh(new THREE.BoxGeometry(.055,.48,.08),new THREE.MeshStandardMaterial({color:'#b8bdc2',metalness:.9}));spoke.position.y=i===0?.24:-.12;spoke.rotation.z=i===1?.85:i===2?-.85:0;steering.add(spoke);}
     steering.position.set(0,-.55,-1.28);cockpit.add(steering);camera.add(cockpit);scene.add(camera);
     const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
-    const observer=new ResizeObserver(resize);observer.observe(el);resize();
+    observer=new ResizeObserver(resize);observer.observe(el);resize();
     let last=performance.now(),travel=0,raf=0;
     const animate=(now:number)=>{if(contextLost)return;raf=requestAnimationFrame(animate);try{const dt=Math.min((now-last)/1000,.05);last=now;const s=latest.current,velocity=Math.max(.4,s.speed/90);travel+=dt*velocity*(s.boost?2.2:1);
       markers.forEach(m=>{m.position.z+=dt*velocity*34;if(m.position.z>15)m.position.z-=240;});
@@ -138,6 +140,7 @@ function CarRacing3DViewportInner(p:Props) {
     };
     raf=requestAnimationFrame(animate);
     return()=>{cancelAnimationFrame(raf);renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);observer.disconnect();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});renderer.dispose();renderer.domElement.remove();};
+    }catch(error){observer?.disconnect();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);renderer.dispose();renderer.domElement.remove();setRendererStatus('error');console.error('Car Racing 3D initialization failed',error);}
   },[rendererAttempt]);
   const retryRenderer=()=>{setRendererStatus('ready');setRendererAttempt(value=>value+1);};
   return <div className="relative isolate w-full overflow-hidden rounded-2xl border border-amber-300/30 bg-[#111820] shadow-[0_18px_55px_rgba(0,0,0,.55)]">
