@@ -18,14 +18,15 @@ const cars = [
 ];
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
-export function createCarRacingDemoService({ realMoneyEnabled = false, now = Date.now } = {}) {
+export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMoneyEnabled, now = Date.now } = {}) {
+  const realMoneyIsEnabled = typeof isRealMoneyEnabled === 'function' ? isRealMoneyEnabled : () => realMoneyEnabled;
   const rooms = new Map();
   const playerRooms = new Map();
   const balances = new Map();
   let roundSequence = 0;
 
   function assertDemo() {
-    if (realMoneyEnabled) throw new HttpError(503, 'car_racing_demo_only', 'Car Racing is unavailable while real-money play is enabled.');
+    if (realMoneyIsEnabled()) throw new HttpError(503, 'car_racing_demo_only', 'Car Racing is unavailable while real-money play is enabled.');
   }
   function balance(userId) {
     if (!balances.has(userId)) balances.set(userId, 100_000);
@@ -143,7 +144,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, now = Dat
 
   return {
     getCatalog() {
-      return { enabled: !realMoneyEnabled, simulationOnly: true, currency: 'DEMO ETB', maxPlayers: 8, minPlayers: 2, maxPrizeEtb: CAR_RACING_MAX_PRIZE_ETB, companyPercent: 55, poolPercent: 45, tracks: clone(tracks.map(({ obstacles, ...t }) => t)), cars: clone(cars) };
+      return { enabled: !realMoneyIsEnabled(), simulationOnly: true, currency: 'DEMO ETB', maxPlayers: 8, minPlayers: 2, maxPrizeEtb: CAR_RACING_MAX_PRIZE_ETB, companyPercent: 55, poolPercent: 45, tracks: clone(tracks.map(({ obstacles, ...t }) => t)), cars: clone(cars) };
     },
     getState(user) {
       assertDemo();
