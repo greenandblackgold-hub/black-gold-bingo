@@ -56,7 +56,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
   }
   function publicRoom(room, userId) {
     return {
-      roomId: room.id, code: room.code, status: room.status, track: room.track,
+      roomId: room.id, code: room.code, status: room.status, isHost: room.hostUserId === userId, track: room.track,
       entryFeeEtb: room.entryFeeEtb, playerCount: room.players.length, maxPlayers: 8,
       poolEtb: room.poolSantim / 100, companyShareEtb: room.companyShareSantim / 100,
       prizePoolEtb: room.prizeSantim / 100, payoutCapEtb: CAR_RACING_MAX_PRIZE_ETB,
@@ -294,7 +294,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       const track = tracks[roundSequence % tracks.length];
       roundSequence += 1;
       const id = randomBytes(12).toString('hex');
-      const room = { id, code: randomBytes(3).toString('hex').toUpperCase(), status: 'lobby', track: clone(track), entryFeeEtb: fee, poolSantim: 0, companyShareSantim: 0, prizeSantim: 0, players: [], createdAt: now(), countdownEndsAt: null, startedAt: null, finishedAt: null, winner: null, collisionEvents: [] };
+      const room = { id, hostUserId: user.id, code: randomBytes(3).toString('hex').toUpperCase(), status: 'lobby', track: clone(track), entryFeeEtb: fee, poolSantim: 0, companyShareSantim: 0, prizeSantim: 0, players: [], createdAt: now(), countdownEndsAt: null, startedAt: null, finishedAt: null, winner: null, collisionEvents: [] };
       rooms.set(id, room);
       joinPlayer(room, user);
       return publicRoom(room, user.id);
@@ -322,6 +322,36 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       if (room.players.length >= 2 && room.players.every((item) => item.ready)) {
         room.status = 'countdown';
         room.countdownEndsAt = now() + 3000;
+      }
+      return publicRoom(room, user.id);
+    },
+    hostControl(user, input = {}) {
+      const room = findRoom(user.id, input.roomId);
+      if (room.hostUserId !== user.id) throw new HttpError(403, 'host_only', 'Only the race host can start or stop this race.');
+      const action = String(input.action || '').toLowerCase();
+      if (action === 'start') {
+        if (room.status !== 'lobby' && room.status !== 'countdown') throw new HttpError(409, 'race_not_startable', 'The host can only start a race from the lobby or countdown.');
+        const startedAt = now();
+        room.status = 'racing';
+        room.countdownEndsAt = null;
+        room.startedAt = startedAt;
+        room.lastTickAt = startedAt;
+        room.players.forEach((item) => { item.ready = true; });
+      } else if (action === 'stop') {
+        if (room.status === 'finished') throw new HttpError(409, 'race_already_finished', 'This race has already finished.');
+        room.status = 'finished';
+        room.endReason = 'host_stopped';
+        room.finishedAt = now();
+        room.countdownEndsAt = null;
+        room.players.forEach((item) => {
+          item.throttle = 0;
+          item.steer = 0;
+          item.reverse = false;
+          item.boost = false;
+          item.velocity = 0;
+        });
+      } else {
+        throw new HttpError(400, 'invalid_host_action', 'Host action must be start or stop.');
       }
       return publicRoom(room, user.id);
     },
