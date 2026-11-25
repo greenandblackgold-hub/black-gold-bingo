@@ -85,7 +85,7 @@ export function RoundProvider({ children }: { children: ReactNode }) {
     if (!loaded) return;
     if (prevLen.current !== null && len > prevLen.current && game.soundEnabled !== false) play('call');
     prevLen.current = len;
-  }, [loaded, len]);
+  }, [loaded, len, game.soundEnabled]);
 
   /* ───────────── host actions (all no-ops for players) ───────────── */
 
