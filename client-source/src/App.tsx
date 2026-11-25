@@ -75,6 +75,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
   const [generalEnabled, setGeneralEnabled] = useState(!SERVER_MODE);
   const [settingsLoaded, setSettingsLoaded] = useState(!SERVER_MODE);
   const [minesEnabled, setMinesEnabled] = useState(true);
+  const [carRacingEnabled, setCarRacingEnabled] = useState(true);
   useEffect(() => {
     if (!SERVER_MODE) return;
     let active = true;
@@ -84,8 +85,8 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
       if (pending) { refreshQueued = true; return; }
       pending = true;
       try {
-        const value = await api.get<{ generalEnabled: boolean; minesEnabled?: boolean }>('/api/games/settings');
-        if (active) { setGeneralEnabled(value.generalEnabled !== false); setMinesEnabled(value.minesEnabled !== false); setSettingsLoaded(true); }
+        const value = await api.get<{ generalEnabled: boolean; minesEnabled?: boolean; carRacingEnabled?: boolean }>('/api/games/settings');
+        if (active) { setGeneralEnabled(value.generalEnabled !== false); setMinesEnabled(value.minesEnabled !== false); setCarRacingEnabled(value.carRacingEnabled === true); setSettingsLoaded(true); }
       } catch {
         // Keep the last confirmed state during temporary network failures.
       } finally {
@@ -113,6 +114,9 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
   useEffect(() => {
     if (SERVER_MODE && !minesEnabled && tab === 'mines') setTab('games');
   }, [minesEnabled, tab]);
+  useEffect(() => {
+    if (SERVER_MODE && !carRacingEnabled && tab === 'car-racing') setTab('games');
+  }, [carRacingEnabled, tab]);
   const handleNavChange = (next: TabId) => {
     if (next === 'menu') { setMenuOpen(true); return; }
     setMenuOpen(false);
