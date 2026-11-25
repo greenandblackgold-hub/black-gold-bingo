@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { Component, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from 'react';
 import * as THREE from 'three';
 
 // Rendering-only layer: server-authoritative race state continues to come from CarRacingGame/API.
@@ -57,12 +57,28 @@ function control(label:string,caption:string,tone:string,down:()=>void,up:()=>vo
   return <button type="button" onPointerDown={(e)=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);down();}} onPointerUp={up} onPointerCancel={up} onLostPointerCapture={up} onContextMenu={(e)=>e.preventDefault()} className={'flex min-h-[62px] min-w-[54px] select-none flex-col items-center justify-center rounded-xl border px-2 py-2 active:scale-95 sm:min-h-[72px] sm:min-w-[68px] '+color} style={{touchAction:'none'}}><span className="text-xl font-black leading-none sm:text-2xl">{label}</span><span className="mt-1 text-[8px] font-black tracking-wider sm:text-[9px]">{caption}</span></button>;
 }
 
-export function CarRacing3DViewport(p:Props) {
+type RendererStatus = 'ready' | 'unavailable' | 'lost' | 'error';
+class CarRacingRenderErrorBoundary extends Component<{children:ReactNode},{failed:boolean}> {
+  state={failed:false};
+  static getDerivedStateFromError(){return {failed:true};}
+  componentDidCatch(error:Error, info:ErrorInfo){console.error('Car Racing 3D UI failed',error,info);}
+  render(){return this.state.failed?<div role="alert" className="flex min-h-[340px] flex-col items-center justify-center gap-3 rounded-2xl border border-amber-300/30 bg-slate-950 p-6 text-center text-white"><p className="text-lg font-black text-amber-200">3D የጨዋታ ማሳያ ለጊዜው አልተጫነም</p><p className="text-sm text-white/70">የጨዋታው ገጽ እንዲቀጥል ተጠብቋል። እባክዎ እንደገና ይሞክሩ።</p></div>:this.props.children;}
+}
+function CarRacing3DViewportInner(p:Props) {
   const host=useRef<HTMLDivElement>(null), latest=useRef(p); latest.current=p;
+  const [rendererStatus,setRendererStatus]=useState<RendererStatus>('ready');
+  const [rendererAttempt,setRendererAttempt]=useState(0);
   useEffect(()=>{
     const el=host.current;if(!el)return;
     let renderer:THREE.WebGLRenderer;
-    try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});}catch{el.dataset.webglUnavailable='true';return;}
+    try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});}catch(error){el.dataset.webglUnavailable='true';setRendererStatus('unavailable');console.warn('Car Racing WebGL is unavailable',error);return;}
+    let contextLost=false;
+    const onContextLost=(event:Event)=>{event.preventDefault();contextLost=true;setRendererStatus('lost');};
+    const onContextRestored=()=>{if(contextLost){setRendererStatus('ready');setRendererAttempt(value=>value+1);}};
+    renderer.domElement.addEventListener('webglcontextlost',onContextLost,false);
+    renderer.domElement.addEventListener('webglcontextrestored',onContextRestored,false);
+    let observer:ResizeObserver|undefined;
+    try{
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
     const scene=new THREE.Scene();scene.background=new THREE.Color('#91a9b4');scene.fog=new THREE.Fog('#91a9b4',75,230);
     const camera=new THREE.PerspectiveCamera(62,1,.1,320);camera.position.set(0,6.2,13);camera.lookAt(0,.8,-24);
@@ -105,9 +121,9 @@ export function CarRacing3DViewport(p:Props) {
     for(let i=0;i<3;i++){const spoke=new THREE.Mesh(new THREE.BoxGeometry(.055,.48,.08),new THREE.MeshStandardMaterial({color:'#b8bdc2',metalness:.9}));spoke.position.y=i===0?.24:-.12;spoke.rotation.z=i===1?.85:i===2?-.85:0;steering.add(spoke);}
     steering.position.set(0,-.55,-1.28);cockpit.add(steering);camera.add(cockpit);scene.add(camera);
     const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
-    const observer=new ResizeObserver(resize);observer.observe(el);resize();
+    observer=new ResizeObserver(resize);observer.observe(el);resize();
     let last=performance.now(),travel=0,raf=0;
-    const animate=(now:number)=>{raf=requestAnimationFrame(animate);const dt=Math.min((now-last)/1000,.05);last=now;const s=latest.current,velocity=Math.max(.4,s.speed/90);travel+=dt*velocity*(s.boost?2.2:1);
+    const animate=(now:number)=>{if(contextLost)return;raf=requestAnimationFrame(animate);try{const dt=Math.min((now-last)/1000,.05);last=now;const s=latest.current,velocity=Math.max(.4,s.speed/90);travel+=dt*velocity*(s.boost?2.2:1);
       markers.forEach(m=>{m.position.z+=dt*velocity*34;if(m.position.z>15)m.position.z-=240;});
       scenery.forEach(o=>{o.position.z+=dt*velocity*25;if(o.position.z>18)o.position.z-=240;});
       obstacleModels.forEach(({group,obstacle})=>{const ahead=obstacle.at/10-latest.current.me.progress;group.position.set(obstacle.lane*3.45,0,THREE.MathUtils.clamp(-ahead*3.2,-220,18));group.visible=ahead>-2&&ahead<72;});
@@ -120,11 +136,15 @@ export function CarRacing3DViewport(p:Props) {
       opponents.forEach((model,id)=>{if(!ids.has(id)){scene.remove(model.group);opponents.delete(id);}});
       const sky=s.track.environment==='coastal'?'#8bb9c8':s.track.environment==='rocky'?'#9a8f80':s.track.environment==='city'?'#8497a4':'#91a9b4';scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,75,230);
       renderer.render(scene,camera);
+      }catch(error){cancelAnimationFrame(raf);setRendererStatus('error');console.error('Car Racing 3D render failed',error);}
     };
     raf=requestAnimationFrame(animate);
-    return()=>{cancelAnimationFrame(raf);observer.disconnect();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});renderer.dispose();renderer.domElement.remove();};
-  },[]);
+    return()=>{cancelAnimationFrame(raf);renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);observer?.disconnect();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});renderer.dispose();renderer.domElement.remove();};
+    }catch(error){observer?.disconnect();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);renderer.dispose();renderer.domElement.remove();setRendererStatus('error');console.error('Car Racing 3D initialization failed',error);}
+  },[rendererAttempt]);
+  const retryRenderer=()=>{setRendererStatus('ready');setRendererAttempt(value=>value+1);};
   return <div className="relative isolate w-full overflow-hidden rounded-2xl border border-amber-300/30 bg-[#111820] shadow-[0_18px_55px_rgba(0,0,0,.55)]">
+    {rendererStatus!=='ready'&&<div role="alert" aria-live="assertive" className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-slate-950/95 p-6 text-center text-white"><p className="text-lg font-black text-amber-200">{rendererStatus==='lost'?'3D ማሳያው ተቋርጧል':rendererStatus==='unavailable'?'ይህ መሳሪያ 3D WebGL አይደግፍም':'3D ማሳያው ላይ ችግር ተፈጥሯል'}</p><p className="max-w-md text-sm text-white/75">{rendererStatus==='lost'?'የግራፊክስ ግንኙነቱ እየተመለሰ ነው። ካልተመለሰ እንደገና ይሞክሩ።':'የ3D እይታው ሳይሰራ ቢቀርም የውድድሩ መረጃና ውጤት አይጠፋም።'}</p><button type="button" onClick={retryRenderer} className="rounded-xl border border-amber-300 bg-amber-300 px-5 py-3 font-black text-black">እንደገና ሞክር</button></div>}
     <div ref={host} className="h-[min(68vh,560px)] min-h-[340px] w-full sm:min-h-[440px]" />
     <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 bg-gradient-to-b from-black/80 to-transparent p-3 sm:p-4">
       <div className="rounded-xl border border-amber-300/40 bg-black/70 px-3 py-2"><p className="text-[9px] font-black uppercase tracking-[.2em] text-amber-300">{p.track.name}</p><p className="mt-1 font-mono text-xl font-black text-white">P{p.rank}<span className="text-xs text-amber-200/70"> / {p.players.length}</span></p></div>
@@ -144,6 +164,8 @@ export function CarRacing3DViewport(p:Props) {
     <div className="sr-only" aria-live="polite">{Math.round(p.speed)} kilometers per hour, position {p.rank} of {p.players.length}</div>
   </div>;
 }
+
+export function CarRacing3DViewport(p:Props) { return <CarRacingRenderErrorBoundary><CarRacing3DViewportInner {...p}/></CarRacingRenderErrorBoundary>; }
 
 export function CarRacing3DPreview({car,plateNumber}:{car:RacingCar;plateNumber:string}) {
   const host=useRef<HTMLDivElement>(null);
