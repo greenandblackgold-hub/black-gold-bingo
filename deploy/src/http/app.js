@@ -150,14 +150,15 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   route('GET', '/api/games/aviator/history', 'user', 'default', ({ user, query }) => gamesHub.getHistory('aviator', user, Number(query.get('limit') || 10)));
 
   /* Multiplayer Car Racing is an isolated in-memory simulation. It never calls the wallet or payment services. */
-  route('GET', '/api/games/car-racing/catalog', 'user', 'default', () => carRacing.getCatalog());
-  route('GET', '/api/games/car-racing/state', 'user', 'car-racing', ({ user }) => carRacing.getState(user));
-  route('POST', '/api/games/car-racing/rooms', 'user', 'money', ({ user, body }) => carRacing.createRoom(user, body));
-  route('POST', '/api/games/car-racing/join', 'user', 'money', ({ user, body }) => carRacing.joinRoom(user, body));
-  route('POST', '/api/games/car-racing/car', 'user', 'default', ({ user, body }) => carRacing.chooseCar(user, body));
-  route('POST', '/api/games/car-racing/ready', 'user', 'default', ({ user, body }) => carRacing.setReady(user, body));
-  route('POST', '/api/games/car-racing/control', 'user', 'car-racing', ({ user, body }) => carRacing.control(user, body));
-  route('POST', '/api/games/car-racing/leave', 'user', 'default', ({ user }) => carRacing.leave(user));
+  const assertCarRacingAvailable = () => gamesHub.assertGameEnabled('car-racing');
+  route('GET', '/api/games/car-racing/catalog', 'user', 'default', async () => { await assertCarRacingAvailable(); return carRacing.getCatalog(); });
+  route('GET', '/api/games/car-racing/state', 'user', 'car-racing', async ({ user }) => { await assertCarRacingAvailable(); return carRacing.getState(user); });
+  route('POST', '/api/games/car-racing/rooms', 'user', 'money', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.createRoom(user, body); });
+  route('POST', '/api/games/car-racing/join', 'user', 'money', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.joinRoom(user, body); });
+  route('POST', '/api/games/car-racing/car', 'user', 'default', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.chooseCar(user, body); });
+  route('POST', '/api/games/car-racing/ready', 'user', 'default', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.setReady(user, body); });
+  route('POST', '/api/games/car-racing/control', 'user', 'car-racing', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.control(user, body); });
+  route('POST', '/api/games/car-racing/leave', 'user', 'default', async ({ user }) => { await assertCarRacingAvailable(); return carRacing.leave(user); });
 
   /* opt-in Web Push subscriptions */
   route('GET', '/api/push/public-key', 'public', 'default', () => ({ enabled: push.isEnabled(), publicKey: push.getPublicKey() }));
