@@ -96,7 +96,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     room.lastTickAt = at;
     const finishers = [];
     for (const p of room.players) {
-      if (p.finished) continue;
+      if (p.finished || p.eliminated) continue;
       const car = cars.find((item) => item.id === p.carId) ?? cars[0];
       const controlFresh = at - p.controlAt < 1500;
       const throttle = controlFresh ? p.throttle : 0;
@@ -116,7 +116,6 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       const drag = throttle ? 0 : dt * 0.7;
       const nextVelocity = p.velocity + (reverse ? -acceleration : acceleration) * dt + (p.velocity > 0 ? -drag : p.velocity < 0 ? drag : 0);
       p.velocity = Math.max(-0.55, Math.min(boost ? 1.35 : 1, nextVelocity));
-      let obstaclePenalty = 1;
       const obstacle = room.track.obstacles[p.obstacleIndex];
       const nextProgress = p.progress + p.velocity * car.speed * room.track.speedFactor * gripPenalty * dt * 145;
       if (p.velocity > 0 && obstacle && p.progress < obstacle.at && nextProgress >= obstacle.at) {
