@@ -151,12 +151,15 @@ test('Car Racing is controlled by both Host game availability and General Games 
   const p = await newPlayer('Car Racing availability player', 100);
   const initial = await api('GET', '/api/games/settings', { token: p.token });
   assert.equal(initial.status, 200);
-  assert.equal(initial.json.carRacingEnabled, false, 'new Car Racing setting defaults OFF until Host enables it');
-  const hostOff = await api('GET', '/api/games/car-racing/catalog', { token: p.token });
-  assert.equal(hostOff.status, 503);
-  assert.equal(hostOff.json.error, 'game_disabled');
+  assert.equal(initial.json.carRacingEnabled, true, 'Car Racing defaults ON in simulation mode');
+  const hostOn = await api('GET', '/api/games/car-racing/catalog', { token: p.token });
+  assert.equal(hostOn.status, 200, JSON.stringify(hostOn.json));
+  assert.equal(hostOn.json.enabled, true);
+  const state = await api('GET', '/api/games/car-racing/state', { token: p.token });
+  assert.equal(state.status, 200, JSON.stringify(state.json));
+  assert.equal(state.json.simulationOnly, true);
 
-  await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { carRacingEnabled: true, generalEnabled: false } });
+  await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: false } });
   const generalOff = await api('GET', '/api/games/car-racing/catalog', { token: p.token });
   assert.equal(generalOff.status, 503);
   assert.equal(generalOff.json.error, 'games_center_disabled');
@@ -164,10 +167,6 @@ test('Car Racing is controlled by both Host game availability and General Games 
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: true } });
   const enabled = await api('GET', '/api/games/car-racing/catalog', { token: p.token });
   assert.equal(enabled.status, 200, JSON.stringify(enabled.json));
-  assert.equal(enabled.json.enabled, true);
-  const state = await api('GET', '/api/games/car-racing/state', { token: p.token });
-  assert.equal(state.status, 200, JSON.stringify(state.json));
-  assert.equal(state.json.simulationOnly, true);
 
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { carRacingEnabled: false } });
   const switchedOff = await api('GET', '/api/games/car-racing/state', { token: p.token });
