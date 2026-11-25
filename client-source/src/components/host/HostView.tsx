@@ -193,6 +193,17 @@ export function HostView() {
         </span>
       </div>
 
+      {/* Host-controlled Bingo call audio is shared with every connected player. */}
+      <section className="flex items-center justify-between gap-4 rounded-xl bg-cardbg p-3 ring-1 ring-gold-700/50 sm:p-4">
+        <div>
+          <h2 className="text-base font-bold text-gold-300">የቢንጎ ድምፅ</h2>
+          <p className="text-xs text-gold-500">{h.soundEnabled ? 'ON · የቁጥር ጥሪ ድምፅ ክፍት ነው' : 'OFF · የቁጥር ጥሪ ድምፅ ተዘግቷል'}</p>
+        </div>
+        <button type="button" role="switch" aria-checked={h.soundEnabled} aria-label="የቢንጎ ድምፅ" onClick={() => h.setSoundEnabled(!h.soundEnabled)} className={['relative h-9 w-16 shrink-0 rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-300', h.soundEnabled ? 'bg-gold-500' : 'bg-white/10 ring-1 ring-gold-700/50'].join(' ')}>
+          <span className={['absolute top-1.5 h-6 w-6 rounded-full bg-darkbg ring-1 ring-gold-400 transition-all', h.soundEnabled ? 'left-9' : 'left-1.5'].join(' ')} />
+        </button>
+      </section>
+
       {/* Host announcement is persisted on the shared round state and streamed to every player. */}
       <section className="rounded-xl bg-cardbg p-3 ring-1 ring-gold-700/50 sm:p-4">
         <label htmlFor="player-announcement" className="mb-2 block text-sm font-semibold text-gold-300">{x('announcementLabel')}</label>

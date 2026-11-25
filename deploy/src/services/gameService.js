@@ -46,6 +46,7 @@ export function createGameService({ repo, config, now = Date.now }) {
     winPattern: g.winPattern ?? 'any_line',
     roundNumber: g.roundNumber,
     calledNumbers: g.calledNumbers,
+    soundEnabled: g.soundEnabled !== false,
     autoCall: g.autoCall,
     callIntervalSec: g.callIntervalSec,
     nextCallAt: g.nextCallAt,
@@ -200,6 +201,10 @@ export function createGameService({ repo, config, now = Date.now }) {
       })),
 
     endRound: () => mutate('running', (g) => ({ phase: 'ended', autoCall: false, nextCallAt: null, endedAt: now(), nextRoundAt: now() + roundIntervalMs(g) })),
+
+    setSoundEnabled(on) {
+      return mutate(null, () => ({ soundEnabled: on === true }));
+    },
 
     setAnnouncement(message) {
       const clean = String(message ?? '').trim().slice(0, 240);
