@@ -65,6 +65,8 @@ export interface SharedGame {
   roundNumber: number;
   /** In call order, values 1..75. */
   calledNumbers: number[];
+  /** Host-controlled Bingo call sound, shared with every player. */
+  soundEnabled: boolean;
   autoCall: boolean;
   /** 1..60 */
   callIntervalSec: number;
@@ -134,6 +136,9 @@ export interface RoundContextValue {
   roundNumber: number;
   /** In call order, values 1..75. */
   calledNumbers: number[];
+  /** Whether Bingo call sounds are enabled for all players. */
+  soundEnabled: boolean;
+  setSoundEnabled: (on: boolean) => void;
   winner: SharedGame['winner'];
   roundPrizeEtb?: number;
   roundCardCount?: number;
