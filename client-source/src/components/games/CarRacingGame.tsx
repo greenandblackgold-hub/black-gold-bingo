@@ -192,6 +192,15 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
                 <p className="mt-1 text-center font-mono text-lg font-black tracking-widest text-amber-300">{room.settlement.winnerPlateNumber}</p>
                 <p className="mt-2 text-center text-2xl font-black text-emerald-300">{room.winner.payoutEtb.toFixed(2)} ETB</p>
                 <p className="text-center text-[10px] uppercase tracking-widest text-amber-100/50">Simulation prize · 45% player pool</p>
+                <p className="mt-2 text-center text-xs font-bold text-amber-100/80">Winner position: #{room.settlement.finishOrder.find((item) => item.plateNumber === room.settlement.winnerPlateNumber)?.position ?? '—'}</p>
+                {state?.simulationOnly && <div className="mt-4 rounded-xl border border-sky-400/30 bg-sky-950/40 p-3 text-center"><p className="text-xs font-black uppercase tracking-widest text-sky-200">SIMULATION / TEST MODE</p><p className="mt-1 font-mono text-[11px] font-bold text-sky-100">REAL_MONEY_ENABLED=false</p><p className="mt-1 text-[10px] text-sky-100/70">Demo credits only · No real-money payment or wallet settlement</p></div>}
+                <div className="mt-4 rounded-xl border border-amber-300/20 bg-black/45 p-3 text-xs">
+                  <p className="font-black uppercase tracking-wider text-amber-200">How the pool is calculated</p>
+                  <p className="mt-2 text-amber-100/80">Total entry pool: {room.settlement.totalEntryPoolEtb.toFixed(2)} ETB ({room.playerCount} players × {room.entryFeeEtb.toFixed(2)} ETB)</p>
+                  <p className="mt-1 text-amber-100/80">Company share: {room.settlement.companyPercent}% · Prize pool: {room.settlement.poolPercent}%</p>
+                  <p className="mt-1 text-amber-100/80">Prize payout = the lower of the {room.settlement.poolPercent}% pool and the 20,000 ETB maximum cap.</p>
+                  <p className="mt-2 border-t border-white/10 pt-2 text-[11px] leading-relaxed text-amber-100/60">Maximum current room example: 8 × 500 ETB = 4,000 ETB total; company 55% = 2,200 ETB; prize pool 45% = 1,800 ETB. The 20,000 ETB figure is an upper payout limit, not a guaranteed prize.</p>
+                </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
                   <div className="rounded-lg bg-black/60 p-3"><p className="text-amber-100/50">Entry pool</p><b className="mt-1 block text-white">{room.settlement.totalEntryPoolEtb.toFixed(2)} ETB</b></div>
                   <div className="rounded-lg bg-black/60 p-3"><p className="text-amber-100/50">Company · 55%</p><b className="mt-1 block text-white">{room.settlement.companyShareEtb.toFixed(2)} ETB</b></div>
