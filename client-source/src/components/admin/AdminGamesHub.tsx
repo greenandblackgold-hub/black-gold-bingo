@@ -57,6 +57,13 @@ export function AdminGamesHub({ activeGame }: { activeGame: HostGameSection }) {
     {error && <p role="alert" className="mt-3 text-sm text-red-300">{error}</p>}
     {notice && <p role="status" className="mt-3 text-sm text-emerald-300">{notice}</p>}
     <div className={card + ' mt-4'}><div className="flex items-center justify-between gap-3"><div><p className="font-bold text-amber-100">{t('general')}</p><p className="text-xs text-amber-100/45">{overview?.settings.generalEnabled ? t('allOn') : t('allOff')}</p></div><button disabled={busy || !overview} onClick={() => { if (!overview) return; if (overview.settings.generalEnabled && !window.confirm(t('confirmOff'))) return; void save({ generalEnabled: !overview.settings.generalEnabled }); }} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.generalEnabled ? t('generalOff') : t('generalOn')}</button></div></div>
+    <div className={card + ' mt-4'}>
+      <p className="font-bold text-amber-100">{t('announcement')}</p>
+      <p className="mt-1 text-xs text-amber-100/50">{t('announcementHelp')}</p>
+      <textarea maxLength={500} rows={3} value={announcementText} onChange={e => setAnnouncementText(e.target.value)} className={input + ' resize-y'} placeholder={t('announcementPlaceholder')} />
+      <button disabled={busy || !overview} onClick={() => void save({ announcementText })} className="mt-2 rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{t('saveAnnouncement')}</button>
+    </div>
+    <div className={card + ' mt-2'}><div className="flex items-center justify-between gap-3"><div><p className="font-bold text-amber-100">{t('showAnnouncement')}</p><p className="text-xs text-amber-100/45">{overview?.settings.announcementVisible ? t('visibleOff') : t('hidden')}</p></div><button disabled={busy || !overview} onClick={() => void save({ announcementVisible: !overview?.settings.announcementVisible })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.announcementVisible ? t('hideMessage') : t('showMessage')}</button></div></div>
     {activeGame === 'bingo' && <>
     <div className={card + ' mt-4'}>
       <p className="text-xs font-semibold text-amber-100/60">{t('maxPayout')}</p>
@@ -66,14 +73,7 @@ export function AdminGamesHub({ activeGame }: { activeGame: HostGameSection }) {
       <p className="mt-3 text-xs leading-5 text-amber-100/55">{t('poolNote')}</p>
       <p className="mt-2 text-xs leading-5 text-amber-300/80">{t('poolCap')}</p>
     </div>
-    <div className={card + ' mt-4'}>
-      <p className="font-bold text-amber-100">{t('announcement')}</p>
-      <p className="mt-1 text-xs text-amber-100/50">{t('announcementHelp')}</p>
-      <textarea maxLength={500} rows={3} value={announcementText} onChange={e => setAnnouncementText(e.target.value)} className={input + ' resize-y'} placeholder={t('announcementPlaceholder')} />
-      <button disabled={busy || !overview} onClick={() => void save({ announcementText })} className="mt-2 rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{t('saveAnnouncement')}</button>
-    </div>
     <p className="mt-4 text-xs font-semibold text-amber-100/60">{t('hostControls')}</p>
-    <div className={card + ' mt-2'}><div className="flex items-center justify-between gap-3"><div><p className="font-bold text-amber-100">{t('showAnnouncement')}</p><p className="text-xs text-amber-100/45">{overview?.settings.announcementVisible ? t('visibleOff') : t('hidden')}</p></div><button disabled={busy || !overview} onClick={() => void save({ announcementVisible: !overview?.settings.announcementVisible })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.announcementVisible ? t('hideMessage') : t('showMessage')}</button></div></div>
     </>}
     <div className="mt-2 grid gap-3 sm:grid-cols-2">
       {activeGame === 'bingo' && <div className={card}><div className="flex items-center justify-between gap-2"><div><p className="font-bold text-amber-100">Bingo PRO</p><p className="text-xs text-amber-100/45">{overview?.settings.bingoEnabled ? t('visible') : t('hidden')}</p></div><button disabled={busy || !overview} onClick={() => void save({ bingoEnabled: !overview?.settings.bingoEnabled })} className="rounded-lg border border-amber-300/25 px-3 py-2 text-xs font-bold text-amber-200">{overview?.settings.bingoEnabled ? t('turnOff') : t('turnOn')}</button></div></div>}
