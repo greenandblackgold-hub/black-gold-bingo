@@ -37,6 +37,8 @@ test('two authenticated drivers join, choose cars and race on server-controlled 
   assert.equal(state.room.status, 'racing');
   assert.equal(state.room.players.length, 2);
   assert.equal(state.room.players.find((p) => p.userId === f.b.id).carId, 'rally');
+  f.service.control(f.a, { throttle: 0, steer: 0, progress: 1000, payoutEtb: 20_000 });
+  assert.equal(f.service.getState(f.a).room.players.find((p) => p.isMe).progress, 0, 'client-supplied progress and payout are ignored');
   f.service.control(f.a, { throttle: 1, steer: 0 });
   f.service.control(f.b, { throttle: 1, steer: 0 });
   for (let i = 0; i < 300 && state.room.status === 'racing'; i++) {
@@ -49,6 +51,10 @@ test('two authenticated drivers join, choose cars and race on server-controlled 
   assert.ok(state.room.winner);
   assert.equal(state.room.prizePoolEtb, 18);
   assert.equal(state.room.companyShareEtb, 22);
+  const winner = state.room.winner.userId === f.a.id ? f.a : f.b;
+  const credited = f.service.getState(winner).balanceEtb;
+  f.service.getState(f.a); f.service.getState(f.b);
+  assert.equal(f.service.getState(winner).balanceEtb, credited, 're-reading a settled race never credits the winner twice');
 });
 
 test('server derives payout and enforces ETB 20,000 cap without touching wallet', () => {
