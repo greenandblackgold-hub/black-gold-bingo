@@ -212,6 +212,8 @@ export function createCarRacingDemoService({ prod = false, now = Date.now } = {}
       const room = rooms.get(roomId);
       if (room && room.status === 'lobby') {
         room.players = room.players.filter((p) => p.userId !== user.id);
+        room.poolSantim = Math.max(0, room.poolSantim - room.entryFeeEtb * 100);
+        balances.set(user.id, balance(user.id) + room.entryFeeEtb * 100);
         if (!room.players.length) rooms.delete(roomId);
       }
       playerRooms.delete(user.id);

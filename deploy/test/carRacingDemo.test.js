@@ -40,6 +40,8 @@ test('two authenticated drivers join, choose cars and race on server-controlled 
   f.service.control(f.a, { throttle: 1, steer: 0 });
   f.service.control(f.b, { throttle: 1, steer: 0 });
   for (let i = 0; i < 300 && state.room.status === 'racing'; i++) {
+    f.service.control(f.a, { throttle: 1, steer: 0 });
+    f.service.control(f.b, { throttle: 1, steer: 0 });
     f.advance(250);
     state = f.service.getState(f.a);
   }
@@ -69,4 +71,13 @@ test('server derives payout and enforces ETB 20,000 cap without touching wallet'
 test('production real-money environment cannot use the car racing demo endpoints', () => {
   const service = createCarRacingDemoService({ prod: true });
   assert.throws(() => service.getCatalog(), (error) => error instanceof HttpError && error.code === 'car_racing_demo_only');
+});
+
+test('leaving an unstarted lobby refunds only simulation credits', () => {
+  const f = fixture();
+  const before = f.service.getState(f.a).balanceEtb;
+  f.service.createRoom(f.a, { entryFeeEtb: 25 });
+  assert.equal(f.service.getState(f.a).balanceEtb, before - 25);
+  f.service.leave(f.a);
+  assert.equal(f.service.getState(f.a).balanceEtb, before);
 });
