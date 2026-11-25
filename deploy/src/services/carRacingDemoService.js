@@ -5,7 +5,7 @@ export const CAR_RACING_MAX_PRIZE_ETB = 20_000;
 export const CAR_RACING_COMPANY_PERCENT = 55;
 export const CAR_RACING_POOL_PERCENT = 45;
 const tracks = [
-  { id: 'city', name: 'City Circuit', terrain: 'Urban asphalt', surface: 'Asphalt', speedFactor: 1, grip: 1, curveType: 'straight', curveIntensity: 0, wallLimit: 1.04, obstacles: [{ at: 180, lane: 0, width: 0.3, type: 'barrier' }, { at: 430, lane: -0.55, width: 0.28, type: 'debris' }, { at: 690, lane: 0.55, width: 0.28, type: 'barrier' }, { at: 860, lane: 0, width: 0.32, type: 'debris' }] },
+  { id: 'city', name: 'City Circuit', terrain: 'Urban asphalt', surface: 'Asphalt', speedFactor: 1, grip: 1, curveType: 'straight', curveIntensity: 0, wallLimit: 1.04, obstacles: [{ at: 180, lane: 0.5, width: 0.24, type: 'barrier' }, { at: 430, lane: -0.55, width: 0.28, type: 'debris' }, { at: 690, lane: 0.55, width: 0.28, type: 'barrier' }, { at: 860, lane: -0.5, width: 0.24, type: 'debris' }] },
   { id: 'country', name: 'Country Run', terrain: 'Rural dirt', surface: 'Loose dirt', speedFactor: 0.92, grip: 0.88, curveType: 'right', curveIntensity: 0.48, wallLimit: 1.02, obstacles: [{ at: 130, lane: -0.48, width: 0.3, type: 'rocks' }, { at: 350, lane: 0.48, width: 0.3, type: 'logs' }, { at: 590, lane: 0, width: 0.28, type: 'rocks' }, { at: 810, lane: -0.5, width: 0.3, type: 'logs' }] },
   { id: 'rocky', name: 'Rocky Ridge', terrain: 'Rough mountain', surface: 'Rock and gravel', speedFactor: 0.78, grip: 0.68, curveType: 'left', curveIntensity: 0.82, wallLimit: 0.98, obstacles: [{ at: 100, lane: 0.48, width: 0.3, type: 'boulder' }, { at: 270, lane: -0.48, width: 0.3, type: 'boulder' }, { at: 470, lane: 0, width: 0.34, type: 'rockfall' }, { at: 720, lane: 0.5, width: 0.3, type: 'boulder' }, { at: 900, lane: -0.45, width: 0.3, type: 'rockfall' }] },
   { id: 'coast', name: 'Coastal Highway', terrain: 'Wet coastal tarmac', surface: 'Wet asphalt', speedFactor: 1.08, grip: 0.94, curveType: 's-bend', curveIntensity: 0.62, wallLimit: 1.02, obstacles: [{ at: 240, lane: -0.5, width: 0.3, type: 'debris' }, { at: 510, lane: 0.5, width: 0.3, type: 'barrier' }, { at: 780, lane: 0, width: 0.32, type: 'debris' }] },
@@ -50,7 +50,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       entryFeeEtb: room.entryFeeEtb, playerCount: room.players.length, maxPlayers: 8,
       poolEtb: room.poolSantim / 100, companyShareEtb: room.companyShareSantim / 100,
       prizePoolEtb: room.prizeSantim / 100, payoutCapEtb: CAR_RACING_MAX_PRIZE_ETB,
-      countdownEndsAt: room.countdownEndsAt, startedAt: room.startedAt, finishedAt: room.finishedAt,
+      countdownEndsAt: room.countdownEndsAt, startedAt: room.startedAt, finishedAt: room.finishedAt, endReason: room.endReason ?? null,
       winner: room.winner ? { userId: room.winner.userId, name: room.winner.name, plateNumber: room.winner.plateNumber, payoutEtb: room.winner.payoutSantim / 100 } : null,
       players: room.players.map((p) => ({
         userId: p.userId, name: p.name, car: cars.find((c) => c.id === p.carId)?.name ?? 'GT Sport',
