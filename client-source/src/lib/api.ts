@@ -97,6 +97,7 @@ export interface ServerGameState {
   winPattern: import('@/types/game').WinPattern;
   roundNumber: number;
   calledNumbers: number[];
+  soundEnabled: boolean;
   autoCall: boolean;
   callIntervalSec: number;
   nextCallAt: number | null;
