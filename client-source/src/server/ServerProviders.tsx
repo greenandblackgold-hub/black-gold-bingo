@@ -370,7 +370,7 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (announcementAt === null) return;
     if (previousAnnouncementAt.current !== null && announcementAt !== previousAnnouncementAt.current) {
-      play('notification');
+      if (game?.soundEnabled !== false) play('notification');
       if (document.visibilityState !== 'visible' && 'Notification' in window && Notification.permission === 'granted') {
         try {
           new Notification('BLACK GOLD BINGO', {
@@ -396,7 +396,7 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
       roundNumber !== previousRoundNumber.current &&
       game?.phase === 'waiting';
     if (isNewWaitingRound) {
-      play('notification');
+      if (game?.soundEnabled !== false) play('notification');
       if (document.visibilityState !== 'visible' && 'Notification' in window && Notification.permission === 'granted') {
         try {
           new Notification('BLACK GOLD BINGO', {
@@ -486,6 +486,8 @@ function ServerRoundProvider({ children }: { children: ReactNode }) {
       setWinPattern: (pattern: WinPattern) => void admin('pattern', { pattern }),
       roundNumber: g?.roundNumber ?? 1,
       calledNumbers: g?.calledNumbers ?? [],
+      soundEnabled: g?.soundEnabled !== false,
+      setSoundEnabled: (on: boolean) => void admin('sound', { on }),
       winner: g?.winner ?? null,
       roundPrizeEtb: g?.roundPrizeEtb ?? 0,
       roundCardCount: g?.roundCardCount ?? 0,
