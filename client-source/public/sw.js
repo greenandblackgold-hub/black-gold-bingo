@@ -1,3 +1,11 @@
+self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('push', (event) => {
   let data = {};
   try {
@@ -14,7 +22,19 @@ self.addEventListener('push', (event) => {
     data: { url: typeof data.url === 'string' && data.url.startsWith('/') ? data.url : '/' },
     renotify: false,
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  // Each player's own Service Worker checks the current Host switches at display time.
+  // Fail closed: if the API is unreachable or the response is invalid, show no notification.
+  event.waitUntil((async () => {
+    try {
+      const response = await fetch('/api/push/availability', { cache: 'no-store', credentials: 'omit' });
+      if (!response.ok) return;
+      const availability = await response.json();
+      if (availability?.allowed !== true) return;
+      await self.registration.showNotification(title, options);
+    } catch {
+      // Do not show stale/unauthorized push notifications while availability is unknown.
+    }
+  })());
 });
 
 self.addEventListener('notificationclick', (event) => {
