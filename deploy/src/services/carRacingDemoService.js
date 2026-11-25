@@ -199,7 +199,8 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     if (balance(user.id) < fee) throw new HttpError(400, 'insufficient_demo_credits', 'Not enough simulation credits.');
     balances.set(user.id, balance(user.id) - fee);
     room.poolSantim += fee;
-    const startingLane = (room.players.length - (Math.min(room.players.length + 1, 8) - 1) / 2) * 0.24;
+    const seat = room.players.length;
+    const startingLane = (seat % 2 === 0 ? -1 : 1) * (Math.floor(seat / 2) + 1) * 0.24;
     room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: 'sport', plateNumber: plateFor(user.id), ready: false, progress: 0, lane: startingLane, velocity: 0, throttle: 0, steer: 0, reverse: false, boost: false, controlAt: 0, obstacleIndex: 0, damage: 0, collisionEvent: null, lastCollisionAt: 0, finished: false, eliminated: false, eliminationReason: null, eliminatedAt: null });
     playerRooms.set(user.id, room.id);
   }
