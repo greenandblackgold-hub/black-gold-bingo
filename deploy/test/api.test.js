@@ -147,6 +147,34 @@ test('Host can hide Bingo, Keno and Aviator from player access while keeping the
   assert.equal(restored.json.aviatorEnabled, true);
 });
 
+test('Car Racing is controlled by both Host game availability and General Games Center switches', async () => {
+  const p = await newPlayer('Car Racing availability player', 100);
+  const initial = await api('GET', '/api/games/settings', { token: p.token });
+  assert.equal(initial.status, 200);
+  assert.equal(initial.json.carRacingEnabled, false, 'new Car Racing setting defaults OFF until Host enables it');
+  const hostOff = await api('GET', '/api/games/car-racing/catalog', { token: p.token });
+  assert.equal(hostOff.status, 503);
+  assert.equal(hostOff.json.error, 'game_disabled');
+
+  await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { carRacingEnabled: true, generalEnabled: false } });
+  const generalOff = await api('GET', '/api/games/car-racing/catalog', { token: p.token });
+  assert.equal(generalOff.status, 503);
+  assert.equal(generalOff.json.error, 'games_center_disabled');
+
+  await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: true } });
+  const enabled = await api('GET', '/api/games/car-racing/catalog', { token: p.token });
+  assert.equal(enabled.status, 200, JSON.stringify(enabled.json));
+  assert.equal(enabled.json.enabled, true);
+  const state = await api('GET', '/api/games/car-racing/state', { token: p.token });
+  assert.equal(state.status, 200, JSON.stringify(state.json));
+  assert.equal(state.json.simulationOnly, true);
+
+  await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { carRacingEnabled: false } });
+  const switchedOff = await api('GET', '/api/games/car-racing/state', { token: p.token });
+  assert.equal(switchedOff.status, 503);
+  assert.equal(switchedOff.json.error, 'game_disabled');
+});
+
 test('register, login, wrong PIN, lockout after 5 failures', async () => {
   const phone = newPhone();
   assert.equal((await api('POST', '/api/auth/register', { body: { phone, name: 'A', pin: '123456', pinConfirm: '123456' } })).json.error, 'invalid_name');
