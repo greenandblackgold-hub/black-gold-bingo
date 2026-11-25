@@ -70,7 +70,7 @@ test('server derives payout and enforces ETB 20,000 cap without touching wallet'
 
 test('production real-money environment cannot use the car racing demo endpoints', () => {
   const service = createCarRacingDemoService({ prod: true });
-  assert.throws(() => service.getCatalog(), (error) => error instanceof HttpError && error.code === 'car_racing_demo_only');
+  assert.equal(service.getCatalog().enabled, false);\n  assert.throws(() => service.getState({ id: 'driver-a' }), (error) => error instanceof HttpError && error.code === 'car_racing_demo_only');
 });
 
 test('leaving an unstarted lobby refunds only simulation credits', () => {

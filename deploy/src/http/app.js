@@ -36,7 +36,8 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   sweep.unref?.();
 
   function rateLimit(ip, bucket) {
-    // Multiplayer race state/control heartbeats have their own bounded per-IP budget.\n    const max = bucket === 'car-racing' ? 2000 : config.rateLimits[bucket];
+    // Multiplayer race state/control heartbeats have their own bounded per-IP budget.
+    const max = bucket === 'car-racing' ? 2000 : config.rateLimits[bucket];
     const windowMs = 60_000;
     const key = `${ip}|${bucket}`;
     const t = Date.now();
