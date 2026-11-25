@@ -313,6 +313,10 @@ test('frontend source includes all four track scenes, modeled obstacles and both
   assert.match(frontend, /view === 'cockpit'/);
   assert.match(frontend, /p\.collisionEvent/);
   assert.match(frontend, /Vehicle damage/);
+  assert.match(frontend, /SERVER VERIFIED/);
+  assert.match(frontend, /winnerPlateNumber/);
+  assert.match(frontend, /Final plate order/);
+  assert.match(frontend, /N₂O Nitro/);
 });
 
 
