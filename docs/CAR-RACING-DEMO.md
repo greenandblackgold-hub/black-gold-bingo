@@ -32,3 +32,6 @@ npm --prefix client-source run build
 ```
 
 Run the API in a non-production environment with memory storage for isolated demo play. Never enable this simulation by changing production legal/payment approval flags.
+## Host and General availability
+
+Car Racing uses the existing Games Hub settings record (no database schema migration). The Host switch `carRacingEnabled` defaults OFF and is managed from the Host Games panel under Bingo controls. The existing General Games Center switch is also enforced. Both switches must be ON for the Car Racing card and every Car Racing API action to be available. Turning either switch OFF immediately blocks the catalog, lobby, room, car selection, ready, control and leave endpoints. Production always keeps this demo unavailable regardless of the Host switch.
