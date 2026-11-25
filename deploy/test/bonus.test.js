@@ -74,3 +74,20 @@ test('ten completed regular rounds trigger one free ETB 10,000 bonus round with 
     await repo.close();
   }
 });
+
+
+test('Bingo bonus announcements and push are suppressed while Bingo Host is OFF', async () => {
+  const repo = createMemoryRepo();
+  await repo.init();
+  await repo.updateGameHubSettings({ generalEnabled: true, bingoEnabled: false, kenoEnabled: true, aviatorEnabled: true, minesEnabled: true, carRacingEnabled: true });
+  const config = { jwtSecret: 'bonus-test-secret-bonus-test-secret-123456', roomId: 'TEST', cardPrice: 1000, prizePercent: 45, maxCardsPerPurchase: 50 };
+  const game = createGameService({ repo, config });
+  const pushed = [];
+  const bonus = createBonusService({ repo, game, config, push: { isEnabled: () => true, notifyPlayers: async (n) => { pushed.push(n); } } });
+  try {
+    await bonus.resume();
+    for (let round = 1; round <= 10; round++) { await game.startRound(); await game.endRound(); await game.resetRound(); await bonus.resume(); }
+    assert.equal(pushed.length, 0);
+    assert.equal((await repo.getGame()).bonusRound, true);
+  } finally { bonus.stop(); game.stop(); await repo.close(); }
+});
