@@ -161,6 +161,17 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   route('POST', '/api/games/car-racing/leave', 'user', 'default', async ({ user }) => { await assertCarRacingAvailable(); return carRacing.leave(user); });
 
   /* opt-in Web Push subscriptions */
+  // Public, no-store eligibility check used by each player's Service Worker before displaying a push.
+  route('GET', '/api/push/availability', 'public', 'default', async () => {
+    const current = await gamesHub.getSettings();
+    const gameKeys = ['bingoEnabled', 'kenoEnabled', 'aviatorEnabled', 'minesEnabled', 'carRacingEnabled'];
+    const allGamesOff = gameKeys.every((key) => current[key] === false);
+    return {
+      allowed: current.generalEnabled !== false && current.bingoEnabled !== false && !allGamesOff,
+      generalEnabled: current.generalEnabled !== false,
+      bingoEnabled: current.bingoEnabled !== false,
+    };
+  });
   route('GET', '/api/push/public-key', 'public', 'default', () => ({ enabled: push.isEnabled(), publicKey: push.getPublicKey() }));
   route('POST', '/api/push/subscribe', 'user', 'default', async ({ user, body }) => {
     if (user.role !== 'player' || user.phoneVerified !== true) throw new HttpError(403, 'player_only', 'Verified player accounts only');
