@@ -115,7 +115,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
         const event = { id: `${at}-${p.userId}-wall`, at, type: 'wall', severity, participants: [p.userId] };
         room.collisionEvents.push(event); p.collisionEvent = event; p.damage = Math.min(100, (p.damage ?? 0) + (severity === 'severe' ? 100 : 38));
         if (severity === 'severe' || p.damage >= 100) { p.eliminated = true; p.eliminationReason = 'wall'; p.eliminatedAt = at; }
-        p.velocity *= severity === 'severe' ? 0 : 0.28; p.throttle = 0; p.steer = 0; p.reverse = false; p.boost = false;
+        p.velocity = p.eliminated ? 0 : p.velocity * 0.28; p.throttle = 0; p.steer = 0; p.reverse = false; p.boost = false;
         continue;
       }
       const gripPenalty = (Math.abs(p.lane) > room.track.grip ? 0.62 : 1) * damagePenalty;
@@ -134,7 +134,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
           room.collisionEvents.push(event); p.collisionEvent = event;
           p.damage = Math.min(100, (p.damage ?? 0) + (severity === 'severe' ? 100 : severity === 'medium' ? 38 : 12));
           if (severity === 'severe' || p.damage >= 100) { p.eliminated = true; p.eliminationReason = obstacle.type || 'obstacle'; p.eliminatedAt = at; }
-          p.velocity *= severity === 'severe' ? 0 : severity === 'medium' ? 0.24 : 0.72;
+          p.velocity = p.eliminated ? 0 : p.velocity * (severity === 'medium' ? 0.24 : 0.72);
           p.throttle = 0; p.boost = false;
           if (p.eliminated) { p.steer = 0; p.reverse = false; continue; }
         }
@@ -161,7 +161,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       for (const p of [a, b]) {
         p.collisionEvent = event; p.lastCollisionAt = at;
         p.damage = Math.min(100, (p.damage ?? 0) + (severity === 'severe' ? 100 : severity === 'medium' ? 32 : 8));
-        p.velocity *= severity === 'severe' ? 0 : severity === 'medium' ? 0.42 : 0.78;
+        p.velocity = p.eliminated ? 0 : p.velocity * (severity === 'medium' ? 0.42 : 0.78);
         p.lane += p === a ? -0.14 : 0.14;
         p.throttle = 0; p.boost = false;
         if (severity === 'severe' || p.damage >= 100) { p.eliminated = true; p.eliminationReason = 'car-to-car'; p.eliminatedAt = at; p.steer = 0; p.reverse = false; }
