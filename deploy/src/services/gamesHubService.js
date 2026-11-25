@@ -658,6 +658,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
     getSettings: settings,
     async assertGameEnabled(game) {
       if (!['bingo', 'keno', 'aviator', 'mines', 'car-racing'].includes(game)) throw new HttpError(404, 'game_not_found', 'Unknown game.');
+      if (game === 'car-racing' && config.prod) throw new HttpError(503, 'car_racing_demo_only', 'Car Racing remains isolated to a non-production demo environment.');
       const current = await settings();
       if (current.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
       const settingKey = game === 'car-racing' ? 'carRacingEnabled' : game + 'Enabled';
@@ -675,7 +676,7 @@ export function createGamesHubService({ repo, config, now = Date.now }) {
         kenoEnabled: current.kenoEnabled === true,
         aviatorEnabled: current.aviatorEnabled === true,
         minesEnabled: current.minesEnabled === true,
-        carRacingEnabled: current.carRacingEnabled === true,
+        carRacingEnabled: current.carRacingEnabled === true && !config.prod,
         minBetEtb: current.minBet / 100,
         maxBetEtb: current.maxBet / 100,
         balanceEtb: wallet.balance / 100,
