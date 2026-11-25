@@ -6,7 +6,7 @@ import { minesLocale } from '@/lib/minesLocalization';
 
 const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-type Props = { onOpenBingo: () => void; onOpenKeno: () => void; onOpenAviator: () => void; onOpenMines: () => void; onOpenCarRacing: () => void; onOpenHelp: () => void; serverMode: boolean };
+type Props = { generalDisabled: boolean; onOpenBingo: () => void; onOpenKeno: () => void; onOpenAviator: () => void; onOpenMines: () => void; onOpenCarRacing: () => void; onOpenHelp: () => void; serverMode: boolean };
 
 function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured = false, disabled = false, disabledLabel = '' }: {
   title: string; subtitle: string; detail: string; icon: 'bingo' | 'keno' | 'aviator' | 'mines' | 'racing' | 'virtual' | 'live'; onClick: () => void; openLabel: string; featured?: boolean; disabled?: boolean; disabledLabel?: string;
@@ -33,7 +33,7 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
   );
 }
 
-export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMines, onOpenCarRacing, onOpenHelp, serverMode }: Props) {
+export function GamesCenter({ generalDisabled, onOpenBingo, onOpenKeno, onOpenAviator, onOpenMines, onOpenCarRacing, onOpenHelp, serverMode }: Props) {
   const { lang } = useLanguage();
   const t = gameUi.gamesCenter[lang];
   const mt = (key: Parameters<typeof minesLocale>[1]) => minesLocale(lang, key);
@@ -91,8 +91,8 @@ export function GamesCenter({ onOpenBingo, onOpenKeno, onOpenAviator, onOpenMine
       document.removeEventListener('visibilitychange', onReturn);
     };
   }, [serverMode, t.loadError]);
-  if (serverMode && availability?.generalEnabled === false) {
-    return <main className="mx-auto min-h-[70vh] w-full max-w-6xl px-4 py-8"><section className="mx-auto mb-6 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300/20 bg-black/45 px-5 py-4"><div><p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">{availability.walletMode === 'shared' ? t.unifiedWallet : t.demoWallet}</p><p className="mt-1 text-xl font-black text-amber-100">{money(availability.balanceEtb)} ETB</p></div><span className="rounded-full border border-amber-300/20 px-3 py-1.5 text-[9px] font-bold tracking-wider text-amber-300">{mt('walletBalance')}</span></section>{availability.announcement && <p role="status" className="mx-auto max-w-2xl rounded-xl border border-amber-300/20 bg-black/40 p-5 text-center text-sm leading-7 text-amber-100">{availability.announcement}</p>}</main>;
+  if (serverMode && (generalDisabled || availability?.generalEnabled === false)) {
+    return <main className="mx-auto min-h-[70vh] w-full max-w-6xl px-4 py-8">{availability?.announcement && <p role="status" aria-live="polite" className="mx-auto max-w-2xl rounded-xl border border-amber-300/20 bg-black/40 p-5 text-center text-sm leading-7 text-amber-100">{availability.announcement}</p>}</main>;
   }
   return (
     <div className="mx-auto w-full max-w-6xl space-y-7 pb-8">
