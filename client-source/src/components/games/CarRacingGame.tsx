@@ -64,11 +64,12 @@ function DrivingScene({ view, players, me, cars, speed, steer, track }: { view: 
     const x = 450 + p.lane * (view === 'cockpit' ? 90 : 115);
     const y = own ? 350 : Math.max(145, Math.min(305, 245 - delta * 1.45));
     const scale = own ? 1 : Math.max(.34, Math.min(.72, 0.58 - Math.abs(delta) / 2200));
-    return <g key={p.userId || index} transform={`translate(${x} ${y}) scale(${scale})`}>
+    return <g key={p.userId || index} transform={`translate(${x} ${y}) scale(${scale})`} className={p.collisionEvent && Date.now() - p.collisionEvent.at < 1000 ? 'animate-pulse' : undefined}>
       <path d="M-45 24 L-38 -22 Q-34 -39 -20 -42 L20 -42 Q34 -39 38 -22 L45 24 Q44 35 32 37 L-32 37 Q-44 35 -45 24Z" fill={color} stroke="#f8e7b4" strokeWidth="3" />
       <path d="M-27 -18 Q-22 -34 -12 -34 L12 -34 Q22 -34 27 -18 L25 -5 L-25 -5Z" fill="#152330" stroke="#b7c9d7" strokeWidth="2" />
       <rect x="-38" y="15" width="12" height="8" rx="2" fill="#fff0b9" /><rect x="26" y="15" width="12" height="8" rx="2" fill="#fff0b9" />
       <rect x="-16" y="26" width="32" height="8" rx="2" fill="#f8f2dc" /><text x="0" y="32" textAnchor="middle" fontSize="6" fontWeight="bold" fill="#111">{p.plateNumber.slice(-6)}</text>
+      {p.collisionEvent && Date.now() - p.collisionEvent.at < 1600 && <g><circle r={p.collisionEvent.severity === 'severe' ? 58 : p.collisionEvent.severity === 'medium' ? 40 : 25} fill="none" stroke={p.collisionEvent.severity === 'severe' ? '#ff4b35' : '#ffd166'} strokeWidth="7" strokeDasharray="9 7"/><path d="M-35 -40l-10 -18m80 18l10 -18M-45 20l-18 8m108 -8l18 8" stroke="#fff1b8" strokeWidth="6" strokeLinecap="round"/><circle cx="-20" cy="-25" r="16" fill="#aeb8c0" opacity=".25"/><circle cx="20" cy="-28" r="13" fill="#aeb8c0" opacity=".2"/></g>}
       {p.eliminated && <><path d="M-24 -48 L24 -48" stroke="#ef4444" strokeWidth="7" strokeLinecap="round" /><text x="0" y="-57" textAnchor="middle" fontSize="13" fontWeight="black" fill="#fecaca">CRASH</text></>}
     </g>;
   };
@@ -83,7 +84,6 @@ function DrivingScene({ view, players, me, cars, speed, steer, track }: { view: 
     <path d={centerPath} stroke="#e7e1c8" strokeOpacity=".7" strokeWidth="5" strokeDasharray="30 26" />
     {track.obstacles.filter((obstacle) => obstacle.at / 10 > me.progress && obstacle.at / 10 < me.progress + 28).map((obstacle) => <g key={obstacle.at} transform={`translate(${450 + obstacle.lane * 105} ${Math.max(190, 390 - (obstacle.at / 10 - me.progress) * 7)})`}>{obstacle.type === 'barrier' ? <><rect x="-24" y="-12" width="48" height="24" rx="3" fill="#eee7d5" stroke="#b52f2f" strokeWidth="3"/><path d="M-18 -9l12 18m5 -18l12 18" stroke="#b52f2f" strokeWidth="6"/></> : obstacle.type === 'logs' ? <><rect x="-27" y="-8" width="54" height="16" rx="8" fill="#80532f" stroke="#d5a46c" strokeWidth="3"/><circle cx="-24" cy="0" r="7" fill="#d7b17b"/></> : obstacle.type === 'rocks' || obstacle.type === 'boulder' || obstacle.type === 'rockfall' ? <><path d="M-25 10L-19 -10L-5 -19L12 -14L26 8L18 15H-18Z" fill="#827d74" stroke="#d1c8b8" strokeWidth="3"/><path d="M-8 -10l10 -5 7 8" fill="none" stroke="#eee" strokeOpacity=".5" strokeWidth="3"/></> : <><path d="M-25 8L-12 -10L2 5L17 -14L27 10Z" fill="#9a9a92" stroke="#e4e4dc" strokeWidth="2"/></>}</g>)}
     {others.map((p, i) => sprite(p, i))}
-    {me.collisionEvent && Date.now() - me.collisionEvent.at < 1600 && <g transform="translate(450 330)" className="animate-pulse"><circle r={me.collisionEvent.severity === 'severe' ? 62 : me.collisionEvent.severity === 'medium' ? 42 : 24} fill="none" stroke={me.collisionEvent.severity === 'severe' ? '#ff4b35' : '#ffd166'} strokeWidth="7" strokeDasharray="9 7"/><path d="M-35 -40l-10 -18m80 18l10 -18M-45 20l-18 8m108 -8l18 8" stroke="#fff1b8" strokeWidth="6" strokeLinecap="round"/></g>}
     {view === 'chase' ? <>
       {sprite(me, -1, true)}
       <rect x="18" y="18" width="200" height="42" rx="12" fill="#050505" fillOpacity=".72"/><text x="34" y="45" fill="#f6d889" fontSize="18" fontWeight="bold">{track.name.toUpperCase()}</text>
