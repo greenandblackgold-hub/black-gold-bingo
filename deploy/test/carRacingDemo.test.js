@@ -22,7 +22,9 @@ test('car racing is a demo-only isolated catalog with rotating tracks and car ch
   assert.equal(catalog.tracks.length, 4);
   assert.deepEqual(catalog.tracks.map((track) => track.curveType), ['straight', 'right', 'left', 's-bend']);
   assert.ok(catalog.tracks.every((track) => track.curveIntensity >= 0 && track.wallLimit > 0));
-  assert.equal(catalog.cars.length, 4);
+  assert.equal(catalog.cars.length, 10);
+  assert.equal(new Set(catalog.cars.map((car) => car.id)).size, 10);
+  assert.ok(catalog.cars.every((car) => car.bodyStyle && car.color && car.speed > 1));
   assert.ok(catalog.cars.every((car) => car.length > 0 && car.width > 0));
   assert.equal(f.service.createRoom(f.a, { entryFeeEtb: 10 }).track.id, 'city');
   f.service.leave(f.a);
@@ -55,14 +57,14 @@ test('two authenticated drivers join, choose cars and race on server-controlled 
   const f = fixture();
   const room = f.service.createRoom(f.a, { entryFeeEtb: 20 });
   f.service.joinRoom(f.b, { code: room.code });
-  f.service.chooseCar(f.b, { carId: 'rally' });
+  f.service.chooseCar(f.b, { carId: 'vortex-gt' });
   f.service.setReady(f.a, { ready: true });
   f.service.setReady(f.b, { ready: true });
   f.advance(3_100);
   let state = f.service.getState(f.a);
   assert.equal(state.room.status, 'racing');
   assert.equal(state.room.players.length, 2);
-  assert.equal(state.room.players.find((p) => p.userId === f.b.id).carId, 'rally');
+  assert.equal(state.room.players.find((p) => p.userId === f.b.id).carId, 'vortex-gt');
   const plateA = state.room.players.find((p) => p.userId === f.a.id).plateNumber;
   const plateB = state.room.players.find((p) => p.userId === f.b.id).plateNumber;
   assert.match(plateA, /^BGB-[A-Z0-9]+-[A-Z0-9]+$/);
