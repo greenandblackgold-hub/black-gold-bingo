@@ -402,7 +402,7 @@ function CarRacing3DViewportInner(p:Props) {
           {control('▶','STEER RIGHT','gold',()=>p.onSteer(1),()=>p.onSteer(0))}
         </div>
         <div className="flex gap-1.5">
-          {control('N₂O','NITRO','nitro',()=>p.onThrottle(1,false,true,false),()=>p.onThrottle(0,false,false,false))}
+          {control('N₂O','NITRO','nitro',()=>p.onThrottle(1,p.reverse,true,false),()=>p.onThrottle(0,p.reverse,false,false))}
           <div className="flex flex-col gap-1">
             <button type="button" onClick={()=>p.onGearChange(!p.reverse)} aria-pressed={p.reverse} className={'min-h-[34px] min-w-[58px] rounded-xl border px-2 text-xs font-black '+(p.reverse?'border-red-300 bg-red-500 text-white':'border-white/30 bg-black/85 text-white')}>{p.reverse?'R · REVERSE':'D · DRIVE'}</button>
             {control('●','BRAKE','muted',()=>p.onThrottle(0,p.reverse,false,true),()=>p.onThrottle(0,p.reverse,false,false))}
