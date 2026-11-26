@@ -182,7 +182,8 @@ function sameBingoCardProps(previous: CardProps, next: CardProps): boolean {
       previous.claimable !== next.claimable || previous.claiming !== next.claiming ||
       previous.draft !== next.draft || previous.registering !== next.registering) return false;
   if (previous.card.id !== next.card.id || previous.card.serial !== next.card.serial ||
-      !!previous.card.locked !== !!next.card.locked || !sameCardGrid(previous.card, next.card)) return false;
+      !!previous.card.locked !== !!next.card.locked || !sameCardGrid(previous.card, next.card) ||
+      previous.called.size !== next.called.size) return false;
   return sameCardNumbersOnGrid(previous.marks, next.marks, previous.card.grid) &&
     sameCardNumbersOnGrid(previous.called, next.called, previous.card.grid);
 }
