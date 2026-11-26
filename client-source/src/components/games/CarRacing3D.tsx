@@ -252,7 +252,8 @@ function CarRacing3DViewportInner(p:Props) {
     const display=new THREE.Mesh(new THREE.BoxGeometry(.52,.3,.035),screenMat);display.position.set(0,-.69,-2.035);cockpit.add(display);
     [-.9,.9].forEach(x=>{const vent=new THREE.Mesh(new THREE.BoxGeometry(.42,.13,.04),silver);vent.position.set(x,-.82,-2.02);cockpit.add(vent);});
     const windshieldFrame=new THREE.Mesh(new THREE.BoxGeometry(4.7,.12,.12),cabin);windshieldFrame.position.set(0,.08,-2.18);cockpit.add(windshieldFrame);
-    const steering=new THREE.Group(),rim=new THREE.Mesh(new THREE.TorusGeometry(.48,.075,16,56),new THREE.MeshStandardMaterial({color:'#101419',metalness:.42,roughness:.34}));steering.add(rim);\n    const innerRim=new THREE.Mesh(new THREE.TorusGeometry(.405,.025,8,48),new THREE.MeshStandardMaterial({color:'#b6b9bb',metalness:.92,roughness:.22}));steering.add(innerRim);
+    const steering=new THREE.Group(),rim=new THREE.Mesh(new THREE.TorusGeometry(.48,.075,16,56),new THREE.MeshStandardMaterial({color:'#101419',metalness:.42,roughness:.34}));steering.add(rim);
+    const innerRim=new THREE.Mesh(new THREE.TorusGeometry(.405,.025,8,48),new THREE.MeshStandardMaterial({color:'#b6b9bb',metalness:.92,roughness:.22}));steering.add(innerRim);
     const hub=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.13,20),new THREE.MeshStandardMaterial({color:'#bd9140',metalness:.65}));hub.rotation.x=Math.PI/2;steering.add(hub);
     for(let i=0;i<3;i++){const spoke=new THREE.Mesh(new THREE.BoxGeometry(.055,.48,.08),new THREE.MeshStandardMaterial({color:'#b8bdc2',metalness:.9}));spoke.position.y=i===0?.24:-.12;spoke.rotation.z=i===1?.85:i===2?-.85:0;steering.add(spoke);}
     steering.position.set(0,-.55,-1.28);cockpit.add(steering);
