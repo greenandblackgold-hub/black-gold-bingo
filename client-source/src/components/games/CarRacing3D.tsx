@@ -120,12 +120,12 @@ function CarRacing3DViewportInner(p:Props) {
   // Normalize renderer collections before Three.js or the HUD calls array methods.
   const safeTrack: RacingTrack = {
     ...(p.track ?? {} as RacingTrack),
-    environment: ['city','country','rocky','coastal'].includes(p.track?.environment) ? safeTrack.environment : 'city',
-    curveType: ['straight','left','right','s-bend'].includes(p.track?.curveType) ? safeTrack.curveType : 'straight',
+    environment: ['city','country','rocky','coastal'].includes(p.track?.environment) ? p.track.environment : 'city',
+    curveType: ['straight','left','right','s-bend'].includes(p.track?.curveType) ? p.track.curveType : 'straight',
     obstacles: Array.isArray(p.track?.obstacles) ? p.track.obstacles : [],
   };
-  const safePlayers = Array.isArray(safePlayers) ? safePlayers : [];
-  const safeCars = Array.isArray(safeCars) ? safeCars : [];
+  const safePlayers = Array.isArray(p.players) ? p.players : [];
+  const safeCars = Array.isArray(p.cars) ? p.cars : [];
   const safeProps = { ...p, track: safeTrack, players: safePlayers, cars: safeCars };
   const host=useRef<HTMLDivElement>(null), latest=useRef(safeProps); latest.current=safeProps;
   const [rendererStatus,setRendererStatus]=useState<RendererStatus>('ready');
