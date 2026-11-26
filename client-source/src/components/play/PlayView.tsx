@@ -162,6 +162,7 @@ type CardProps = {
   draft?: boolean;
   registering?: boolean;
   onRegister?: () => void;
+  gameStarted: boolean;
 };
 
 function sameCardGrid(a: BingoCard, b: BingoCard): boolean {
@@ -177,7 +178,7 @@ function sameCardNumbersOnGrid(previous: Set<number>, next: Set<number>, grid: B
 }
 
 function sameBingoCardProps(previous: CardProps, next: CardProps): boolean {
-  if (previous.labels !== next.labels || previous.index !== next.index ||
+  if (previous.labels !== next.labels || previous.gameStarted !== next.gameStarted || previous.index !== next.index ||
       previous.markColor !== next.markColor || previous.pattern !== next.pattern ||
       previous.claimable !== next.claimable || previous.claiming !== next.claiming ||
       previous.draft !== next.draft || previous.registering !== next.registering) return false;
@@ -197,7 +198,7 @@ function readableMarkText(hexColor: string): string {
   return luminance > 0.42 ? '#111827' : '#ffffff';
 }
 
-const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, called, markColor, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister }: CardProps) {
+const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, called, markColor, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister, gameStarted }: CardProps) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
   const winning = useMemo(() => {
     const result = findWinningPattern(card.grid, new Set([...called].filter(n => marks.has(n))), pattern);
@@ -214,7 +215,11 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
           <span className="shrink-0 rounded-full border border-white/25 bg-black/25 px-1.5 py-0.5 text-[9px] font-black leading-none text-white sm:text-[10px]">N-{called.size}</span>
           {card.locked && <span className="shrink-0 rounded bg-red-700 px-1.5 py-0.5 text-[9px] font-black">{labels.locked}</span>}
         </div>
-        <button type="button" aria-label={`Remove card #${card.serial}`} onClick={(event) => { event.stopPropagation(); onRemove(); }} className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-xl font-medium leading-none text-white/95 transition hover:bg-black/20 focus:outline-none focus:ring-2 focus:ring-white/80 sm:h-8 sm:w-8">×</button>
+        {draft ? (
+          <button type="button" aria-label={`Remove card #${card.serial}`} onClick={(event) => { event.stopPropagation(); onRemove(); }} className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-xl font-medium leading-none text-white/95 transition hover:bg-black/20 focus:outline-none focus:ring-2 focus:ring-white/80 sm:h-8 sm:w-8">×</button>
+        ) : (
+          <span aria-label={`Card #${card.serial} locked`} title="Locked" className="grid h-7 w-7 shrink-0 place-items-center text-base text-white/95 sm:h-8 sm:w-8">🔒</span>
+        )}
       </div>
       {draft ? (
         <button type="button" onClick={onRegister} disabled={registering} className="flex min-h-8 w-full items-center justify-center bg-emerald-700 px-2 py-1.5 text-xs font-black text-white transition hover:bg-emerald-600 disabled:opacity-60 sm:min-h-9 sm:text-sm">
@@ -222,7 +227,7 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
         </button>
       ) : (
         <div className="flex min-h-8 w-full items-center justify-center bg-emerald-700 px-2 py-1.5 text-xs font-black text-white sm:min-h-9 sm:text-sm">
-          ካርቴላ አመዝግብ
+          {gameStarted ? 'BINGO' : 'ተመዝግበዋል'}
         </div>
       )}
       <div className="grid grid-cols-5 gap-px overflow-hidden bg-zinc-300">
@@ -600,7 +605,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     }
   };
   return (
-    <main data-player-theme={playerTheme} className="player-play-view relative mx-auto min-h-full w-full max-w-[1100px] overflow-visible rounded-[2rem] border-2 border-zinc-500/80 bg-[#030303] px-2 pb-32 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
+    <main data-player-theme={playerTheme} className="player-play-view relative mx-auto min-h-full w-full max-w-[1100px] overflow-visible rounded-[2rem] border-2 border-zinc-500/80 bg-[#030303] px-2 pb-8 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
       <div className="pointer-events-none absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_50%_12%,rgba(255,196,0,.17),transparent_36%),radial-gradient(ellipse_at_50%_100%,rgba(255,196,0,.13),transparent_38%)]" />
       <div className="relative z-10 space-y-2 sm:space-y-3">
 
@@ -839,6 +844,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 onClaim={() => undefined}
                 onToggle={() => undefined}
                 draft
+                gameStarted={phase !== 'waiting'}
                 registering={registeringDraftId === card.id}
                 onRegister={() => void registerDraftCard(card)}
                 onRemove={() => {
@@ -866,6 +872,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 markColor={markColor}
                 pattern={winPattern}
                 claimable={claimableCards.some(candidate => candidate.id === card.id)}
+                gameStarted={phase !== 'waiting'}
                 claiming={claimingCardId === card.id}
                 onClaim={() => void handleClaim(card.id)}
                 onToggle={number => toggleMark(card.id, number)}
@@ -925,35 +932,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
           </div>
         )}
 
-        <footer className="fixed inset-x-0 bottom-[calc(4.6rem+env(safe-area-inset-bottom))] z-30 px-2 sm:px-4">
-          <div className="mx-auto flex max-w-[1100px] items-center gap-2 rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_25px_rgba(250,204,21,.35)]">
-            <button type="button" role="switch" aria-checked={autoMark} onClick={() => {
-              const next = !autoMark;
-              setAutoMark(next);
-              try { localStorage.setItem('bgb.autoMark', next ? 'on' : 'off'); } catch { /* ignore */ }
-              window.dispatchEvent(new Event('bgb-player-settings'));
-            }} className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
-              <span className="text-[10px] font-black text-white sm:text-xs">{t.autoMark}</span>
-              <span className={`relative h-6 w-10 shrink-0 rounded-full ${autoMark ? 'bg-green-500' : 'bg-zinc-600'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${autoMark ? 'translate-x-5' : 'translate-x-1'}`} /></span>
-            </button>
-            <button
-              type="button"
-              onClick={() => { setQuickBuyMessage(''); setQuickBuyOpen(true); }}
-              disabled={!quickBuyAllowed}
-              aria-label={t.quickBuy}
-              className="player-quick-buy-footer-cta min-w-0 shrink-0 rounded-xl px-2 py-2 text-center disabled:opacity-40"
-            >
-              <span className="block text-lg font-black leading-none" aria-hidden="true">＋</span>
-            </button>
-            <button type="button" onClick={onGoToWallet} className="min-w-0 shrink-0 border-l border-yellow-500/50 px-2 text-left">
-              <span className="flex items-center gap-1 text-lg leading-none text-yellow-400">▣ <span className="text-[9px] font-bold text-white sm:text-xs">{t.balance}</span></span>
-              <strong className="text-xs font-black tabular-nums text-yellow-300 sm:text-base">{formatAmount(lang, balance)} ብር</strong>
-            </button>
-            <button type="button" disabled={claimableCards.length === 0 || !!claimingCardId} onClick={() => void handleClaim(claimableCards[0]?.id)} className="min-w-[34%] rounded-full border-2 border-yellow-200 bg-gradient-to-b from-yellow-200 via-yellow-400 to-amber-600 px-3 py-3 text-base font-black text-black shadow-[0_0_20px_rgba(250,204,21,.5)] disabled:opacity-45 sm:min-w-[30%] sm:text-xl">
-              {claimingCardId ? '…' : '♛ ' + t.claim}
-            </button>
-          </div>
-        </footer>
+
       </div>
       {winner && iWon && <div role="status" className="sr-only">{t.winAnnouncement}</div>}
     </main>
