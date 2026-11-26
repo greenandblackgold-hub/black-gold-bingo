@@ -64,20 +64,20 @@ export function AppHeader({ onOpenWallet, onOpenAdmin, onLogout, onOpenMenu, onO
   return (
     <header className={['sticky top-0 z-30 border-b pt-[env(safe-area-inset-top)] shadow-lg shadow-black/10 backdrop-blur-xl', hideControls ? 'border-[#1c7467]/50 bg-[#061d19]/95' : 'border-gold-500/20 bg-darkbg/95'].join(' ')}>
       {hideControls ? (
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1 px-2 py-2 sm:gap-3 sm:px-4">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-2 py-2 sm:gap-3 sm:px-4">
           <div className="flex min-w-0 items-center gap-1">
             <p className="max-w-[4.5rem] truncate text-[10px] font-black leading-none tracking-wide text-zinc-300 sm:max-w-none sm:text-sm">Black Gold PLC</p>
-            <button type="button" onClick={() => window.location.reload()} aria-label={l.refresh} title={l.refresh} className="grid h-8 w-6 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
-              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 7v5h-5"/><path d="M20 12a8 8 0 1 1-2.34-5.66L20 9"/></svg>
+            <button type="button" onClick={() => window.location.reload()} aria-label={l.refresh} title={l.refresh} className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-3L3 11"/><path d="M3 4v7h7"/><path d="M4 13a8 8 0 0 0 14.9 3L21 13"/><path d="M21 20v-7h-7"/></svg>
             </button>
+            <div className="flex min-w-0 items-center gap-1 border-l border-yellow-500/70 pl-1.5 text-yellow-200 sm:gap-2 sm:pl-3">
+              <span className="text-xl leading-none drop-shadow-[0_0_12px_rgba(255,215,0,1)] sm:text-4xl">🏆</span>
+              <strong className="whitespace-nowrap text-[10px] font-black tracking-tight text-yellow-200 drop-shadow-[0_0_12px_rgba(255,215,0,1)] sm:text-2xl">
+                {roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} {l.currency}
+              </strong>
+            </div>
           </div>
-          <div className="flex min-w-0 items-center justify-center gap-1 border-x border-yellow-500/70 px-1.5 text-yellow-200 sm:gap-2 sm:px-3">
-            <span className="text-2xl leading-none drop-shadow-[0_0_16px_rgba(255,215,0,1)] sm:text-5xl">🏆</span>
-            <strong className="whitespace-nowrap text-xs font-black tracking-tight text-yellow-200 drop-shadow-[0_0_16px_rgba(255,215,0,1)] sm:text-3xl">
-              {roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} {l.currency}
-            </strong>
-          </div>
-          <div className="flex min-w-0 items-center justify-self-end gap-0.5 sm:gap-2">
+          <div className="flex min-w-0 shrink-0 items-center justify-self-end gap-2 sm:gap-3">
             <div role="group" aria-label="Undo and redo" className="flex h-8 shrink-0 items-center gap-0.5 rounded-lg border border-white/10 bg-white/5 px-1 sm:h-9 sm:px-1.5">
               <span title="Undo" className="grid h-7 w-5 place-items-center text-zinc-300 sm:w-7" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-1"/></svg>
