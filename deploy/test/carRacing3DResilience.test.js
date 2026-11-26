@@ -29,3 +29,18 @@ test('Car Racing isolates React rendering failures and catches animation-loop er
   assert.match(source, /CarRacingRenderErrorBoundary><CarRacing3DViewportInner/);
   assert.match(source, /catch\(error\)\{cancelAnimationFrame\(raf\);setRendererStatus\('error'\)/);
 });
+
+
+test('solo racing screen includes ten-minute timer, responsive driving controls and working settings', () => {
+  assert.match(source, /Math\.min\(600,/);
+  assert.match(source, /GAME SETTINGS/);
+  assert.match(source, /ENGINE & GAME VOLUME/);
+  assert.match(source, /STEERING SENSITIVITY/);
+  assert.match(source, /GRAPHICS QUALITY/);
+  assert.match(source, /STEER LEFT/);
+  assert.match(source, /STEER RIGHT/);
+  assert.match(source, /GAS/);
+  assert.match(source, /NITRO/);
+  assert.match(source, /ROTATE/);
+  assert.match(source, /p\.solo\?1/);
+});
