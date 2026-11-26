@@ -51,9 +51,6 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const [notifications, setNotifications] = useState(() => {
     try { return localStorage.getItem('bgb.playerNotifications') === 'on'; } catch { return false; }
   });
-  const [cardsPerRow, setCardsPerRow] = useState(() => {
-    try { const n = Number(localStorage.getItem('bgb.cardsPerRow')); return Number.isInteger(n) && n >= 2 && n <= 4 ? n : 2; } catch { return 2; }
-  });
   const [cardOrder, setCardOrder] = useState<'oldest' | 'newest'>(() => {
     try { return localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest'; } catch { return 'oldest'; }
   });
@@ -70,10 +67,8 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   useEffect(() => {
     const syncSettings = () => {
       try {
-        const layout = Number(localStorage.getItem('bgb.cardsPerRow'));
         setTheme(localStorage.getItem('bgb.playerTheme') === 'light' ? 'light' : 'dark');
         setNotifications(localStorage.getItem('bgb.playerNotifications') === 'on');
-        setCardsPerRow(Number.isInteger(layout) && layout >= 2 && layout <= 4 ? layout : 2);
         setCardOrder(localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest');
         const color = localStorage.getItem('bgb.markColor');
         setMarkColor(markColors.includes(color ?? '') ? color! : '#d4af37');
@@ -269,7 +264,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                     <div className="rounded-xl border border-amber-400/25 bg-black/20 p-3">
                       <h4 className="mb-3 font-black text-amber-300">{t.gameSettings}</h4>
                       <div className="space-y-4">
-                        <div><p className="mb-2 font-semibold text-amber-200">{t.layout}</p><div className="grid grid-cols-3 gap-2">{[2,3,4].map(n=><button key={n} type="button" aria-pressed={cardsPerRow===n} onClick={()=>{setCardsPerRow(n);try{localStorage.setItem('bgb.cardsPerRow',String(n));}catch{}window.dispatchEvent(new Event('bgb-player-settings'));}} className={`rounded-lg border px-3 py-2 font-bold ${cardsPerRow===n?'border-amber-200 bg-amber-400/20 text-amber-100':'border-amber-400/40'}`}>{n} {t.card}</button>)}</div></div>
+                        <div><p className="mb-2 font-semibold text-amber-200">{t.layout}</p><div className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 font-bold text-amber-100">2 {t.card} · 2-column grid</div></div>
                         <div><p className="mb-2 font-semibold text-amber-200">{t.cardOrder}</p><div className="flex flex-wrap gap-2"><button type="button" aria-pressed={cardOrder==='oldest'} onClick={()=>{setCardOrder('oldest');try{localStorage.setItem('bgb.cardOrder','oldest');}catch{}window.dispatchEvent(new Event('bgb-player-settings'));}} className={`rounded-lg border px-3 py-2 ${cardOrder==='oldest'?'border-amber-200 bg-amber-400/20 text-amber-100':'border-amber-400/40'}`}>{t.oldestFirst}</button><button type="button" aria-pressed={cardOrder==='newest'} onClick={()=>{setCardOrder('newest');try{localStorage.setItem('bgb.cardOrder','newest');}catch{}window.dispatchEvent(new Event('bgb-player-settings'));}} className={`rounded-lg border px-3 py-2 ${cardOrder==='newest'?'border-amber-200 bg-amber-400/20 text-amber-100':'border-amber-400/40'}`}>{t.newestFirst}</button></div></div>
 
                         <label className="flex items-center justify-between gap-3"><span>{t.removeUnregistered}</span><input type="checkbox" checked={removeUnregistered} onChange={async e=>{const enabled=e.target.checked;setRemoveUnregistered(enabled);try{localStorage.setItem('bgb.removeUnregistered',enabled?'on':'off');}catch{}window.dispatchEvent(new Event('bgb-player-settings'));if(enabled){const results=await Promise.allSettled(cards.map(async c=>({id:c.id,result:await verifyCard(c.id)})));const removableIds=results.flatMap(result=>result.status==='fulfilled'&&result.value.result.status!=='valid'?[result.value.id]:[]);removeCards(removableIds);}}}/></label>
