@@ -422,3 +422,41 @@ test('Car Racing lobby state cannot be rolled back by an older poll after a Read
   assert.match(frontend, /api\.post<Room \| \{ ok: boolean \}>\(path, body\)/);
   assert.match(frontend, /setState\(\(current\) => current \? \{ \.\.\.current, room: result \} : current\)/);
 });
+
+
+test('steering supports the full signed range, reverse gear moves backward, and brake actively slows the car', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 10 });
+  f.service.joinRoom(f.b, { code: room.code });
+  f.service.setReady(f.a, {}); f.service.setReady(f.b, {});
+  f.advance(3_100);
+  f.service.getState(f.a);
+
+  f.service.control(f.a, { throttle: 1, steer: -1 });
+  f.advance(1_000);
+  let state = f.service.getState(f.a).room;
+  let driver = state.players.find((p) => p.isMe);
+  assert.ok(driver.speed > 0, 'accelerator increases speed');
+  assert.ok(driver.lane < -0.2, 'full-left steering moves the car left');
+
+  f.service.control(f.a, { throttle: 0, steer: 1, brake: true });
+  f.advance(500);
+  state = f.service.getState(f.a).room;
+  driver = state.players.find((p) => p.isMe);
+  assert.ok(driver.speed < 10, 'brake rapidly reduces forward speed');
+  assert.ok(driver.lane > -0.2, 'full-right steering moves the car right');
+
+  f.service.control(f.a, { throttle: 1, steer: 0, reverse: true });
+  f.advance(500);
+  state = f.service.getState(f.a).room;
+  driver = state.players.find((p) => p.isMe);
+  assert.ok(driver.speed > 0, 'reverse gear engages reverse velocity');
+  assert.equal(driver.progress, 0, 'reverse gear does not advance forward race progress');
+
+  const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacing3D.tsx', import.meta.url), 'utf8');
+  assert.match(frontend, /STEER · ±180°/);
+  assert.match(frontend, /D · DRIVE/);
+  assert.match(frontend, /R · REVERSE/);
+  assert.match(frontend, /ACCELERATE/);
+  assert.match(frontend, /BRAKE/);
+});
