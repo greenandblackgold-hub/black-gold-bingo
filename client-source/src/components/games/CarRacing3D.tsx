@@ -39,6 +39,11 @@ function makeCar(color: string, plate: string): CarModel {
   });
   const plateMesh=add(new THREE.PlaneGeometry(.95,.24),new THREE.MeshStandardMaterial({map:plateTexture(plate)}),0,.75,2.135);
   add(new THREE.BoxGeometry(1.72,.08,.3),new THREE.MeshStandardMaterial({color:'#111820',metalness:.5}),0,1.48,1.72);
+  add(new THREE.BoxGeometry(1.88,.12,.22),new THREE.MeshStandardMaterial({color:'#111820',metalness:.45}),0,.55,-1.98);
+  add(new THREE.BoxGeometry(1.95,.12,.32),new THREE.MeshStandardMaterial({color:'#15191d',metalness:.65}),0,.48,1.92);
+  add(new THREE.BoxGeometry(1.9,.09,.42),paint,0,1.93,1.78);
+  [-1,1].forEach(side=>{add(new THREE.BoxGeometry(.22,.16,.28),paint,side*1.05,1.42,-.65);add(new THREE.BoxGeometry(.12,.12,2.35),new THREE.MeshStandardMaterial({color:'#15191d',metalness:.35}),side*.99,.58,0);});
+  add(new THREE.BoxGeometry(1.12,.2,.07),new THREE.MeshStandardMaterial({color:'#080b0e',metalness:.35}),0,.66,-2.12);
   return {group:g,wheels};
 }
 function tree(x:number,z:number) {
@@ -79,15 +84,19 @@ function CarRacing3DViewportInner(p:Props) {
     renderer.domElement.addEventListener('webglcontextrestored',onContextRestored,false);
     let observer:ResizeObserver|undefined;
     try{
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.85));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
     const scene=new THREE.Scene();scene.background=new THREE.Color('#91a9b4');scene.fog=new THREE.Fog('#91a9b4',75,230);
     const camera=new THREE.PerspectiveCamera(62,1,.1,320);camera.position.set(0,6.2,13);camera.lookAt(0,.8,-24);
     scene.add(new THREE.HemisphereLight('#d9eaff','#343025',2.1));
-    const sun=new THREE.DirectionalLight('#fff0cf',3.1);sun.position.set(-22,38,12);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
-    const road=new THREE.Mesh(new THREE.PlaneGeometry(16,280),new THREE.MeshStandardMaterial({color:'#292d32',roughness:.96}));road.rotation.x=-Math.PI/2;road.position.set(0,0,-112);road.receiveShadow=true;scene.add(road);
+    const sun=new THREE.DirectionalLight('#fff0cf',3.1);sun.position.set(-22,38,12);sun.castShadow=true;sun.shadow.mapSize.set(1536,1536);scene.add(sun);
+    const road=new THREE.Mesh(new THREE.PlaneGeometry(16,280),new THREE.MeshStandardMaterial({color:'#20262c',roughness:.82}));road.rotation.x=-Math.PI/2;road.position.set(0,0,-112);road.receiveShadow=true;scene.add(road);
     const ground=new THREE.Mesh(new THREE.PlaneGeometry(420,300),new THREE.MeshStandardMaterial({color:p.track.environment==='coastal'?'#1a657a':'#334c34'}));ground.rotation.x=-Math.PI/2;ground.position.set(0,-.08,-110);scene.add(ground);
     const markers:THREE.Mesh[]=[];
-    for(let lane=1;lane<4;lane++)for(let i=0;i<20;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.12,.025,5.2),new THREE.MeshStandardMaterial({color:'#e6dfc6'}));m.position.set(-8+lane*4,.025,-i*12);scene.add(m);markers.push(m);}
+    const lanePaint=new THREE.MeshStandardMaterial({color:'#e7dfc4',roughness:.72});
+    for(let lane=1;lane<4;lane++)for(let i=0;i<28;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.095,.026,3.1),lanePaint);m.position.set(-8+lane*4,.026,-i*9);scene.add(m);markers.push(m);}
+    const lampMat=new THREE.MeshStandardMaterial({color:'#343b42',metalness:.8,roughness:.28});
+    const lampGlow=new THREE.MeshStandardMaterial({color:'#fff0bd',emissive:'#ffd77c',emissiveIntensity:2.2});
+    for(let i=0;i<18;i++)for(const side of [-1,1]){const x=side*10.5,z=-i*15-4;const pole=new THREE.Mesh(new THREE.CylinderGeometry(.07,.1,5.8,8),lampMat);pole.position.set(x,2.9,z);scene.add(pole);const arm=new THREE.Mesh(new THREE.BoxGeometry(1.25,.08,.08),lampMat);arm.position.set(x-side*.55,5.65,z);scene.add(arm);const glow=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),lampGlow);glow.position.set(x-side*1.05,5.55,z);scene.add(glow);}
     const railMat=new THREE.MeshStandardMaterial({color:'#9ca6ae',metalness:.82,roughness:.3});
     [-8.25,8.25].forEach(x=>{const rail=new THREE.Mesh(new THREE.BoxGeometry(.22,.42,280),railMat);rail.position.set(x,.72,-112);scene.add(rail);for(let i=0;i<24;i++){const post=new THREE.Mesh(new THREE.BoxGeometry(.25,.9,.25),railMat);post.position.set(x,.45,-i*12);scene.add(post);}});
     const scenery:THREE.Object3D[]=[];
@@ -145,17 +154,17 @@ function CarRacing3DViewportInner(p:Props) {
   const retryRenderer=()=>{setRendererStatus('ready');setRendererAttempt(value=>value+1);};
   return <div className="relative isolate w-full overflow-hidden rounded-2xl border border-amber-300/30 bg-[#111820] shadow-[0_18px_55px_rgba(0,0,0,.55)]">
     {rendererStatus!=='ready'&&<div role="alert" aria-live="assertive" className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-slate-950/95 p-6 text-center text-white"><p className="text-lg font-black text-amber-200">{rendererStatus==='lost'?'3D ማሳያው ተቋርጧል':rendererStatus==='unavailable'?'ይህ መሳሪያ 3D WebGL አይደግፍም':'3D ማሳያው ላይ ችግር ተፈጥሯል'}</p><p className="max-w-md text-sm text-white/75">{rendererStatus==='lost'?'የግራፊክስ ግንኙነቱ እየተመለሰ ነው። ካልተመለሰ እንደገና ይሞክሩ።':'የ3D እይታው ሳይሰራ ቢቀርም የውድድሩ መረጃና ውጤት አይጠፋም።'}</p><button type="button" onClick={retryRenderer} className="rounded-xl border border-amber-300 bg-amber-300 px-5 py-3 font-black text-black">እንደገና ሞክር</button></div>}
-    <div ref={host} className="h-[min(68vh,560px)] min-h-[340px] w-full sm:min-h-[440px]" />
+    <div ref={host} className="h-[min(72vh,660px)] min-h-[400px] w-full sm:min-h-[500px]" />
     <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 bg-gradient-to-b from-black/80 to-transparent p-3 sm:p-4">
-      <div className="rounded-xl border border-amber-300/40 bg-black/70 px-3 py-2"><p className="text-[9px] font-black uppercase tracking-[.2em] text-amber-300">{p.track.name}</p><p className="mt-1 font-mono text-xl font-black text-white">P{p.rank}<span className="text-xs text-amber-200/70"> / {p.players.length}</span></p></div>
-      <div className="rounded-xl border border-amber-300/40 bg-black/75 px-4 py-2 text-center"><p className="font-mono text-3xl font-black tabular-nums text-white">{Math.round(p.speed)}</p><p className="text-[9px] font-black tracking-[.22em] text-amber-200">KM/H</p></div>
-      <div className="rounded-xl border border-sky-300/50 bg-slate-950/85 px-3 py-2"><p className="font-mono text-xs font-black tracking-wider text-sky-200">{p.me.plateNumber}</p><p className={'mt-1 text-[9px] font-black '+(p.boost?'animate-pulse text-cyan-200':'text-slate-400')}>N₂O {p.boost?'ACTIVE':'READY'}</p></div>
+      <div className="rounded-2xl border border-amber-200/45 bg-slate-950/85 px-3 py-2 shadow-lg backdrop-blur-md"><p className="text-[9px] font-black uppercase tracking-[.2em] text-amber-300">{p.track.name}</p><p className="mt-1 font-mono text-xl font-black text-white">P{p.rank}<span className="text-xs text-amber-200/70"> / {p.players.length}</span></p></div>
+      <div className="rounded-2xl border border-amber-200/55 bg-slate-950/90 px-5 py-2 text-center shadow-lg backdrop-blur-md"><p className="font-mono text-3xl font-black tabular-nums text-white">{Math.round(p.speed)}</p><p className="text-[9px] font-black tracking-[.22em] text-amber-200">KM/H</p></div>
+      <div className="rounded-2xl border border-sky-300/55 bg-slate-950/90 px-3 py-2 shadow-lg backdrop-blur-md"><p className="font-mono text-xs font-black tracking-wider text-sky-200">{p.me.plateNumber}</p><p className={'mt-1 text-[9px] font-black '+(p.boost?'animate-pulse text-cyan-200':'text-slate-400')}>N₂O {p.boost?'ACTIVE':'READY'}</p></div>
     </div>
-    <div className="absolute right-3 top-[76px] flex gap-1 rounded-xl border border-white/15 bg-black/65 p-1">
+    <div className="absolute right-3 top-[82px] flex gap-1 rounded-2xl border border-white/20 bg-slate-950/80 p-1.5 shadow-lg backdrop-blur-md">
       <button type="button" onClick={()=>p.onViewChange('chase')} aria-pressed={p.view==='chase'} className={'rounded-lg px-3 py-2 text-[10px] font-black '+(p.view==='chase'?'bg-amber-300 text-black':'text-amber-100')}>CHASE</button>
       <button type="button" onClick={()=>p.onViewChange('cockpit')} aria-pressed={p.view==='cockpit'} className={'rounded-lg px-3 py-2 text-[10px] font-black '+(p.view==='cockpit'?'bg-amber-300 text-black':'text-amber-100')}>COCKPIT</button>
     </div>
-    <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/95 via-black/75 to-transparent px-3 pb-3 pt-12 sm:px-5 sm:pb-5">
+    <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-[#030609]/98 via-[#030609]/85 to-transparent px-3 pb-4 pt-16 sm:px-6 sm:pb-6">
       <div className="flex gap-2">{control('◀','LEFT','default',()=>p.onSteer(-1),()=>p.onSteer(0))}{control('▶','RIGHT','default',()=>p.onSteer(1),()=>p.onSteer(0))}</div>
       <div className="flex items-end gap-2">{control('▼','BRAKE / REV','muted',()=>p.onThrottle(1,true,false),()=>p.onThrottle(0,false,false))}{control('▲','GAS','gold',()=>p.onThrottle(1,false,false),()=>p.onThrottle(0,false,false))}{control('N₂O','NITRO','nitro',()=>p.onThrottle(1,false,true),()=>p.onThrottle(0,false,false))}</div>
     </div>
