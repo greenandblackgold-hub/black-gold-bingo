@@ -363,6 +363,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   const [quickBuyBusy, setQuickBuyBusy] = useState(false);
   const [quickBuyMessage, setQuickBuyMessage] = useState('');
   const [selectedDepositAccount, setSelectedDepositAccount] = useState<DepositAccount | null>(null);
+  const [depositAccountsExpanded, setDepositAccountsExpanded] = useState(false);
   const [copyStatus, setCopyStatus] = useState('');
 
 
@@ -633,29 +634,44 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
             aria-label={t.depositAccounts}
             className="rounded-2xl border border-yellow-400/80 bg-yellow-950/70 px-3 py-3 text-center shadow-[0_0_20px_rgba(250,204,21,.2)]"
           >
-            <span className="mb-2 block text-[11px] font-bold tracking-wide text-yellow-300">📢 {t.depositAccounts}</span>
-            <p className="mb-2 text-[10px] text-yellow-100/80">{t.choosePayment}</p>
-            <div className="mx-auto grid max-w-md gap-2 text-left">
-              {DEPOSIT_ACCOUNTS.map(account => (
-                <button
-                  key={account.id}
-                  type="button"
-                  onClick={() => { setSelectedDepositAccount(account); setCopyStatus(''); }}
-                  aria-label={`${account.id === 'cbe' ? t.cbeBank : account.id === 'anbesa' ? t.anbesaBank : t.telebirr} ${account.number} ${t.paymentOptions}`}
-                  className="w-full rounded-xl border border-yellow-400/50 bg-black/60 px-3 py-2 text-left transition hover:border-yellow-200 hover:bg-yellow-950/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-yellow-300">{account.id === 'cbe' ? t.cbeBank : account.id === 'anbesa' ? t.anbesaBank : t.telebirr}</span>
-                    <span className="text-[10px] text-yellow-100/70">{account.id === 'telebirr' ? t.phoneAccount : t.bankAccount}</span>
-                  </div>
-                  <div className="mt-1 flex items-center justify-between gap-2">
-                    <span className="text-base font-black tracking-wider text-white tabular-nums">{account.number}</span>
-                    <span className="text-[10px] font-bold text-yellow-300">{t.open} ›</span>
-                  </div>
-                  <p className="mt-0.5 text-[11px] font-medium text-yellow-100">{t.accountOwner}: {account.owner}</p>
-                </button>
-              ))}
-            </div>
+            <button
+              type="button"
+              aria-expanded={depositAccountsExpanded}
+              aria-controls="deposit-account-options"
+              onClick={() => setDepositAccountsExpanded(expanded => !expanded)}
+              className="flex w-full items-center justify-between gap-3 rounded-xl px-1 py-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300"
+            >
+              <span className="min-w-0">
+                <span className="block text-[11px] font-bold tracking-wide text-yellow-300">📢 {t.depositAccounts}</span>
+                <span className="mt-1 block text-[10px] text-yellow-100/80">{t.choosePayment}</span>
+              </span>
+              <span className="shrink-0 rounded-full border border-yellow-400/40 bg-black/40 px-3 py-1.5 text-xs font-black text-yellow-200">
+                {depositAccountsExpanded ? '−' : '+'} 3
+              </span>
+            </button>
+            {depositAccountsExpanded && (
+              <div id="deposit-account-options" className="mx-auto mt-3 grid max-w-md gap-2 text-left">
+                {DEPOSIT_ACCOUNTS.map(account => (
+                  <button
+                    key={account.id}
+                    type="button"
+                    onClick={() => { setSelectedDepositAccount(account); setCopyStatus(''); }}
+                    aria-label={`${account.id === 'cbe' ? t.cbeBank : account.id === 'anbesa' ? t.anbesaBank : t.telebirr} ${account.number} ${t.paymentOptions}`}
+                    className="w-full rounded-xl border border-yellow-400/50 bg-black/60 px-3 py-2 text-left transition hover:border-yellow-200 hover:bg-yellow-950/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-yellow-300"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-yellow-300">{account.id === 'cbe' ? t.cbeBank : account.id === 'anbesa' ? t.anbesaBank : t.telebirr}</span>
+                      <span className="text-[10px] text-yellow-100/70">{account.id === 'telebirr' ? t.phoneAccount : t.bankAccount}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <span className="text-base font-black tracking-wider text-white tabular-nums">{account.number}</span>
+                      <span className="text-[10px] font-bold text-yellow-300">{t.open} ›</span>
+                    </div>
+                    <p className="mt-0.5 text-[11px] font-medium text-yellow-100">{t.accountOwner}: {account.owner}</p>
+                  </button>
+                ))}
+              </div>
+            )}
           </section>
         )}
 
