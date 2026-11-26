@@ -248,11 +248,11 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
                 '--bingo-mark-text-color': wasCalled ? '#ffffff' : readableMarkText(markColor),
               } as CSSProperties) : undefined}
               className={[
-                'relative grid aspect-square min-w-0 place-items-center rounded-full border border-white/10 text-[clamp(12px,2.8vw,20px)] font-black leading-none text-white transition',
-                free ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
-                  wasCalled ? 'bg-pink-600 text-white shadow-[0_0_7px_rgba(236,72,153,.35)]' :
-                  marked ? 'border border-black/20' :
-                  'bg-[#183a34]',
+                'relative grid aspect-square min-w-0 place-items-center border text-[clamp(12px,2.8vw,20px)] font-black leading-none transition',
+                free ? 'rounded-full border-blue-300 bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
+                  wasCalled ? 'rounded-full border-pink-300 bg-pink-600 text-white shadow-[0_0_7px_rgba(236,72,153,.35)]' :
+                  marked ? 'rounded-[3px] border-zinc-300 bg-white text-black' :
+                  'rounded-[3px] border-zinc-300 bg-white text-black',
                 inWinningLine ? 'outline outline-2 outline-yellow-300' : '',
               ].join(' ')}
             >
