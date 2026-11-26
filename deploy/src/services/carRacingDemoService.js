@@ -262,7 +262,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     if (room.status === 'racing' && room.players.every((p) => p.finished || p.eliminated)) {
       room.status = 'finished'; room.finishedAt = at; room.endReason = 'all_eliminated';
     }
-    if (room.status === 'racing' && at - room.startedAt > 180_000) {
+    if (room.status === 'racing' && at - room.startedAt > 600_000) {
       const leader = room.players.filter((p) => !p.eliminated).sort((a, b) => b.progress - a.progress)[0];
       if (leader) settle(room, leader, at, 'time_limit');
       else { room.status = 'finished'; room.finishedAt = at; room.endReason = 'all_eliminated'; }
