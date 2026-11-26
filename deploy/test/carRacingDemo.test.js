@@ -22,7 +22,9 @@ test('car racing is a demo-only isolated catalog with rotating tracks and car ch
   assert.equal(catalog.tracks.length, 4);
   assert.deepEqual(catalog.tracks.map((track) => track.curveType), ['straight', 'right', 'left', 's-bend']);
   assert.ok(catalog.tracks.every((track) => track.curveIntensity >= 0 && track.wallLimit > 0));
-  assert.equal(catalog.cars.length, 4);
+  assert.equal(catalog.cars.length, 10);
+  assert.equal(new Set(catalog.cars.map((car) => car.id)).size, 10);
+  assert.ok(catalog.cars.every((car) => car.bodyStyle && car.color && car.speed > 1));
   assert.ok(catalog.cars.every((car) => car.length > 0 && car.width > 0));
   assert.equal(f.service.createRoom(f.a, { entryFeeEtb: 10 }).track.id, 'city');
   f.service.leave(f.a);
