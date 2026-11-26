@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 // Rendering-only layer: server-authoritative race state continues to come from CarRacingGame/API.
 export type RacingCar = { id: string; name: string; color: string; bodyStyle?: string };
-export type RacingPlayer = { userId: string; name: string; carId: string; plateNumber: string; progress: number; lane: number; speed: number; finished: boolean; eliminated: boolean; isMe: boolean; collisionEvent: { id: string; at: number; type: string; severity: 'light' | 'medium' | 'severe'; participants: string[] } | null };
+export type RacingPlayer = { userId: string; name: string; carId: string; plateNumber: string; progress: number; laps?: number; lane: number; speed: number; finished: boolean; eliminated: boolean; isMe: boolean; collisionEvent: { id: string; at: number; type: string; severity: 'light' | 'medium' | 'severe'; participants: string[] } | null };
 export type RacingTrack = { name: string; environment: 'city' | 'country' | 'rocky' | 'coastal'; curveType: 'straight' | 'left' | 'right' | 's-bend'; obstacles: { at: number; lane: number; width: number; type: string }[] };
 export type RacingView = 'chase' | 'cockpit';
 type Props = { startedAt: number; solo: boolean; view: RacingView; throttle: number; brake: boolean; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; reverse: boolean; track: RacingTrack; boost: boolean; rank: number; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean, brake?: boolean) => void; onGearChange: (reverse: boolean) => void };
@@ -368,7 +368,7 @@ function CarRacing3DViewportInner(p:Props) {
     <div ref={host} className="absolute inset-0 h-full min-h-0 w-full" />
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-1.5 bg-gradient-to-b from-black/95 via-black/55 to-transparent p-2 sm:gap-3 sm:p-4">
       <div className="min-w-0 max-w-[260px] rounded-xl border border-amber-300/70 bg-[#05070d]/95 px-2 py-2 shadow-[0_0_24px_rgba(245,190,70,.18)] backdrop-blur-md sm:rounded-2xl sm:px-3">
-        <p className="font-black italic leading-none text-amber-300"><span className="text-xs sm:text-lg">LAP</span> <span className="text-2xl text-yellow-300 sm:text-4xl">1</span><span className="text-white text-sm sm:text-xl"> / 3</span></p>
+        <p className="font-black italic leading-none text-amber-300"><span className="text-xs sm:text-lg">LAP</span> <span className="text-2xl text-yellow-300 sm:text-4xl">{Math.min(3,(p.me.laps??0)+1)}</span><span className="text-white text-sm sm:text-xl"> / 3</span></p>
         <div className="mt-2 space-y-1">
           {[...p.players].sort((a,b)=>b.progress-a.progress).slice(0,p.solo?1:3).map((driver,index)=><div key={driver.userId} className={`flex items-center justify-between gap-2 rounded px-1.5 py-1 text-[9px] font-black sm:text-xs ${driver.isMe?'bg-yellow-300 text-black':'bg-black/50 text-white/85'}`}><span>{index+1}　{driver.isMe?'YOU':driver.name.slice(0,13)}</span><span>{driver.isMe?'♛':Math.round(driver.progress)+'%'}</span></div>)}
           {p.solo&&<div className="rounded bg-black/50 px-1.5 py-1 text-[8px] font-black text-amber-100/70">SOLO TEST DRIVE</div>}
