@@ -726,19 +726,18 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
             role="status"
             aria-live="polite"
             aria-atomic="true"
-            className="rounded-2xl border border-yellow-400/80 bg-yellow-950/70 px-3 py-3 text-center shadow-[0_0_20px_rgba(250,204,21,.2)]"
+            className="rounded-xl border border-yellow-400/80 bg-yellow-950/70 px-2 py-1.5 text-center shadow-[0_0_12px_rgba(250,204,21,.14)]"
           >
-            <span className="mb-1 block text-[11px] font-bold tracking-wide text-yellow-300">{phase === 'running' ? '📢 ' + t.roundHelp : '📢 ' + t.nextRoundHelp}</span>
-            <h2 className="text-xs font-bold text-yellow-100">
+            <span className="block text-[9px] font-bold leading-tight tracking-wide text-yellow-300">{phase === 'running' ? t.roundHelp : t.nextRoundHelp}</span>
+            <h2 className="mt-0.5 text-[10px] font-bold leading-tight text-yellow-100">
               {t.patternType}: {patternNames[lang][winPattern]}
             </h2>
-            <p className="mt-1 text-[11px] font-medium leading-relaxed text-yellow-50">
+            <p className="mt-0.5 text-[9px] font-medium leading-snug text-yellow-50">
               {getPatternDescription(lang, winPattern)}
             </p>
-            <p className="mt-1 text-[10px] leading-relaxed text-yellow-300/90">
+            <p className="mt-0.5 text-[8px] leading-snug text-yellow-300/90">
               {t.winInstruction}
             </p>
-            <p className="mt-2 text-lg font-black text-yellow-300">{phase === 'waiting' ? '🏆 ' + t.nextPrize : '🏆 ' + t.currentPrize}: {Number(roundPrizeEtb ?? 0).toFixed(2)} ብር</p>
           </section>
         )}
 
