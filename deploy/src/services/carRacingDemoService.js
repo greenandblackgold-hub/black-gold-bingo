@@ -104,7 +104,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       collisionEvents: clone((room.collisionEvents ?? []).slice(-12)),
       players: room.players.map((p) => ({
         userId: p.userId, name: p.name, car: cars.find((c) => c.id === p.carId)?.name ?? 'GT Sport',
-        carId: p.carId, plateNumber: p.plateNumber, ready: p.ready, progress: Math.min(100, Math.round(p.progress / 10)),
+        carId: p.carId, plateNumber: p.plateNumber, ready: p.ready, progress: Math.min(100, Math.round(p.progress / 10)), laps: p.laps ?? 0,
         lane: p.lane, speed: Math.round(Math.abs(p.velocity) * 100), finished: p.finished,
         damage: p.damage ?? 0, collisionEvent: p.collisionEvent ?? null,
         eliminated: p.eliminated === true, eliminationReason: p.eliminationReason ?? null, eliminatedAt: p.eliminatedAt ?? null,
@@ -224,7 +224,11 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       }
       const gain = p.velocity * car.speed * room.track.speedFactor * gripPenalty * dt * 145;
       const next = Math.max(0, p.progress + gain);
-      if (gain > 0 && next >= 1000) {
+      if (gain > 0 && next >= 1000 && room.solo) {
+        p.laps = (p.laps ?? 0) + Math.floor(next / 1000);
+        p.progress = next % 1000;
+        p.obstacleIndex = 0;
+      } else if (gain > 0 && next >= 1000) {
         const crossing = at - dt * ((1000 - p.progress) / Math.max(gain, 0.001));
         p.progress = 1000;
         finishers.push({ player: p, at: crossing });
@@ -291,7 +295,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     room.poolSantim += fee;
     const seat = room.players.length;
     const startingLane = (seat % 2 === 0 ? -1 : 1) * (Math.floor(seat / 2) + 1) * 0.24;
-    room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: room.solo ? 'striker-r' : 'sport', plateNumber: plateFor(user.id), ready: false, progress: 0, lane: startingLane, velocity: 0, throttle: 0, steer: 0, reverse: false, boost: false, brake: false, controlAt: 0, obstacleIndex: 0, damage: 0, collisionEvent: null, lastCollisionAt: 0, finished: false, eliminated: false, eliminationReason: null, eliminatedAt: null });
+    room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: room.solo ? 'striker-r' : 'sport', plateNumber: plateFor(user.id), ready: false, progress: 0, laps: 0, lane: startingLane, velocity: 0, throttle: 0, steer: 0, reverse: false, boost: false, brake: false, controlAt: 0, obstacleIndex: 0, damage: 0, collisionEvent: null, lastCollisionAt: 0, finished: false, eliminated: false, eliminationReason: null, eliminatedAt: null });
     playerRooms.set(user.id, room.id);
   }
 
