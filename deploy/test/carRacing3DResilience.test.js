@@ -41,5 +41,5 @@ test('Car Racing tolerates missing or malformed track/player/car arrays before r
   assert.match(source, /const safePlayers = Array\.isArray\(p\.players\) \? p\.players : \[\]/);
   assert.match(source, /const safeCars = Array\.isArray\(p\.cars\) \? p\.cars : \[\]/);
   assert.match(source, /safeTrack\.obstacles\.map/);
-  assert.match(source, /safePlayers\.sort/);
+  assert.match(source, /\[\.\.\.safePlayers\]\.sort/);
 });
