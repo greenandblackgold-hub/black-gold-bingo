@@ -413,3 +413,12 @@ test('finished result screen explains pool arithmetic, cap semantics, winner ran
   assert.match(frontend, /Winner position:/);
   assert.match(frontend, /Demo credits only/);
 });
+
+
+test('Car Racing lobby state cannot be rolled back by an older poll after a Ready response', () => {
+  const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacingGame.tsx', import.meta.url), 'utf8');
+  assert.match(frontend, /stateRequestVersion = useRef\(0\)/);
+  assert.match(frontend, /requestVersion === stateRequestVersion\.current/);
+  assert.match(frontend, /api\.post<Room \| \{ ok: boolean \}>\(path, body\)/);
+  assert.match(frontend, /setState\(\(current\) => current \? \{ \.\.\.current, room: result \} : current\)/);
+});
