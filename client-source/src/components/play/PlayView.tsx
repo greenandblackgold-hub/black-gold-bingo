@@ -877,6 +877,16 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
             ))}
           </section>
         )}
+        <button
+          type="button"
+          onClick={() => { setQuickBuyMessage(''); setQuickBuyOpen(true); }}
+          disabled={!quickBuyAllowed}
+          aria-label={t.quickBuy}
+          title={t.quickBuy}
+          className="fixed bottom-[calc(10.5rem+env(safe-area-inset-bottom))] right-4 z-40 grid h-16 w-16 place-items-center rounded-full border-2 border-emerald-300/70 bg-emerald-600 text-4xl font-black leading-none text-white shadow-[0_8px_24px_rgba(16,185,129,.45)] transition hover:bg-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 sm:bottom-28 sm:right-6 sm:h-[4.5rem] sm:w-[4.5rem]"
+        >
+          <span aria-hidden="true">＋</span>
+        </button>
         {draftMessage && <p role="status" className="rounded-lg bg-yellow-950/70 p-2 text-center text-xs font-bold text-yellow-200">{draftMessage}</p>}
         {quickBuyOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:pb-3" role="presentation" onClick={() => !quickBuyBusy && setQuickBuyOpen(false)}>
