@@ -3,10 +3,10 @@ import * as THREE from 'three';
 
 // Rendering-only layer: server-authoritative race state continues to come from CarRacingGame/API.
 export type RacingCar = { id: string; name: string; color: string; bodyStyle?: string };
-export type RacingPlayer = { userId: string; name: string; carId: string; plateNumber: string; progress: number; lane: number; speed: number; finished: boolean; eliminated: boolean; isMe: boolean; collisionEvent: { id: string; at: number; type: string; severity: 'light' | 'medium' | 'severe'; participants: string[] } | null };
+export type RacingPlayer = { userId: string; name: string; carId: string; plateNumber: string; progress: number; laps?: number; lane: number; speed: number; finished: boolean; eliminated: boolean; isMe: boolean; collisionEvent: { id: string; at: number; type: string; severity: 'light' | 'medium' | 'severe'; participants: string[] } | null };
 export type RacingTrack = { name: string; environment: 'city' | 'country' | 'rocky' | 'coastal'; curveType: 'straight' | 'left' | 'right' | 's-bend'; obstacles: { at: number; lane: number; width: number; type: string }[] };
 export type RacingView = 'chase' | 'cockpit';
-type Props = { view: RacingView; throttle: number; brake: boolean; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; reverse: boolean; track: RacingTrack; boost: boolean; rank: number; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean, brake?: boolean) => void; onGearChange: (reverse: boolean) => void };
+type Props = { startedAt: number; solo: boolean; view: RacingView; throttle: number; brake: boolean; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; reverse: boolean; track: RacingTrack; boost: boolean; rank: number; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean, brake?: boolean) => void; onGearChange: (reverse: boolean) => void };
 type CarModel = { group: THREE.Group; wheels: THREE.Mesh[]; frontWheels: THREE.Mesh[] };
 
 function plateTexture(plate: string) {
@@ -117,10 +117,15 @@ function CarRacing3DViewportInner(p:Props) {
   const host=useRef<HTMLDivElement>(null), latest=useRef(p); latest.current=p;
   const [rendererStatus,setRendererStatus]=useState<RendererStatus>('ready');
   const [rendererAttempt,setRendererAttempt]=useState(0);
-  const raceStartedAt=useRef(Date.now());
   const [elapsedSeconds,setElapsedSeconds]=useState(0);
-  useEffect(()=>{const timer=window.setInterval(()=>setElapsedSeconds(Math.min(180,Math.floor((Date.now()-raceStartedAt.current)/1000))),250);return()=>window.clearInterval(timer);},[]);
-  const remainingSeconds=Math.max(0,180-elapsedSeconds);
+  useEffect(()=>{const timer=window.setInterval(()=>setElapsedSeconds(Math.min(600,Math.floor((Date.now()-p.startedAt)/1000))),250);return()=>window.clearInterval(timer);},[p.startedAt]);
+  const remainingSeconds=Math.max(0,600-elapsedSeconds);
+  const [nitroCharge,setNitroCharge]=useState(100);
+  useEffect(()=>{const timer=window.setInterval(()=>setNitroCharge(value=>p.boost?Math.max(0,value-1.8):Math.min(100,value+.45)),120);return()=>window.clearInterval(timer);},[p.boost]);
+  const [settingsOpen,setSettingsOpen]=useState(false);
+  const [audioVolume,setAudioVolume]=useState(88);
+  const [steeringSensitivity,setSteeringSensitivity]=useState(72);
+  const [graphicsQuality,setGraphicsQuality]=useState<'low'|'medium'|'high'>('high');
   const elapsedLabel=`${String(Math.floor(remainingSeconds/60)).padStart(2,'0')}:${String(remainingSeconds%60).padStart(2,'0')}`;
   const audioRig=useRef<{ctx:AudioContext;engine:OscillatorNode;sub:OscillatorNode;engineGain:GainNode;subGain:GainNode;engineFilter:BiquadFilterNode;wind:AudioBufferSourceNode;windGain:GainNode;windFilter:BiquadFilterNode;tires:AudioBufferSourceNode;tiresGain:GainNode;tiresFilter:BiquadFilterNode}|null>(null);
   useEffect(()=>{
@@ -146,10 +151,10 @@ function CarRacing3DViewportInner(p:Props) {
   useEffect(()=>{
     const rig=audioRig.current;if(!rig)return;const now=rig.ctx.currentTime;const speed=Math.max(0,latest.current.speed),throttle=latest.current.throttle,boost=latest.current.boost,steer=Math.abs(latest.current.steer),brake=latest.current.brake;
     const rpm=58+speed*2.35+throttle*82+(boost?55:0);rig.engine.frequency.setTargetAtTime(rpm,now,.08);rig.sub.frequency.setTargetAtTime(Math.max(28,rpm*.48),now,.1);rig.engineFilter.frequency.setTargetAtTime(380+speed*8+throttle*520,now,.12);
-    rig.engineGain.gain.setTargetAtTime(.035+throttle*.19+(boost?.075:0)+(speed/220)*.055,now,.12);rig.subGain.gain.setTargetAtTime(.045+throttle*.11+(boost?.04:0),now,.12);
-    rig.windFilter.frequency.setTargetAtTime(240+speed*17,now,.2);rig.windGain.gain.setTargetAtTime(.008+(speed/220)*.16,now,.2);
-    rig.tiresFilter.frequency.setTargetAtTime(900+speed*7,now,.1);rig.tiresGain.gain.setTargetAtTime((steer>.28&&speed>35?steer*.16:0)+(brake&&speed>10?.12:0),now,.08);
-  },[p.speed,p.throttle,p.steer,p.boost,p.brake]);
+    rig.engineGain.gain.setTargetAtTime((.055+throttle*.27+(boost?.11:0)+(speed/220)*.075)*(audioVolume/100),now,.12);rig.subGain.gain.setTargetAtTime((.06+throttle*.15+(boost?.06:0))*(audioVolume/100),now,.12);
+    rig.windFilter.frequency.setTargetAtTime(240+speed*17,now,.2);rig.windGain.gain.setTargetAtTime((.008+(speed/220)*.16)*(audioVolume/100),now,.2);
+    rig.tiresFilter.frequency.setTargetAtTime(900+speed*7,now,.1);rig.tiresGain.gain.setTargetAtTime(((steer>.28&&speed>35?steer*.16:0)+(brake&&speed>10?.12:0))*(audioVolume/100),now,.08);
+  },[p.speed,p.throttle,p.steer,p.boost,p.brake,audioVolume]);
   useEffect(()=>{
     const ignored=(target:EventTarget|null)=>target instanceof HTMLElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
     const down=(event:KeyboardEvent)=>{
@@ -157,8 +162,8 @@ function CarRacing3DViewportInner(p:Props) {
       const key=event.key.toLowerCase();
       if(['arrowup','w'].includes(key)){event.preventDefault();p.onThrottle(1,latest.current.reverse,false,false);}
       else if(['arrowdown','s',' '].includes(key)){event.preventDefault();p.onThrottle(0,latest.current.reverse,false,true);}
-      else if(['arrowleft','a'].includes(key)){event.preventDefault();p.onSteer(Math.max(-1,latest.current.steer-.12));}
-      else if(['arrowright','d'].includes(key)){event.preventDefault();p.onSteer(Math.min(1,latest.current.steer+.12));}
+      else if(['arrowleft','a'].includes(key)){event.preventDefault();p.onSteer(Math.max(-1,latest.current.steer-.12*(steeringSensitivity/72)));}
+      else if(['arrowright','d'].includes(key)){event.preventDefault();p.onSteer(Math.min(1,latest.current.steer+.12*(steeringSensitivity/72)));}
       else if(key==='r'&&!event.repeat){event.preventDefault();p.onGearChange(!latest.current.reverse);}
       else if(key==='shift'){event.preventDefault();p.onThrottle(1,latest.current.reverse,true,false);}
     };
@@ -170,7 +175,7 @@ function CarRacing3DViewportInner(p:Props) {
     };
     window.addEventListener('keydown',down);window.addEventListener('keyup',up);
     return()=>{window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);};
-  },[]);
+  },[steeringSensitivity]);
   useEffect(()=>{
     const el=host.current;if(!el)return;
     let renderer:THREE.WebGLRenderer;
@@ -182,7 +187,7 @@ function CarRacing3DViewportInner(p:Props) {
     renderer.domElement.addEventListener('webglcontextrestored',onContextRestored,false);
     let observer:ResizeObserver|undefined;
     try{
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.85));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,graphicsQuality==='high'?1.85:graphicsQuality==='medium'?1.35:1));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
     const scene=new THREE.Scene();scene.background=new THREE.Color('#06152c');scene.fog=new THREE.Fog('#06152c',78,245);
     const camera=new THREE.PerspectiveCamera(62,1,.1,320);camera.position.set(0,6.2,13);camera.lookAt(0,.8,-24);
     scene.add(new THREE.HemisphereLight('#a9c8f0','#080b18',1.22));
@@ -286,7 +291,9 @@ function CarRacing3DViewportInner(p:Props) {
       scene.add(group);
       return {group, obstacle};
     });
-    const ownColor=p.cars.find(c=>c.id===p.me.carId)?.color||'#e9ad3b';const own=makeCar(ownColor,p.me.plateNumber);scene.add(own.group);
+    const ownCar=p.cars.find(c=>c.id===p.me.carId);const ownColor=p.solo?'#f6b900':ownCar?.color||'#e9ad3b';const own=makeCar(ownColor,p.me.plateNumber,ownCar?.bodyStyle||'track');scene.add(own.group);
+    const nitroFlames=[-.68,.68].map(x=>{const flame=new THREE.Mesh(new THREE.ConeGeometry(.19,.95,16),new THREE.MeshBasicMaterial({color:'#16bfff'}));flame.rotation.x=-Math.PI/2;flame.position.set(x,.42,2.62);flame.visible=false;own.group.add(flame);return flame;});
+    const nitroGlow=new THREE.PointLight('#08aaff',0,9,2);nitroGlow.position.set(0,.5,3.15);own.group.add(nitroGlow);
     const opponents=new Map<string,CarModel>();
     const cockpit=new THREE.Group();
     const cabin=new THREE.MeshStandardMaterial({color:'#11161b',metalness:.28,roughness:.72});
@@ -336,6 +343,7 @@ function CarRacing3DViewportInner(p:Props) {
       own.group.position.set(offset*.7,0,4.5);own.group.rotation.y=-s.steer*.16-bend*.16;own.group.visible=s.view==='chase';own.wheels.forEach(w=>{w.rotation.x+=dt*velocity*3;});
       steering.rotation.z=-s.steer*Math.PI;cockpit.visible=s.view==='cockpit';
       own.frontWheels.forEach(w=>{w.rotation.y=s.steer*.48;});
+      nitroFlames.forEach((flame,index)=>{flame.visible=s.boost;flame.scale.setScalar(s.boost?1+Math.sin(now/42+index)*.22:.001);});nitroGlow.intensity=s.boost?5:0;
       gearLever.rotation.z=s.reverse?-.48:0;gearLever.position.x=s.reverse?.58:.48;
       brakePedal.rotation.x=s.brake?-.32:0;accelPedal.rotation.x=s.throttle>.05?-.24:0;
       speedNeedle.rotation.z=-THREE.MathUtils.clamp(s.speed/220,0,1)*Math.PI*.78;
@@ -353,61 +361,68 @@ function CarRacing3DViewportInner(p:Props) {
     raf=requestAnimationFrame(animate);
     return()=>{cancelAnimationFrame(raf);renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);observer?.disconnect();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});renderer.dispose();renderer.domElement.remove();};
     }catch(error){observer?.disconnect();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);renderer.dispose();renderer.domElement.remove();setRendererStatus('error');console.error('Car Racing 3D initialization failed',error);}
-  },[rendererAttempt]);
+  },[rendererAttempt,graphicsQuality]);
   const retryRenderer=()=>{setRendererStatus('ready');setRendererAttempt(value=>value+1);};
   return <div className="relative isolate h-full min-h-0 w-full overflow-hidden rounded-none border-0 bg-[#030609] shadow-none">
-    {rendererStatus!=='ready'&&<div role="alert" aria-live="assertive" className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-slate-950/95 p-6 text-center text-white"><p className="text-lg font-black text-amber-200">{rendererStatus==='lost'?'3D ማሳያው ተቋርጧል':rendererStatus==='unavailable'?'ይህ መሳሪያ 3D WebGL አይደግፍም':'3D ማሳያው ላይ ችግር ተፈጥሯል'}</p><p className="max-w-md text-sm text-white/75">{rendererStatus==='lost'?'የግራፊክስ ግንኙነቱ እየተመለሰ ነው። ካልተመለሰ እንደገና ይሞክሩ።':'የ3D እይታው ሳይሰራ ቢቀርም የውድድሩ መረጃና ውጤት አይጠፋም።'}</p><button type="button" onClick={retryRenderer} className="rounded-xl border border-amber-300 bg-amber-300 px-5 py-3 font-black text-black">እንደገና ሞክር</button></div>}
+    {rendererStatus!=='ready'&&<div role="alert" aria-live="assertive" className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-slate-950/95 p-6 text-center text-white"><p className="text-lg font-black text-amber-200">{rendererStatus==='lost'?'3D ማሳያው ተቋርጧል':rendererStatus==='unavailable'?'ይህ መሳሪያ 3D WebGL አይደግፍም':'3D ማሳያው ላይ ችግር ተፈጥሯል'}</p><p className="max-w-md text-sm text-white/75">{rendererStatus==='lost'?'የግራፊክስ ግንኙነቱ እየተመለሰ ነው። ካልተመለሰ እንደገና ይሞክሩ።':'የ3D እይታው ሳይሰራ ቢቀርም የውድድሩ መረጃና ውጤት አይጠፋም።'}</p><button type="button" onClick={retryRenderer} className="rounded-xl border border-amber-300 bg-amber-300 px-5 py-3 font-black text-black">እንደገና ሞክር</button></div>}
     <div ref={host} className="absolute inset-0 h-full min-h-0 w-full" />
-    <div className="pointer-events-none absolute inset-x-0 top-0 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-1.5 bg-gradient-to-b from-black/90 via-black/45 to-transparent p-2 sm:gap-3 sm:p-4">
-      <div className="min-w-0 rounded-xl border border-amber-200/45 bg-slate-950/90 px-2 py-2 shadow-lg backdrop-blur-md sm:rounded-2xl sm:px-3"><p className="font-black italic text-amber-300">LAP <span className="text-2xl text-yellow-300">1</span><span className="text-white"> / 3</span></p><p className="mt-1 truncate text-[8px] font-black uppercase tracking-wider text-white/70">{p.track.name}</p><div className="mt-2 space-y-1">{[...p.players].sort((a,b)=>b.progress-a.progress).slice(0,8).map((driver,index)=><div key={driver.userId} className={`flex items-center justify-between gap-3 rounded px-1.5 py-0.5 text-[9px] font-bold ${driver.isMe?'bg-yellow-300 text-black':'text-white/85'}`}><span>{index+1}  {driver.isMe?'YOU':driver.name.slice(0,13)}</span><span>{driver.isMe?'●':Math.round(driver.progress)+'%'}</span></div>)}</div></div>
-      <div className="min-w-[92px] rounded-xl border border-amber-200/70 bg-slate-950/95 px-3 py-2 text-center shadow-[0_0_24px_rgba(245,190,70,.16)] backdrop-blur-md sm:min-w-[116px] sm:rounded-2xl sm:px-5"><p className="whitespace-nowrap font-mono text-2xl font-black leading-none tabular-nums text-white sm:text-3xl">{Math.round(p.speed)}</p><p className="mt-1 whitespace-nowrap text-[9px] font-black tracking-[.2em] text-amber-200">KM/H</p><p className="mt-1 font-mono text-[10px] font-black text-white/80">{elapsedLabel}</p></div>
-      <div className="min-w-0 rounded-xl border border-sky-300/55 bg-slate-950/90 px-2 py-2 text-right shadow-lg backdrop-blur-md sm:rounded-2xl sm:px-3"><p className="truncate font-mono text-[10px] font-black tracking-wider text-sky-200 sm:text-xs">{p.me.plateNumber}</p><p className={'mt-1 whitespace-nowrap text-[8px] font-black sm:text-[9px] '+(p.boost?'animate-pulse text-cyan-200':'text-slate-400')}>N₂O {p.boost?'ACTIVE':'READY'}</p></div>
-    </div>
-    <button type="button" onClick={async()=>{try{await document.documentElement.requestFullscreen?.();const orientation=(window.screen as Screen & {orientation?:{lock?:(mode:string)=>Promise<void>}}).orientation;await orientation?.lock?.('landscape');}catch{/* Orientation lock is not supported by every browser. */}}} aria-label="Rotate screen to landscape" className="absolute right-3 top-[82px] z-20 flex h-16 w-16 flex-col items-center justify-center rounded-full border border-white/40 bg-slate-950/90 text-white shadow-xl"><span className="text-2xl">↻</span><span className="text-[8px] font-black">ROTATE</span><span className="text-[8px] font-black">SCREEN</span></button>
-    <div className="absolute right-24 top-[82px] flex gap-1 rounded-2xl border border-white/20 bg-slate-950/80 p-1.5 shadow-lg backdrop-blur-md">
-      <button type="button" onClick={()=>p.onViewChange('chase')} aria-pressed={p.view==='chase'} className={'rounded-lg px-3 py-2 text-[10px] font-black '+(p.view==='chase'?'bg-amber-300 text-black':'text-amber-100')}>CHASE</button>
-      <button type="button" onClick={()=>p.onViewChange('cockpit')} aria-pressed={p.view==='cockpit'} className={'rounded-lg px-3 py-2 text-[10px] font-black '+(p.view==='cockpit'?'bg-amber-300 text-black':'text-amber-100')}>COCKPIT</button>
-    </div>
-    <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-[#030609]/98 via-[#030609]/90 to-transparent px-3 pb-4 pt-16 sm:px-6 sm:pb-6">
-      <div className="flex min-w-0 flex-col items-center gap-1">
-        <div
-          role="slider"
-          aria-label="Steering wheel"
-          aria-valuemin={-180}
-          aria-valuemax={180}
-          aria-valuenow={Math.round(p.steer*180)}
-          tabIndex={0}
-          onKeyDown={(e)=>{if(e.key==='ArrowLeft')p.onSteer(Math.max(-1,p.steer-.08));else if(e.key==='ArrowRight')p.onSteer(Math.min(1,p.steer+.08));else if(e.key==='Home')p.onSteer(0);}}
-          onPointerDown={(e)=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);const r=e.currentTarget.getBoundingClientRect();p.onSteer(THREE.MathUtils.clamp(((e.clientX-r.left)/r.width-.5)*2,-1,1));}}
-          onPointerMove={(e)=>{if(e.buttons===1){const r=e.currentTarget.getBoundingClientRect();p.onSteer(THREE.MathUtils.clamp(((e.clientX-r.left)/r.width-.5)*2,-1,1));}}}
-          onPointerUp={()=>p.onSteer(0)}
-          onPointerCancel={()=>p.onSteer(0)}
-          className="relative flex h-[132px] w-[132px] touch-none select-none items-center justify-center rounded-full border-[5px] border-slate-400/70 bg-[radial-gradient(circle,#26313d_0%,#080d14_68%)] shadow-[0_0_30px_rgba(245,190,70,.22),inset_0_0_18px_#000] outline-none focus:ring-2 focus:ring-amber-300"
-          style={{touchAction:'none'}}
-        >
-          <div className="relative h-[104px] w-[104px] rounded-full border-[11px] border-slate-300 shadow-[inset_0_0_0_2px_#64748b,0_3px_12px_#000] transition-transform duration-75" style={{transform:`rotate(${p.steer*180}deg)`}}>
-            <div className="absolute left-1/2 top-0 h-[34px] w-[7px] -translate-x-1/2 rounded-b bg-amber-300"/>
-            <div className="absolute bottom-[7px] left-[7px] h-[7px] w-[27px] rotate-[28deg] rounded bg-slate-300"/>
-            <div className="absolute bottom-[7px] right-[7px] h-[7px] w-[27px] -rotate-[28deg] rounded bg-slate-300"/>
-            <div className="absolute left-1/2 top-1/2 h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-200 bg-slate-800"/>
-          </div>
-          <span className="pointer-events-none absolute -bottom-5 whitespace-nowrap text-[8px] font-black tracking-widest text-amber-200">STEER · ±180°</span>
-        </div>
-        <p className="text-[9px] font-black text-amber-100/60">DRAG LEFT / RIGHT</p>
-      </div>
-      <div className="flex flex-wrap items-end justify-end gap-1.5 sm:gap-2">
-        <div className="flex flex-col gap-1">
-          <button type="button" onClick={()=>p.onGearChange(!p.reverse)} aria-pressed={p.reverse} className={'min-h-[42px] min-w-[54px] rounded-xl border px-3 text-xs font-black '+(p.reverse?'border-red-300 bg-red-500 text-white':'border-emerald-300/50 bg-emerald-950/80 text-emerald-200')}>{p.reverse?'R · REVERSE':'D · DRIVE'}</button>
-          {control('■','BRAKE','muted',()=>p.onThrottle(0,latest.current.reverse,false,true),()=>p.onThrottle(0,latest.current.reverse,false,false))}
-        </div>
-        <div className="flex flex-col gap-1">
-          {control('▲','ACCELERATE','gold',()=>p.onThrottle(1,latest.current.reverse,false,false),()=>p.onThrottle(0,latest.current.reverse,false,false))}
-          {control('N₂O','NITRO','nitro',()=>p.onThrottle(1,latest.current.reverse,true,false),()=>p.onThrottle(0,latest.current.reverse,false,false))}
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-1.5 bg-gradient-to-b from-black/95 via-black/55 to-transparent p-2 sm:gap-3 sm:p-4">
+      <div className="min-w-0 max-w-[260px] rounded-xl border border-amber-300/70 bg-[#05070d]/95 px-2 py-2 shadow-[0_0_24px_rgba(245,190,70,.18)] backdrop-blur-md sm:rounded-2xl sm:px-3">
+        <p className="font-black italic leading-none text-amber-300"><span className="text-xs sm:text-lg">LAP</span> <span className="text-2xl text-yellow-300 sm:text-4xl">{Math.min(3,(p.me.laps??0)+1)}</span><span className="text-white text-sm sm:text-xl"> / 3</span></p>
+        <div className="mt-2 space-y-1">
+          {[...p.players].sort((a,b)=>b.progress-a.progress).slice(0,p.solo?1:3).map((driver,index)=><div key={driver.userId} className={`flex items-center justify-between gap-2 rounded px-1.5 py-1 text-[9px] font-black sm:text-xs ${driver.isMe?'bg-yellow-300 text-black':'bg-black/50 text-white/85'}`}><span>{index+1}　{driver.isMe?'YOU':driver.name.slice(0,13)}</span><span>{driver.isMe?'♛':Math.round(driver.progress)+'%'}</span></div>)}
+          {p.solo&&<div className="rounded bg-black/50 px-1.5 py-1 text-[8px] font-black text-amber-100/70">SOLO TEST DRIVE</div>}
         </div>
       </div>
+      <div className="min-w-[138px] rounded-xl border border-amber-300/75 bg-[#05070d]/95 px-3 py-2 text-center shadow-[0_0_28px_rgba(245,190,70,.2)] backdrop-blur-md sm:min-w-[250px] sm:rounded-2xl sm:px-6">
+        <p className="text-[8px] font-black tracking-[.28em] text-amber-300 sm:text-[10px]">BLACK GOLD RACING</p>
+        <p className="mt-1 whitespace-nowrap font-mono text-2xl font-black leading-none tabular-nums text-white sm:text-4xl">{elapsedLabel}</p>
+        <p className="mt-1 text-[8px] font-black tracking-[.2em] text-amber-100/70 sm:text-[9px]">10:00 RACE TIMER</p>
+      </div>
+      <div className="min-w-0 rounded-xl border border-sky-300/60 bg-[#05070d]/95 px-2 py-2 text-right shadow-lg backdrop-blur-md sm:rounded-2xl sm:px-3">
+        <p className="font-black italic text-white"><span className="text-xs sm:text-lg">POS</span> <span className="text-2xl text-yellow-300 sm:text-4xl">{p.rank}</span><span className="text-sm sm:text-xl"> / {p.solo?1:Math.max(1,p.players.length)}</span></p>
+        <div className="mt-2 flex items-center gap-1.5"><span className="text-xs text-sky-300">ϟ</span><span className="text-[9px] font-black italic text-white">NITRO</span></div>
+        <div className="mt-1 h-2.5 overflow-hidden rounded-full border border-sky-300/60 bg-slate-900"><div className="h-full rounded-full bg-gradient-to-r from-blue-600 via-cyan-400 to-sky-200 shadow-[0_0_12px_#0af]" style={{width:nitroCharge+'%'}}/></div>
+      </div>
     </div>
-    <div className="pointer-events-none absolute bottom-[88px] left-1/2 -translate-x-1/2 rounded-full border border-white/15 bg-black/60 px-3 py-1 text-[9px] font-black tracking-[.2em] text-white/75">{p.view==='cockpit'?'3D COCKPIT · LIVE DASH':'3D CHASE CAMERA'}</div>
-    {p.me.collisionEvent && Date.now()-p.me.collisionEvent.at<2200 && <div role="status" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-orange-300/70 bg-red-950/85 px-5 py-3 text-center text-sm font-black tracking-widest text-orange-100 shadow-[0_0_30px_rgba(255,90,30,.45)]">IMPACT · {p.me.collisionEvent.severity.toUpperCase()}</div>}
+    <div className="absolute right-2 top-[104px] z-20 flex flex-col gap-2 sm:right-4 sm:top-[112px]">
+      <button type="button" onClick={async()=>{try{await document.documentElement.requestFullscreen?.();const orientation=(window.screen as Screen & {orientation?:{lock?:(mode:string)=>Promise<void>}}).orientation;await orientation?.lock?.('landscape');}catch{/* Browser may not support orientation lock. */}}} aria-label="Rotate screen" className="flex h-12 w-12 flex-col items-center justify-center rounded-full border border-white/50 bg-black/90 text-white shadow-xl sm:h-16 sm:w-16"><span className="text-xl">↻</span><span className="text-[7px] font-black">ROTATE</span><span className="text-[7px] font-black">SCREEN</span></button>
+      <button type="button" onClick={()=>setSettingsOpen(value=>!value)} aria-expanded={settingsOpen} aria-label="Game settings" className="flex h-12 w-12 items-center justify-center rounded-full border border-amber-300/70 bg-black/90 text-xl text-amber-200 shadow-xl sm:h-14 sm:w-14">⚙</button>
+      <div className="flex flex-col gap-1 rounded-xl border border-white/20 bg-black/80 p-1 shadow-lg">
+        <button type="button" onClick={()=>p.onViewChange('chase')} aria-pressed={p.view==='chase'} className={'rounded-lg px-2 py-1.5 text-[8px] font-black '+(p.view==='chase'?'bg-amber-300 text-black':'text-amber-100')}>CHASE</button>
+        <button type="button" onClick={()=>p.onViewChange('cockpit')} aria-pressed={p.view==='cockpit'} className={'rounded-lg px-2 py-1.5 text-[8px] font-black '+(p.view==='cockpit'?'bg-amber-300 text-black':'text-amber-100')}>COCKPIT</button>
+      </div>
+    </div>
+    {settingsOpen&&<div role="dialog" aria-modal="true" aria-label="Racing game settings" className="absolute right-3 top-52 z-30 w-[min(330px,calc(100vw-24px))] rounded-2xl border border-amber-300/70 bg-[#070b12]/95 p-4 text-white shadow-[0_0_35px_rgba(0,0,0,.8)] backdrop-blur-xl">
+      <div className="flex items-center justify-between"><h2 className="text-sm font-black tracking-widest text-amber-200">GAME SETTINGS</h2><button type="button" onClick={()=>setSettingsOpen(false)} aria-label="Close settings" className="rounded-lg border border-white/20 px-2 py-1 text-sm">✕</button></div>
+      <label className="mt-4 block text-xs font-bold">ENGINE & GAME VOLUME <span className="float-right text-amber-200">{audioVolume}%</span></label>
+      <input aria-label="Game volume" type="range" min="0" max="100" value={audioVolume} onChange={e=>setAudioVolume(Number(e.target.value))} className="mt-2 w-full accent-amber-300"/>
+      <label className="mt-4 block text-xs font-bold">STEERING SENSITIVITY <span className="float-right text-amber-200">{steeringSensitivity}%</span></label>
+      <input aria-label="Steering sensitivity" type="range" min="30" max="100" value={steeringSensitivity} onChange={e=>setSteeringSensitivity(Number(e.target.value))} className="mt-2 w-full accent-amber-300"/>
+      <label className="mt-4 block text-xs font-bold">GRAPHICS QUALITY</label>
+      <select aria-label="Graphics quality" value={graphicsQuality} onChange={e=>setGraphicsQuality(e.target.value as 'low'|'medium'|'high')} className="mt-2 w-full rounded-lg border border-white/20 bg-slate-900 p-2 text-sm text-white"><option value="low">Performance</option><option value="medium">Balanced</option><option value="high">Ultra</option></select>
+      <p className="mt-3 text-[10px] text-white/55">Settings apply immediately to sound, steering and 3D rendering</p>
+    </div>}
+    <div className="pointer-events-none absolute bottom-3 left-3 z-10 flex h-[132px] w-[132px] flex-col items-center justify-center rounded-full border-[5px] border-sky-300/80 bg-[radial-gradient(circle_at_45%_35%,#253748_0%,#080c14_62%,#020306_100%)] shadow-[0_0_28px_rgba(0,180,255,.28),inset_0_0_18px_#000] sm:bottom-5 sm:left-5 sm:h-[190px] sm:w-[190px]">
+      <div className="absolute inset-[5px] rounded-full border-[5px] border-transparent border-t-cyan-300 border-r-pink-500 border-b-amber-300 border-l-blue-500"/>
+      <p className="text-[8px] font-black tracking-[.2em] text-white/75 sm:text-[10px]">SPEED</p>
+      <p className="font-mono text-3xl font-black leading-none text-white sm:text-5xl">{Math.round(p.speed)}</p>
+      <p className="text-[9px] font-black tracking-widest text-white sm:text-xs">KM/H</p>
+      <div className="mt-1 rounded-lg border border-amber-300/70 bg-black/80 px-3 py-0.5 font-mono text-xl font-black italic text-yellow-300 sm:text-2xl">{p.reverse?'R':p.speed<8?'1':String(Math.min(6,Math.max(1,Math.ceil(p.speed/38))))}</div>
+    </div>
+    <div className="absolute bottom-3 right-3 z-20 flex max-w-[66%] flex-col items-end gap-2 sm:bottom-5 sm:right-5">
+      <div className="flex items-end justify-end gap-2">
+        {control('ϟ','NITRO','nitro',()=>{if(nitroCharge>0)p.onThrottle(1,false,true,false);},()=>p.onThrottle(0,p.reverse,false,false))}
+        <button type="button" onClick={()=>p.onGearChange(!p.reverse)} aria-pressed={p.reverse} className={'flex min-h-[62px] min-w-[62px] flex-col items-center justify-center rounded-full border-2 px-2 text-white shadow-lg sm:min-h-[82px] sm:min-w-[82px] '+(p.reverse?'border-red-300 bg-red-700':'border-amber-300/70 bg-black/90')}><span className="text-2xl font-black sm:text-3xl">R</span><span className="text-[8px] font-black sm:text-[10px]">REVERSE</span></button>
+      </div>
+      <div className="flex items-end justify-end gap-2">
+        {control('◀','STEER LEFT','muted',()=>p.onSteer(-steeringSensitivity/100),()=>p.onSteer(0))}
+        {control('▶','STEER RIGHT','muted',()=>p.onSteer(steeringSensitivity/100),()=>p.onSteer(0))}
+        {control('■','BRAKE','muted',()=>p.onThrottle(0,p.reverse,false,true),()=>p.onThrottle(0,p.reverse,false,false))}
+        {control('▲','GAS','gold',()=>p.onThrottle(1,p.reverse,false,false),()=>p.onThrottle(0,p.reverse,false,false))}
+      </div>
+    </div>
+    {p.me.collisionEvent && Date.now()-p.me.collisionEvent.at<2200 && <div role="status" className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-orange-300/70 bg-red-950/85 px-5 py-3 text-center text-sm font-black tracking-widest text-orange-100 shadow-[0_0_30px_rgba(255,90,30,.45)]">IMPACT · {p.me.collisionEvent.severity.toUpperCase()}</div>}
     <div className="sr-only" aria-live="polite">{Math.round(p.speed)} kilometers per hour, position {p.rank} of {p.players.length}</div>
   </div>;
 }

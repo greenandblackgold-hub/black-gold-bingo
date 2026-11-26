@@ -70,4 +70,19 @@ test('two distinct authenticated accounts complete the real Car Racing HTTP room
   assert.deepEqual(await request('token-driver-b', 'POST', '/api/games/car-racing/control', {
     roomId: created.roomId, throttle: 1, steer: -0.25,
   }), { ok: true });
+
+  drivers.set('token-driver-c', { id: 'driver-c', name: 'Solo Driver', role: 'player', phoneVerified: true });
+  const solo = await request('token-driver-c', 'POST', '/api/games/car-racing/rooms', { entryFeeEtb: 10, solo: true });
+  assert.equal(solo.solo, true);
+  assert.equal(solo.maxPlayers, 1);
+  assert.equal(solo.players.length, 1);
+  assert.equal(solo.players[0].carId, 'striker-r');
+  const soloReady = await request('token-driver-c', 'POST', '/api/games/car-racing/ready', { roomId: solo.roomId, ready: true });
+  assert.equal(soloReady.status, 'countdown');
+  clock += 3_100;
+  assert.equal((await request('token-driver-c', 'GET', '/api/games/car-racing/state')).room.status, 'racing');
+  clock += 600_100;
+  const soloResult = await request('token-driver-c', 'GET', '/api/games/car-racing/state');
+  assert.equal(soloResult.room.status, 'finished');
+  assert.equal(soloResult.room.settlement.reason, 'time_limit');
 });

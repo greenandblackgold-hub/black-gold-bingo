@@ -158,7 +158,7 @@ test('server derives payout and enforces ETB 20,000 cap without touching wallet'
   f.service.setReady(f.b, {});
   f.advance(3_100);
   f.service.control(f.a, { throttle: 1 });
-  f.advance(180_100);
+  f.advance(600_100);
   const state = f.service.getState(f.a).room;
   assert.equal(state.status, 'finished');
   assert.ok(state.winner.payoutEtb <= 20_000);
@@ -166,6 +166,31 @@ test('server derives payout and enforces ETB 20,000 cap without touching wallet'
   assert.equal(state.settlement.winnerPlateNumber, state.winner.plateNumber);
   assert.equal(state.settlement.prizePoolEtb, 450);
   assert.equal(state.settlement.companyShareEtb, 550);
+});
+
+test('single-player test drive starts alone, rejects multiplayer joins and ends after ten minutes', () => {
+  const f = fixture();
+  const room = f.service.createRoom(f.a, { entryFeeEtb: 10, solo: true });
+  assert.equal(room.solo, true);
+  assert.equal(room.maxPlayers, 1);
+  assert.equal(room.players.length, 1);
+  assert.equal(room.players[0].carId, 'striker-r');
+  assert.throws(() => f.service.joinRoom(f.b, { code: room.code }), (error) => error instanceof HttpError && error.code === 'solo_room');
+  f.service.setReady(f.a, { roomId: room.roomId, ready: true });
+  assert.equal(f.service.getState(f.a).room.status, 'countdown');
+  f.advance(3_100);
+  assert.equal(f.service.getState(f.a).room.status, 'racing');
+  for (let i = 0; i < 50; i++) { f.service.control(f.a, { throttle: 1, boost: true }); f.advance(250); f.service.getState(f.a); }
+  const midRace = f.service.getState(f.a).room;
+  assert.equal(midRace.status, 'racing', 'a solo test drive does not end early at the lap line');
+  assert.ok(midRace.players[0].laps >= 1, 'the solo driver can complete and repeat laps');
+  assert.ok(midRace.players[0].speed > 200, 'the yellow solo sports car exposes a high-speed km/h display');
+  f.advance(590_100);
+  const ended = f.service.getState(f.a).room;
+  assert.equal(ended.status, 'finished');
+  assert.equal(ended.endReason, null);
+  assert.equal(ended.settlement.reason, 'time_limit');
+  assert.equal(ended.winner.userId, f.a.id);
 });
 
 test('host OFF immediately stops active races without winner or payout and blocks new races until ON', () => {
@@ -472,9 +497,10 @@ test('steering supports the full signed range, reverse gear moves backward, and 
   assert.ok(driver.progress <= progressBeforeReverse, 'reverse gear does not advance forward race progress');
 
   const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacing3D.tsx', import.meta.url), 'utf8');
-  assert.match(frontend, /STEER · ±180°/);
-  assert.match(frontend, /D · DRIVE/);
+  assert.match(frontend, /STEER LEFT/);
+  assert.match(frontend, /STEER RIGHT/);
   assert.match(frontend, /R · REVERSE/);
-  assert.match(frontend, /ACCELERATE/);
+  assert.match(frontend, /R · REVERSE/);
+  assert.match(frontend, /GAS/);
   assert.match(frontend, /BRAKE/);
 });
