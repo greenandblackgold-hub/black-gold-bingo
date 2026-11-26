@@ -71,20 +71,20 @@ export function AppHeader({ onOpenWallet, onOpenAdmin, onLogout, onOpenMenu, onO
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-3L3 11"/><path d="M3 4v7h7"/><path d="M4 13a8 8 0 0 0 14.9 3L21 13"/><path d="M21 20v-7h-7"/></svg>
             </button>
             <div className="flex min-w-0 items-center gap-1 border-l border-yellow-500/70 pl-1.5 text-yellow-200 sm:gap-2 sm:pl-3">
-              <span className="text-xl leading-none drop-shadow-[0_0_12px_rgba(255,215,0,1)] sm:text-4xl">🏆</span>
-              <strong className="whitespace-nowrap text-[10px] font-black tracking-tight text-yellow-200 drop-shadow-[0_0_12px_rgba(255,215,0,1)] sm:text-2xl">
+              <span className="text-2xl leading-none drop-shadow-[0_0_5px_rgba(255,255,180,1)] drop-shadow-[0_0_16px_rgba(255,215,0,1)] sm:text-4xl">🏆</span>
+              <strong className="whitespace-nowrap text-[11px] font-black tracking-tight text-yellow-100 drop-shadow-[0_0_5px_rgba(255,255,180,1)] drop-shadow-[0_0_14px_rgba(255,215,0,1)] sm:text-2xl">
                 {roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} {l.currency}
               </strong>
             </div>
           </div>
           <div className="flex min-w-0 shrink-0 items-center justify-self-end gap-2 sm:gap-3">
             <div role="group" aria-label="Undo and redo" className="flex h-8 shrink-0 items-center gap-0.5 rounded-lg border border-white/10 bg-white/5 px-1 sm:h-9 sm:px-1.5">
-              <span title="Undo" className="grid h-7 w-5 place-items-center text-zinc-300 sm:w-7" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-1"/></svg>
-              </span>
-              <span title="Redo" className="grid h-7 w-5 place-items-center text-zinc-300 sm:w-7" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9h-9a7 7 0 0 0 0 14h1"/></svg>
-              </span>
+              <button type="button" onClick={() => window.history.back()} aria-label="Undo navigation" title="Undo" className="grid h-7 w-5 place-items-center rounded text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:w-7">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-1"/></svg>
+              </button>
+              <button type="button" onClick={() => window.history.forward()} aria-label="Redo navigation" title="Redo" className="grid h-7 w-5 place-items-center rounded text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:w-7">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9h-9a7 7 0 0 0 0 14h1"/></svg>
+              </button>
             </div>
             <button type="button" onClick={onOpenSettings} aria-label={l.settings} title={l.settings} className="grid h-8 w-6 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2" fill="#090909"/><circle cx="15" cy="12" r="2" fill="#090909"/><circle cx="10" cy="18" r="2" fill="#090909"/></svg>
