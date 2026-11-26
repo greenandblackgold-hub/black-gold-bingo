@@ -57,14 +57,14 @@ test('two authenticated drivers join, choose cars and race on server-controlled 
   const f = fixture();
   const room = f.service.createRoom(f.a, { entryFeeEtb: 20 });
   f.service.joinRoom(f.b, { code: room.code });
-  f.service.chooseCar(f.b, { carId: 'rally' });
+  f.service.chooseCar(f.b, { carId: 'vortex-gt' });
   f.service.setReady(f.a, { ready: true });
   f.service.setReady(f.b, { ready: true });
   f.advance(3_100);
   let state = f.service.getState(f.a);
   assert.equal(state.room.status, 'racing');
   assert.equal(state.room.players.length, 2);
-  assert.equal(state.room.players.find((p) => p.userId === f.b.id).carId, 'rally');
+  assert.equal(state.room.players.find((p) => p.userId === f.b.id).carId, 'vortex-gt');
   const plateA = state.room.players.find((p) => p.userId === f.a.id).plateNumber;
   const plateB = state.room.players.find((p) => p.userId === f.b.id).plateNumber;
   assert.match(plateA, /^BGB-[A-Z0-9]+-[A-Z0-9]+$/);
