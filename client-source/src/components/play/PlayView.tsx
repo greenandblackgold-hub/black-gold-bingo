@@ -203,6 +203,10 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
     return result.missing === 0 ? result.positions : null;
   }, [card.grid, called, marks, pattern]);
   const winningCells = useMemo(() => new Set((winning ?? []).map(([r, c]) => r + '-' + c)), [winning]);
+  const calledOnCard = useMemo(
+    () => card.grid.flat().filter((value): value is number => value !== null && called.has(value)).length,
+    [card.grid, called],
+  );
 
   return (
     <section className={`bingo-card-surface relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-0 shadow-xl ${accent.glow}`}>
@@ -210,6 +214,7 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
         <div className="flex min-w-0 items-center gap-1.5">
           <span aria-hidden="true" className="shrink-0 text-xs sm:text-sm">▣</span>
           <span className="truncate text-xs font-black tabular-nums sm:text-base">{card.serial}</span>
+          <span className="shrink-0 rounded-full border border-white/25 bg-black/25 px-1.5 py-0.5 text-[9px] font-black leading-none text-white sm:text-[10px]">N-{calledOnCard}</span>
           {card.locked && <span className="shrink-0 rounded bg-red-700 px-1.5 py-0.5 text-[9px] font-black">{labels.locked}</span>}
         </div>
         <button type="button" aria-label={`Remove card #${card.serial}`} onClick={(event) => { event.stopPropagation(); onRemove(); }} className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-xl font-medium leading-none text-white/95 transition hover:bg-black/20 focus:outline-none focus:ring-2 focus:ring-white/80 sm:h-8 sm:w-8">×</button>
@@ -246,15 +251,15 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
                 '--bingo-mark-text-color': readableMarkText(markColor),
               } as CSSProperties) : undefined}
               className={[
-                'relative grid aspect-square min-w-0 place-items-center rounded-[3px] text-[clamp(12px,2.8vw,20px)] font-black leading-none text-black transition',
+                'relative grid aspect-square min-w-0 place-items-center rounded-full border border-white/10 text-[clamp(12px,2.8vw,20px)] font-black leading-none text-white transition',
                 free ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
                   marked ? 'border border-black/20' :
-                  'bg-gradient-to-b from-white to-zinc-200',
+                  'bg-[#183a34]',
+                wasCalled && !marked ? 'bg-pink-600 text-white shadow-[0_0_7px_rgba(236,72,153,.35)]' : '',
                 inWinningLine ? 'outline outline-2 outline-yellow-300' : '',
-                wasCalled && !marked ? 'bg-blue-500 text-white' : '',
               ].join(' ')}
             >
-              {free ? labels.free : value}
+              {free ? '★' : value}
             </button>
           );
         }))}
@@ -872,7 +877,17 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
             ))}
           </section>
         )}
-        {draftMessage && <p role="status" className="rounded-lg bg-yellow-950/70 p-2 text-center text-xs font-bold text-yellow-200">{draftMessage}</p>}
+        <button
+          type="button"
+          onClick={() => { setQuickBuyMessage(''); setQuickBuyOpen(true); }}
+          disabled={!quickBuyAllowed}
+          aria-label={t.quickBuy}
+          title={t.quickBuy}
+          className="fixed bottom-[calc(10.5rem+env(safe-area-inset-bottom))] right-4 z-40 grid h-16 w-16 place-items-center rounded-full border-2 border-emerald-300/70 bg-emerald-600 text-4xl font-black leading-none text-white shadow-[0_8px_24px_rgba(16,185,129,.45)] transition hover:bg-emerald-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 sm:bottom-28 sm:right-6 sm:h-[4.5rem] sm:w-[4.5rem]"
+        >
+          <span aria-hidden="true">＋</span>
+        </button>
+        {draftMessage && <p role="status" className="rounded-lg bg-yellow-950/70 p-2 text-center text-xs font-bold text-yellow-200">{draftMessage}</p>
         {quickBuyOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:pb-3" role="presentation" onClick={() => !quickBuyBusy && setQuickBuyOpen(false)}>
             <section role="dialog" aria-modal="true" aria-labelledby="quick-buy-title" className="max-h-[calc(100dvh-7.5rem-env(safe-area-inset-bottom))] w-full max-w-md overflow-y-auto rounded-2xl border-2 border-yellow-400 bg-zinc-950 p-4 shadow-[0_0_30px_rgba(250,204,21,.3)] sm:max-h-[calc(100dvh-2rem)]" onClick={event => event.stopPropagation()}>
