@@ -27,5 +27,9 @@ test('Car Racing isolates React rendering failures and catches animation-loop er
   assert.match(source, /getDerivedStateFromError/);
   assert.match(source, /componentDidCatch/);
   assert.match(source, /CarRacingRenderErrorBoundary><CarRacing3DViewportInner/);
-  assert.match(source, /catch\(error\)\{cancelAnimationFrame\(raf\);setRendererStatus\('error'\)/);
+  assert.match(source, /catch\(error\)\{\s*cancelAnimationFrame\(raf\);\s*if\(!lowGraphicsFallbackUsed\)/);
+  assert.match(source, /renderer\.shadowMap\.enabled=false/);
+  assert.match(source, /renderer\.setPixelRatio\(1\)/);
+  assert.match(source, /setRendererStatus\('error'\)/);
+  assert.match(source, /setRendererError\(error instanceof Error/);
 });

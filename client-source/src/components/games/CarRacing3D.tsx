@@ -118,6 +118,7 @@ class CarRacingRenderErrorBoundary extends Component<{children:ReactNode},{faile
 function CarRacing3DViewportInner(p:Props) {
   const host=useRef<HTMLDivElement>(null), latest=useRef(p); latest.current=p;
   const [rendererStatus,setRendererStatus]=useState<RendererStatus>('ready');
+  const [rendererError,setRendererError]=useState('');
   const [rendererAttempt,setRendererAttempt]=useState(0);
   const [elapsedSeconds,setElapsedSeconds]=useState(0);
   useEffect(()=>{const update=()=>setElapsedSeconds(Math.min(600,Math.floor((Date.now()-p.startedAt)/1000)));update();const timer=window.setInterval(update,200);return()=>window.clearInterval(timer);},[p.startedAt]);
@@ -339,6 +340,7 @@ function CarRacing3DViewportInner(p:Props) {
     observer=new ResizeObserver(resize);observer.observe(el);resize();
     let last=performance.now(),travel=0,raf=0;
     let lastDashboardLabel='';
+    let lowGraphicsFallbackUsed=false;
     const animate=(now:number)=>{if(contextLost)return;raf=requestAnimationFrame(animate);try{const dt=Math.min((now-last)/1000,.05);last=now;rotor.rotation.y+=dt*18;tailRotor.rotation.y+=dt*22;const s=latest.current,velocity=(s.speed>0?Math.max(.15,s.speed/90):0)*(s.reverse?-1:1);travel+=dt*Math.abs(velocity)*(s.boost?2.2:1);
       markers.forEach(m=>{m.position.z+=dt*velocity*34;if(m.position.z>15)m.position.z-=240;});
       scenery.forEach(o=>{o.position.z+=dt*velocity*25;if(o.position.z>18)o.position.z-=240;});
@@ -359,15 +361,33 @@ function CarRacing3DViewportInner(p:Props) {
       const sky='#06152c';scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,78,245);
       traffic.forEach((car,i)=>{car.group.position.z+=dt*velocity*(23+i%2*4);if(car.group.position.z>16)car.group.position.z=-205-i*8;car.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.2;});});
       renderer.render(scene,camera);
-      }catch(error){cancelAnimationFrame(raf);setRendererStatus('error');console.error('Car Racing 3D render failed',error);}
+      }catch(error){
+        cancelAnimationFrame(raf);
+        if(!lowGraphicsFallbackUsed){
+          lowGraphicsFallbackUsed=true;
+          // Recover from GPU pressure / driver limits by retrying once without
+          // expensive shadows and at native pixel density before failing closed.
+          renderer.shadowMap.enabled=false;
+          renderer.setPixelRatio(1);
+          const width=Math.max(1,el.clientWidth),height=Math.max(1,el.clientHeight);
+          renderer.setSize(width,height,false);
+          console.warn('Car Racing 3D retrying in low-graphics mode',error);
+          last=performance.now();
+          raf=requestAnimationFrame(animate);
+          return;
+        }
+        setRendererError(error instanceof Error ? error.message : String(error));
+        setRendererStatus('error');
+        console.error('Car Racing 3D render failed after low-graphics retry',error);
+      }
     };
     raf=requestAnimationFrame(animate);
     return()=>{cancelAnimationFrame(raf);renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);observer?.disconnect();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});renderer.dispose();renderer.domElement.remove();};
-    }catch(error){observer?.disconnect();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);renderer.dispose();renderer.domElement.remove();setRendererStatus('error');console.error('Car Racing 3D initialization failed',error);}
+    }catch(error){observer?.disconnect();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);renderer.dispose();renderer.domElement.remove();setRendererError(error instanceof Error ? error.message : String(error));setRendererStatus('error');console.error('Car Racing 3D initialization failed',error);}
   },[rendererAttempt,p.graphicsQuality]);
-  const retryRenderer=()=>{setRendererStatus('ready');setRendererAttempt(value=>value+1);};
+  const retryRenderer=()=>{setRendererError('');setRendererStatus('ready');setRendererAttempt(value=>value+1);};
   return <div className="relative isolate h-full min-h-0 w-full overflow-hidden rounded-none border-0 bg-[#030609] shadow-none">
-    {rendererStatus!=='ready'&&<div role="alert" aria-live="assertive" className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-slate-950/95 p-6 text-center text-white"><p className="text-lg font-black text-amber-200">{rendererStatus==='lost'?'3D ማሳያው ተቋርጧል':rendererStatus==='unavailable'?'ይህ መሳሪያ 3D WebGL አይደግፍም':'3D ማሳያው ላይ ችግር ተፈጥሯል'}</p><p className="max-w-md text-sm text-white/75">{rendererStatus==='lost'?'የግራፊክስ ግንኙነቱ እየተመለሰ ነው። ካልተመለሰ እንደገና ይሞክሩ።':'የ3D እይታው ሳይሰራ ቢቀርም የውድድሩ መረጃና ውጤት አይጠፋም።'}</p><button type="button" onClick={retryRenderer} className="rounded-xl border border-amber-300 bg-amber-300 px-5 py-3 font-black text-black">እንደገና ሞክር</button></div>}
+    {rendererStatus!=='ready'&&<div role="alert" aria-live="assertive" className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-slate-950/95 p-6 text-center text-white"><p className="text-lg font-black text-amber-200">{rendererStatus==='lost'?'3D ማሳያው ተቋርጧል':rendererStatus==='unavailable'?'ይህ መሳሪያ 3D WebGL አይደግፍም':'3D ማሳያው ላይ ችግር ተፈጥሯል'}</p><p className="max-w-md text-sm text-white/75">{rendererStatus==='lost'?'የግራፊክስ ግንኙነቱ እየተመለሰ ነው። ካልተመለሰ እንደገና ይሞክሩ።':'የ3D እይታው ሳይሰራ ቢቀርም የውድድሩ መረጃና ውጤት አይጠፋም።'}</p>{rendererError&&<p className="max-w-md break-words rounded-lg border border-red-300/25 bg-red-950/50 px-3 py-2 font-mono text-[10px] text-red-100">{rendererError}</p>}<button type="button" onClick={retryRenderer} className="rounded-xl border border-amber-300 bg-amber-300 px-5 py-3 font-black text-black">እንደገና ሞክር</button></div>}
     <div ref={host} className="absolute inset-0 h-full min-h-0 w-full" />
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2 bg-gradient-to-b from-black/90 via-black/40 to-transparent p-2 sm:gap-4 sm:p-4">
       <div className="min-w-0 max-w-[260px] rounded-xl border border-amber-300/60 bg-black/85 p-2 shadow-xl backdrop-blur-md sm:rounded-2xl sm:p-3">
