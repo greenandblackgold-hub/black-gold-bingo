@@ -493,7 +493,8 @@ test('steering supports the full signed range, reverse gear moves backward, and 
   assert.ok(driver.progress <= progressBeforeReverse, 'reverse gear does not advance forward race progress');
 
   const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacing3D.tsx', import.meta.url), 'utf8');
-  assert.match(frontend, /STEER LEFT/);\n  assert.match(frontend, /STEER RIGHT/);
+  assert.match(frontend, /STEER LEFT/);
+  assert.match(frontend, /STEER RIGHT/);
   assert.match(frontend, /R · REVERSE/);
   assert.match(frontend, /R · REVERSE/);
   assert.match(frontend, /GAS/);
