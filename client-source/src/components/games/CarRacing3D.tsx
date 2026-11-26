@@ -262,7 +262,7 @@ function CarRacing3DViewportInner(p:Props) {
     for(let i=0;i<18;i++){const reflection=new THREE.Mesh(new THREE.PlaneGeometry(THREE.MathUtils.randFloat(1.2,4.8),THREE.MathUtils.randFloat(2,8)),new THREE.MeshBasicMaterial({color:i%2?'#087eb8':'#a51d72',transparent:true,opacity:.12,depthWrite:false}));reflection.rotation.x=-Math.PI/2;reflection.position.set(THREE.MathUtils.randFloat(-7,7),.018,-i*13-5);scene.add(reflection);}
     // Ambient road traffic adds depth to the city scene without changing race logic.
     const traffic:CarModel[]=[];
-    if(p.track.environment==='city'){
+    if(true){
       for(let i=0;i<5;i++){const trafficCar=makeCar(['#c7d1d8','#d34b35','#e4b84d','#3989a8','#252a31'][i],`CITY-${i+1}`);trafficCar.group.scale.setScalar(.78);trafficCar.group.position.set(i%2?5.35:-5.35,0,-26-i*43);scene.add(trafficCar.group);traffic.push(trafficCar);}
     }
     const obstacleModels = p.track.obstacles.map(obstacle => {
