@@ -158,7 +158,7 @@ test('server derives payout and enforces ETB 20,000 cap without touching wallet'
   f.service.setReady(f.b, {});
   f.advance(3_100);
   f.service.control(f.a, { throttle: 1 });
-  f.advance(180_100);
+  f.advance(600_100);
   const state = f.service.getState(f.a).room;
   assert.equal(state.status, 'finished');
   assert.ok(state.winner.payoutEtb <= 20_000);
@@ -372,7 +372,7 @@ test('frontend source includes all four Three.js track scenes, 3D obstacles and 
   assert.match(frontend, /SERVER VERIFIED/);
   assert.match(frontend, /winnerPlateNumber/);
   assert.match(frontend, /Final plate order/);
-  assert.match(frontend, /55% company \/ 45% pool/);
+  assert.match(frontend, /Single-player test drive/);
 });
 
 
@@ -472,9 +472,28 @@ test('steering supports the full signed range, reverse gear moves backward, and 
   assert.ok(driver.progress <= progressBeforeReverse, 'reverse gear does not advance forward race progress');
 
   const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacing3D.tsx', import.meta.url), 'utf8');
-  assert.match(frontend, /STEER · ±180°/);
+  assert.match(frontend, /STEER LEFT/);
+  assert.match(frontend, /STEER RIGHT/);
   assert.match(frontend, /D · DRIVE/);
   assert.match(frontend, /R · REVERSE/);
-  assert.match(frontend, /ACCELERATE/);
+  assert.match(frontend, /GAS/);
   assert.match(frontend, /BRAKE/);
+});
+
+
+test('solo test mode uses a local single-driver session, 10-minute timer and persistent working settings', () => {
+  const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacingGame.tsx', import.meta.url), 'utf8');
+  const scene = readFileSync(new URL('../../client-source/src/components/games/CarRacing3D.tsx', import.meta.url), 'utf8');
+  assert.match(frontend, /const room = soloRoom/);
+  assert.match(frontend, /roomId:'solo-practice'/);
+  assert.match(frontend, /elapsed>=600/);
+  assert.match(frontend, /localStorage\.setItem\('black-gold-racing-settings'/);
+  assert.match(frontend, /MASTER SOUND/);
+  assert.match(frontend, /GRAPHICS QUALITY/);
+  assert.match(frontend, /SAVE SETTINGS/);
+  assert.match(scene, /Math\.min\(600/);
+  assert.match(scene, /BLACK GOLD RACING/);
+  assert.match(scene, /STEER LEFT/);
+  assert.match(scene, /STEER RIGHT/);
+  assert.match(scene, /NITRO/);
 });
