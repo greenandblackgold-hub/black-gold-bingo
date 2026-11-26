@@ -395,7 +395,7 @@ function CarRacing3DViewportInner(p:Props) {
       <div className="flex h-[112px] w-[112px] shrink-0 flex-col items-center justify-center rounded-full border-[5px] border-sky-300 bg-[radial-gradient(circle,#172b3a_0%,#020509_70%)] shadow-[0_0_26px_rgba(0,174,255,.38)] sm:h-[170px] sm:w-[170px]">
         <div className="text-[9px] font-black tracking-widest text-sky-200">KM/H</div>
         <div className="font-mono text-3xl font-black leading-tight text-white sm:text-5xl">{Math.round(p.speed)}</div>
-        <div className="rounded-md border border-amber-300/70 bg-black/80 px-3 py-0.5 font-mono text-lg font-black text-yellow-300 sm:text-2xl">{p.reverse?'R':Math.max(1,Math.min(6,Math.ceil(p.speed/38)))}</div>
+        <div className="rounded-md border border-amber-300/70 bg-black/80 px-3 py-0.5 font-mono text-lg font-black text-yellow-300 sm:text-2xl">{p.reverse?'R':Math.max(1,Math.min(6,Math.ceil(p.speed/50)))}</div>
       </div>
       <div className="flex min-w-0 flex-wrap items-end justify-end gap-1.5 sm:gap-3">
         <div className="flex gap-1.5">
