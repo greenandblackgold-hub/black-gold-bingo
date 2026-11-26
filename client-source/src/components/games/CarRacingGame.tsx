@@ -86,7 +86,7 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
   const progress = me?.progress ?? 0;
   const countdown = room?.countdownEndsAt ? Math.max(0, Math.ceil((room.countdownEndsAt - clock) / 1000)) : 0;
   return (
-    <main className="mx-auto min-h-[calc(100dvh-7rem)] w-full max-w-5xl space-y-4 px-3 pb-28 pt-4 text-amber-50 sm:px-5">
+    <main className={room?.status === 'racing' ? "fixed inset-0 z-[80] h-[100dvh] w-[100vw] overflow-hidden bg-[#030609] p-0 text-amber-50" : "mx-auto min-h-[calc(100dvh-7rem)] w-full max-w-5xl space-y-4 px-3 pb-28 pt-4 text-amber-50 sm:px-5"}>
       <header className="rounded-3xl border border-amber-300/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.2),transparent_48%),linear-gradient(120deg,#19150b,#080808)] p-5">
         <button onClick={onBack} className="mb-4 text-xs font-bold text-amber-300">← {t.back}</button>
         <p className="text-[10px] font-black tracking-[.3em] text-amber-400">BLACK GOLD · RACING LEAGUE</p>
