@@ -184,6 +184,7 @@ test('single-player test drive starts alone, rejects multiplayer joins and ends 
   const midRace = f.service.getState(f.a).room;
   assert.equal(midRace.status, 'racing', 'a solo test drive does not end early at the lap line');
   assert.ok(midRace.players[0].laps >= 1, 'the solo driver can complete and repeat laps');
+  assert.ok(midRace.players[0].speed > 200, 'the yellow solo sports car exposes a high-speed km/h display');
   f.advance(590_100);
   const ended = f.service.getState(f.a).room;
   assert.equal(ended.status, 'finished');
