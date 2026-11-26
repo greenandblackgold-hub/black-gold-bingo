@@ -119,8 +119,37 @@ function CarRacing3DViewportInner(p:Props) {
   const [rendererAttempt,setRendererAttempt]=useState(0);
   const raceStartedAt=useRef(Date.now());
   const [elapsedSeconds,setElapsedSeconds]=useState(0);
-  useEffect(()=>{const timer=window.setInterval(()=>setElapsedSeconds(Math.floor((Date.now()-raceStartedAt.current)/1000)),250);return()=>window.clearInterval(timer);},[]);
-  const elapsedLabel=`${String(Math.floor(elapsedSeconds/60)).padStart(2,'0')}:${String(elapsedSeconds%60).padStart(2,'0')}.${String(Math.floor((Date.now()%1000)/10)).padStart(2,'0')}`;
+  useEffect(()=>{const timer=window.setInterval(()=>setElapsedSeconds(Math.min(180,Math.floor((Date.now()-raceStartedAt.current)/1000))),250);return()=>window.clearInterval(timer);},[]);
+  const remainingSeconds=Math.max(0,180-elapsedSeconds);
+  const elapsedLabel=`${String(Math.floor(remainingSeconds/60)).padStart(2,'0')}:${String(remainingSeconds%60).padStart(2,'0')}`;
+  const audioRig=useRef<{ctx:AudioContext;engine:OscillatorNode;sub:OscillatorNode;engineGain:GainNode;subGain:GainNode;engineFilter:BiquadFilterNode;wind:AudioBufferSourceNode;windGain:GainNode;windFilter:BiquadFilterNode;tires:AudioBufferSourceNode;tiresGain:GainNode;tiresFilter:BiquadFilterNode}|null>(null);
+  useEffect(()=>{
+    const startAudio=()=>{
+      if(audioRig.current)return;
+      const AudioCtor=window.AudioContext;
+      if(!AudioCtor)return;
+      try{
+        const ctx=new AudioCtor();
+        const engine=ctx.createOscillator(),sub=ctx.createOscillator(),engineFilter=ctx.createBiquadFilter(),engineGain=ctx.createGain(),subGain=ctx.createGain();
+        engine.type='sawtooth';engine.frequency.value=62;engineFilter.type='lowpass';engineFilter.frequency.value=520;engine.connect(engineFilter);engineFilter.connect(engineGain);engineGain.gain.value=.0001;engineGain.connect(ctx.destination);
+        sub.type='triangle';sub.frequency.value=31;sub.connect(subGain);subGain.gain.value=.0001;subGain.connect(ctx.destination);
+        const makeNoise=()=>{const buffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*.55;const source=ctx.createBufferSource();source.buffer=buffer;source.loop=true;return source;};
+        const wind=makeNoise(),windFilter=ctx.createBiquadFilter(),windGain=ctx.createGain();windFilter.type='lowpass';windFilter.frequency.value=420;wind.connect(windFilter);windFilter.connect(windGain);windGain.gain.value=.0001;windGain.connect(ctx.destination);
+        const tires=makeNoise(),tiresFilter=ctx.createBiquadFilter(),tiresGain=ctx.createGain();tiresFilter.type='bandpass';tiresFilter.frequency.value=1450;tiresFilter.Q.value=.7;tires.connect(tiresFilter);tiresFilter.connect(tiresGain);tiresGain.gain.value=.0001;tiresGain.connect(ctx.destination);
+        engine.start();sub.start();wind.start();tires.start();audioRig.current={ctx,engine,sub,engineGain,subGain,engineFilter,wind,windGain,windFilter,tires,tiresGain,tiresFilter};
+        void ctx.resume();
+      }catch(error){console.warn('Racing audio could not start',error);}
+    };
+    window.addEventListener('pointerdown',startAudio,{passive:true});window.addEventListener('keydown',startAudio);
+    return()=>{window.removeEventListener('pointerdown',startAudio);window.removeEventListener('keydown',startAudio);const rig=audioRig.current;if(rig){rig.engine.stop();rig.sub.stop();rig.wind.stop();rig.tires.stop();void rig.ctx.close();audioRig.current=null;}};
+  },[]);
+  useEffect(()=>{
+    const rig=audioRig.current;if(!rig)return;const now=rig.ctx.currentTime;const speed=Math.max(0,latest.current.speed),throttle=latest.current.throttle,boost=latest.current.boost,steer=Math.abs(latest.current.steer),brake=latest.current.brake;
+    const rpm=58+speed*2.35+throttle*82+(boost?55:0);rig.engine.frequency.setTargetAtTime(rpm,now,.08);rig.sub.frequency.setTargetAtTime(Math.max(28,rpm*.48),now,.1);rig.engineFilter.frequency.setTargetAtTime(380+speed*8+throttle*520,now,.12);
+    rig.engineGain.gain.setTargetAtTime(.035+throttle*.19+(boost?.075:0)+(speed/220)*.055,now,.12);rig.subGain.gain.setTargetAtTime(.045+throttle*.11+(boost?.04:0),now,.12);
+    rig.windFilter.frequency.setTargetAtTime(240+speed*17,now,.2);rig.windGain.gain.setTargetAtTime(.008+(speed/220)*.16,now,.2);
+    rig.tiresFilter.frequency.setTargetAtTime(900+speed*7,now,.1);rig.tiresGain.gain.setTargetAtTime((steer>.28&&speed>35?steer*.16:0)+(brake&&speed>10?.12:0),now,.08);
+  },[p.speed,p.throttle,p.steer,p.boost,p.brake]);
   useEffect(()=>{
     const ignored=(target:EventTarget|null)=>target instanceof HTMLElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
     const down=(event:KeyboardEvent)=>{
@@ -154,17 +183,17 @@ function CarRacing3DViewportInner(p:Props) {
     let observer:ResizeObserver|undefined;
     try{
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.85));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
-    const scene=new THREE.Scene();scene.background=new THREE.Color('#111b2b');scene.fog=new THREE.Fog('#111b2b',62,220);
+    const scene=new THREE.Scene();scene.background=new THREE.Color('#06152c');scene.fog=new THREE.Fog('#06152c',78,245);
     const camera=new THREE.PerspectiveCamera(62,1,.1,320);camera.position.set(0,6.2,13);camera.lookAt(0,.8,-24);
-    scene.add(new THREE.HemisphereLight('#a9c8f0','#15131b',1.05));
-    const moon=new THREE.DirectionalLight('#a9c9ff',1.35);moon.position.set(-22,28,12);moon.castShadow=true;moon.shadow.mapSize.set(1536,1536);scene.add(moon);
-    const cityGlow=new THREE.AmbientLight('#38506c',.42);scene.add(cityGlow);
-    const road=new THREE.Mesh(new THREE.PlaneGeometry(17,300),new THREE.MeshStandardMaterial({color:'#171c22',roughness:.94,metalness:.04}));road.rotation.x=-Math.PI/2;road.position.set(0,0,-118);road.receiveShadow=true;scene.add(road);
+    scene.add(new THREE.HemisphereLight('#a9c8f0','#080b18',1.22));
+    const moon=new THREE.DirectionalLight('#9fcaff',1.55);moon.position.set(-22,28,12);moon.castShadow=true;moon.shadow.mapSize.set(1536,1536);scene.add(moon);
+    const cityGlow=new THREE.AmbientLight('#3850a0',.58);scene.add(cityGlow);
+    const road=new THREE.Mesh(new THREE.PlaneGeometry(17,300),new THREE.MeshStandardMaterial({color:'#080e19',roughness:.24,metalness:.32}));road.rotation.x=-Math.PI/2;road.position.set(0,0,-118);road.receiveShadow=true;scene.add(road);
     const shoulderMat=new THREE.MeshStandardMaterial({color:'#b7a77e',roughness:.95});
     [-8.45,8.45].forEach(x=>{const shoulder=new THREE.Mesh(new THREE.BoxGeometry(.55,.035,300),shoulderMat);shoulder.position.set(x,.015,-118);scene.add(shoulder);});
     const centerGlow=new THREE.MeshStandardMaterial({color:'#f3e4b5',emissive:'#d5b66c',emissiveIntensity:.12});
     [-4,4].forEach(x=>{const line=new THREE.Mesh(new THREE.BoxGeometry(.075,.03,300),centerGlow);line.position.set(x,.035,-118);scene.add(line);});
-    const ground=new THREE.Mesh(new THREE.PlaneGeometry(420,300),new THREE.MeshStandardMaterial({color:p.track.environment==='coastal'?'#1a657a':'#334c34'}));ground.rotation.x=-Math.PI/2;ground.position.set(0,-.08,-110);scene.add(ground);
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(420,300),new THREE.MeshStandardMaterial({color:'#07162a',roughness:.82,metalness:.12}));ground.rotation.x=-Math.PI/2;ground.position.set(0,-.08,-110);scene.add(ground);
     const markers:THREE.Mesh[]=[];
     const lanePaint=new THREE.MeshStandardMaterial({color:'#e7dfc4',roughness:.72});
     for(let lane=1;lane<4;lane++)for(let i=0;i<28;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.095,.026,3.1),lanePaint);m.position.set(-8+lane*4,.026,-i*9);scene.add(m);markers.push(m);}
@@ -182,7 +211,7 @@ function CarRacing3DViewportInner(p:Props) {
     const scenery:THREE.Object3D[]=[];
     for(let i=0;i<20;i++){
       const z=-i*12-5;
-      if(p.track.environment==='city'){
+      if(true){
         scenery.push(building(-14-(i%3)*1.2,z,i),building(14+(i%2)*1.5,z-5,i+1));
         if(i%2===0)scenery.push(tree(-10.2,z-3),tree(10.2,z-9));
       }else if(p.track.environment==='rocky'||p.track.environment==='country'){
@@ -196,7 +225,7 @@ function CarRacing3DViewportInner(p:Props) {
       }
     }
     // Street-level storefronts, illuminated signs and roadside advertising like an urban night circuit.
-    if(p.track.environment==='city'){
+    if(true){
       for(let i=0;i<12;i++)for(const side of [-1,1]){
         const z=-i*19-8,x=side*(12.2+(i%2)*1.2);
         const shop=new THREE.Group();
@@ -216,6 +245,21 @@ function CarRacing3DViewportInner(p:Props) {
       }
     }
     scenery.forEach(x=>scene.add(x));
+    // Premium neon night circuit: glowing skyline strips, wet-road reflections and the BLACK GOLD start gantry.
+    const neonBlue=new THREE.MeshStandardMaterial({color:'#28c9ff',emissive:'#087eb8',emissiveIntensity:2.8,metalness:.35,roughness:.22});
+    const neonPink=new THREE.MeshStandardMaterial({color:'#ff4fc8',emissive:'#b40072',emissiveIntensity:2.5,metalness:.3,roughness:.24});
+    for(let i=0;i<14;i++)for(const side of [-1,1]){const strip=new THREE.Mesh(new THREE.BoxGeometry(.075,7.5,.12),i%2?neonBlue:neonPink);strip.position.set(side*(14+(i%3)*1.5),5.2,-i*17-12);scene.add(strip);}
+    const gantry=new THREE.Group();
+    const gantryMat=new THREE.MeshStandardMaterial({color:'#101722',metalness:.72,roughness:.28});
+    const beam=new THREE.Mesh(new THREE.BoxGeometry(17,.85,.6),gantryMat);beam.position.y=7.1;gantry.add(beam);
+    [-8,8].forEach(x=>{const post=new THREE.Mesh(new THREE.BoxGeometry(.55,7.2,.55),gantryMat);post.position.set(x,3.6,0);gantry.add(post);});
+    const bannerCanvas=document.createElement('canvas');bannerCanvas.width=1024;bannerCanvas.height=128;const bannerCtx=bannerCanvas.getContext('2d');
+    if(bannerCtx){bannerCtx.fillStyle='#080d16';bannerCtx.fillRect(0,0,1024,128);bannerCtx.strokeStyle='#f7bd3b';bannerCtx.lineWidth=7;bannerCtx.strokeRect(5,5,1014,118);bannerCtx.fillStyle='#ffd24a';bannerCtx.font='900 italic 76px Arial';bannerCtx.textAlign='center';bannerCtx.textBaseline='middle';bannerCtx.fillText('BLACK GOLD RACING',512,67);}
+    const bannerTexture=new THREE.CanvasTexture(bannerCanvas);bannerTexture.colorSpace=THREE.SRGBColorSpace;
+    const banner=new THREE.Mesh(new THREE.PlaneGeometry(12,.95),new THREE.MeshBasicMaterial({map:bannerTexture}));banner.position.set(0,7.1,-.34);gantry.add(banner);gantry.position.set(0,0,-58);scene.add(gantry);
+    [-5.5,5.5].forEach(x=>{const glow=new THREE.PointLight(x<0?'#1baeff':'#ff42c8',48,26,2);glow.position.set(x,4,-28);scene.add(glow);});
+    // Wet-road reflection bands catch the city neon without obscuring driving lanes.
+    for(let i=0;i<18;i++){const reflection=new THREE.Mesh(new THREE.PlaneGeometry(THREE.MathUtils.randFloat(1.2,4.8),THREE.MathUtils.randFloat(2,8)),new THREE.MeshBasicMaterial({color:i%2?'#087eb8':'#a51d72',transparent:true,opacity:.12,depthWrite:false}));reflection.rotation.x=-Math.PI/2;reflection.position.set(THREE.MathUtils.randFloat(-7,7),.018,-i*13-5);scene.add(reflection);}
     // Ambient road traffic adds depth to the city scene without changing race logic.
     const traffic:CarModel[]=[];
     if(p.track.environment==='city'){
@@ -295,12 +339,12 @@ function CarRacing3DViewportInner(p:Props) {
       brakePedal.rotation.x=s.brake?-.32:0;accelPedal.rotation.x=s.throttle>.05?-.24:0;
       speedNeedle.rotation.z=-THREE.MathUtils.clamp(s.speed/220,0,1)*Math.PI*.78;
       rpmNeedle.rotation.z=-THREE.MathUtils.clamp((s.speed/220)+(s.boost?.18:0),0,1)*Math.PI*.78;
-      const dashboardLabel=(s.reverse?'REVERSE':'DRIVE')+' '+Math.round(s.speed);if(speedCtx&&dashboardLabel!==lastDashboardLabel){speedCtx.clearRect(0,0,512,256);speedCtx.fillStyle='#06131d';speedCtx.fillRect(0,0,512,256);speedCtx.fillStyle='#8bdcff';speedCtx.font='bold 44px Arial';speedCtx.textAlign='center';speedCtx.fillText(s.reverse?'REVERSE':'DRIVE',256,62);speedCtx.fillStyle='#ffffff';speedCtx.font='bold 112px Arial';speedCtx.fillText(String(Math.round(s.speed)),256,178);speedCtx.fillStyle='#e9b94f';speedCtx.font='bold 30px Arial';speedCtx.fillText('KM/H',256,222);speedTexture.needsUpdate=true;lastDashboardLabel=dashboardLabel;}
+      const gear=s.reverse?'R':s.speed<8?'1':String(Math.min(6,Math.max(1,Math.ceil(s.speed/38))));const dashboardLabel=(s.reverse?'REVERSE':'DRIVE')+' '+Math.round(s.speed)+' G'+gear;if(speedCtx&&dashboardLabel!==lastDashboardLabel){speedCtx.clearRect(0,0,512,256);speedCtx.fillStyle='#06131d';speedCtx.fillRect(0,0,512,256);speedCtx.fillStyle='#8bdcff';speedCtx.font='bold 38px Arial';speedCtx.textAlign='center';speedCtx.fillText((s.reverse?'REVERSE':'DRIVE')+'  GEAR '+gear,256,54);speedCtx.fillStyle='#ffffff';speedCtx.font='bold 112px Arial';speedCtx.fillText(String(Math.round(s.speed)),256,172);speedCtx.fillStyle='#e9b94f';speedCtx.font='bold 30px Arial';speedCtx.fillText('KM/H',256,222);speedTexture.needsUpdate=true;lastDashboardLabel=dashboardLabel;}
       if(s.view==='cockpit'){camera.position.set(offset*.18,1.62,3.3);camera.lookAt(offset*.25+bend*2,1.2,-32);}else{camera.position.lerp(new THREE.Vector3(offset*.22,5.3,14.8),.075);camera.lookAt(offset*.18+bend*2,.85,-27);}
       const ids=new Set<string>();
       s.players.forEach(player=>{if(player.isMe||player.finished)return;ids.add(player.userId);let model=opponents.get(player.userId);if(!model){const car=s.cars.find(c=>c.id===player.carId);model=makeCar(car?.color||'#4b9bd2',player.plateNumber,car?.bodyStyle);opponents.set(player.userId,model);scene.add(model.group);}const delta=player.progress-s.me.progress;model.group.position.set(player.lane*3.45,0,THREE.MathUtils.clamp(-22-delta*.38,-115,8));model.group.visible=!player.eliminated;model.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.3;});model.frontWheels.forEach(w=>{w.rotation.y=(player.lane-s.me.lane)*.16;});});
       opponents.forEach((model,id)=>{if(!ids.has(id)){scene.remove(model.group);opponents.delete(id);}});
-      const sky=s.track.environment==='coastal'?'#10283b':s.track.environment==='rocky'?'#252b35':s.track.environment==='city'?'#101a2b':'#172333';scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,62,220);
+      const sky='#06152c';scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,78,245);
       traffic.forEach((car,i)=>{car.group.position.z+=dt*velocity*(23+i%2*4);if(car.group.position.z>16)car.group.position.z=-205-i*8;car.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.2;});});
       renderer.render(scene,camera);
       }catch(error){cancelAnimationFrame(raf);setRendererStatus('error');console.error('Car Racing 3D render failed',error);}
