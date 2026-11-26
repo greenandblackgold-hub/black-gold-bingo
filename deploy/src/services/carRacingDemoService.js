@@ -105,7 +105,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       players: room.players.map((p) => ({
         userId: p.userId, name: p.name, car: cars.find((c) => c.id === p.carId)?.name ?? 'GT Sport',
         carId: p.carId, plateNumber: p.plateNumber, ready: p.ready, progress: Math.min(100, Math.round(p.progress / 10)), laps: p.laps ?? 0,
-        lane: p.lane, speed: Math.round(Math.abs(p.velocity) * 100), finished: p.finished,
+        lane: p.lane, speed: Math.round(Math.abs(p.velocity) * (room.solo ? 170 : 100)), finished: p.finished,
         damage: p.damage ?? 0, collisionEvent: p.collisionEvent ?? null,
         eliminated: p.eliminated === true, eliminationReason: p.eliminationReason ?? null, eliminatedAt: p.eliminatedAt ?? null,
         isMe: p.userId === userId,
