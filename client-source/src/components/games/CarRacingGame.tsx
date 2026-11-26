@@ -124,14 +124,13 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
   const countdown = room?.countdownEndsAt ? Math.max(0, Math.ceil((room.countdownEndsAt - clock) / 1000)) : 0;
   return (
     <main className={room?.status === 'racing' ? "fixed inset-0 z-[80] h-[100dvh] w-[100vw] overflow-hidden bg-[#030609] p-0 text-amber-50" : "mx-auto min-h-[calc(100dvh-7rem)] w-full max-w-5xl space-y-4 px-3 pb-28 pt-4 text-amber-50 sm:px-5"}>
-      <header className="rounded-3xl border border-amber-300/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.2),transparent_48%),linear-gradient(120deg,#19150b,#080808)] p-5">
+      {room?.status!=='racing'&&<header className="rounded-3xl border border-amber-300/25 bg-[radial-gradient(ellipse_at_top_right,rgba(202,158,57,.2),transparent_48%),linear-gradient(120deg,#19150b,#080808)] p-5">
         <button onClick={onBack} className="mb-4 text-xs font-bold text-amber-300">← {t.back}</button>
         <p className="text-[10px] font-black tracking-[.3em] text-amber-400">BLACK GOLD · RACING LEAGUE</p>
         <h1 className="mt-2 text-2xl font-black sm:text-4xl">{t.title}</h1>
         <p className="mt-2 text-sm text-amber-100/60">{t.subtitle}</p>
         <p className="mt-4 rounded-xl border border-amber-300/25 bg-amber-300/10 p-3 text-center text-[10px] font-black tracking-wider text-amber-200">{t.demo}</p>
-        <div className="mt-3 flex flex-wrap justify-between gap-2 text-xs"><span>{t.balance}: <b>{state?.balanceEtb?.toFixed(2) ?? '—'} ETB</b></span><span>55% company / 45% pool · max 20,000 ETB</span></div>
-      </header>
+      </header>}
       {error && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-950/30 p-3 text-sm text-red-200">{error}</p>}
       {!room ? (
         <section className="rounded-3xl border border-amber-300/25 bg-[#080b12] p-4 shadow-[0_0_45px_rgba(0,174,255,.08)] sm:p-6">
@@ -189,7 +188,7 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
                 <div className="mt-4"><p className="mb-2 text-xs font-black uppercase tracking-widest text-amber-300">Final plate order</p><div className="space-y-1">{room.settlement.finishOrder.map((item) => <div key={item.plateNumber} className="flex items-center justify-between rounded-lg bg-black/50 px-3 py-2 text-xs"><span className="font-black text-amber-200">#{item.position} · {item.plateNumber}</span><span className={item.status === 'winner' ? 'font-black text-emerald-300' : item.status === 'eliminated' ? 'text-red-300' : 'text-amber-100/60'}>{item.status.toUpperCase()} · {item.progress}%</span></div>)}</div></div>
               </> : <p className="text-center text-lg font-black text-red-300">{room.endReason === 'host_stopped' ? t.stopped : t.allEliminated}</p>}
             </div>}
-            <button onClick={() => {setSoloRoom(null);setThrottle(0);setSteer(0);setReverse(false);setBoost(false);setBrake(false);}} className={room.status === 'racing' ? "absolute left-3 top-3 z-30 rounded-lg border border-white/25 bg-black/70 px-3 py-2 text-xs text-white" : "mt-5 w-full rounded-xl border border-white/15 p-3 text-sm text-amber-100/70"}>{t.leave}</button>
+            <button onClick={() => {setSoloRoom(null);setThrottle(0);setSteer(0);setReverse(false);setBoost(false);setBrake(false);setNitroPercent(100);}} className={room.status === 'racing' ? "absolute left-3 top-3 z-30 rounded-lg border border-white/25 bg-black/70 px-3 py-2 text-xs text-white" : "mt-5 w-full rounded-xl border border-white/15 p-3 text-sm text-amber-100/70"}>{t.leave}</button>
           </div>
         </section>
       )}
