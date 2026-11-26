@@ -80,7 +80,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
   function publicRoom(room, userId) {
     return {
       roomId: room.id, code: room.code, status: room.status, track: room.track,
-      entryFeeEtb: room.entryFeeEtb, playerCount: room.players.length, maxPlayers: 8,
+      entryFeeEtb: room.entryFeeEtb, playerCount: room.players.length, maxPlayers: room.solo ? 1 : 8, solo: room.solo === true,
       poolEtb: room.poolSantim / 100, companyShareEtb: room.companyShareSantim / 100,
       prizePoolEtb: room.prizeSantim / 100, payoutCapEtb: CAR_RACING_MAX_PRIZE_ETB,
       countdownEndsAt: room.countdownEndsAt, startedAt: room.startedAt, finishedAt: room.finishedAt, endReason: room.endReason ?? null,
@@ -262,7 +262,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     if (room.status === 'racing' && room.players.every((p) => p.finished || p.eliminated)) {
       room.status = 'finished'; room.finishedAt = at; room.endReason = 'all_eliminated';
     }
-    if (room.status === 'racing' && at - room.startedAt > 180_000) {
+    if (room.status === 'racing' && at - room.startedAt > 600_000) {
       const leader = room.players.filter((p) => !p.eliminated).sort((a, b) => b.progress - a.progress)[0];
       if (leader) settle(room, leader, at, 'time_limit');
       else { room.status = 'finished'; room.finishedAt = at; room.endReason = 'all_eliminated'; }
@@ -291,7 +291,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     room.poolSantim += fee;
     const seat = room.players.length;
     const startingLane = (seat % 2 === 0 ? -1 : 1) * (Math.floor(seat / 2) + 1) * 0.24;
-    room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: 'sport', plateNumber: plateFor(user.id), ready: false, progress: 0, lane: startingLane, velocity: 0, throttle: 0, steer: 0, reverse: false, boost: false, brake: false, controlAt: 0, obstacleIndex: 0, damage: 0, collisionEvent: null, lastCollisionAt: 0, finished: false, eliminated: false, eliminationReason: null, eliminatedAt: null });
+    room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: room.solo ? 'striker-r' : 'sport', plateNumber: plateFor(user.id), ready: false, progress: 0, lane: startingLane, velocity: 0, throttle: 0, steer: 0, reverse: false, boost: false, brake: false, controlAt: 0, obstacleIndex: 0, damage: 0, collisionEvent: null, lastCollisionAt: 0, finished: false, eliminated: false, eliminationReason: null, eliminatedAt: null });
     playerRooms.set(user.id, room.id);
   }
 
@@ -312,7 +312,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       return {
         ...this.getCatalog(),
         balanceEtb: balance(user.id) / 100,
-        openRooms: [...rooms.values()].filter((r) => r.status === 'lobby' && r.players.length < 8).slice(-12).map((r) => ({ code: r.code, track: r.track.name, players: r.players.length, entryFeeEtb: r.entryFeeEtb })),
+        openRooms: [...rooms.values()].filter((r) => !r.solo && r.status === 'lobby' && r.players.length < 8).slice(-12).map((r) => ({ code: r.code, track: r.track.name, players: r.players.length, entryFeeEtb: r.entryFeeEtb })),
         room: room ? publicRoom(room, user.id) : null,
       };
     },
@@ -326,7 +326,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       const track = tracks[roundSequence % tracks.length];
       roundSequence += 1;
       const id = randomBytes(12).toString('hex');
-      const room = { id, code: randomBytes(3).toString('hex').toUpperCase(), status: 'lobby', track: clone(track), entryFeeEtb: fee, poolSantim: 0, companyShareSantim: 0, prizeSantim: 0, players: [], createdAt: now(), countdownEndsAt: null, startedAt: null, finishedAt: null, winner: null, collisionEvents: [] };
+      const room = { id, code: randomBytes(3).toString('hex').toUpperCase(), status: 'lobby', solo: input.solo === true, track: clone(track), entryFeeEtb: fee, poolSantim: 0, companyShareSantim: 0, prizeSantim: 0, players: [], createdAt: now(), countdownEndsAt: null, startedAt: null, finishedAt: null, winner: null, collisionEvents: [] };
       rooms.set(id, room);
       joinPlayer(room, user);
       return publicRoom(room, user.id);
@@ -337,6 +337,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       const code = String(input.code || '').trim().toUpperCase();
       const room = [...rooms.values()].find((r) => r.code === code);
       if (!room) throw new HttpError(404, 'room_not_found', 'Race code not found.');
+      if (room.solo) throw new HttpError(409, 'solo_room', 'This is a single-player test drive.');
       joinPlayer(room, user);
       return publicRoom(room, user.id);
     },
@@ -354,7 +355,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       if (room.status !== 'lobby') throw new HttpError(409, 'race_started', 'This race is no longer in the lobby.');
       const p = player(room, user.id);
       p.ready = input.ready !== false;
-      if (room.players.length >= 2 && room.players.every((item) => item.ready)) {
+      if ((room.solo && room.players.length === 1 && p.ready) || (!room.solo && room.players.length >= 2 && room.players.every((item) => item.ready))) {
         room.status = 'countdown';
         room.countdownEndsAt = now() + 3000;
       }
