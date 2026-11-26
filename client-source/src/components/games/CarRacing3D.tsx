@@ -55,6 +55,8 @@ function makeCar(color: string, plate: string, bodyStyle = 'coupe'): CarModel {
   for(let i=0;i<5;i++){const slat=new THREE.Mesh(new THREE.BoxGeometry(.88,.018,.025),trim);slat.position.set(0,.59+i*.04,-2.155);g.add(slat);}
   const lowerLip=new THREE.Mesh(new THREE.BoxGeometry(1.95,.12,.24),dark);lowerLip.position.set(0,.42,-2.08);g.add(lowerLip);
   const rearDiffuser=new THREE.Mesh(new THREE.BoxGeometry(1.55,.16,.28),dark);rearDiffuser.position.set(0,.42,2.04);g.add(rearDiffuser);
+  const spoilerWing=new THREE.Mesh(new THREE.BoxGeometry(1.9,.095,.34),new THREE.MeshStandardMaterial({color:'#10151d',metalness:.78,roughness:.22}));spoilerWing.position.set(0,1.98,1.82);g.add(spoilerWing);
+  [-.62,.62].forEach(x=>{const support=new THREE.Mesh(new THREE.BoxGeometry(.065,.28,.09),chrome);support.position.set(x,1.84,1.78);g.add(support);});
   [-.78,.78].forEach(x=>{const head=new THREE.Mesh(new THREE.BoxGeometry(.48,.16,.07),lamp);head.position.set(x,.88,-2.12);g.add(head);const rearLight=new THREE.Mesh(new THREE.BoxGeometry(.48,.18,.07),tailLamp);rearLight.position.set(x,.87,2.12);g.add(rearLight);});
   // Roof glass and panoramic windshield trim.
   const sunroof=new THREE.Mesh(new THREE.BoxGeometry(1.12,.025,.72),dark);sunroof.position.set(0,1.855,.08);g.add(sunroof);
@@ -286,7 +288,7 @@ function CarRacing3DViewportInner(p:Props) {
       scene.add(group);
       return {group, obstacle};
     });
-    const ownColor=p.cars.find(c=>c.id===p.me.carId)?.color||'#e9ad3b';const own=makeCar(ownColor,p.me.plateNumber,p.cars.find(c=>c.id===p.me.carId)?.bodyStyle);scene.add(own.group);
+    const ownColor=p.soloMode?'#f5c400':(p.cars.find(c=>c.id===p.me.carId)?.color||'#e9ad3b');const own=makeCar(ownColor,p.me.plateNumber,p.cars.find(c=>c.id===p.me.carId)?.bodyStyle);scene.add(own.group);
     const nitroFlames=new THREE.Group();[-.56,.56].forEach(x=>{const flame=new THREE.Mesh(new THREE.ConeGeometry(.19,1.35,16),new THREE.MeshBasicMaterial({color:'#16baff',transparent:true,opacity:.92}));flame.rotation.x=Math.PI/2;flame.position.set(x,.43,2.82);nitroFlames.add(flame);});const nitroGlow=new THREE.PointLight('#16aaff',0,7,2);nitroGlow.position.set(0,.55,3.25);nitroFlames.add(nitroGlow);own.group.add(nitroFlames);
     const opponents=new Map<string,CarModel>();
     const cockpit=new THREE.Group();
@@ -329,12 +331,12 @@ function CarRacing3DViewportInner(p:Props) {
     observer=new ResizeObserver(resize);observer.observe(el);resize();
     let last=performance.now(),travel=0,raf=0;
     let lastDashboardLabel='';
-    const animate=(now:number)=>{if(contextLost)return;raf=requestAnimationFrame(animate);try{const dt=Math.min((now-last)/1000,.05);last=now;const s=latest.current,velocity=Math.max(.4,s.speed/90);travel+=dt*velocity*(s.boost?2.2:1);
+    const animate=(now:number)=>{if(contextLost)return;raf=requestAnimationFrame(animate);try{const dt=Math.min((now-last)/1000,.05);last=now;const s=latest.current,velocity=(s.speed>0?Math.max(.15,s.speed/90):0)*(s.reverse?-1:1);travel+=dt*Math.abs(velocity)*(s.boost?2.2:1);
       markers.forEach(m=>{m.position.z+=dt*velocity*34;if(m.position.z>15)m.position.z-=240;});
       scenery.forEach(o=>{o.position.z+=dt*velocity*25;if(o.position.z>18)o.position.z-=240;});
       obstacleModels.forEach(({group,obstacle})=>{const ahead=obstacle.at/10-latest.current.me.progress;group.position.set(obstacle.lane*3.45,0,THREE.MathUtils.clamp(-ahead*3.2,-220,18));group.visible=ahead>-2&&ahead<72;});
       const bend=s.track.curveType==='left'?.22:s.track.curveType==='right'?-.22:s.track.curveType==='s-bend'?Math.sin(travel*.2)*.2:0,offset=s.steer*1.05;
-      own.group.position.set(offset*.7,0,4.5);own.group.rotation.y=-s.steer*.16-bend*.16;own.group.visible=s.view==='chase';nitroFlames.visible=s.boost&&p.nitroPercent>0;nitroFlames.scale.setScalar(.78+Math.random()*.32);nitroGlow.intensity=nitroFlames.visible?2.8:0;own.wheels.forEach(w=>{w.rotation.x+=dt*velocity*3;});
+      own.group.position.set(offset*.7,0,4.5);own.group.rotation.y=-s.steer*.16-bend*.16;own.group.visible=s.view==='chase';nitroFlames.visible=s.boost&&s.speed>1&&latest.current.nitroPercent>0;nitroFlames.scale.setScalar(.78+Math.random()*.32);nitroGlow.intensity=nitroFlames.visible?2.8:0;own.wheels.forEach(w=>{w.rotation.x+=dt*velocity*3;});
       steering.rotation.z=-s.steer*Math.PI;cockpit.visible=s.view==='cockpit';
       own.frontWheels.forEach(w=>{w.rotation.y=s.steer*.48;});
       gearLever.rotation.z=s.reverse?-.48:0;gearLever.position.x=s.reverse?.58:.48;
