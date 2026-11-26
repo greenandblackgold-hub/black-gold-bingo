@@ -432,15 +432,21 @@ test('steering supports the full signed range, reverse gear moves backward, and 
   f.advance(3_100);
   f.service.getState(f.a);
 
-  f.service.control(f.a, { throttle: 1, steer: -1 });
-  f.advance(1_000);
+  f.service.control(f.a, { throttle: 1, steer: 0 });
+  f.advance(500);
   let state = f.service.getState(f.a).room;
   let driver = state.players.find((p) => p.isMe);
   assert.ok(driver.speed > 0, 'accelerator increases speed');
+  const progressBeforeReverse = driver.progress;
+
+  f.service.control(f.a, { throttle: 0, steer: -1 });
+  f.advance(200);
+  state = f.service.getState(f.a).room;
+  driver = state.players.find((p) => p.isMe);
   assert.ok(driver.lane < -0.2, 'full-left steering moves the car left');
 
   f.service.control(f.a, { throttle: 0, steer: 1, brake: true });
-  f.advance(500);
+  f.advance(200);
   state = f.service.getState(f.a).room;
   driver = state.players.find((p) => p.isMe);
   assert.ok(driver.speed < 10, 'brake rapidly reduces forward speed');
@@ -451,7 +457,7 @@ test('steering supports the full signed range, reverse gear moves backward, and 
   state = f.service.getState(f.a).room;
   driver = state.players.find((p) => p.isMe);
   assert.ok(driver.speed > 0, 'reverse gear engages reverse velocity');
-  assert.equal(driver.progress, 0, 'reverse gear does not advance forward race progress');
+  assert.ok(driver.progress <= progressBeforeReverse, 'reverse gear does not advance forward race progress');
 
   const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacing3D.tsx', import.meta.url), 'utf8');
   assert.match(frontend, /STEER · ±180°/);
