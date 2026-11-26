@@ -255,7 +255,7 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
                 inWinningLine ? 'outline outline-2 outline-yellow-300' : '',
               ].join(' ')}
             >
-              {free ? labels.free : value}
+              {free ? '★' : value}
             </button>
           );
         }))}
