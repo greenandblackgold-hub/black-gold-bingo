@@ -49,7 +49,7 @@ function AudioSwitch({ label, checked, onChange }: { label: string; checked: boo
   );
 }
 
-export function AppHeader({ onOpenWallet, onOpenAdmin, onLogout, onOpenMenu, onOpenSettings, hideControls = false }: { onOpenWallet: () => void; onOpenAdmin: () => void; onLogout: () => void; onOpenMenu: () => void; onOpenSettings: () => void; hideControls?: boolean }) {
+export function AppHeader({ onOpenWallet, onOpenAdmin, onLogout, onOpenMenu, onOpenSettings, onOpenGames, hideControls = false }: { onOpenWallet: () => void; onOpenAdmin: () => void; onLogout: () => void; onOpenMenu: () => void; onOpenSettings: () => void; onOpenGames: () => void; hideControls?: boolean }) {
   const { lang, setLang } = useLanguage();
   const {
     soundEnabled, setSoundEnabled, voiceEnabled, setVoiceEnabled, audioVolume, setAudioVolume,
@@ -64,28 +64,36 @@ export function AppHeader({ onOpenWallet, onOpenAdmin, onLogout, onOpenMenu, onO
   return (
     <header className={['sticky top-0 z-30 border-b pt-[env(safe-area-inset-top)] shadow-lg shadow-black/10 backdrop-blur-xl', hideControls ? 'border-[#1c7467]/50 bg-[#061d19]/95' : 'border-gold-500/20 bg-darkbg/95'].join(' ')}>
       {hideControls ? (
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 px-2 py-2 sm:gap-3 sm:px-4">
-          <div className="flex min-w-0 items-center">
-            <p className="max-w-full truncate text-[11px] font-black leading-none tracking-wide text-zinc-300 sm:text-sm">Black Gold PLC</p>
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1 px-2 py-2 sm:gap-3 sm:px-4">
+          <div className="flex min-w-0 items-center gap-1">
+            <p className="max-w-[4.5rem] truncate text-[10px] font-black leading-none tracking-wide text-zinc-300 sm:max-w-none sm:text-sm">Black Gold PLC</p>
+            <button type="button" onClick={() => window.location.reload()} aria-label={l.refresh} title={l.refresh} className="grid h-8 w-6 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 7v5h-5"/><path d="M20 12a8 8 0 1 1-2.34-5.66L20 9"/></svg>
+            </button>
           </div>
-          <div className="flex min-w-0 items-center justify-center gap-1 border-x border-yellow-500/70 px-2 text-yellow-200 sm:gap-2 sm:px-3">
-            <span className="text-3xl leading-none drop-shadow-[0_0_16px_rgba(255,215,0,1)] sm:text-5xl">🏆</span>
-            <strong className="whitespace-nowrap text-base font-black tracking-tight text-yellow-200 drop-shadow-[0_0_16px_rgba(255,215,0,1)] sm:text-3xl">
+          <div className="flex min-w-0 items-center justify-center gap-1 border-x border-yellow-500/70 px-1.5 text-yellow-200 sm:gap-2 sm:px-3">
+            <span className="text-2xl leading-none drop-shadow-[0_0_16px_rgba(255,215,0,1)] sm:text-5xl">🏆</span>
+            <strong className="whitespace-nowrap text-xs font-black tracking-tight text-yellow-200 drop-shadow-[0_0_16px_rgba(255,215,0,1)] sm:text-3xl">
               {roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} {l.currency}
             </strong>
           </div>
-          <div className="flex min-w-0 items-center justify-self-end gap-1 sm:gap-2">
-            <button type="button" onClick={() => window.location.reload()} aria-label={l.refresh} title={l.refresh} className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 7v5h-5"/><path d="M20 12a8 8 0 1 1-2.34-5.66L20 9"/></svg>
+          <div className="flex min-w-0 items-center justify-self-end gap-0.5 sm:gap-2">
+            <div role="group" aria-label="Undo and redo" className="flex h-8 shrink-0 items-center gap-0.5 rounded-lg border border-white/10 bg-white/5 px-1 sm:h-9 sm:px-1.5">
+              <span title="Undo" className="grid h-7 w-5 place-items-center text-zinc-300 sm:w-7" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-1"/></svg>
+              </span>
+              <span title="Redo" className="grid h-7 w-5 place-items-center text-zinc-300 sm:w-7" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9h-9a7 7 0 0 0 0 14h1"/></svg>
+              </span>
+            </div>
+            <button type="button" onClick={onOpenSettings} aria-label={l.settings} title={l.settings} className="grid h-8 w-6 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2" fill="#090909"/><circle cx="15" cy="12" r="2" fill="#090909"/><circle cx="10" cy="18" r="2" fill="#090909"/></svg>
             </button>
-            <button type="button" onClick={onOpenSettings} aria-label={l.settings} title={l.settings} className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
-              <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1a1.8 1.8 0 0 1-2.5 2.5l-.1-.1a1.8 1.8 0 0 0-3 .9v.2a1.8 1.8 0 0 1-3.6 0v-.2a1.8 1.8 0 0 0-3-.9l-.1.1a1.8 1.8 0 0 1-2.5-2.5l.1-.1a1.8 1.8 0 0 0-.9-3h-.2a1.8 1.8 0 0 1 0-3.6h.2a1.8 1.8 0 0 0 .9-3l-.1-.1a1.8 1.8 0 0 1 2.5-2.5l.1.1a1.8 1.8 0 0 0 3-.9v-.2a1.8 1.8 0 0 1 3.6 0v.2a1.8 1.8 0 0 0 3 .9l.1-.1a1.8 1.8 0 0 1 2.5 2.5l-.1.1a1.8 1.8 0 0 0 .9 3h.2a1.8 1.8 0 0 1 0 3.6h-.2a1.8 1.8 0 0 0-.9 3Z"/></svg>
+            <button type="button" onClick={onOpenGames} aria-label="Games grid" title="Games" className="grid h-8 w-6 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             </button>
-            <button type="button" onClick={onLogout} aria-label={l.logout} title={l.logout} className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-amber-300 transition hover:bg-white/10 hover:text-amber-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="14" cy="4" r="1.6"/><path d="m12 7-3 4 3 2 1 5m-4-7-3 3-2 4m8-6 4 2 2 4m-8-2-3 5m7-5 3 4"/></svg>
-            </button>
-            <button type="button" onClick={onOpenMenu} aria-label={l.players} title={l.players} className="grid h-8 w-7 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
-              <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1H3Z"/><path d="M16 5.5a3 3 0 0 1 0 5.8M18 14a5 5 0 0 1 3 4.6V20h-4"/></svg>
+            <button type="button" onClick={onOpenMenu} aria-label="Menu" title="Menu" className="grid h-8 w-6 shrink-0 place-items-center rounded-md text-zinc-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#36c7ae] sm:h-9 sm:w-9">
+              <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
           </div>
         </div>
