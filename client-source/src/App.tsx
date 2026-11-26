@@ -40,11 +40,7 @@ function useHash(): string {
   useEffect(() => {
     const onChange = () => setHash(window.location.hash);
     window.addEventListener('hashchange', onChange);
-    window.addEventListener('popstate', onChange);
-    return () => {
-      window.removeEventListener('hashchange', onChange);
-      window.removeEventListener('popstate', onChange);
-    };
+    return () => window.removeEventListener('hashchange', onChange);
   }, []);
   return hash;
 }
@@ -71,7 +67,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
     // Keep the current screen in the URL so a page refresh returns to the same section.
     const nextHash = `#${tab}`;
     if (window.location.hash !== nextHash) {
-      window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`);
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`);
     }
   }, [tab]);
   const [menuOpen, setMenuOpen] = useState(false);
