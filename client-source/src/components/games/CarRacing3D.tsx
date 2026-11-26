@@ -222,7 +222,7 @@ function CarRacing3DViewportInner(p:Props) {
     const dashTop=new THREE.Mesh(new THREE.BoxGeometry(4.65,.13,.96),leather);dashTop.position.set(0,-.64,-1.58);cockpit.add(dashTop);
     // Driver and passenger seats, center console and instrument binnacle.
     [-1.18,1.18].forEach(x=>{const seat=new THREE.Group();const base=new THREE.Mesh(new THREE.BoxGeometry(.88,.2,.9),leather);base.position.set(0,-1.18,-.15);seat.add(base);const back=new THREE.Mesh(new THREE.BoxGeometry(.9,1.12,.2),leather);back.position.set(0,-.68,.28);seat.add(back);const headrest=new THREE.Mesh(new THREE.BoxGeometry(.48,.32,.18),cabin);headrest.position.set(0,-.12,.34);seat.add(headrest);seat.position.x=x;cockpit.add(seat);});
-    const console=new THREE.Mesh(new THREE.BoxGeometry(.82,.22,1.2),cabin);console.position.set(0,-1.12,-.45);cockpit.add(console);
+    const centerConsole=new THREE.Mesh(new THREE.BoxGeometry(.82,.22,1.2),cabin);centerConsole.position.set(0,-1.12,-.45);cockpit.add(centerConsole);
     const consoleScreen=new THREE.Mesh(new THREE.BoxGeometry(.62,.32,.045),screenMat);consoleScreen.position.set(0,-.91,-.9);cockpit.add(consoleScreen);
     const gearStick=new THREE.Group();const stick=new THREE.Mesh(new THREE.CylinderGeometry(.035,.045,.42,10),silver);stick.position.y=.18;gearStick.add(stick);const knob=new THREE.Mesh(new THREE.SphereGeometry(.11,14,12),cabin);knob.position.y=.42;gearStick.add(knob);gearStick.position.set(.48,-1.2,-.3);cockpit.add(gearStick);
     const cluster=new THREE.Mesh(new THREE.BoxGeometry(1.7,.55,.14),cabin);cluster.position.set(0,-.69,-1.92);cockpit.add(cluster);
