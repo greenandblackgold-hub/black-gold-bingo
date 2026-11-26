@@ -331,6 +331,8 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     nextCallAt, roundPrizeEtb, nextRoundAt, firstCallAt, endedAt,
   } = useRound();
   const { cardPrice } = useAppSettings();
+  const markUndoStack = useRef<Record<string, number[]>[]>([]);
+  const markRedoStack = useRef<Record<string, number[]>[]>([]);
   const [autoMark, setAutoMark] = useState(true);
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
   const [patternOpen, setPatternOpen] = useState(false);
@@ -493,6 +495,44 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   }, [cards, markedByCard]);
 
   const active = phase === 'running';
+
+  const handleManualMark = useCallback((cardId: string, number: number) => {
+    markUndoStack.current.push(JSON.parse(JSON.stringify(markedByCard)) as Record<string, number[]>);
+    if (markUndoStack.current.length > 100) markUndoStack.current.shift();
+    markRedoStack.current = [];
+    toggleMark(cardId, number);
+  }, [markedByCard, toggleMark]);
+
+  useEffect(() => {
+    const applySnapshot = (snapshot: Record<string, number[]>) => {
+      for (const card of cards) {
+        const current = new Set(markedByCard[card.id] ?? []);
+        const target = new Set(snapshot[card.id] ?? []);
+        for (const number of new Set([...current, ...target])) {
+          if (current.has(number) !== target.has(number)) toggleMark(card.id, number);
+        }
+      }
+    };
+    const undo = () => {
+      const previous = markUndoStack.current.pop();
+      if (!previous) return;
+      markRedoStack.current.push(JSON.parse(JSON.stringify(markedByCard)) as Record<string, number[]>);
+      applySnapshot(previous);
+    };
+    const redo = () => {
+      const next = markRedoStack.current.pop();
+      if (!next) return;
+      markUndoStack.current.push(JSON.parse(JSON.stringify(markedByCard)) as Record<string, number[]>);
+      applySnapshot(next);
+    };
+    window.addEventListener('bgb:undo-mark', undo);
+    window.addEventListener('bgb:redo-mark', redo);
+    return () => {
+      window.removeEventListener('bgb:undo-mark', undo);
+      window.removeEventListener('bgb:redo-mark', redo);
+    };
+  }, [cards, markedByCard, toggleMark]);
+
   const claimableCards = useMemo(() => {
     if (!active || calledKey.length === 0) return [];
     return cards.filter(card =>
@@ -884,7 +924,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 gameStarted={phase !== 'waiting'}
                 claiming={claimingCardId === card.id}
                 onClaim={() => void handleClaim(card.id)}
-                onToggle={number => toggleMark(card.id, number)}
+                onToggle={number => handleManualMark(card.id, number)}
                 onRemove={() => removeCards([card.id])}
               />
             ))}
