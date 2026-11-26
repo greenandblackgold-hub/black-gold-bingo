@@ -11,10 +11,16 @@ const tracks = [
   { id: 'coast', name: 'Coastal Highway', terrain: 'Wet coastal tarmac', surface: 'Wet asphalt', environment: 'coastal', scenery: ['ocean', 'shoreline', 'waves'], speedFactor: 1.08, grip: 0.94, curveType: 's-bend', curveIntensity: 0.62, wallLimit: 1.02, obstacles: [{ at: 240, lane: -0.5, width: 0.3, type: 'debris' }, { at: 510, lane: 0.5, width: 0.3, type: 'barrier' }, { at: 780, lane: 0, width: 0.32, type: 'debris' }] },
 ];
 const cars = [
-  { id: 'sport', name: 'GT Sport', length: 4.2, width: 0.36, speed: 1.18, handling: 0.88, color: '#f4b942' },
-  { id: 'rally', name: 'Rally X', length: 4.4, width: 0.38, speed: 1.02, handling: 1.2, color: '#53c7a5' },
-  { id: 'muscle', name: 'Muscle V8', length: 4.6, width: 0.4, speed: 1.12, handling: 0.82, color: '#e76f51' },
-  { id: 'electric', name: 'Volt GT', length: 4.1, width: 0.36, speed: 1.08, handling: 1.08, color: '#65a9ff' },
+  { id: 'hyperion-x', name: 'Hyperion X', length: 4.35, width: 0.38, speed: 1.28, handling: 1.02, color: '#d91f36', bodyStyle: 'hypercar' },
+  { id: 'vortex-gt', name: 'Vortex GT', length: 4.42, width: 0.39, speed: 1.24, handling: 1.08, color: '#1678d4', bodyStyle: 'coupe' },
+  { id: 'phantom-rs', name: 'Phantom RS', length: 4.55, width: 0.4, speed: 1.2, handling: 1.14, color: '#e5e7eb', bodyStyle: 'sedan' },
+  { id: 'striker-r', name: 'Striker R', length: 4.28, width: 0.38, speed: 1.3, handling: 0.98, color: '#f0a51b', bodyStyle: 'track' },
+  { id: 'eclipse-ev', name: 'Eclipse EV', length: 4.48, width: 0.39, speed: 1.18, handling: 1.2, color: '#20b8a5', bodyStyle: 'electric' },
+  { id: 'titan-suv', name: 'Titan Sport', length: 4.72, width: 0.43, speed: 1.12, handling: 1.06, color: '#6b7280', bodyStyle: 'suv' },
+  { id: 'raptor-x', name: 'Raptor X', length: 4.6, width: 0.41, speed: 1.22, handling: 0.96, color: '#8b5cf6', bodyStyle: 'muscle' },
+  { id: 'zenith-roadster', name: 'Zenith Roadster', length: 4.18, width: 0.37, speed: 1.25, handling: 1.16, color: '#f472b6', bodyStyle: 'roadster' },
+  { id: 'aurora-gt', name: 'Aurora GT', length: 4.38, width: 0.38, speed: 1.16, handling: 1.26, color: '#84cc16', bodyStyle: 'grandtourer' },
+  { id: 'nova-concept', name: 'Nova Concept', length: 4.32, width: 0.38, speed: 1.32, handling: 1.0, color: '#38bdf8', bodyStyle: 'concept' },
 ];
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
