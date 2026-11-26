@@ -6,7 +6,7 @@ export type RacingCar = { id: string; name: string; color: string; bodyStyle?: s
 export type RacingPlayer = { userId: string; name: string; carId: string; plateNumber: string; progress: number; lane: number; speed: number; finished: boolean; eliminated: boolean; isMe: boolean; collisionEvent: { id: string; at: number; type: string; severity: 'light' | 'medium' | 'severe'; participants: string[] } | null };
 export type RacingTrack = { name: string; environment: 'city' | 'country' | 'rocky' | 'coastal'; curveType: 'straight' | 'left' | 'right' | 's-bend'; obstacles: { at: number; lane: number; width: number; type: string }[] };
 export type RacingView = 'chase' | 'cockpit';
-type Props = { view: RacingView; throttle: number; brake: boolean; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; reverse: boolean; track: RacingTrack; boost: boolean; rank: number; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean, brake?: boolean) => void; onGearChange: (reverse: boolean) => void };
+type Props = { startedAt: number; solo: boolean; view: RacingView; throttle: number; brake: boolean; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; reverse: boolean; track: RacingTrack; boost: boolean; rank: number; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean, brake?: boolean) => void; onGearChange: (reverse: boolean) => void };
 type CarModel = { group: THREE.Group; wheels: THREE.Mesh[]; frontWheels: THREE.Mesh[] };
 
 function plateTexture(plate: string) {
@@ -117,10 +117,15 @@ function CarRacing3DViewportInner(p:Props) {
   const host=useRef<HTMLDivElement>(null), latest=useRef(p); latest.current=p;
   const [rendererStatus,setRendererStatus]=useState<RendererStatus>('ready');
   const [rendererAttempt,setRendererAttempt]=useState(0);
-  const raceStartedAt=useRef(Date.now());
   const [elapsedSeconds,setElapsedSeconds]=useState(0);
-  useEffect(()=>{const timer=window.setInterval(()=>setElapsedSeconds(Math.min(180,Math.floor((Date.now()-raceStartedAt.current)/1000))),250);return()=>window.clearInterval(timer);},[]);
-  const remainingSeconds=Math.max(0,180-elapsedSeconds);
+  useEffect(()=>{const timer=window.setInterval(()=>setElapsedSeconds(Math.min(600,Math.floor((Date.now()-p.startedAt)/1000))),250);return()=>window.clearInterval(timer);},[p.startedAt]);
+  const remainingSeconds=Math.max(0,600-elapsedSeconds);
+  const [nitroCharge,setNitroCharge]=useState(100);
+  useEffect(()=>{const timer=window.setInterval(()=>setNitroCharge(value=>p.boost?Math.max(0,value-1.8):Math.min(100,value+.45)),120);return()=>window.clearInterval(timer);},[p.boost]);
+  const [settingsOpen,setSettingsOpen]=useState(false);
+  const [audioVolume,setAudioVolume]=useState(88);
+  const [steeringSensitivity,setSteeringSensitivity]=useState(72);
+  const [graphicsQuality,setGraphicsQuality]=useState<'low'|'medium'|'high'>('high');
   const elapsedLabel=`${String(Math.floor(remainingSeconds/60)).padStart(2,'0')}:${String(remainingSeconds%60).padStart(2,'0')}`;
   const audioRig=useRef<{ctx:AudioContext;engine:OscillatorNode;sub:OscillatorNode;engineGain:GainNode;subGain:GainNode;engineFilter:BiquadFilterNode;wind:AudioBufferSourceNode;windGain:GainNode;windFilter:BiquadFilterNode;tires:AudioBufferSourceNode;tiresGain:GainNode;tiresFilter:BiquadFilterNode}|null>(null);
   useEffect(()=>{
@@ -146,10 +151,10 @@ function CarRacing3DViewportInner(p:Props) {
   useEffect(()=>{
     const rig=audioRig.current;if(!rig)return;const now=rig.ctx.currentTime;const speed=Math.max(0,latest.current.speed),throttle=latest.current.throttle,boost=latest.current.boost,steer=Math.abs(latest.current.steer),brake=latest.current.brake;
     const rpm=58+speed*2.35+throttle*82+(boost?55:0);rig.engine.frequency.setTargetAtTime(rpm,now,.08);rig.sub.frequency.setTargetAtTime(Math.max(28,rpm*.48),now,.1);rig.engineFilter.frequency.setTargetAtTime(380+speed*8+throttle*520,now,.12);
-    rig.engineGain.gain.setTargetAtTime(.035+throttle*.19+(boost?.075:0)+(speed/220)*.055,now,.12);rig.subGain.gain.setTargetAtTime(.045+throttle*.11+(boost?.04:0),now,.12);
-    rig.windFilter.frequency.setTargetAtTime(240+speed*17,now,.2);rig.windGain.gain.setTargetAtTime(.008+(speed/220)*.16,now,.2);
-    rig.tiresFilter.frequency.setTargetAtTime(900+speed*7,now,.1);rig.tiresGain.gain.setTargetAtTime((steer>.28&&speed>35?steer*.16:0)+(brake&&speed>10?.12:0),now,.08);
-  },[p.speed,p.throttle,p.steer,p.boost,p.brake]);
+    rig.engineGain.gain.setTargetAtTime((.055+throttle*.27+(boost?.11:0)+(speed/220)*.075)*(audioVolume/100),now,.12);rig.subGain.gain.setTargetAtTime((.06+throttle*.15+(boost?.06:0))*(audioVolume/100),now,.12);
+    rig.windFilter.frequency.setTargetAtTime(240+speed*17,now,.2);rig.windGain.gain.setTargetAtTime((.008+(speed/220)*.16)*(audioVolume/100),now,.2);
+    rig.tiresFilter.frequency.setTargetAtTime(900+speed*7,now,.1);rig.tiresGain.gain.setTargetAtTime(((steer>.28&&speed>35?steer*.16:0)+(brake&&speed>10?.12:0))*(audioVolume/100),now,.08);
+  },[p.speed,p.throttle,p.steer,p.boost,p.brake,audioVolume]);
   useEffect(()=>{
     const ignored=(target:EventTarget|null)=>target instanceof HTMLElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
     const down=(event:KeyboardEvent)=>{
@@ -157,8 +162,8 @@ function CarRacing3DViewportInner(p:Props) {
       const key=event.key.toLowerCase();
       if(['arrowup','w'].includes(key)){event.preventDefault();p.onThrottle(1,latest.current.reverse,false,false);}
       else if(['arrowdown','s',' '].includes(key)){event.preventDefault();p.onThrottle(0,latest.current.reverse,false,true);}
-      else if(['arrowleft','a'].includes(key)){event.preventDefault();p.onSteer(Math.max(-1,latest.current.steer-.12));}
-      else if(['arrowright','d'].includes(key)){event.preventDefault();p.onSteer(Math.min(1,latest.current.steer+.12));}
+      else if(['arrowleft','a'].includes(key)){event.preventDefault();p.onSteer(Math.max(-1,latest.current.steer-.12*(steeringSensitivity/72)));}
+      else if(['arrowright','d'].includes(key)){event.preventDefault();p.onSteer(Math.min(1,latest.current.steer+.12*(steeringSensitivity/72)));}
       else if(key==='r'&&!event.repeat){event.preventDefault();p.onGearChange(!latest.current.reverse);}
       else if(key==='shift'){event.preventDefault();p.onThrottle(1,latest.current.reverse,true,false);}
     };
@@ -170,7 +175,7 @@ function CarRacing3DViewportInner(p:Props) {
     };
     window.addEventListener('keydown',down);window.addEventListener('keyup',up);
     return()=>{window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);};
-  },[]);
+  },[steeringSensitivity]);
   useEffect(()=>{
     const el=host.current;if(!el)return;
     let renderer:THREE.WebGLRenderer;
@@ -182,7 +187,7 @@ function CarRacing3DViewportInner(p:Props) {
     renderer.domElement.addEventListener('webglcontextrestored',onContextRestored,false);
     let observer:ResizeObserver|undefined;
     try{
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.85));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,graphicsQuality==='high'?1.85:graphicsQuality==='medium'?1.35:1));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
     const scene=new THREE.Scene();scene.background=new THREE.Color('#06152c');scene.fog=new THREE.Fog('#06152c',78,245);
     const camera=new THREE.PerspectiveCamera(62,1,.1,320);camera.position.set(0,6.2,13);camera.lookAt(0,.8,-24);
     scene.add(new THREE.HemisphereLight('#a9c8f0','#080b18',1.22));
@@ -286,7 +291,9 @@ function CarRacing3DViewportInner(p:Props) {
       scene.add(group);
       return {group, obstacle};
     });
-    const ownColor=p.cars.find(c=>c.id===p.me.carId)?.color||'#e9ad3b';const own=makeCar(ownColor,p.me.plateNumber);scene.add(own.group);
+    const ownCar=p.cars.find(c=>c.id===p.me.carId);const ownColor=p.solo?'#f6b900':ownCar?.color||'#e9ad3b';const own=makeCar(ownColor,p.me.plateNumber,ownCar?.bodyStyle||'track');scene.add(own.group);
+    const nitroFlames=[-.68,.68].map(x=>{const flame=new THREE.Mesh(new THREE.ConeGeometry(.19,.95,16),new THREE.MeshBasicMaterial({color:'#16bfff'}));flame.rotation.x=-Math.PI/2;flame.position.set(x,.42,2.62);flame.visible=false;own.group.add(flame);return flame;});
+    const nitroGlow=new THREE.PointLight('#08aaff',0,9,2);nitroGlow.position.set(0,.5,3.15);own.group.add(nitroGlow);
     const opponents=new Map<string,CarModel>();
     const cockpit=new THREE.Group();
     const cabin=new THREE.MeshStandardMaterial({color:'#11161b',metalness:.28,roughness:.72});
@@ -336,6 +343,7 @@ function CarRacing3DViewportInner(p:Props) {
       own.group.position.set(offset*.7,0,4.5);own.group.rotation.y=-s.steer*.16-bend*.16;own.group.visible=s.view==='chase';own.wheels.forEach(w=>{w.rotation.x+=dt*velocity*3;});
       steering.rotation.z=-s.steer*Math.PI;cockpit.visible=s.view==='cockpit';
       own.frontWheels.forEach(w=>{w.rotation.y=s.steer*.48;});
+      nitroFlames.forEach((flame,index)=>{flame.visible=s.boost;flame.scale.setScalar(s.boost?1+Math.sin(now/42+index)*.22:.001);});nitroGlow.intensity=s.boost?5:0;
       gearLever.rotation.z=s.reverse?-.48:0;gearLever.position.x=s.reverse?.58:.48;
       brakePedal.rotation.x=s.brake?-.32:0;accelPedal.rotation.x=s.throttle>.05?-.24:0;
       speedNeedle.rotation.z=-THREE.MathUtils.clamp(s.speed/220,0,1)*Math.PI*.78;
@@ -353,7 +361,7 @@ function CarRacing3DViewportInner(p:Props) {
     raf=requestAnimationFrame(animate);
     return()=>{cancelAnimationFrame(raf);renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);observer?.disconnect();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});renderer.dispose();renderer.domElement.remove();};
     }catch(error){observer?.disconnect();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);renderer.dispose();renderer.domElement.remove();setRendererStatus('error');console.error('Car Racing 3D initialization failed',error);}
-  },[rendererAttempt]);
+  },[rendererAttempt,graphicsQuality]);
   const retryRenderer=()=>{setRendererStatus('ready');setRendererAttempt(value=>value+1);};
   return <div className="relative isolate h-full min-h-0 w-full overflow-hidden rounded-none border-0 bg-[#030609] shadow-none">
     {rendererStatus!=='ready'&&<div role="alert" aria-live="assertive" className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-slate-950/95 p-6 text-center text-white"><p className="text-lg font-black text-amber-200">{rendererStatus==='lost'?'3D ማሳያው ተቋርጧል':rendererStatus==='unavailable'?'ይህ መሳሪያ 3D WebGL አይደግፍም':'3D ማሳያው ላይ ችግር ተፈጥሯል'}</p><p className="max-w-md text-sm text-white/75">{rendererStatus==='lost'?'የግራፊክስ ግንኙነቱ እየተመለሰ ነው። ካልተመለሰ እንደገና ይሞክሩ።':'የ3D እይታው ሳይሰራ ቢቀርም የውድድሩ መረጃና ውጤት አይጠፋም።'}</p><button type="button" onClick={retryRenderer} className="rounded-xl border border-amber-300 bg-amber-300 px-5 py-3 font-black text-black">እንደገና ሞክር</button></div>}
