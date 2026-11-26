@@ -2,7 +2,7 @@ import { Component, useEffect, useRef, useState, type ErrorInfo, type ReactNode 
 import * as THREE from 'three';
 
 // Rendering-only layer: server-authoritative race state continues to come from CarRacingGame/API.
-export type RacingCar = { id: string; name: string; color: string };
+export type RacingCar = { id: string; name: string; color: string; bodyStyle?: string };
 export type RacingPlayer = { userId: string; name: string; carId: string; plateNumber: string; progress: number; lane: number; speed: number; finished: boolean; eliminated: boolean; isMe: boolean; collisionEvent: { id: string; at: number; type: string; severity: 'light' | 'medium' | 'severe'; participants: string[] } | null };
 export type RacingTrack = { name: string; environment: 'city' | 'country' | 'rocky' | 'coastal'; curveType: 'straight' | 'left' | 'right' | 's-bend'; obstacles: { at: number; lane: number; width: number; type: string }[] };
 export type RacingView = 'chase' | 'cockpit';
@@ -15,19 +15,21 @@ function plateTexture(plate: string) {
   if (ctx) { ctx.fillStyle = '#f4edcf'; ctx.fillRect(0, 0, 512, 128); ctx.strokeStyle = '#171717'; ctx.lineWidth = 12; ctx.strokeRect(6, 6, 500, 116); ctx.fillStyle = '#111'; ctx.font = '900 54px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(plate.slice(0, 18), 256, 66); }
   const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; return texture;
 }
-function makeCar(color: string, plate: string): CarModel {
+function makeCar(color: string, plate: string, bodyStyle = 'coupe'): CarModel {
   const g = new THREE.Group(), wheels: THREE.Mesh[] = [], frontWheels: THREE.Mesh[] = [];
   const paint = new THREE.MeshStandardMaterial({ color, metalness: .7, roughness: .25 });
   const glass = new THREE.MeshPhysicalMaterial({ color: '#6f9bb0', metalness: .3, roughness: .14, transparent: true, opacity: .84 });
   const rubber = new THREE.MeshStandardMaterial({ color: '#08090b', roughness: .95 });
   const chrome = new THREE.MeshStandardMaterial({ color: '#c1c5c9', metalness: .9, roughness: .2 });
   const add = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
-  add(new THREE.BoxGeometry(2.05,.58,4.15),paint,0,.72,0);
+  const suv = bodyStyle === 'suv', roadster = bodyStyle === 'roadster', hyper = ['hypercar','track','concept'].includes(bodyStyle), muscle = bodyStyle === 'muscle';
+  const bodyLength = suv ? 4.45 : roadster ? 3.95 : hyper ? 4.05 : muscle ? 4.35 : 4.15;
+  add(new THREE.BoxGeometry(suv?2.12:2.05,.58,bodyLength),paint,0,.72,0);
   add(new THREE.BoxGeometry(1.92,.18,1.22),paint,0,1.02,-1.34);
-  add(new THREE.BoxGeometry(1.56,.78,1.92),paint,0,1.34,.08);
+  add(new THREE.BoxGeometry(1.56,suv?.95:roadster?.48:.78,1.92),paint,0,suv?1.42:roadster?1.2:1.34,.08);
   const wind = add(new THREE.BoxGeometry(1.43,.53,.08),glass,0,1.39,-.91); wind.rotation.x=-.2;
   const rear = add(new THREE.BoxGeometry(1.4,.48,.07),glass,0,1.4,1.05); rear.rotation.x=.2;
-  add(new THREE.BoxGeometry(1.55,.1,1.22),paint,0,1.76,.05);
+  add(new THREE.BoxGeometry(1.55,.1,1.22),paint,0,suv?2.02:roadster?1.46:1.76,.05);
   // Sculpted body details: wheel arches, bumpers, grille, side glass and door lines.
   const dark=new THREE.MeshStandardMaterial({color:'#111820',metalness:.48,roughness:.42});
   const trim=new THREE.MeshStandardMaterial({color:'#aeb8c0',metalness:.88,roughness:.22});
@@ -70,6 +72,9 @@ function makeCar(color: string, plate: string): CarModel {
   add(new THREE.BoxGeometry(1.88,.12,.22),new THREE.MeshStandardMaterial({color:'#111820',metalness:.45}),0,.55,-1.98);
   add(new THREE.BoxGeometry(1.95,.12,.32),new THREE.MeshStandardMaterial({color:'#15191d',metalness:.65}),0,.48,1.92);
   add(new THREE.BoxGeometry(1.9,.09,.42),paint,0,1.93,1.78);
+  if(hyper||muscle){add(new THREE.BoxGeometry(1.72,.07,.34),dark,0,1.98,1.78);[-.62,.62].forEach(x=>{const support=add(new THREE.BoxGeometry(.07,.28,.08),trim,x,1.91,1.76);});}
+  if(suv){add(new THREE.BoxGeometry(1.55,.08,.12),dark,0,2.04,.08);}
+
   [-1,1].forEach(side=>{add(new THREE.BoxGeometry(.22,.16,.28),paint,side*1.05,1.42,-.65);add(new THREE.BoxGeometry(.12,.12,2.35),new THREE.MeshStandardMaterial({color:'#15191d',metalness:.35}),side*.99,.58,0);});
   add(new THREE.BoxGeometry(1.12,.2,.07),new THREE.MeshStandardMaterial({color:'#080b0e',metalness:.35}),0,.66,-2.12);
   return {group:g,wheels,frontWheels};
@@ -289,7 +294,7 @@ function CarRacing3DViewportInner(p:Props) {
       const dashboardLabel=(s.reverse?'REVERSE':'DRIVE')+' '+Math.round(s.speed);if(speedCtx&&dashboardLabel!==lastDashboardLabel){speedCtx.clearRect(0,0,512,256);speedCtx.fillStyle='#06131d';speedCtx.fillRect(0,0,512,256);speedCtx.fillStyle='#8bdcff';speedCtx.font='bold 44px Arial';speedCtx.textAlign='center';speedCtx.fillText(s.reverse?'REVERSE':'DRIVE',256,62);speedCtx.fillStyle='#ffffff';speedCtx.font='bold 112px Arial';speedCtx.fillText(String(Math.round(s.speed)),256,178);speedCtx.fillStyle='#e9b94f';speedCtx.font='bold 30px Arial';speedCtx.fillText('KM/H',256,222);speedTexture.needsUpdate=true;lastDashboardLabel=dashboardLabel;}
       if(s.view==='cockpit'){camera.position.set(offset*.18,1.62,3.3);camera.lookAt(offset*.25+bend*2,1.2,-32);}else{camera.position.lerp(new THREE.Vector3(offset*.22,5.3,14.8),.075);camera.lookAt(offset*.18+bend*2,.85,-27);}
       const ids=new Set<string>();
-      s.players.forEach(player=>{if(player.isMe||player.finished)return;ids.add(player.userId);let model=opponents.get(player.userId);if(!model){const car=s.cars.find(c=>c.id===player.carId);model=makeCar(car?.color||'#4b9bd2',player.plateNumber);opponents.set(player.userId,model);scene.add(model.group);}const delta=player.progress-s.me.progress;model.group.position.set(player.lane*3.45,0,THREE.MathUtils.clamp(-22-delta*.38,-115,8));model.group.visible=!player.eliminated;model.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.3;});model.frontWheels.forEach(w=>{w.rotation.y=(player.lane-s.me.lane)*.16;});});
+      s.players.forEach(player=>{if(player.isMe||player.finished)return;ids.add(player.userId);let model=opponents.get(player.userId);if(!model){const car=s.cars.find(c=>c.id===player.carId);model=makeCar(car?.color||'#4b9bd2',player.plateNumber,car?.bodyStyle);opponents.set(player.userId,model);scene.add(model.group);}const delta=player.progress-s.me.progress;model.group.position.set(player.lane*3.45,0,THREE.MathUtils.clamp(-22-delta*.38,-115,8));model.group.visible=!player.eliminated;model.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.3;});model.frontWheels.forEach(w=>{w.rotation.y=(player.lane-s.me.lane)*.16;});});
       opponents.forEach((model,id)=>{if(!ids.has(id)){scene.remove(model.group);opponents.delete(id);}});
       const sky=s.track.environment==='coastal'?'#10283b':s.track.environment==='rocky'?'#252b35':s.track.environment==='city'?'#101a2b':'#172333';scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,62,220);
       traffic.forEach((car,i)=>{car.group.position.z+=dt*velocity*(23+i%2*4);if(car.group.position.z>16)car.group.position.z=-205-i*8;car.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.2;});});
@@ -364,7 +369,7 @@ export function CarRacing3DPreview({car,plateNumber}:{car:RacingCar;plateNumber:
   useEffect(()=>{const el=host.current;if(!el)return;let renderer:THREE.WebGLRenderer;try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});}catch{el.dataset.webglUnavailable='true';return;}
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.shadowMap.enabled=true;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
     const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(5.4,3.4,7.2);camera.lookAt(0,.7,0);scene.add(new THREE.HemisphereLight('#e4f1ff','#3c2d16',2.2));const light=new THREE.DirectionalLight('#fff0cf',3);light.position.set(-4,9,6);light.castShadow=true;scene.add(light);
-    const floor=new THREE.Mesh(new THREE.CircleGeometry(5,48),new THREE.MeshStandardMaterial({color:'#16191b',roughness:.9}));floor.rotation.x=-Math.PI/2;floor.position.y=-.04;scene.add(floor);const model=makeCar(car.color,plateNumber);scene.add(model.group);
+    const floor=new THREE.Mesh(new THREE.CircleGeometry(5,48),new THREE.MeshStandardMaterial({color:'#16191b',roughness:.9}));floor.rotation.x=-Math.PI/2;floor.position.y=-.04;scene.add(floor);const model=makeCar(car.color,plateNumber,car.bodyStyle);scene.add(model.group);
     const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};const observer=new ResizeObserver(resize);observer.observe(el);resize();let raf=0;const animate=()=>{raf=requestAnimationFrame(animate);model.group.rotation.y+=.003;renderer.render(scene,camera);};raf=requestAnimationFrame(animate);
     return()=>{cancelAnimationFrame(raf);observer.disconnect();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});renderer.dispose();renderer.domElement.remove();};
   },[car.color,plateNumber]);
