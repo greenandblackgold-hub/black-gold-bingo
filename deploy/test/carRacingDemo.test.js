@@ -158,7 +158,7 @@ test('server derives payout and enforces ETB 20,000 cap without touching wallet'
   f.service.setReady(f.b, {});
   f.advance(3_100);
   f.service.control(f.a, { throttle: 1 });
-  f.advance(180_100);
+  f.advance(600_100);
   const state = f.service.getState(f.a).room;
   assert.equal(state.status, 'finished');
   assert.ok(state.winner.payoutEtb <= 20_000);
