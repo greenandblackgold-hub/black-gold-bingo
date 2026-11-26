@@ -128,7 +128,7 @@ function PlayerShell({ onOpenAdmin, onLogout }: { onOpenAdmin: () => void; onLog
   return (
     <div className="premium-ui min-h-screen">
       <AudioCallAnnouncer enabled={tab === 'play' && soundEnabled} />
-      {generalEnabled && tab !== 'help' && <AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} onLogout={onLogout} onOpenMenu={() => setMenuOpen(true)} onOpenSettings={() => setPlayerSettingsOpen(true)} hideControls={tab === 'play'} />}
+      {generalEnabled && tab !== 'help' && <AppHeader onOpenWallet={() => setTab('wallet')} onOpenAdmin={onOpenAdmin} onLogout={onLogout} onOpenMenu={() => setMenuOpen(true)} onOpenSettings={() => setPlayerSettingsOpen(true)} onOpenGames={() => setTab('games')} hideControls={tab === 'play'} />}
       <main className={!generalEnabled ? 'mx-auto w-full max-w-6xl px-4 pt-4' : tab === 'help' ? 'mx-auto w-full max-w-none px-0 pt-0 pb-0' : tab === 'keno' || tab === 'mines' ? 'mx-auto w-full max-w-none px-0 pt-0 pb-28' : tab === 'play' ? 'mx-auto w-full max-w-none px-2 pt-2 pb-28 sm:px-4 sm:pt-4' : tab === 'aviator' ? 'mx-auto w-full max-w-6xl px-3 pt-4 pb-28 sm:px-4 sm:pt-6' : 'mx-auto max-w-6xl px-4 pt-5 pb-28 sm:pt-8'}>
         {(tab === 'games' || (!generalEnabled && tab !== 'help')) && <GamesCenter serverMode={SERVER_MODE} generalDisabled={!generalEnabled} onOpenBingo={() => setTab('play')} onOpenKeno={() => setTab('keno')} onOpenAviator={() => setTab('aviator')} onOpenMines={() => setTab('mines')} onOpenCarRacing={() => setTab('car-racing')} onOpenHelp={() => setTab('help')} />}
         {generalEnabled && tab === 'help' && <HelpCenter onEnterGames={() => setTab('games')} />}
