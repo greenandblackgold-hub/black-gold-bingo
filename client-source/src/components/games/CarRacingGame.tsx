@@ -31,6 +31,7 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
   const [soloRoom,setSoloRoom]=useState<Room|null>(null);
   const [selectedCarId,setSelectedCarId]=useState('striker-r');
   const [settingsOpen,setSettingsOpen]=useState(false);
+  const [settingsLoaded,setSettingsLoaded]=useState(false);
   const [audioVolume,setAudioVolume]=useState(.82);
   const [graphicsQuality,setGraphicsQuality]=useState<'performance'|'balanced'|'ultra'>('balanced');
   const [nitroPercent,setNitroPercent]=useState(100);
@@ -57,8 +58,8 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
       stateRequestInFlight.current = false;
     }
   }, [t.error]);
-  useEffect(()=>{try{const saved=localStorage.getItem('black-gold-racing-settings');if(saved){const value=JSON.parse(saved);if(typeof value.audioVolume==='number')setAudioVolume(Math.max(0,Math.min(1,value.audioVolume)));if(['performance','balanced','ultra'].includes(value.graphicsQuality))setGraphicsQuality(value.graphicsQuality);if(value.drivingView==='chase'||value.drivingView==='cockpit')setDrivingView(value.drivingView);}}catch{/* Invalid local settings are ignored. */}},[]);
-  useEffect(()=>{try{localStorage.setItem('black-gold-racing-settings',JSON.stringify({audioVolume,graphicsQuality,drivingView}));}catch{/* Settings remain active for this session if storage is unavailable. */}},[audioVolume,graphicsQuality,drivingView]);
+  useEffect(()=>{try{const saved=localStorage.getItem('black-gold-racing-settings');if(saved){const value=JSON.parse(saved);if(typeof value.audioVolume==='number')setAudioVolume(Math.max(0,Math.min(1,value.audioVolume)));if(['performance','balanced','ultra'].includes(value.graphicsQuality))setGraphicsQuality(value.graphicsQuality);if(value.drivingView==='chase'||value.drivingView==='cockpit')setDrivingView(value.drivingView);}}catch{/* Invalid local settings are ignored. */}finally{setSettingsLoaded(true);}},[]);
+  useEffect(()=>{if(!settingsLoaded)return;try{localStorage.setItem('black-gold-racing-settings',JSON.stringify({audioVolume,graphicsQuality,drivingView}));}catch{/* Settings remain active for this session if storage is unavailable. */}},[settingsLoaded,audioVolume,graphicsQuality,drivingView]);
   useEffect(() => {
     let stopped = false;
     let timer = 0;
