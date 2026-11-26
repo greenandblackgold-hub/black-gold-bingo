@@ -33,10 +33,10 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
   const stateRequestInFlight = useRef(false);
   const room = state?.room ?? null;
   const me = room?.players.find((p) => p.isMe);
-  const load = useCallback(async (force = false) => {
+  const load = useCallback(async () => {
     // Never overlap state polls: a slow response must not be invalidated by a
     // faster timer tick, which previously could starve room updates indefinitely.
-    if (stateRequestInFlight.current && !force) return;
+    if (stateRequestInFlight.current) return;
     stateRequestInFlight.current = true;
     const requestVersion = ++stateRequestVersion.current;
     try {
@@ -55,7 +55,7 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
     let stopped = false;
     let timer = 0;
     const poll = async () => {
-      await load(true);
+      await load();
       if (!stopped) timer = window.setTimeout(() => { setClock(Date.now()); void poll(); }, 700);
     };
     void poll();
