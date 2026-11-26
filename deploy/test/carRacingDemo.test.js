@@ -355,6 +355,16 @@ test('frontend source includes all four Three.js track scenes, 3D obstacles and 
   }
   assert.match(scene, /s\.view==='chase'/);
   assert.match(scene, /s\.view==='cockpit'/);
+  assert.match(scene, /steering\.rotation\.z=-s\.steer\*Math\.PI/);
+  assert.match(scene, /own\.frontWheels\.forEach/);
+  assert.match(scene, /gearLever\.rotation\.z=s\.reverse/);
+  assert.match(scene, /brakePedal\.rotation\.x=s\.brake/);
+  assert.match(scene, /accelPedal\.rotation\.x=s\.throttle/);
+  assert.match(scene, /speedCtx\.fillText\(String\(Math\.round\(s\.speed\)\)/);
+  assert.match(scene, /p\.onThrottle\(1,p\.reverse,false,false\)/);
+  assert.match(scene, /p\.onThrottle\(0,p\.reverse,false,true\)/);
+  assert.match(scene, /p\.onGearChange\(!latest\.current\.reverse\)/);
+  assert.match(frontend, /throttle=\{throttle\} brake=\{brake\}/);
   assert.match(scene, /p\.me\.collisionEvent/);
   assert.match(frontend, /Vehicle damage/);
   assert.match(frontend, /SERVER VERIFIED/);
