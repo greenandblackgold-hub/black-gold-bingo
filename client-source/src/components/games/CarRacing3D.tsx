@@ -117,12 +117,12 @@ function CarRacing3DViewportInner(p:Props) {
     const down=(event:KeyboardEvent)=>{
       if(ignored(event.target))return;
       const key=event.key.toLowerCase();
-      if(['arrowup','w'].includes(key)){event.preventDefault();p.onThrottle(1,p.reverse,false,false);}
-      else if(['arrowdown','s',' '].includes(key)){event.preventDefault();p.onThrottle(0,p.reverse,false,true);}
+      if(['arrowup','w'].includes(key)){event.preventDefault();p.onThrottle(1,latest.current.reverse,false,false);}
+      else if(['arrowdown','s',' '].includes(key)){event.preventDefault();p.onThrottle(0,latest.current.reverse,false,true);}
       else if(['arrowleft','a'].includes(key)){event.preventDefault();p.onSteer(Math.max(-1,latest.current.steer-.12));}
       else if(['arrowright','d'].includes(key)){event.preventDefault();p.onSteer(Math.min(1,latest.current.steer+.12));}
       else if(key==='r'&&!event.repeat){event.preventDefault();p.onGearChange(!latest.current.reverse);}
-      else if(key==='shift'){event.preventDefault();p.onThrottle(1,p.reverse,true,false);}
+      else if(key==='shift'){event.preventDefault();p.onThrottle(1,latest.current.reverse,true,false);}
     };
     const up=(event:KeyboardEvent)=>{
       const key=event.key.toLowerCase();
@@ -272,6 +272,7 @@ function CarRacing3DViewportInner(p:Props) {
     const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
     observer=new ResizeObserver(resize);observer.observe(el);resize();
     let last=performance.now(),travel=0,raf=0;
+    let lastDashboardLabel='';
     const animate=(now:number)=>{if(contextLost)return;raf=requestAnimationFrame(animate);try{const dt=Math.min((now-last)/1000,.05);last=now;const s=latest.current,velocity=Math.max(.4,s.speed/90);travel+=dt*velocity*(s.boost?2.2:1);
       markers.forEach(m=>{m.position.z+=dt*velocity*34;if(m.position.z>15)m.position.z-=240;});
       scenery.forEach(o=>{o.position.z+=dt*velocity*25;if(o.position.z>18)o.position.z-=240;});
@@ -284,7 +285,7 @@ function CarRacing3DViewportInner(p:Props) {
       brakePedal.rotation.x=s.brake?-.32:0;accelPedal.rotation.x=s.throttle>.05?-.24:0;
       speedNeedle.rotation.z=-THREE.MathUtils.clamp(s.speed/220,0,1)*Math.PI*.78;
       rpmNeedle.rotation.z=-THREE.MathUtils.clamp((s.speed/220)+(s.boost?.18:0),0,1)*Math.PI*.78;
-      if(speedCtx){speedCtx.clearRect(0,0,512,256);speedCtx.fillStyle='#06131d';speedCtx.fillRect(0,0,512,256);speedCtx.fillStyle='#8bdcff';speedCtx.font='bold 44px Arial';speedCtx.textAlign='center';speedCtx.fillText(s.reverse?'REVERSE':'DRIVE',256,62);speedCtx.fillStyle='#ffffff';speedCtx.font='bold 112px Arial';speedCtx.fillText(String(Math.round(s.speed)),256,178);speedCtx.fillStyle='#e9b94f';speedCtx.font='bold 30px Arial';speedCtx.fillText('KM/H',256,222);speedTexture.needsUpdate=true;}
+      const dashboardLabel=(s.reverse?'REVERSE':'DRIVE')+' '+Math.round(s.speed);if(speedCtx&&dashboardLabel!==lastDashboardLabel){speedCtx.clearRect(0,0,512,256);speedCtx.fillStyle='#06131d';speedCtx.fillRect(0,0,512,256);speedCtx.fillStyle='#8bdcff';speedCtx.font='bold 44px Arial';speedCtx.textAlign='center';speedCtx.fillText(s.reverse?'REVERSE':'DRIVE',256,62);speedCtx.fillStyle='#ffffff';speedCtx.font='bold 112px Arial';speedCtx.fillText(String(Math.round(s.speed)),256,178);speedCtx.fillStyle='#e9b94f';speedCtx.font='bold 30px Arial';speedCtx.fillText('KM/H',256,222);speedTexture.needsUpdate=true;lastDashboardLabel=dashboardLabel;}
       if(s.view==='cockpit'){camera.position.set(offset*.18,1.62,3.3);camera.lookAt(offset*.25+bend*2,1.2,-32);}else{camera.position.lerp(new THREE.Vector3(offset*.22,5.3,14.8),.075);camera.lookAt(offset*.18+bend*2,.85,-27);}
       const ids=new Set<string>();
       s.players.forEach(player=>{if(player.isMe||player.finished)return;ids.add(player.userId);let model=opponents.get(player.userId);if(!model){const car=s.cars.find(c=>c.id===player.carId);model=makeCar(car?.color||'#4b9bd2',player.plateNumber);opponents.set(player.userId,model);scene.add(model.group);}const delta=player.progress-s.me.progress;model.group.position.set(player.lane*3.45,0,THREE.MathUtils.clamp(-22-delta*.38,-115,8));model.group.visible=!player.eliminated;model.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.3;});model.frontWheels.forEach(w=>{w.rotation.y=(player.lane-s.me.lane)*.16;});});
@@ -341,11 +342,11 @@ function CarRacing3DViewportInner(p:Props) {
       <div className="flex flex-wrap items-end justify-end gap-1.5 sm:gap-2">
         <div className="flex flex-col gap-1">
           <button type="button" onClick={()=>p.onGearChange(!p.reverse)} aria-pressed={p.reverse} className={'min-h-[42px] min-w-[54px] rounded-xl border px-3 text-xs font-black '+(p.reverse?'border-red-300 bg-red-500 text-white':'border-emerald-300/50 bg-emerald-950/80 text-emerald-200')}>{p.reverse?'R · REVERSE':'D · DRIVE'}</button>
-          {control('■','BRAKE','muted',()=>p.onThrottle(0,p.reverse,false,true),()=>p.onThrottle(0,p.reverse,false,false))}
+          {control('■','BRAKE','muted',()=>p.onThrottle(0,latest.current.reverse,false,true),()=>p.onThrottle(0,latest.current.reverse,false,false))}
         </div>
         <div className="flex flex-col gap-1">
-          {control('▲','ACCELERATE','gold',()=>p.onThrottle(1,p.reverse,false,false),()=>p.onThrottle(0,p.reverse,false,false))}
-          {control('N₂O','NITRO','nitro',()=>p.onThrottle(1,p.reverse,true,false),()=>p.onThrottle(0,p.reverse,false,false))}
+          {control('▲','ACCELERATE','gold',()=>p.onThrottle(1,latest.current.reverse,false,false),()=>p.onThrottle(0,latest.current.reverse,false,false))}
+          {control('N₂O','NITRO','nitro',()=>p.onThrottle(1,latest.current.reverse,true,false),()=>p.onThrottle(0,latest.current.reverse,false,false))}
         </div>
       </div>
     </div>
