@@ -43,7 +43,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       room.finishedAt = at;
       room.countdownEndsAt = null;
       for (const p of room.players) {
-        p.throttle = 0; p.steer = 0; p.reverse = false; p.boost = false; p.velocity = 0;
+        p.throttle = 0; p.steer = 0; p.reverse = false; p.boost = false; p.brake = false; p.velocity = 0;
       }
     }
   }
@@ -180,6 +180,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       const steer = controlFresh ? p.steer : 0;
       const reverse = controlFresh && p.reverse;
       const boost = controlFresh && p.boost;
+      const brake = controlFresh && p.brake;
       const curveWave = room.track.curveType === 's-bend' ? Math.sin((p.progress / 1000) * Math.PI * 2) : 1;
       const damagePenalty = Math.max(0.55, 1 - (p.damage ?? 0) * 0.004);
       const curveForce = (room.track.curveType === 'left' ? -1 : room.track.curveType === 'right' ? 1 : room.track.curveType === 's-bend' ? curveWave : 0) * room.track.curveIntensity;
@@ -189,13 +190,15 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
         const event = { id: `${at}-${p.userId}-wall`, at, type: 'wall', severity, participants: [p.userId] };
         room.collisionEvents.push(event); p.collisionEvent = event; p.damage = Math.min(100, (p.damage ?? 0) + (severity === 'severe' ? 100 : 38));
         if (severity === 'severe' || p.damage >= 100) { p.eliminated = true; p.eliminationReason = 'wall'; p.eliminatedAt = at; }
-        p.velocity = p.eliminated ? 0 : p.velocity * 0.28; p.throttle = 0; p.steer = 0; p.reverse = false; p.boost = false;
+        p.velocity = p.eliminated ? 0 : p.velocity * 0.28; p.throttle = 0; p.steer = 0; p.reverse = false; p.boost = false; p.brake = false;
         continue;
       }
       const gripPenalty = (Math.abs(p.lane) > room.track.grip ? 0.62 : 1) * damagePenalty;
       const acceleration = throttle * (reverse ? 1.05 : boost ? 1.3 : 0.8);
-      const drag = throttle ? 0 : dt * 0.7;
-      const nextVelocity = p.velocity + (reverse ? -acceleration : acceleration) * dt + (p.velocity > 0 ? -drag : p.velocity < 0 ? drag : 0);
+      const drag = throttle ? 0 : dt * (brake ? 4.2 : 0.7);
+      const nextVelocity = brake
+        ? Math.sign(p.velocity) * Math.max(0, Math.abs(p.velocity) - drag)
+        : p.velocity + (reverse ? -acceleration : acceleration) * dt + (p.velocity > 0 ? -drag : p.velocity < 0 ? drag : 0);
       p.velocity = Math.max(-0.55, Math.min(boost ? 1.35 : 1, nextVelocity));
       const obstacle = room.track.obstacles[p.obstacleIndex];
       const nextProgress = p.progress + p.velocity * car.speed * room.track.speedFactor * gripPenalty * dt * 145;
@@ -282,7 +285,7 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
     room.poolSantim += fee;
     const seat = room.players.length;
     const startingLane = (seat % 2 === 0 ? -1 : 1) * (Math.floor(seat / 2) + 1) * 0.24;
-    room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: 'sport', plateNumber: plateFor(user.id), ready: false, progress: 0, lane: startingLane, velocity: 0, throttle: 0, steer: 0, reverse: false, boost: false, controlAt: 0, obstacleIndex: 0, damage: 0, collisionEvent: null, lastCollisionAt: 0, finished: false, eliminated: false, eliminationReason: null, eliminatedAt: null });
+    room.players.push({ userId: user.id, name: String(user.name || 'Driver').slice(0, 28), carId: 'sport', plateNumber: plateFor(user.id), ready: false, progress: 0, lane: startingLane, velocity: 0, throttle: 0, steer: 0, reverse: false, boost: false, brake: false, controlAt: 0, obstacleIndex: 0, damage: 0, collisionEvent: null, lastCollisionAt: 0, finished: false, eliminated: false, eliminationReason: null, eliminatedAt: null });
     playerRooms.set(user.id, room.id);
   }
 
@@ -357,10 +360,11 @@ export function createCarRacingDemoService({ realMoneyEnabled = false, isRealMon
       if (room.status !== 'racing') throw new HttpError(409, 'race_not_running', 'The race is not running.');
       const p = player(room, user.id);
       if (p.eliminated) throw new HttpError(409, 'driver_eliminated', 'You have been eliminated from this race.');
-      p.throttle = Math.max(0, Math.min(1, Number(input.throttle) || 0));
+      p.brake = input.brake === true;
+      p.throttle = p.brake ? 0 : Math.max(0, Math.min(1, Number(input.throttle) || 0));
       p.steer = Math.max(-1, Math.min(1, Number(input.steer) || 0));
       p.reverse = input.reverse === true;
-      p.boost = input.boost === true && !p.reverse;
+      p.boost = input.boost === true && !p.reverse && !p.brake;
       p.controlAt = now();
       return { ok: true };
     },
