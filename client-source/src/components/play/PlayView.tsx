@@ -932,7 +932,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
           </div>
         )}
 
-/footer>
+
       </div>
       {winner && iWon && <div role="status" className="sr-only">{t.winAnnouncement}</div>}
     </main>
