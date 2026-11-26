@@ -113,6 +113,27 @@ function CarRacing3DViewportInner(p:Props) {
   const [rendererStatus,setRendererStatus]=useState<RendererStatus>('ready');
   const [rendererAttempt,setRendererAttempt]=useState(0);
   useEffect(()=>{
+    const ignored=(target:EventTarget|null)=>target instanceof HTMLElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
+    const down=(event:KeyboardEvent)=>{
+      if(ignored(event.target))return;
+      const key=event.key.toLowerCase();
+      if(['arrowup','w'].includes(key)){event.preventDefault();p.onThrottle(1,p.reverse,false,false);}
+      else if(['arrowdown','s',' '].includes(key)){event.preventDefault();p.onThrottle(0,p.reverse,false,true);}
+      else if(['arrowleft','a'].includes(key)){event.preventDefault();p.onSteer(Math.max(-1,latest.current.steer-.12));}
+      else if(['arrowright','d'].includes(key)){event.preventDefault();p.onSteer(Math.min(1,latest.current.steer+.12));}
+      else if(key==='r'&&!event.repeat){event.preventDefault();p.onGearChange(!latest.current.reverse);}
+      else if(key==='shift'){event.preventDefault();p.onThrottle(1,p.reverse,true,false);}
+    };
+    const up=(event:KeyboardEvent)=>{
+      const key=event.key.toLowerCase();
+      if(['arrowup','w','shift'].includes(key))p.onThrottle(0,latest.current.reverse,false,false);
+      if(['arrowdown','s',' '].includes(key))p.onThrottle(0,latest.current.reverse,false,false);
+      if(['arrowleft','a','arrowright','d'].includes(key))p.onSteer(0);
+    };
+    window.addEventListener('keydown',down);window.addEventListener('keyup',up);
+    return()=>{window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);};
+  },[]);
+  useEffect(()=>{
     const el=host.current;if(!el)return;
     let renderer:THREE.WebGLRenderer;
     try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});}catch(error){el.dataset.webglUnavailable='true';setRendererStatus('unavailable');console.warn('Car Racing WebGL is unavailable',error);return;}
