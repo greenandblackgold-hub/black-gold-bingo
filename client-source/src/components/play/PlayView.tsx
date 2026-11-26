@@ -205,21 +205,21 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
   const winningCells = useMemo(() => new Set((winning ?? []).map(([r, c]) => r + '-' + c)), [winning]);
 
   return (
-    <section className={`bingo-card-surface relative min-w-0 rounded-[1.2rem] border-2 ${accent.border} bg-black p-1 shadow-xl ${accent.glow}`}>
+    <section className={`bingo-card-surface relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-0 shadow-xl ${accent.glow}`}>
       {draft ? (
-        <button type="button" onClick={onRegister} disabled={registering} className={`flex w-full items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-1 text-base font-black text-white sm:text-xl disabled:opacity-60`}>
-          {registering ? '…' : 'REGISTER'} · #{String(card.serial).padStart(5, '0')}
+        <button type="button" onClick={onRegister} disabled={registering} className={`flex min-h-9 w-full items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-2 text-sm font-black text-white sm:min-h-11 sm:text-xl disabled:opacity-60`}>
+          {registering ? '…' : `Card #${index + 1} · REGISTER`}
         </button>
       ) : (
-        <div className={`flex items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-1 text-base font-black text-white sm:text-xl`}>
-          {labels.card} #{String(card.serial).padStart(5, '0')} · BINGO
+        <div className={`flex min-h-9 items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-2 text-sm font-black text-white sm:min-h-11 sm:text-xl`}>
+          Card #{index + 1}
         </div>
       )}
       {card.locked && <span className="absolute left-1 top-1 z-10 rounded bg-red-700 px-2 py-0.5 text-[9px] font-black text-white">{labels.locked}</span>}
       <button type="button" aria-label={`Remove card #${card.serial}`} onClick={(event) => { event.stopPropagation(); onRemove(); }} className="absolute right-1 top-1 z-20 grid h-6 w-6 place-items-center rounded-full border border-white/70 bg-red-700 text-sm font-black leading-none text-white shadow">×</button>
-      <div className="grid grid-cols-5 gap-px overflow-hidden rounded-b-lg bg-zinc-400">
+      <div className="grid grid-cols-5 gap-px overflow-hidden bg-zinc-300">
         {LETTERS.map((letter, col) => (
-          <div key={letter} className={`py-1 text-center text-base font-black text-white sm:text-2xl ${['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'][col]}`}>{letter}</div>
+          <div key={letter} className={`grid min-h-8 place-items-center py-1 text-center text-base font-black text-white sm:min-h-10 sm:text-2xl ${['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'][col]}`}>{letter}</div>
         ))}
         {card.grid.flatMap((row, r) => row.map((value, c) => {
           const free = value === null;
@@ -326,12 +326,6 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   });
   const [numberBoardExpanded, setNumberBoardExpanded] = useState(() => {
     try { return localStorage.getItem('bgb.numberBoardExpanded') !== 'off'; } catch { return true; }
-  });
-  const [cardsPerRow, setCardsPerRow] = useState(() => {
-    try {
-      const saved = Number(localStorage.getItem('bgb.cardsPerRow'));
-      return Number.isInteger(saved) && saved >= 2 && saved <= 4 ? saved : 2;
-    } catch { return 2; }
   });
   const [markColor, setMarkColor] = useState(() => {
     try {
@@ -447,8 +441,6 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   useEffect(() => {
     const syncCardSettings = () => {
       try {
-        const layout = Number(localStorage.getItem('bgb.cardsPerRow'));
-        setCardsPerRow(Number.isInteger(layout) && layout >= 2 && layout <= 4 ? layout : 2);
         const color = localStorage.getItem('bgb.markColor');
         setMarkColor(['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'].includes(color ?? '') ? color! : '#d4af37');
         setCardOrder(localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest');
@@ -823,7 +815,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         </section>
 
         {(draftCards.length > 0 || cards.length > 0) && (
-          <section className="grid gap-2 sm:gap-4" style={{ gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))` }}>
+          <section className="grid grid-cols-2 items-start gap-2 sm:gap-4">
             {orderedDraftCards.map((card, index) => (
               <BingoCardView
                 labels={t}
