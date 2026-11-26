@@ -6,8 +6,8 @@ export type RacingCar = { id: string; name: string; color: string };
 export type RacingPlayer = { userId: string; name: string; carId: string; plateNumber: string; progress: number; lane: number; speed: number; finished: boolean; eliminated: boolean; isMe: boolean; collisionEvent: { id: string; at: number; type: string; severity: 'light' | 'medium' | 'severe'; participants: string[] } | null };
 export type RacingTrack = { name: string; environment: 'city' | 'country' | 'rocky' | 'coastal'; curveType: 'straight' | 'left' | 'right' | 's-bend'; obstacles: { at: number; lane: number; width: number; type: string }[] };
 export type RacingView = 'chase' | 'cockpit';
-type Props = { view: RacingView; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; reverse: boolean; track: RacingTrack; boost: boolean; rank: number; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean, brake?: boolean) => void; onGearChange: (reverse: boolean) => void };
-type CarModel = { group: THREE.Group; wheels: THREE.Mesh[] };
+type Props = { view: RacingView; throttle: number; brake: boolean; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; reverse: boolean; track: RacingTrack; boost: boolean; rank: number; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean, brake?: boolean) => void; onGearChange: (reverse: boolean) => void };
+type CarModel = { group: THREE.Group; wheels: THREE.Mesh[]; frontWheels: THREE.Mesh[] };
 
 function plateTexture(plate: string) {
   const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 128;
@@ -16,7 +16,7 @@ function plateTexture(plate: string) {
   const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; return texture;
 }
 function makeCar(color: string, plate: string): CarModel {
-  const g = new THREE.Group(), wheels: THREE.Mesh[] = [];
+  const g = new THREE.Group(), wheels: THREE.Mesh[] = [], frontWheels: THREE.Mesh[] = [];
   const paint = new THREE.MeshStandardMaterial({ color, metalness: .7, roughness: .25 });
   const glass = new THREE.MeshPhysicalMaterial({ color: '#6f9bb0', metalness: .3, roughness: .14, transparent: true, opacity: .84 });
   const rubber = new THREE.MeshStandardMaterial({ color: '#08090b', roughness: .95 });
@@ -57,7 +57,7 @@ function makeCar(color: string, plate: string): CarModel {
   // Roof glass and panoramic windshield trim.
   const sunroof=new THREE.Mesh(new THREE.BoxGeometry(1.12,.025,.72),dark);sunroof.position.set(0,1.855,.08);g.add(sunroof);
   [-1,1].forEach((x) => [-1,1].forEach((z) => {
-    const tire = add(new THREE.CylinderGeometry(.43,.43,.28,24),rubber,x*1.03,.45,z*1.34); tire.rotation.z=Math.PI/2; wheels.push(tire);
+    const tire = add(new THREE.CylinderGeometry(.43,.43,.28,32),rubber,x*1.03,.45,z*1.34); tire.rotation.z=Math.PI/2; wheels.push(tire); if(z<0)frontWheels.push(tire);
     const rim=add(new THREE.CylinderGeometry(.22,.22,.3,20),chrome,x*1.03,.45,z*1.34); rim.rotation.z=Math.PI/2;
   }));
   [-.68,.68].forEach((x) => {
@@ -72,7 +72,7 @@ function makeCar(color: string, plate: string): CarModel {
   add(new THREE.BoxGeometry(1.9,.09,.42),paint,0,1.93,1.78);
   [-1,1].forEach(side=>{add(new THREE.BoxGeometry(.22,.16,.28),paint,side*1.05,1.42,-.65);add(new THREE.BoxGeometry(.12,.12,2.35),new THREE.MeshStandardMaterial({color:'#15191d',metalness:.35}),side*.99,.58,0);});
   add(new THREE.BoxGeometry(1.12,.2,.07),new THREE.MeshStandardMaterial({color:'#080b0e',metalness:.35}),0,.66,-2.12);
-  return {group:g,wheels};
+  return {group:g,wheels,frontWheels};
 }
 function tree(x:number,z:number) {
   const g=new THREE.Group();
@@ -231,11 +231,22 @@ function CarRacing3DViewportInner(p:Props) {
     const display=new THREE.Mesh(new THREE.BoxGeometry(.52,.3,.035),screenMat);display.position.set(0,-.69,-2.035);cockpit.add(display);
     [-.9,.9].forEach(x=>{const vent=new THREE.Mesh(new THREE.BoxGeometry(.42,.13,.04),silver);vent.position.set(x,-.82,-2.02);cockpit.add(vent);});
     const windshieldFrame=new THREE.Mesh(new THREE.BoxGeometry(4.7,.12,.12),cabin);windshieldFrame.position.set(0,.08,-2.18);cockpit.add(windshieldFrame);
-    const steering=new THREE.Group(),rim=new THREE.Mesh(new THREE.TorusGeometry(.48,.075,12,40),new THREE.MeshStandardMaterial({color:'#b6b9bb',metalness:.8}));steering.add(rim);
+    const steering=new THREE.Group(),rim=new THREE.Mesh(new THREE.TorusGeometry(.48,.075,16,56),new THREE.MeshStandardMaterial({color:'#101419',metalness:.42,roughness:.34}));steering.add(rim);\n    const innerRim=new THREE.Mesh(new THREE.TorusGeometry(.405,.025,8,48),new THREE.MeshStandardMaterial({color:'#b6b9bb',metalness:.92,roughness:.22}));steering.add(innerRim);
     const hub=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.13,20),new THREE.MeshStandardMaterial({color:'#bd9140',metalness:.65}));hub.rotation.x=Math.PI/2;steering.add(hub);
     for(let i=0;i<3;i++){const spoke=new THREE.Mesh(new THREE.BoxGeometry(.055,.48,.08),new THREE.MeshStandardMaterial({color:'#b8bdc2',metalness:.9}));spoke.position.y=i===0?.24:-.12;spoke.rotation.z=i===1?.85:i===2?-.85:0;steering.add(spoke);}
     steering.position.set(0,-.55,-1.28);cockpit.add(steering);
     const column=new THREE.Mesh(new THREE.CylinderGeometry(.09,.12,.62,12),cabin);column.rotation.x=Math.PI/2;column.position.set(0,-.78,-1.55);cockpit.add(column);
+    const gearLever=new THREE.Group();
+    const leverStem=new THREE.Mesh(new THREE.CylinderGeometry(.035,.05,.46,12),silver);leverStem.position.y=.22;gearLever.add(leverStem);
+    const leverKnob=new THREE.Mesh(new THREE.SphereGeometry(.14,18,16),new THREE.MeshStandardMaterial({color:'#161a20',metalness:.3,roughness:.25}));leverKnob.position.y=.46;gearLever.add(leverKnob);gearLever.position.set(.48,-1.18,-.38);cockpit.add(gearLever);
+    const pedalMat=new THREE.MeshStandardMaterial({color:'#59616a',metalness:.8,roughness:.35});
+    const brakePedal=new THREE.Group(),brakePlate=new THREE.Mesh(new THREE.BoxGeometry(.22,.32,.06),pedalMat);brakePlate.position.y=.16;brakePedal.add(brakePlate);brakePedal.position.set(.42,-1.38,-1.02);cockpit.add(brakePedal);
+    const accelPedal=new THREE.Group(),accelPlate=new THREE.Mesh(new THREE.BoxGeometry(.18,.34,.06),pedalMat);accelPlate.position.y=.17;accelPedal.add(accelPlate);accelPedal.position.set(.72,-1.38,-1.02);cockpit.add(accelPedal);
+    const speedCanvas=document.createElement('canvas');speedCanvas.width=512;speedCanvas.height=256;
+    const speedCtx=speedCanvas.getContext('2d');const speedTexture=new THREE.CanvasTexture(speedCanvas);speedTexture.colorSpace=THREE.SRGBColorSpace;
+    const liveDisplay=new THREE.Mesh(new THREE.PlaneGeometry(.48,.27),new THREE.MeshBasicMaterial({map:speedTexture,transparent:true}));liveDisplay.position.set(0,-.69,-2.08);cockpit.add(liveDisplay);
+    const speedNeedle=new THREE.Group();const needleMesh=new THREE.Mesh(new THREE.BoxGeometry(.025,.2,.025),new THREE.MeshStandardMaterial({color:'#f4bd54',emissive:'#d78a25',emissiveIntensity:1.5}));needleMesh.position.y=.1;speedNeedle.add(needleMesh);speedNeedle.position.set(-.48,-.69,-2.1);cockpit.add(speedNeedle);
+    const rpmNeedle=new THREE.Group();const rpmMesh=new THREE.Mesh(new THREE.BoxGeometry(.025,.2,.025),new THREE.MeshStandardMaterial({color:'#f04e57',emissive:'#a51c25',emissiveIntensity:1.2}));rpmMesh.position.y=.1;rpmNeedle.add(rpmMesh);rpmNeedle.position.set(.48,-.69,-2.1);cockpit.add(rpmNeedle);
     camera.add(cockpit);scene.add(camera);
     const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
     observer=new ResizeObserver(resize);observer.observe(el);resize();
@@ -246,10 +257,16 @@ function CarRacing3DViewportInner(p:Props) {
       obstacleModels.forEach(({group,obstacle})=>{const ahead=obstacle.at/10-latest.current.me.progress;group.position.set(obstacle.lane*3.45,0,THREE.MathUtils.clamp(-ahead*3.2,-220,18));group.visible=ahead>-2&&ahead<72;});
       const bend=s.track.curveType==='left'?.22:s.track.curveType==='right'?-.22:s.track.curveType==='s-bend'?Math.sin(travel*.2)*.2:0,offset=s.steer*1.05;
       own.group.position.set(offset*.7,0,4.5);own.group.rotation.y=-s.steer*.16-bend*.16;own.group.visible=s.view==='chase';own.wheels.forEach(w=>{w.rotation.x+=dt*velocity*3;});
-      steering.rotation.z=-s.steer*.55;cockpit.visible=s.view==='cockpit';
+      steering.rotation.z=-s.steer*Math.PI;cockpit.visible=s.view==='cockpit';
+      own.frontWheels.forEach(w=>{w.rotation.y=s.steer*.48;});
+      gearLever.rotation.z=s.reverse?-.48:0;gearLever.position.x=s.reverse?.58:.48;
+      brakePedal.rotation.x=s.brake?-.32:0;accelPedal.rotation.x=s.throttle>.05?-.24:0;
+      speedNeedle.rotation.z=-THREE.MathUtils.clamp(s.speed/220,0,1)*Math.PI*.78;
+      rpmNeedle.rotation.z=-THREE.MathUtils.clamp((s.speed/220)+(s.boost?.18:0),0,1)*Math.PI*.78;
+      if(speedCtx){speedCtx.clearRect(0,0,512,256);speedCtx.fillStyle='#06131d';speedCtx.fillRect(0,0,512,256);speedCtx.fillStyle='#8bdcff';speedCtx.font='bold 44px Arial';speedCtx.textAlign='center';speedCtx.fillText(s.reverse?'REVERSE':'DRIVE',256,62);speedCtx.fillStyle='#ffffff';speedCtx.font='bold 112px Arial';speedCtx.fillText(String(Math.round(s.speed)),256,178);speedCtx.fillStyle='#e9b94f';speedCtx.font='bold 30px Arial';speedCtx.fillText('KM/H',256,222);speedTexture.needsUpdate=true;}
       if(s.view==='cockpit'){camera.position.set(offset*.18,1.62,3.3);camera.lookAt(offset*.25+bend*2,1.2,-32);}else{camera.position.lerp(new THREE.Vector3(offset*.22,5.3,14.8),.075);camera.lookAt(offset*.18+bend*2,.85,-27);}
       const ids=new Set<string>();
-      s.players.forEach(player=>{if(player.isMe||player.finished)return;ids.add(player.userId);let model=opponents.get(player.userId);if(!model){const car=s.cars.find(c=>c.id===player.carId);model=makeCar(car?.color||'#4b9bd2',player.plateNumber);opponents.set(player.userId,model);scene.add(model.group);}const delta=player.progress-s.me.progress;model.group.position.set(player.lane*3.45,0,THREE.MathUtils.clamp(-22-delta*.38,-115,8));model.group.visible=!player.eliminated;model.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.3;});});
+      s.players.forEach(player=>{if(player.isMe||player.finished)return;ids.add(player.userId);let model=opponents.get(player.userId);if(!model){const car=s.cars.find(c=>c.id===player.carId);model=makeCar(car?.color||'#4b9bd2',player.plateNumber);opponents.set(player.userId,model);scene.add(model.group);}const delta=player.progress-s.me.progress;model.group.position.set(player.lane*3.45,0,THREE.MathUtils.clamp(-22-delta*.38,-115,8));model.group.visible=!player.eliminated;model.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.3;});model.frontWheels.forEach(w=>{w.rotation.y=(player.lane-s.me.lane)*.16;});});
       opponents.forEach((model,id)=>{if(!ids.has(id)){scene.remove(model.group);opponents.delete(id);}});
       const sky=s.track.environment==='coastal'?'#10283b':s.track.environment==='rocky'?'#252b35':s.track.environment==='city'?'#101a2b':'#172333';scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,62,220);
       traffic.forEach((car,i)=>{car.group.position.z+=dt*velocity*(23+i%2*4);if(car.group.position.z>16)car.group.position.z=-205-i*8;car.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.2;});});
@@ -287,16 +304,16 @@ function CarRacing3DViewportInner(p:Props) {
           onPointerMove={(e)=>{if(e.buttons===1){const r=e.currentTarget.getBoundingClientRect();p.onSteer(THREE.MathUtils.clamp(((e.clientX-r.left)/r.width-.5)*2,-1,1));}}}
           onPointerUp={()=>p.onSteer(0)}
           onPointerCancel={()=>p.onSteer(0)}
-          className="relative flex h-[104px] w-[156px] touch-none select-none items-center justify-center rounded-full border border-amber-300/35 bg-slate-950/85 shadow-[0_0_24px_rgba(245,190,70,.12)] outline-none focus:ring-2 focus:ring-amber-300"
+          className="relative flex h-[132px] w-[132px] touch-none select-none items-center justify-center rounded-full border-[5px] border-slate-400/70 bg-[radial-gradient(circle,#26313d_0%,#080d14_68%)] shadow-[0_0_30px_rgba(245,190,70,.22),inset_0_0_18px_#000] outline-none focus:ring-2 focus:ring-amber-300"
           style={{touchAction:'none'}}
         >
-          <div className="relative h-[82px] w-[82px] rounded-full border-[9px] border-slate-300 shadow-[inset_0_0_0_2px_#64748b,0_3px_8px_#000] transition-transform duration-75" style={{transform:`rotate(${p.steer*180}deg)`}}>
+          <div className="relative h-[104px] w-[104px] rounded-full border-[11px] border-slate-300 shadow-[inset_0_0_0_2px_#64748b,0_3px_12px_#000] transition-transform duration-75" style={{transform:`rotate(${p.steer*180}deg)`}}>
             <div className="absolute left-1/2 top-0 h-[34px] w-[7px] -translate-x-1/2 rounded-b bg-amber-300"/>
             <div className="absolute bottom-[7px] left-[7px] h-[7px] w-[27px] rotate-[28deg] rounded bg-slate-300"/>
             <div className="absolute bottom-[7px] right-[7px] h-[7px] w-[27px] -rotate-[28deg] rounded bg-slate-300"/>
             <div className="absolute left-1/2 top-1/2 h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-200 bg-slate-800"/>
           </div>
-          <span className="pointer-events-none absolute bottom-1 text-[8px] font-black tracking-widest text-amber-200">STEER · ±180°</span>
+          <span className="pointer-events-none absolute -bottom-5 whitespace-nowrap text-[8px] font-black tracking-widest text-amber-200">STEER · ±180°</span>
         </div>
         <p className="text-[9px] font-black text-amber-100/60">DRAG LEFT / RIGHT</p>
       </div>
