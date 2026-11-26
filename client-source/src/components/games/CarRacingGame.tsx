@@ -104,7 +104,8 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
             <input type="number" min={5} max={500} step={5} value={entryFee} onChange={(e) => setEntryFee(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-amber-300/20 bg-black p-3 text-amber-100" />
             <button disabled={busy} onClick={() => void act('/api/games/car-racing/rooms', { entryFeeEtb: entryFee, solo: true })} className="mt-4 w-full rounded-xl bg-amber-300 p-3 font-black text-black disabled:opacity-50">{t.create}</button>
           </div>
-          {false && <>\n          <div className="rounded-3xl border border-amber-300/20 bg-[#0d0d0b] p-5">
+          {false && <>
+          <div className="rounded-3xl border border-amber-300/20 bg-[#0d0d0b] p-5">
             <h2 className="text-lg font-black">{t.join}</h2>
             <label className="mt-4 block text-xs text-amber-100/60">{t.code}</label>
             <input value={roomCode} onChange={(e) => setRoomCode(e.target.value.toUpperCase().slice(0, 6))} className="mt-2 w-full rounded-xl border border-amber-300/20 bg-black p-3 font-mono uppercase tracking-[.25em] text-amber-100" />
@@ -114,7 +115,8 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
             <h2 className="font-black">{t.rooms}</h2>
             {state?.openRooms.length ? state.openRooms.map((r) => <button key={r.code} onClick={() => void act('/api/games/car-racing/join', { code: r.code })} className="mt-2 flex w-full justify-between rounded-xl border border-white/10 p-3 text-left text-sm hover:border-amber-300/40"><span><b>{r.code}</b> · {r.track} · {r.players}/8</span><span>{r.entryFeeEtb} ETB</span></button>) : <p className="mt-3 text-sm text-amber-100/45">No open races yet.</p>}
           </div>
-          </>}\n        </section>
+          </>}
+        </section>
       ) : (
         <section className={room.status === 'racing' ? "h-full w-full" : "space-y-4"}>
           <div className={room.status === 'racing' ? "h-full w-full overflow-hidden bg-[#030609]" : "rounded-3xl border border-amber-300/25 bg-[#0b0b09] p-4 sm:p-6"}>
