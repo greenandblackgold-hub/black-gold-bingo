@@ -28,6 +28,34 @@ function makeCar(color: string, plate: string): CarModel {
   const wind = add(new THREE.BoxGeometry(1.43,.53,.08),glass,0,1.39,-.91); wind.rotation.x=-.2;
   const rear = add(new THREE.BoxGeometry(1.4,.48,.07),glass,0,1.4,1.05); rear.rotation.x=.2;
   add(new THREE.BoxGeometry(1.55,.1,1.22),paint,0,1.76,.05);
+  // Sculpted body details: wheel arches, bumpers, grille, side glass and door lines.
+  const dark=new THREE.MeshStandardMaterial({color:'#111820',metalness:.48,roughness:.42});
+  const trim=new THREE.MeshStandardMaterial({color:'#aeb8c0',metalness:.88,roughness:.22});
+  const lamp=new THREE.MeshStandardMaterial({color:'#fff5d8',emissive:'#ffe5a0',emissiveIntensity:2.4});
+  const tailLamp=new THREE.MeshStandardMaterial({color:'#ed1835',emissive:'#b90022',emissiveIntensity:2.1});
+  [-1,1].forEach(side=>{
+    const arch=new THREE.Mesh(new THREE.TorusGeometry(.52,.095,8,28,Math.PI),paint);
+    arch.rotation.z=Math.PI;arch.rotation.y=Math.PI/2;arch.position.set(side*1.02,.52,-1.34);g.add(arch);
+    const rearArch=new THREE.Mesh(new THREE.TorusGeometry(.52,.095,8,28,Math.PI),paint);
+    rearArch.rotation.z=Math.PI;rearArch.rotation.y=Math.PI/2;rearArch.position.set(side*1.02,.52,1.34);g.add(rearArch);
+    const sideGlass=new THREE.Mesh(new THREE.BoxGeometry(.055,.47,1.48),glass);
+    sideGlass.position.set(side*.965,1.39,.02);sideGlass.rotation.x=-.08;g.add(sideGlass);
+    const doorLine=new THREE.Mesh(new THREE.BoxGeometry(.018,.48,1.5),dark);
+    doorLine.position.set(side*1.035,.78,.1);g.add(doorLine);
+    [-.62,.72].forEach(z=>{const handle=new THREE.Mesh(new THREE.BoxGeometry(.035,.045,.22),trim);handle.position.set(side*1.055,1.03,z);g.add(handle);});
+    const mirror=new THREE.Mesh(new THREE.BoxGeometry(.28,.16,.34),paint);mirror.position.set(side*1.13,1.35,-.78);g.add(mirror);
+    const mirrorGlass=new THREE.Mesh(new THREE.BoxGeometry(.018,.105,.23),trim);mirrorGlass.position.set(side*1.275,1.36,-.78);g.add(mirrorGlass);
+    const skirt=new THREE.Mesh(new THREE.BoxGeometry(.12,.16,2.5),dark);skirt.position.set(side*1.01,.43,0);g.add(skirt);
+    const frontFog=new THREE.Mesh(new THREE.CircleGeometry(.105,16),lamp);frontFog.position.set(side*.72,.55,-2.105);g.add(frontFog);
+  });
+  // Front fascia and rear diffuser.
+  const grille=new THREE.Mesh(new THREE.BoxGeometry(1.05,.24,.055),dark);grille.position.set(0,.67,-2.12);g.add(grille);
+  for(let i=0;i<5;i++){const slat=new THREE.Mesh(new THREE.BoxGeometry(.88,.018,.025),trim);slat.position.set(0,.59+i*.04,-2.155);g.add(slat);}
+  const lowerLip=new THREE.Mesh(new THREE.BoxGeometry(1.95,.12,.24),dark);lowerLip.position.set(0,.42,-2.08);g.add(lowerLip);
+  const rearDiffuser=new THREE.Mesh(new THREE.BoxGeometry(1.55,.16,.28),dark);rearDiffuser.position.set(0,.42,2.04);g.add(rearDiffuser);
+  [-.78,.78].forEach(x=>{const head=new THREE.Mesh(new THREE.BoxGeometry(.48,.16,.07),lamp);head.position.set(x,.88,-2.12);g.add(head);const rearLight=new THREE.Mesh(new THREE.BoxGeometry(.48,.18,.07),tailLamp);rearLight.position.set(x,.87,2.12);g.add(rearLight);});
+  // Roof glass and panoramic windshield trim.
+  const sunroof=new THREE.Mesh(new THREE.BoxGeometry(1.12,.025,.72),dark);sunroof.position.set(0,1.855,.08);g.add(sunroof);
   [-1,1].forEach((x) => [-1,1].forEach((z) => {
     const tire = add(new THREE.CylinderGeometry(.43,.43,.28,24),rubber,x*1.03,.45,z*1.34); tire.rotation.z=Math.PI/2; wheels.push(tire);
     const rim=add(new THREE.CylinderGeometry(.22,.22,.3,20),chrome,x*1.03,.45,z*1.34); rim.rotation.z=Math.PI/2;
@@ -96,10 +124,11 @@ function CarRacing3DViewportInner(p:Props) {
     let observer:ResizeObserver|undefined;
     try{
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.85));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
-    const scene=new THREE.Scene();scene.background=new THREE.Color('#91a9b4');scene.fog=new THREE.Fog('#91a9b4',75,230);
+    const scene=new THREE.Scene();scene.background=new THREE.Color('#111b2b');scene.fog=new THREE.Fog('#111b2b',62,220);
     const camera=new THREE.PerspectiveCamera(62,1,.1,320);camera.position.set(0,6.2,13);camera.lookAt(0,.8,-24);
-    scene.add(new THREE.HemisphereLight('#d9eaff','#343025',2.1));
-    const sun=new THREE.DirectionalLight('#fff0cf',3.1);sun.position.set(-22,38,12);sun.castShadow=true;sun.shadow.mapSize.set(1536,1536);scene.add(sun);
+    scene.add(new THREE.HemisphereLight('#a9c8f0','#15131b',1.05));
+    const moon=new THREE.DirectionalLight('#a9c9ff',1.35);moon.position.set(-22,28,12);moon.castShadow=true;moon.shadow.mapSize.set(1536,1536);scene.add(moon);
+    const cityGlow=new THREE.AmbientLight('#38506c',.42);scene.add(cityGlow);
     const road=new THREE.Mesh(new THREE.PlaneGeometry(17,300),new THREE.MeshStandardMaterial({color:'#171c22',roughness:.94,metalness:.04}));road.rotation.x=-Math.PI/2;road.position.set(0,0,-118);road.receiveShadow=true;scene.add(road);
     const shoulderMat=new THREE.MeshStandardMaterial({color:'#b7a77e',roughness:.95});
     [-8.45,8.45].forEach(x=>{const shoulder=new THREE.Mesh(new THREE.BoxGeometry(.55,.035,300),shoulderMat);shoulder.position.set(x,.015,-118);scene.add(shoulder);});
@@ -110,7 +139,7 @@ function CarRacing3DViewportInner(p:Props) {
     const lanePaint=new THREE.MeshStandardMaterial({color:'#e7dfc4',roughness:.72});
     for(let lane=1;lane<4;lane++)for(let i=0;i<28;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.095,.026,3.1),lanePaint);m.position.set(-8+lane*4,.026,-i*9);scene.add(m);markers.push(m);}
     const lampMat=new THREE.MeshStandardMaterial({color:'#343b42',metalness:.8,roughness:.28});
-    const lampGlow=new THREE.MeshStandardMaterial({color:'#fff0bd',emissive:'#ffd77c',emissiveIntensity:2.2});
+    const lampGlow=new THREE.MeshStandardMaterial({color:'#fff0bd',emissive:'#ffd77c',emissiveIntensity:3.2});
     for(let i=0;i<18;i++)for(const side of [-1,1]){
       const x=side*10.5,z=-i*15-4;
       const pole=new THREE.Mesh(new THREE.CylinderGeometry(.07,.1,5.8,8),lampMat);pole.position.set(x,2.9,z);pole.castShadow=true;scene.add(pole);
@@ -136,7 +165,32 @@ function CarRacing3DViewportInner(p:Props) {
         palm.position.set(i%2?15:-15,0,z-3);scenery.push(palm);
       }
     }
+    // Street-level storefronts, illuminated signs and roadside advertising like an urban night circuit.
+    if(p.track.environment==='city'){
+      for(let i=0;i<12;i++)for(const side of [-1,1]){
+        const z=-i*19-8,x=side*(12.2+(i%2)*1.2);
+        const shop=new THREE.Group();
+        const facade=new THREE.Mesh(new THREE.BoxGeometry(3.8,3.1,4.2),new THREE.MeshStandardMaterial({color:i%2?'#263744':'#3c3430',metalness:.18,roughness:.82}));
+        facade.position.y=1.55;shop.add(facade);
+        const windowPane=new THREE.Mesh(new THREE.BoxGeometry(3.2,1.55,.08),new THREE.MeshStandardMaterial({color:'#193342',emissive:i%2?'#e28b36':'#2a9cbb',emissiveIntensity:.8,metalness:.2}));
+        windowPane.position.set(0,1.05,-2.14);shop.add(windowPane);
+        const sign=new THREE.Mesh(new THREE.BoxGeometry(3.5,.46,.12),new THREE.MeshStandardMaterial({color:i%3===0?'#e9a83b':i%3===1?'#26a9c6':'#d94b53',emissive:i%3===0?'#bd6b18':i%3===1?'#087c9b':'#a51d2b',emissiveIntensity:1.35}));
+        sign.position.set(0,2.35,-2.2);shop.add(sign);
+        shop.position.set(x,0,z);scenery.push(shop);
+      }
+      for(let i=0;i<7;i++){
+        const board=new THREE.Group();
+        const post=new THREE.Mesh(new THREE.BoxGeometry(.14,5,.14),lampMat);post.position.y=2.5;board.add(post);
+        const panel=new THREE.Mesh(new THREE.BoxGeometry(4.8,1.55,.18),new THREE.MeshStandardMaterial({color:i%2?'#102b3a':'#332016',emissive:i%2?'#0a6e91':'#9d4d12',emissiveIntensity:.65}));
+        panel.position.set(0,4.5,0);board.add(panel);board.position.set(i%2?18:-18,0,-i*34-12);scenery.push(board);
+      }
+    }
     scenery.forEach(x=>scene.add(x));
+    // Ambient road traffic adds depth to the city scene without changing race logic.
+    const traffic:CarModel[]=[];
+    if(p.track.environment==='city'){
+      for(let i=0;i<5;i++){const trafficCar=makeCar(['#c7d1d8','#d34b35','#e4b84d','#3989a8','#252a31'][i],`CITY-${i+1}`);trafficCar.group.scale.setScalar(.78);trafficCar.group.position.set(i%2?5.35:-5.35,0,-26-i*43);scene.add(trafficCar.group);traffic.push(trafficCar);}
+    }
     const obstacleModels = p.track.obstacles.map(obstacle => {
       const group = new THREE.Group();
       const laneX = obstacle.lane * 3.45;
@@ -159,11 +213,30 @@ function CarRacing3DViewportInner(p:Props) {
     });
     const ownColor=p.cars.find(c=>c.id===p.me.carId)?.color||'#e9ad3b';const own=makeCar(ownColor,p.me.plateNumber);scene.add(own.group);
     const opponents=new Map<string,CarModel>();
-    const cockpit=new THREE.Group(),dash=new THREE.Mesh(new THREE.BoxGeometry(4.8,.62,1.1),new THREE.MeshStandardMaterial({color:'#101316',metalness:.42}));dash.position.set(0,-.95,-1.55);cockpit.add(dash);
+    const cockpit=new THREE.Group();
+    const cabin=new THREE.MeshStandardMaterial({color:'#11161b',metalness:.28,roughness:.72});
+    const leather=new THREE.MeshStandardMaterial({color:'#252a2d',roughness:.86});
+    const silver=new THREE.MeshStandardMaterial({color:'#aab2b8',metalness:.9,roughness:.2});
+    const screenMat=new THREE.MeshStandardMaterial({color:'#071b24',emissive:'#0a6b8c',emissiveIntensity:.8,metalness:.2});
+    const dash=new THREE.Mesh(new THREE.BoxGeometry(4.8,.62,1.1),cabin);dash.position.set(0,-.95,-1.55);cockpit.add(dash);
+    const dashTop=new THREE.Mesh(new THREE.BoxGeometry(4.65,.13,.96),leather);dashTop.position.set(0,-.64,-1.58);cockpit.add(dashTop);
+    // Driver and passenger seats, center console and instrument binnacle.
+    [-1.18,1.18].forEach(x=>{const seat=new THREE.Group();const base=new THREE.Mesh(new THREE.BoxGeometry(.88,.2,.9),leather);base.position.set(0,-1.18,-.15);seat.add(base);const back=new THREE.Mesh(new THREE.BoxGeometry(.9,1.12,.2),leather);back.position.set(0,-.68,.28);seat.add(back);const headrest=new THREE.Mesh(new THREE.BoxGeometry(.48,.32,.18),cabin);headrest.position.set(0,-.12,.34);seat.add(headrest);seat.position.x=x;cockpit.add(seat);});
+    const console=new THREE.Mesh(new THREE.BoxGeometry(.82,.22,1.2),cabin);console.position.set(0,-1.12,-.45);cockpit.add(console);
+    const consoleScreen=new THREE.Mesh(new THREE.BoxGeometry(.62,.32,.045),screenMat);consoleScreen.position.set(0,-.91,-.9);cockpit.add(consoleScreen);
+    const gearStick=new THREE.Group();const stick=new THREE.Mesh(new THREE.CylinderGeometry(.035,.045,.42,10),silver);stick.position.y=.18;gearStick.add(stick);const knob=new THREE.Mesh(new THREE.SphereGeometry(.11,14,12),cabin);knob.position.y=.42;gearStick.add(knob);gearStick.position.set(.48,-1.2,-.3);cockpit.add(gearStick);
+    const cluster=new THREE.Mesh(new THREE.BoxGeometry(1.7,.55,.14),cabin);cluster.position.set(0,-.69,-1.92);cockpit.add(cluster);
+    const gaugeMat=new THREE.MeshStandardMaterial({color:'#06121b',emissive:'#0a3348',emissiveIntensity:.7});
+    [-.48,.48].forEach(x=>{const gauge=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.055,32),gaugeMat);gauge.rotation.x=Math.PI/2;gauge.position.set(x,-.69,-2.02);cockpit.add(gauge);const ring=new THREE.Mesh(new THREE.TorusGeometry(.255,.025,8,32),silver);ring.position.set(x,-.69,-2.055);cockpit.add(ring);const needle=new THREE.Mesh(new THREE.BoxGeometry(.018,.2,.025),new THREE.MeshStandardMaterial({color:'#f4bd54',emissive:'#d78a25',emissiveIntensity:1.2}));needle.position.set(x,-.69,-2.09);needle.rotation.z=-.65;cockpit.add(needle);});
+    const display=new THREE.Mesh(new THREE.BoxGeometry(.52,.3,.035),screenMat);display.position.set(0,-.69,-2.035);cockpit.add(display);
+    [-.9,.9].forEach(x=>{const vent=new THREE.Mesh(new THREE.BoxGeometry(.42,.13,.04),silver);vent.position.set(x,-.82,-2.02);cockpit.add(vent);});
+    const windshieldFrame=new THREE.Mesh(new THREE.BoxGeometry(4.7,.12,.12),cabin);windshieldFrame.position.set(0,.08,-2.18);cockpit.add(windshieldFrame);
     const steering=new THREE.Group(),rim=new THREE.Mesh(new THREE.TorusGeometry(.48,.075,12,40),new THREE.MeshStandardMaterial({color:'#b6b9bb',metalness:.8}));steering.add(rim);
     const hub=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.13,20),new THREE.MeshStandardMaterial({color:'#bd9140',metalness:.65}));hub.rotation.x=Math.PI/2;steering.add(hub);
     for(let i=0;i<3;i++){const spoke=new THREE.Mesh(new THREE.BoxGeometry(.055,.48,.08),new THREE.MeshStandardMaterial({color:'#b8bdc2',metalness:.9}));spoke.position.y=i===0?.24:-.12;spoke.rotation.z=i===1?.85:i===2?-.85:0;steering.add(spoke);}
-    steering.position.set(0,-.55,-1.28);cockpit.add(steering);camera.add(cockpit);scene.add(camera);
+    steering.position.set(0,-.55,-1.28);cockpit.add(steering);
+    const column=new THREE.Mesh(new THREE.CylinderGeometry(.09,.12,.62,12),cabin);column.rotation.x=Math.PI/2;column.position.set(0,-.78,-1.55);cockpit.add(column);
+    camera.add(cockpit);scene.add(camera);
     const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
     observer=new ResizeObserver(resize);observer.observe(el);resize();
     let last=performance.now(),travel=0,raf=0;
@@ -178,7 +251,8 @@ function CarRacing3DViewportInner(p:Props) {
       const ids=new Set<string>();
       s.players.forEach(player=>{if(player.isMe||player.finished)return;ids.add(player.userId);let model=opponents.get(player.userId);if(!model){const car=s.cars.find(c=>c.id===player.carId);model=makeCar(car?.color||'#4b9bd2',player.plateNumber);opponents.set(player.userId,model);scene.add(model.group);}const delta=player.progress-s.me.progress;model.group.position.set(player.lane*3.45,0,THREE.MathUtils.clamp(-22-delta*.38,-115,8));model.group.visible=!player.eliminated;model.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.3;});});
       opponents.forEach((model,id)=>{if(!ids.has(id)){scene.remove(model.group);opponents.delete(id);}});
-      const sky=s.track.environment==='coastal'?'#8bb9c8':s.track.environment==='rocky'?'#9a8f80':s.track.environment==='city'?'#8497a4':'#91a9b4';scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,75,230);
+      const sky=s.track.environment==='coastal'?'#10283b':s.track.environment==='rocky'?'#252b35':s.track.environment==='city'?'#101a2b':'#172333';scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,62,220);
+      traffic.forEach((car,i)=>{car.group.position.z+=dt*velocity*(23+i%2*4);if(car.group.position.z>16)car.group.position.z=-205-i*8;car.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.2;});});
       renderer.render(scene,camera);
       }catch(error){cancelAnimationFrame(raf);setRendererStatus('error');console.error('Car Racing 3D render failed',error);}
     };
