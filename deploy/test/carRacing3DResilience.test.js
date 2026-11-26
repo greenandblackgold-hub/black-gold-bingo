@@ -17,7 +17,7 @@ test('Car Racing handles WebGL context loss and recreates the renderer after res
   assert.match(source, /event\.preventDefault\(\)/);
   assert.match(source, /webglcontextrestored/);
   assert.match(source, /setRendererAttempt\(value=>value\+1\)/);
-  assert.match(source, /\},\[rendererAttempt\]\)/);
+  assert.match(source, /\},\[rendererAttempt,graphicsQuality\]\)/);
   assert.match(source, /removeEventListener\('webglcontextlost'/);
   assert.match(source, /removeEventListener\('webglcontextrestored'/);
 });
