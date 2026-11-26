@@ -372,7 +372,7 @@ test('frontend source includes all four Three.js track scenes, 3D obstacles and 
   assert.match(frontend, /SERVER VERIFIED/);
   assert.match(frontend, /winnerPlateNumber/);
   assert.match(frontend, /Final plate order/);
-  assert.match(frontend, /55% company \/ 45% pool/);
+  assert.match(frontend, /Single-player test drive/);
 });
 
 
@@ -472,9 +472,10 @@ test('steering supports the full signed range, reverse gear moves backward, and 
   assert.ok(driver.progress <= progressBeforeReverse, 'reverse gear does not advance forward race progress');
 
   const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacing3D.tsx', import.meta.url), 'utf8');
-  assert.match(frontend, /STEER · ±180°/);
+  assert.match(frontend, /STEER LEFT/);
+  assert.match(frontend, /STEER RIGHT/);
   assert.match(frontend, /D · DRIVE/);
   assert.match(frontend, /R · REVERSE/);
-  assert.match(frontend, /ACCELERATE/);
+  assert.match(frontend, /GAS/);
   assert.match(frontend, /BRAKE/);
 });
