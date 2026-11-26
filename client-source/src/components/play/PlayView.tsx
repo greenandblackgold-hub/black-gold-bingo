@@ -540,7 +540,6 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   }, []);
 
   const lastCalls = calledNumbers.slice(-5).reverse();
-  const patternCells = useMemo(() => getPatternCells(winPattern), [winPattern]);
   const quickBuyTotal = bonusRound ? 0 : quickBuyCount * cardPrice;
   const quickBuyAllowed = bonusRound || phase === 'waiting';
   const quickBuyInsufficient = bonusRound && quickBuyTotal > balance;
@@ -741,14 +740,14 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
           </section>
         )}
 
-        <section className="grid grid-cols-[0.9fr_0.65fr_1.8fr] items-start gap-2 rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_18px_rgba(250,204,21,.28)]">
+        <section className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-xl border border-yellow-400 bg-black p-2 shadow-[0_0_14px_rgba(250,204,21,.2)]">
           <div className="relative">
             <button
               type="button"
               aria-expanded={patternOpen}
               aria-controls="winning-pattern-options"
               onClick={() => setPatternOpen(open => !open)}
-              className="flex min-h-[3.4rem] w-full items-center justify-center gap-1 rounded-xl border border-yellow-400 bg-black px-1.5 text-center text-xs font-black leading-tight text-yellow-300 sm:text-base"
+              className="inline-flex min-h-0 w-fit items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-yellow-400 bg-black px-2 py-1.5 text-[10px] font-black leading-tight text-yellow-300 sm:text-xs"
             >
               {t.winningPattern} <span aria-hidden="true">{patternOpen ? '▴' : '▾'}</span>
             </button>
@@ -787,11 +786,6 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 </div>
               </div>
             )}
-          </div>
-          <div className="flex items-center justify-center pt-1">
-            <div className="grid w-full max-w-[6.5rem] grid-cols-5 gap-[2px] rounded-md border border-yellow-300/70 bg-white p-1 shadow-[0_0_12px_rgba(250,204,21,.35)]">
-              {Array.from({ length: 25 }, (_, i) => <span key={i} className={`aspect-square rounded-[2px] ${patternCells.includes(i) ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,.9)]' : 'bg-zinc-200'}`} />)}
-            </div>
           </div>
           <div className="min-w-0">
             <div className="flex min-h-[3.4rem] items-center justify-around gap-0.5 rounded-xl border border-yellow-400 bg-black px-1 py-1">
