@@ -6,7 +6,7 @@ export type RacingCar = { id: string; name: string; color: string };
 export type RacingPlayer = { userId: string; name: string; carId: string; plateNumber: string; progress: number; lane: number; speed: number; finished: boolean; eliminated: boolean; isMe: boolean; collisionEvent: { id: string; at: number; type: string; severity: 'light' | 'medium' | 'severe'; participants: string[] } | null };
 export type RacingTrack = { name: string; environment: 'city' | 'country' | 'rocky' | 'coastal'; curveType: 'straight' | 'left' | 'right' | 's-bend'; obstacles: { at: number; lane: number; width: number; type: string }[] };
 export type RacingView = 'chase' | 'cockpit';
-type Props = { view: RacingView; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; track: RacingTrack; boost: boolean; rank: number; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean) => void };
+type Props = { view: RacingView; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; reverse: boolean; track: RacingTrack; boost: boolean; rank: number; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean, brake?: boolean) => void; onGearChange: (reverse: boolean) => void };
 type CarModel = { group: THREE.Group; wheels: THREE.Mesh[] };
 
 function plateTexture(plate: string) {
@@ -199,9 +199,43 @@ function CarRacing3DViewportInner(p:Props) {
       <button type="button" onClick={()=>p.onViewChange('chase')} aria-pressed={p.view==='chase'} className={'rounded-lg px-3 py-2 text-[10px] font-black '+(p.view==='chase'?'bg-amber-300 text-black':'text-amber-100')}>CHASE</button>
       <button type="button" onClick={()=>p.onViewChange('cockpit')} aria-pressed={p.view==='cockpit'} className={'rounded-lg px-3 py-2 text-[10px] font-black '+(p.view==='cockpit'?'bg-amber-300 text-black':'text-amber-100')}>COCKPIT</button>
     </div>
-    <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-[#030609]/98 via-[#030609]/85 to-transparent px-3 pb-4 pt-16 sm:px-6 sm:pb-6">
-      <div className="flex gap-2">{control('◀','LEFT','default',()=>p.onSteer(-1),()=>p.onSteer(0))}{control('▶','RIGHT','default',()=>p.onSteer(1),()=>p.onSteer(0))}</div>
-      <div className="flex items-end gap-2">{control('▼','BRAKE / REV','muted',()=>p.onThrottle(1,true,false),()=>p.onThrottle(0,false,false))}{control('▲','GAS','gold',()=>p.onThrottle(1,false,false),()=>p.onThrottle(0,false,false))}{control('N₂O','NITRO','nitro',()=>p.onThrottle(1,false,true),()=>p.onThrottle(0,false,false))}</div>
+    <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-[#030609]/98 via-[#030609]/90 to-transparent px-3 pb-4 pt-16 sm:px-6 sm:pb-6">
+      <div className="flex min-w-0 flex-col items-center gap-1">
+        <div
+          role="slider"
+          aria-label="Steering wheel"
+          aria-valuemin={-180}
+          aria-valuemax={180}
+          aria-valuenow={Math.round(p.steer*180)}
+          tabIndex={0}
+          onKeyDown={(e)=>{if(e.key==='ArrowLeft')p.onSteer(Math.max(-1,p.steer-.08));else if(e.key==='ArrowRight')p.onSteer(Math.min(1,p.steer+.08));else if(e.key==='Home')p.onSteer(0);}}
+          onPointerDown={(e)=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);const r=e.currentTarget.getBoundingClientRect();p.onSteer(THREE.MathUtils.clamp(((e.clientX-r.left)/r.width-.5)*2,-1,1));}}
+          onPointerMove={(e)=>{if(e.buttons===1){const r=e.currentTarget.getBoundingClientRect();p.onSteer(THREE.MathUtils.clamp(((e.clientX-r.left)/r.width-.5)*2,-1,1));}}}
+          onPointerUp={()=>p.onSteer(0)}
+          onPointerCancel={()=>p.onSteer(0)}
+          className="relative flex h-[104px] w-[156px] touch-none select-none items-center justify-center rounded-full border border-amber-300/35 bg-slate-950/85 shadow-[0_0_24px_rgba(245,190,70,.12)] outline-none focus:ring-2 focus:ring-amber-300"
+          style={{touchAction:'none'}}
+        >
+          <div className="relative h-[82px] w-[82px] rounded-full border-[9px] border-slate-300 shadow-[inset_0_0_0_2px_#64748b,0_3px_8px_#000] transition-transform duration-75" style={{transform:`rotate(${p.steer*180}deg)`}}>
+            <div className="absolute left-1/2 top-0 h-[34px] w-[7px] -translate-x-1/2 rounded-b bg-amber-300"/>
+            <div className="absolute bottom-[7px] left-[7px] h-[7px] w-[27px] rotate-[28deg] rounded bg-slate-300"/>
+            <div className="absolute bottom-[7px] right-[7px] h-[7px] w-[27px] -rotate-[28deg] rounded bg-slate-300"/>
+            <div className="absolute left-1/2 top-1/2 h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-200 bg-slate-800"/>
+          </div>
+          <span className="pointer-events-none absolute bottom-1 text-[8px] font-black tracking-widest text-amber-200">STEER · ±180°</span>
+        </div>
+        <p className="text-[9px] font-black text-amber-100/60">DRAG LEFT / RIGHT</p>
+      </div>
+      <div className="flex flex-wrap items-end justify-end gap-1.5 sm:gap-2">
+        <div className="flex flex-col gap-1">
+          <button type="button" onClick={()=>p.onGearChange(!p.reverse)} aria-pressed={p.reverse} className={'min-h-[42px] min-w-[54px] rounded-xl border px-3 text-xs font-black '+(p.reverse?'border-red-300 bg-red-500 text-white':'border-emerald-300/50 bg-emerald-950/80 text-emerald-200')}>{p.reverse?'R · REVERSE':'D · DRIVE'}</button>
+          {control('■','BRAKE','muted',()=>p.onThrottle(0,p.reverse,false,true),()=>p.onThrottle(0,p.reverse,false,false))}
+        </div>
+        <div className="flex flex-col gap-1">
+          {control('▲','ACCELERATE','gold',()=>p.onThrottle(1,p.reverse,false,false),()=>p.onThrottle(0,p.reverse,false,false))}
+          {control('N₂O','NITRO','nitro',()=>p.onThrottle(1,p.reverse,true,false),()=>p.onThrottle(0,p.reverse,false,false))}
+        </div>
+      </div>
     </div>
     <div className="pointer-events-none absolute bottom-[88px] left-1/2 -translate-x-1/2 rounded-full border border-white/15 bg-black/60 px-3 py-1 text-[9px] font-black tracking-[.2em] text-white/75">{p.view==='cockpit'?'3D COCKPIT · LIVE DASH':'3D CHASE CAMERA'}</div>
     {p.me.collisionEvent && Date.now()-p.me.collisionEvent.at<2200 && <div role="status" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-orange-300/70 bg-red-950/85 px-5 py-3 text-center text-sm font-black tracking-widest text-orange-100 shadow-[0_0_30px_rgba(255,90,30,.45)]">IMPACT · {p.me.collisionEvent.severity.toUpperCase()}</div>}
