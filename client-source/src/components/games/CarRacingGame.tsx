@@ -30,23 +30,36 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
   const [drivingView, setDrivingView] = useState<DrivingView>('chase');
   const [clock, setClock] = useState(Date.now());
   const stateRequestVersion = useRef(0);
+  const stateRequestInFlight = useRef(false);
   const room = state?.room ?? null;
   const me = room?.players.find((p) => p.isMe);
   const load = useCallback(async () => {
+    // Never overlap state polls: a slow response must not be invalidated by a
+    // faster timer tick, which previously could starve room updates indefinitely.
+    if (stateRequestInFlight.current) return;
+    stateRequestInFlight.current = true;
     const requestVersion = ++stateRequestVersion.current;
     try {
       const nextState = await api.get<State>('/api/games/car-racing/state');
-      // Ignore an older poll that finishes after a newer action/poll; otherwise it can
-      // roll the lobby back to a one-player snapshot and hide the server countdown.
-      if (requestVersion === stateRequestVersion.current) { setState(nextState); setError(''); }
+      if (requestVersion === stateRequestVersion.current) {
+        setState(nextState);
+        setError('');
+      }
     } catch (e) {
       if (requestVersion === stateRequestVersion.current) setError(e instanceof Error ? e.message : t.error);
+    } finally {
+      stateRequestInFlight.current = false;
     }
   }, [t.error]);
   useEffect(() => {
-    void load();
-    const poll = window.setInterval(() => { void load(); setClock(Date.now()); }, 700);
-    return () => window.clearInterval(poll);
+    let stopped = false;
+    let timer = 0;
+    const poll = async () => {
+      await load();
+      if (!stopped) timer = window.setTimeout(() => { setClock(Date.now()); void poll(); }, 700);
+    };
+    void poll();
+    return () => { stopped = true; window.clearTimeout(timer); };
   }, [load]);
   useEffect(() => {
     if (!room || room.status !== 'racing' || me?.eliminated) { setThrottle(0); setSteer(0); setReverse(false); setBoost(false); return; }
