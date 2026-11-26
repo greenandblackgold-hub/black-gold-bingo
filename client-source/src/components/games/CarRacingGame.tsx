@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CarRacing3DPreview, CarRacing3DViewport } from './CarRacing3D';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
@@ -29,11 +29,19 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
   const [boost, setBoost] = useState(false);
   const [drivingView, setDrivingView] = useState<DrivingView>('chase');
   const [clock, setClock] = useState(Date.now());
+  const stateRequestVersion = useRef(0);
   const room = state?.room ?? null;
   const me = room?.players.find((p) => p.isMe);
   const load = useCallback(async () => {
-    try { setState(await api.get<State>('/api/games/car-racing/state')); setError(''); }
-    catch (e) { setError(e instanceof Error ? e.message : t.error); }
+    const requestVersion = ++stateRequestVersion.current;
+    try {
+      const nextState = await api.get<State>('/api/games/car-racing/state');
+      // Ignore an older poll that finishes after a newer action/poll; otherwise it can
+      // roll the lobby back to a one-player snapshot and hide the server countdown.
+      if (requestVersion === stateRequestVersion.current) { setState(nextState); setError(''); }
+    } catch (e) {
+      if (requestVersion === stateRequestVersion.current) setError(e instanceof Error ? e.message : t.error);
+    }
   }, [t.error]);
   useEffect(() => {
     void load();
@@ -48,9 +56,17 @@ export function CarRacingGame({ onBack }: { onBack: () => void }) {
     return () => window.clearInterval(timer);
   }, [room?.roomId, room?.status, me?.eliminated, throttle, steer, reverse, boost]);
   const act = async (path: string, body: unknown) => {
+    // Invalidate in-flight polling before a room mutation so an old GET cannot
+    // overwrite the authoritative room returned by create/join/ready.
+    stateRequestVersion.current += 1;
     setBusy(true); setError('');
-    try { await api.post(path, body); await load(); }
-    catch (e) { setError(e instanceof Error ? e.message : t.error); }
+    try {
+      const result = await api.post<Room | { ok: boolean }>(path, body);
+      if (result && 'roomId' in result) {
+        setState((current) => current ? { ...current, room: result } : current);
+      }
+      await load();
+    } catch (e) { setError(e instanceof Error ? e.message : t.error); }
     finally { setBusy(false); }
   };
   const progress = me?.progress ?? 0;
