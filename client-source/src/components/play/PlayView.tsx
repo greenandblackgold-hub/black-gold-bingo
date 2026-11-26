@@ -210,29 +210,29 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
     <section className={`bingo-card-surface relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-0 shadow-xl ${accent.glow}`}>
       <div className={`flex min-h-9 items-center justify-between gap-2 bg-gradient-to-r ${accent.head} px-2 py-1.5 text-white sm:min-h-11 sm:px-3`}>
         <div className="flex min-w-0 items-center gap-1.5">
-          <span aria-hidden="true" className="shrink-0 text-xs sm:text-sm">▣</span>
-          <span className="truncate text-xs font-black tabular-nums sm:text-base">{card.serial}</span>
-          <span className="shrink-0 rounded-full border border-white/25 bg-black/25 px-1.5 py-0.5 text-[9px] font-black leading-none text-white sm:text-[10px]">N-{called.size}</span>
+          <span aria-hidden="true" className="shrink-0 text-sm sm:text-sm">▣</span>
+          <span className="truncate text-sm font-black tabular-nums sm:text-base">{card.serial}</span>
+          <span className="shrink-0 rounded-full border border-white/25 bg-black/25 px-2 py-0.5 text-[10px] font-black leading-none text-white sm:text-[10px]">N-{called.size}</span>
           {card.locked && <span className="shrink-0 rounded bg-red-700 px-1.5 py-0.5 text-[9px] font-black">{labels.locked}</span>}
         </div>
         {draft ? (
-          <button type="button" aria-label={`Remove card #${card.serial}`} onClick={(event) => { event.stopPropagation(); onRemove(); }} className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-xl font-medium leading-none text-white/95 transition hover:bg-black/20 focus:outline-none focus:ring-2 focus:ring-white/80 sm:h-8 sm:w-8">×</button>
+          <button type="button" aria-label={`Remove card #${card.serial}`} onClick={(event) => { event.stopPropagation(); onRemove(); }} className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-2xl font-medium leading-none text-white/95 transition hover:bg-black/20 focus:outline-none focus:ring-2 focus:ring-white/80 sm:h-8 sm:w-8">×</button>
         ) : (
-          <span aria-label={`Card #${card.serial} locked`} title="Locked" className="grid h-7 w-7 shrink-0 place-items-center text-base text-white/95 sm:h-8 sm:w-8">🔒</span>
+          <span aria-label={`Card #${card.serial} locked`} title="Locked" className="grid h-8 w-8 shrink-0 place-items-center text-lg text-white/95 sm:h-8 sm:w-8">🔒</span>
         )}
       </div>
       {draft ? (
-        <button type="button" onClick={onRegister} disabled={registering} className="flex min-h-8 w-full items-center justify-center bg-emerald-700 px-2 py-1.5 text-xs font-black text-white transition hover:bg-emerald-600 disabled:opacity-60 sm:min-h-9 sm:text-sm">
+        <button type="button" onClick={onRegister} disabled={registering} className="flex min-h-9 w-full items-center justify-center bg-emerald-700 px-2.5 py-2 text-sm font-black text-white transition hover:bg-emerald-600 disabled:opacity-60 sm:min-h-10 sm:text-sm">
           {registering ? '…' : 'ካርቴላ አመዝግብ'}
         </button>
       ) : (
-        <div className="flex min-h-8 w-full items-center justify-center bg-emerald-700 px-2 py-1.5 text-xs font-black text-white sm:min-h-9 sm:text-sm">
+        <div className="flex min-h-9 w-full items-center justify-center bg-emerald-700 px-2.5 py-2 text-sm font-black text-white sm:min-h-10 sm:text-sm">
           {gameStarted ? 'BINGO' : 'ተመዝግበዋል'}
         </div>
       )}
       <div className="grid grid-cols-5 gap-px overflow-hidden bg-zinc-300">
         {LETTERS.map((letter, col) => (
-          <div key={letter} className={`grid min-h-8 place-items-center py-1 text-center text-base font-black text-white sm:min-h-10 sm:text-2xl ${['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'][col]}`}>{letter}</div>
+          <div key={letter} className={`grid min-h-9 place-items-center py-1.5 text-center text-lg font-black text-white sm:min-h-10 sm:text-2xl ${['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'][col]}`}>{letter}</div>
         ))}
         {card.grid.flatMap((row, r) => row.map((value, c) => {
           const free = value === null;
@@ -253,7 +253,7 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
                 '--bingo-mark-text-color': wasCalled ? '#ffffff' : readableMarkText(markColor),
               } as CSSProperties) : undefined}
               className={[
-                'relative grid aspect-square min-w-0 place-items-center border text-[clamp(12px,2.8vw,20px)] font-black leading-none transition',
+                'relative grid aspect-square min-w-0 place-items-center border text-[clamp(13px,3vw,22px)] font-black leading-none transition',
                 free ? 'rounded-full border-blue-300 bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
                   wasCalled ? 'rounded-full border-pink-300 bg-pink-600 text-white shadow-[0_0_7px_rgba(236,72,153,.35)]' :
                   marked ? 'rounded-[3px] border-zinc-300 bg-white text-black' :
@@ -267,7 +267,7 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
         }))}
       </div>
       {claimable && !card.locked && (
-        <button type="button" onClick={onClaim} disabled={claiming} className="mt-1 w-full rounded-lg bg-gradient-to-r from-yellow-200 to-amber-500 py-1 text-xs font-black text-black">
+        <button type="button" onClick={onClaim} disabled={claiming} className="mt-1 w-full rounded-lg bg-gradient-to-r from-yellow-200 to-amber-500 py-1.5 text-sm font-black text-black">
           {claiming ? labels.claiming : 'BINGO'}
         </button>
       )}
@@ -877,7 +877,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         </section>
 
         {(draftCards.length > 0 || cards.length > 0) && (
-          <section className="grid grid-cols-2 items-start gap-2 sm:gap-4">
+          <section className="grid grid-cols-2 items-start gap-1.5 sm:gap-4">
             {orderedDraftCards.map((card, index) => (
               <BingoCardView
                 labels={t}
