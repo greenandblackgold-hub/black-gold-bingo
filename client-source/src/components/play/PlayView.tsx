@@ -206,17 +206,23 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
 
   return (
     <section className={`bingo-card-surface relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-0 shadow-xl ${accent.glow}`}>
+      <div className={`flex min-h-9 items-center justify-between gap-2 bg-gradient-to-r ${accent.head} px-2 py-1.5 text-white sm:min-h-11 sm:px-3`}>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span aria-hidden="true" className="shrink-0 text-xs sm:text-sm">▣</span>
+          <span className="truncate text-xs font-black tabular-nums sm:text-base">{card.serial}</span>
+          {card.locked && <span className="shrink-0 rounded bg-red-700 px-1.5 py-0.5 text-[9px] font-black">{labels.locked}</span>}
+        </div>
+        <button type="button" aria-label={`Remove card #${card.serial}`} onClick={(event) => { event.stopPropagation(); onRemove(); }} className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-xl font-medium leading-none text-white/95 transition hover:bg-black/20 focus:outline-none focus:ring-2 focus:ring-white/80 sm:h-8 sm:w-8">×</button>
+      </div>
       {draft ? (
-        <button type="button" onClick={onRegister} disabled={registering} className={`flex min-h-9 w-full items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-2 text-sm font-black text-white sm:min-h-11 sm:text-xl disabled:opacity-60`}>
-          {registering ? '…' : `Card #${index + 1} · REGISTER`}
+        <button type="button" onClick={onRegister} disabled={registering} className="flex min-h-8 w-full items-center justify-center bg-emerald-700 px-2 py-1.5 text-xs font-black text-white transition hover:bg-emerald-600 disabled:opacity-60 sm:min-h-9 sm:text-sm">
+          {registering ? '…' : 'ካርቴላ አመዝግብ'}
         </button>
       ) : (
-        <div className={`flex min-h-9 items-center justify-center bg-gradient-to-r ${accent.head} px-2 py-2 text-sm font-black text-white sm:min-h-11 sm:text-xl`}>
-          Card #{index + 1}
+        <div className="flex min-h-8 w-full items-center justify-center bg-emerald-700 px-2 py-1.5 text-xs font-black text-white sm:min-h-9 sm:text-sm">
+          ካርቴላ አመዝግብ
         </div>
       )}
-      {card.locked && <span className="absolute left-1 top-1 z-10 rounded bg-red-700 px-2 py-0.5 text-[9px] font-black text-white">{labels.locked}</span>}
-      <button type="button" aria-label={`Remove card #${card.serial}`} onClick={(event) => { event.stopPropagation(); onRemove(); }} className="absolute right-1 top-1 z-20 grid h-6 w-6 place-items-center rounded-full border border-white/70 bg-red-700 text-sm font-black leading-none text-white shadow">×</button>
       <div className="grid grid-cols-5 gap-px overflow-hidden bg-zinc-300">
         {LETTERS.map((letter, col) => (
           <div key={letter} className={`grid min-h-8 place-items-center py-1 text-center text-base font-black text-white sm:min-h-10 sm:text-2xl ${['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'][col]}`}>{letter}</div>
@@ -240,7 +246,7 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
                 '--bingo-mark-text-color': readableMarkText(markColor),
               } as CSSProperties) : undefined}
               className={[
-                'relative grid aspect-square min-w-0 place-items-center rounded-[3px] text-[clamp(10px,2.1vw,22px)] font-black leading-none text-black transition',
+                'relative grid aspect-square min-w-0 place-items-center rounded-[3px] text-[clamp(12px,2.8vw,20px)] font-black leading-none text-black transition',
                 free ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
                   marked ? 'border border-black/20' :
                   'bg-gradient-to-b from-white to-zinc-200',
