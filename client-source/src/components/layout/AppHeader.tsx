@@ -71,8 +71,8 @@ export function AppHeader({ onOpenWallet, onOpenAdmin, onLogout, onOpenMenu, onO
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-3L3 11"/><path d="M3 4v7h7"/><path d="M4 13a8 8 0 0 0 14.9 3L21 13"/><path d="M21 20v-7h-7"/></svg>
             </button>
             <div className="flex min-w-0 items-center gap-1 border-l border-yellow-500/70 pl-1.5 text-yellow-200 sm:gap-2 sm:pl-3">
-              <span className="text-xl leading-none drop-shadow-[0_0_12px_rgba(255,215,0,1)] sm:text-4xl">🏆</span>
-              <strong className="whitespace-nowrap text-[10px] font-black tracking-tight text-yellow-200 drop-shadow-[0_0_12px_rgba(255,215,0,1)] sm:text-2xl">
+              <span className="text-2xl leading-none [filter:brightness(1.2)_saturate(1.5)] drop-shadow-[0_0_6px_rgba(255,215,0,1)] drop-shadow-[0_0_16px_rgba(255,190,0,1)] sm:text-[2.6rem]">🏆</span>
+              <strong className="whitespace-nowrap text-[11px] font-black tracking-tight text-[#FFD700] drop-shadow-[0_0_5px_rgba(255,215,0,1)] drop-shadow-[0_0_14px_rgba(255,190,0,0.95)] sm:text-[1.65rem]">
                 {roundPrizeEtb !== undefined ? formatAmount(lang, roundPrizeEtb) : '—'} {l.currency}
               </strong>
             </div>
