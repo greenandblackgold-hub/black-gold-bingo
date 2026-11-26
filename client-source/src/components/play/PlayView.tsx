@@ -791,16 +791,16 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
             <div className="flex min-h-[3.4rem] items-center justify-around gap-0.5 rounded-xl border border-yellow-400 bg-black px-1 py-1">
               {lastCalls.length ? lastCalls.map((number, index) => <CalledBall key={number} number={number} latest={index === 0} />) : <span className="text-xs text-yellow-100/60">—</span>}
             </div>
-            <div className="ml-auto mt-1 w-fit rounded-lg border border-red-500 bg-red-950 px-4 py-0.5 text-lg font-black leading-none text-red-500 shadow-[0_0_12px_rgba(239,68,68,.5)]">
-              <RoundCallTimer phase={phase} nextRoundAt={nextRoundAt} nextCallAt={nextCallAt} calledCount={calledNumbers.length} firstCallAt={firstCallAt} endedAt={endedAt} />
-            </div>
           </div>
         </section>
 
         <section aria-label={t.numberBoard} className="rounded-2xl border border-yellow-400 bg-black p-2 shadow-[0_0_18px_rgba(250,204,21,.22)] sm:p-3">
-          <div className="mb-2 flex flex-nowrap items-center justify-between gap-1">
+          <div className="mb-2 flex flex-nowrap items-center gap-1">
             <h2 className="shrink-0 text-[11px] font-black tracking-wide text-yellow-300 sm:text-base">{t.numberBoard}</h2>
-            <div className="flex shrink-0 items-center gap-1">
+            <div className="shrink-0 rounded-lg border border-red-500 bg-red-950 px-2 py-0.5 text-sm font-black leading-none text-red-500 shadow-[0_0_12px_rgba(239,68,68,.5)] sm:px-4 sm:text-lg">
+              <RoundCallTimer phase={phase} nextRoundAt={nextRoundAt} nextCallAt={nextCallAt} calledCount={calledNumbers.length} firstCallAt={firstCallAt} endedAt={endedAt} />
+            </div>
+            <div className="ml-auto flex shrink-0 items-center gap-1">
               {numberBoardExpanded && (
                 <>
                   <span aria-label={t.calledCount} className="rounded-md border border-yellow-500/60 bg-yellow-400 px-2 py-1.5 text-[11px] font-black text-black shadow sm:px-3 sm:text-sm tabular-nums">{calledNumbers.length}/75</span>
