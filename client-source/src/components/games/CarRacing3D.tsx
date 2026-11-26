@@ -252,6 +252,15 @@ function CarRacing3DViewportInner(p:Props) {
     const neonBlue=new THREE.MeshStandardMaterial({color:'#28c9ff',emissive:'#087eb8',emissiveIntensity:2.8,metalness:.35,roughness:.22});
     const neonPink=new THREE.MeshStandardMaterial({color:'#ff4fc8',emissive:'#b40072',emissiveIntensity:2.5,metalness:.3,roughness:.24});
     for(let i=0;i<14;i++)for(const side of [-1,1]){const strip=new THREE.Mesh(new THREE.BoxGeometry(.075,7.5,.12),i%2?neonBlue:neonPink);strip.position.set(side*(14+(i%3)*1.5),5.2,-i*17-12);scene.add(strip);}
+    const helicopter=new THREE.Group();
+    const heliBody=new THREE.Mesh(new THREE.SphereGeometry(.72,20,16),new THREE.MeshStandardMaterial({color:'#171e2a',metalness:.72,roughness:.28}));heliBody.scale.set(1.55,.72,1);helicopter.add(heliBody);
+    const heliGlass=new THREE.Mesh(new THREE.SphereGeometry(.48,18,14),new THREE.MeshPhysicalMaterial({color:'#3f9ed0',metalness:.35,roughness:.12,transparent:true,opacity:.82}));heliGlass.scale.set(1.1,.72,.85);heliGlass.position.set(0,.08,-.55);helicopter.add(heliGlass);
+    const tailBoom=new THREE.Mesh(new THREE.CylinderGeometry(.12,.22,3.2,12),new THREE.MeshStandardMaterial({color:'#202a37',metalness:.55}));tailBoom.rotation.x=Math.PI/2;tailBoom.position.set(0,.06,2);helicopter.add(tailBoom);
+    const rotor=new THREE.Group();for(let i=0;i<4;i++){const blade=new THREE.Mesh(new THREE.BoxGeometry(.16,.045,5.8),new THREE.MeshStandardMaterial({color:'#111820',metalness:.55}));blade.rotation.y=i*Math.PI/2;rotor.add(blade);}rotor.position.y=.68;helicopter.add(rotor);
+    const tailRotor=new THREE.Group();for(let i=0;i<3;i++){const blade=new THREE.Mesh(new THREE.BoxGeometry(.08,.12,1.1),new THREE.MeshStandardMaterial({color:'#d7dce2'}));blade.rotation.y=i*Math.PI/3;tailRotor.add(blade);}tailRotor.position.set(0,.18,3.55);helicopter.add(tailRotor);
+    const searchBeam=new THREE.Mesh(new THREE.ConeGeometry(3.2,12,24),new THREE.MeshBasicMaterial({color:'#318dff',transparent:true,opacity:.13,depthWrite:false}));searchBeam.rotation.x=Math.PI;searchBeam.position.set(0,-6,0);helicopter.add(searchBeam);
+    const searchLight=new THREE.SpotLight('#4d9dff',72,48,.58,.72,1.5);searchLight.position.set(0,-.1,0);searchLight.target.position.set(0,-12,-4);helicopter.add(searchLight,searchLight.target);
+    helicopter.position.set(8.5,13,-52);scene.add(helicopter);
     const gantry=new THREE.Group();
     const gantryMat=new THREE.MeshStandardMaterial({color:'#101722',metalness:.72,roughness:.28});
     const beam=new THREE.Mesh(new THREE.BoxGeometry(17,.85,.6),gantryMat);beam.position.y=7.1;gantry.add(beam);
@@ -288,7 +297,7 @@ function CarRacing3DViewportInner(p:Props) {
       scene.add(group);
       return {group, obstacle};
     });
-    const ownColor=p.soloMode?'#f5c400':(p.cars.find(c=>c.id===p.me.carId)?.color||'#e9ad3b');const own=makeCar(ownColor,p.me.plateNumber,p.cars.find(c=>c.id===p.me.carId)?.bodyStyle);scene.add(own.group);
+    const ownColor=p.soloMode?'#f5c400':(p.cars.find(c=>c.id===p.me.carId)?.color||'#e9ad3b');const own=makeCar(ownColor,p.me.plateNumber,p.cars.find(c=>c.id===p.me.carId)?.bodyStyle);own.group.scale.setScalar(p.soloMode?1.18:1);scene.add(own.group);
     const nitroFlames=new THREE.Group();[-.56,.56].forEach(x=>{const flame=new THREE.Mesh(new THREE.ConeGeometry(.19,1.35,16),new THREE.MeshBasicMaterial({color:'#16baff',transparent:true,opacity:.92}));flame.rotation.x=Math.PI/2;flame.position.set(x,.43,2.82);nitroFlames.add(flame);});const nitroGlow=new THREE.PointLight('#16aaff',0,7,2);nitroGlow.position.set(0,.55,3.25);nitroFlames.add(nitroGlow);own.group.add(nitroFlames);
     const opponents=new Map<string,CarModel>();
     const cockpit=new THREE.Group();
@@ -331,7 +340,7 @@ function CarRacing3DViewportInner(p:Props) {
     observer=new ResizeObserver(resize);observer.observe(el);resize();
     let last=performance.now(),travel=0,raf=0;
     let lastDashboardLabel='';
-    const animate=(now:number)=>{if(contextLost)return;raf=requestAnimationFrame(animate);try{const dt=Math.min((now-last)/1000,.05);last=now;const s=latest.current,velocity=(s.speed>0?Math.max(.15,s.speed/90):0)*(s.reverse?-1:1);travel+=dt*Math.abs(velocity)*(s.boost?2.2:1);
+    const animate=(now:number)=>{if(contextLost)return;raf=requestAnimationFrame(animate);try{const dt=Math.min((now-last)/1000,.05);last=now;rotor.rotation.y+=dt*18;tailRotor.rotation.y+=dt*22;const s=latest.current,velocity=(s.speed>0?Math.max(.15,s.speed/90):0)*(s.reverse?-1:1);travel+=dt*Math.abs(velocity)*(s.boost?2.2:1);
       markers.forEach(m=>{m.position.z+=dt*velocity*34;if(m.position.z>15)m.position.z-=240;});
       scenery.forEach(o=>{o.position.z+=dt*velocity*25;if(o.position.z>18)o.position.z-=240;});
       obstacleModels.forEach(({group,obstacle})=>{const ahead=obstacle.at/10-latest.current.me.progress;group.position.set(obstacle.lane*3.45,0,THREE.MathUtils.clamp(-ahead*3.2,-220,18));group.visible=ahead>-2&&ahead<72;});
