@@ -539,7 +539,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     }
   }, []);
 
-  const lastCalls = calledNumbers.slice().reverse();
+  const lastCalls = calledNumbers.slice(-5).reverse();
   const quickBuyTotal = bonusRound ? 0 : quickBuyCount * cardPrice;
   const quickBuyAllowed = bonusRound || phase === 'waiting';
   const quickBuyInsufficient = bonusRound && quickBuyTotal > balance;
@@ -605,7 +605,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     }
   };
   return (
-    <main data-player-theme={playerTheme} className="player-play-view relative mx-auto min-h-full w-full max-w-[1100px] overflow-visible rounded-[2rem] bg-[#030303] px-2 pb-8 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
+    <main data-player-theme={playerTheme} className="player-play-view relative mx-auto min-h-full w-full max-w-[1100px] overflow-visible rounded-[2rem] border-2 border-zinc-500/80 bg-[#030303] px-2 pb-8 pt-2 text-white shadow-[0_0_35px_rgba(212,175,55,.22),inset_0_0_35px_rgba(212,175,55,.08)] sm:px-4 sm:pt-4">
       <div className="pointer-events-none absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_50%_12%,rgba(255,196,0,.17),transparent_36%),radial-gradient(ellipse_at_50%_100%,rgba(255,196,0,.13),transparent_38%)]" />
       <div className="relative z-10 space-y-2 sm:space-y-3">
 
@@ -788,7 +788,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
             )}
           </div>
           <div className="min-w-0">
-            <div className="flex min-h-[3.4rem] min-w-0 items-center gap-1 overflow-x-auto overscroll-x-contain rounded-xl border border-yellow-400 bg-black px-1 py-1 [scrollbar-width:thin]">
+            <div className="flex min-h-[3.4rem] min-w-0 items-center justify-start gap-2 overflow-x-auto overscroll-x-contain rounded-xl border border-yellow-400 bg-black px-2 py-1 [scrollbar-width:thin]">
               {lastCalls.length ? lastCalls.map((number, index) => <CalledBall key={number} number={number} latest={index === 0} />) : <span className="text-xs text-yellow-100/60">—</span>}
             </div>
           </div>
@@ -798,7 +798,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
           <div className="mb-2 flex flex-nowrap items-center justify-between gap-1">
             <div className="flex min-w-0 items-center gap-2">
               <h2 className="shrink-0 text-[11px] font-black tracking-wide text-yellow-300 sm:text-base">{t.numberBoard}</h2>
-              <div className="shrink-0 rounded-lg border border-red-500 bg-red-950 px-2 py-1 text-sm font-black leading-none text-red-400 shadow-[0_0_12px_rgba(239,68,68,.5)] sm:px-3 sm:text-base">
+              <div className="shrink-0 rounded-md border border-red-500/80 bg-red-950 px-1.5 py-0.5 text-[11px] font-black leading-none text-red-300 shadow-[0_0_10px_rgba(239,68,68,.45)] sm:px-2 sm:py-1 sm:text-sm">
                 <RoundCallTimer phase={phase} nextRoundAt={nextRoundAt} nextCallAt={nextCallAt} calledCount={calledNumbers.length} firstCallAt={firstCallAt} endedAt={endedAt} />
               </div>
             </div>
@@ -827,7 +827,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                     const isLatestCall = calledNumbers[calledNumbers.length - 1] === number;
                     const visible = numberBoardMode === 'all' || isCalled;
                     return (
-                      <div key={number} aria-label={visible ? `${letter} ${number}${isLatestCall ? ', latest called number' : isCalled ? ', called' : ''}` : undefined} className={`grid aspect-square min-w-0 place-items-center rounded-[4px] border text-[clamp(12px,2vw,18px)] font-black tabular-nums transition sm:text-base ${!visible ? 'border-transparent bg-transparent text-transparent' : isLatestCall ? 'bingo-latest-called-number border-white text-black shadow-[0_0_18px_rgba(250,204,21,.95)] ring-2 ring-yellow-200' : isCalled ? 'border-yellow-200 bg-blue-600 text-white shadow-[0_0_8px_rgba(59,130,246,.65)]' : 'border-yellow-500/20 bg-zinc-900 text-yellow-100/90'}`}>
+                      <div key={number} aria-label={visible ? `${letter} ${number}${isLatestCall ? ', latest called number' : isCalled ? ', called' : ''}` : undefined} className={`grid aspect-square min-w-0 place-items-center rounded-[4px] border text-[clamp(12px,2vw,18px)] font-black tabular-nums transition sm:text-base ${!visible ? 'border-transparent bg-transparent text-transparent' : isLatestCall ? 'bingo-latest-called-number border-white text-black shadow-[0_0_18px_rgba(250,204,21,.95)] ring-2 ring-yellow-200' : isCalled ? 'border-yellow-200 !bg-blue-600 text-white shadow-[0_0_8px_rgba(59,130,246,.65)]' : 'border-zinc-800 !bg-[#090909] !text-yellow-100/90'}`}>
                         {visible ? number : ''}
                       </div>
                     );
