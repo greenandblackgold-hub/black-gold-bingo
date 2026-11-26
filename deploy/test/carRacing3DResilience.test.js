@@ -33,3 +33,13 @@ test('Car Racing isolates React rendering failures and catches animation-loop er
   assert.match(source, /setRendererStatus\('error'\)/);
   assert.match(source, /setRendererError\(error instanceof Error/);
 });
+
+
+test('Car Racing tolerates missing or malformed track/player/car arrays before rendering', () => {
+  assert.match(source, /const safeTrack: RacingTrack =/);
+  assert.match(source, /obstacles: Array\.isArray\(p\.track\?\.obstacles\) \? p\.track\.obstacles : \[\]/);
+  assert.match(source, /const safePlayers = Array\.isArray\(p\.players\) \? p\.players : \[\]/);
+  assert.match(source, /const safeCars = Array\.isArray\(p\.cars\) \? p\.cars : \[\]/);
+  assert.match(source, /safeTrack\.obstacles\.map/);
+  assert.match(source, /\[\.\.\.safePlayers\]\.sort/);
+});

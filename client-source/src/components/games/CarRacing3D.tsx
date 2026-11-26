@@ -116,7 +116,18 @@ class CarRacingRenderErrorBoundary extends Component<{children:ReactNode},{faile
   render(){return this.state.failed?<div role="alert" className="flex min-h-[340px] flex-col items-center justify-center gap-3 rounded-2xl border border-amber-300/30 bg-slate-950 p-6 text-center text-white"><p className="text-lg font-black text-amber-200">3D የጨዋታ ማሳያ ለጊዜው አልተጫነም</p><p className="text-sm text-white/70">የጨዋታው ገጽ እንዲቀጥል ተጠብቋል። እባክዎ እንደገና ይሞክሩ።</p></div>:this.props.children;}
 }
 function CarRacing3DViewportInner(p:Props) {
-  const host=useRef<HTMLDivElement>(null), latest=useRef(p); latest.current=p;
+  // The room/state API can return older or partially populated track objects.
+  // Normalize renderer collections before Three.js or the HUD calls array methods.
+  const safeTrack: RacingTrack = {
+    ...(p.track ?? {} as RacingTrack),
+    environment: ['city','country','rocky','coastal'].includes(p.track?.environment) ? p.track.environment : 'city',
+    curveType: ['straight','left','right','s-bend'].includes(p.track?.curveType) ? p.track.curveType : 'straight',
+    obstacles: Array.isArray(p.track?.obstacles) ? p.track.obstacles : [],
+  };
+  const safePlayers = Array.isArray(p.players) ? p.players : [];
+  const safeCars = Array.isArray(p.cars) ? p.cars : [];
+  const safeProps = { ...p, track: safeTrack, players: safePlayers, cars: safeCars };
+  const host=useRef<HTMLDivElement>(null), latest=useRef(safeProps); latest.current=safeProps;
   const [rendererStatus,setRendererStatus]=useState<RendererStatus>('ready');
   const [rendererError,setRendererError]=useState('');
   const [rendererAttempt,setRendererAttempt]=useState(0);
@@ -214,13 +225,13 @@ function CarRacing3DViewportInner(p:Props) {
     const scenery:THREE.Object3D[]=[];
     for(let i=0;i<20;i++){
       const z=-i*12-5;
-      if(p.track.environment==='city'){
+      if(safeTrack.environment==='city'){
         scenery.push(building(-14-(i%3)*1.2,z,i),building(14+(i%2)*1.5,z-5,i+1));
         if(i%2===0)scenery.push(tree(-10.2,z-3),tree(10.2,z-9));
-      }else if(p.track.environment==='rocky'||p.track.environment==='country'){
+      }else if(safeTrack.environment==='rocky'||safeTrack.environment==='country'){
         scenery.push(tree(-12.5-(i%3),z),tree(12.5+(i%2),z-5));
         if(i%3===0){scenery.push(building(-19,z-7,i),building(19,z-2,i+2));}
-      }else if(p.track.environment==='coastal'){
+      }else if(safeTrack.environment==='coastal'){
         scenery.push(tree(-14,z),tree(14,z-7));
         const palm=new THREE.Group();const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.16,.24,4,8),new THREE.MeshStandardMaterial({color:'#8b6948'}));trunk.position.y=2;palm.add(trunk);
         for(let leaf=0;leaf<6;leaf++){const frond=new THREE.Mesh(new THREE.ConeGeometry(.28,3,5),new THREE.MeshStandardMaterial({color:'#287a50'}));frond.position.set(Math.cos(leaf*Math.PI/3)*1.2,3.7,Math.sin(leaf*Math.PI/3)*1.2);frond.rotation.z=Math.PI/2-Math.cos(leaf*Math.PI/3)*.45;frond.rotation.x=Math.sin(leaf*Math.PI/3)*.45;palm.add(frond);}
@@ -228,7 +239,7 @@ function CarRacing3DViewportInner(p:Props) {
       }
     }
     // Street-level storefronts, illuminated signs and roadside advertising like an urban night circuit.
-    if(p.track.environment==='city'){
+    if(safeTrack.environment==='city'){
       for(let i=0;i<12;i++)for(const side of [-1,1]){
         const z=-i*19-8,x=side*(12.2+(i%2)*1.2);
         const shop=new THREE.Group();
@@ -274,10 +285,10 @@ function CarRacing3DViewportInner(p:Props) {
     for(let i=0;i<18;i++){const reflection=new THREE.Mesh(new THREE.PlaneGeometry(THREE.MathUtils.randFloat(1.2,4.8),THREE.MathUtils.randFloat(2,8)),new THREE.MeshBasicMaterial({color:i%2?'#087eb8':'#a51d72',transparent:true,opacity:.12,depthWrite:false}));reflection.rotation.x=-Math.PI/2;reflection.position.set(THREE.MathUtils.randFloat(-7,7),.018,-i*13-5);scene.add(reflection);}
     // Ambient road traffic adds depth to the city scene without changing race logic.
     const traffic:CarModel[]=[];
-    if(p.track.environment==='city'){
+    if(safeTrack.environment==='city'){
       for(let i=0;i<5;i++){const trafficCar=makeCar(['#c7d1d8','#d34b35','#e4b84d','#3989a8','#252a31'][i],`CITY-${i+1}`);trafficCar.group.scale.setScalar(.78);trafficCar.group.position.set(i%2?5.35:-5.35,0,-26-i*43);scene.add(trafficCar.group);traffic.push(trafficCar);}
     }
-    const obstacleModels = p.track.obstacles.map(obstacle => {
+    const obstacleModels = safeTrack.obstacles.map(obstacle => {
       const group = new THREE.Group();
       const laneX = obstacle.lane * 3.45;
       const warning = new THREE.MeshStandardMaterial({color:'#f4e8c8', roughness:.75});
@@ -297,7 +308,7 @@ function CarRacing3DViewportInner(p:Props) {
       scene.add(group);
       return {group, obstacle};
     });
-    const ownColor=p.soloMode?'#f5c400':(p.cars.find(c=>c.id===p.me.carId)?.color||'#e9ad3b');const own=makeCar(ownColor,p.me.plateNumber,p.cars.find(c=>c.id===p.me.carId)?.bodyStyle);own.group.scale.setScalar(p.soloMode?1.18:1);scene.add(own.group);
+    const ownColor=p.soloMode?'#f5c400':(safeCars.find(c=>c.id===p.me.carId)?.color||'#e9ad3b');const own=makeCar(ownColor,p.me.plateNumber,safeCars.find(c=>c.id===p.me.carId)?.bodyStyle);own.group.scale.setScalar(p.soloMode?1.18:1);scene.add(own.group);
     const nitroFlames=new THREE.Group();[-.56,.56].forEach(x=>{const flame=new THREE.Mesh(new THREE.ConeGeometry(.19,1.35,16),new THREE.MeshBasicMaterial({color:'#16baff',transparent:true,opacity:.92}));flame.rotation.x=Math.PI/2;flame.position.set(x,.43,2.82);nitroFlames.add(flame);});const nitroGlow=new THREE.PointLight('#16aaff',0,7,2);nitroGlow.position.set(0,.55,3.25);nitroFlames.add(nitroGlow);own.group.add(nitroFlames);
     const opponents=new Map<string,CarModel>();
     const cockpit=new THREE.Group();
@@ -392,14 +403,14 @@ function CarRacing3DViewportInner(p:Props) {
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2 bg-gradient-to-b from-black/90 via-black/40 to-transparent p-2 sm:gap-4 sm:p-4">
       <div className="min-w-0 max-w-[260px] rounded-xl border border-amber-300/60 bg-black/85 p-2 shadow-xl backdrop-blur-md sm:rounded-2xl sm:p-3">
         <div className="font-black italic text-amber-300">LAP <span className="text-2xl text-yellow-300">{lap}</span><span className="text-white"> / 3</span></div>
-        <div className="mt-1 space-y-0.5">{[...p.players].sort((a,b)=>b.progress-a.progress).slice(0,3).map((driver,index)=><div key={driver.userId} className={`flex items-center justify-between gap-2 rounded px-1.5 py-1 text-[10px] font-black sm:text-xs ${driver.isMe?'bg-yellow-300 text-black':'bg-black/60 text-white'}`}><span>{index+1}  {driver.isMe?'YOU':driver.name.slice(0,13)}</span><span>{driver.isMe?'♛':Math.round(driver.progress)+'%'}</span></div>)}</div>
+        <div className="mt-1 space-y-0.5">{[...safePlayers].sort((a,b)=>b.progress-a.progress).slice(0,3).map((driver,index)=><div key={driver.userId} className={`flex items-center justify-between gap-2 rounded px-1.5 py-1 text-[10px] font-black sm:text-xs ${driver.isMe?'bg-yellow-300 text-black':'bg-black/60 text-white'}`}><span>{index+1}  {driver.isMe?'YOU':driver.name.slice(0,13)}</span><span>{driver.isMe?'♛':Math.round(driver.progress)+'%'}</span></div>)}</div>
       </div>
       <div className="pointer-events-none min-w-[150px] rounded-xl border border-amber-300/60 bg-black/90 px-4 py-2 text-center shadow-[0_0_24px_rgba(245,190,70,.24)] sm:min-w-[300px] sm:rounded-2xl sm:px-7">
         <div className="font-mono text-2xl font-black leading-none tabular-nums text-white sm:text-4xl">{elapsedLabel}</div>
         <div className="mt-1 text-[9px] font-black italic tracking-[.18em] text-yellow-300 sm:text-sm">BLACK GOLD RACING</div>
       </div>
       <div className="ml-auto min-w-0 w-full max-w-[220px] rounded-xl border border-sky-300/60 bg-black/85 p-2 text-right shadow-xl backdrop-blur-md sm:rounded-2xl sm:p-3">
-        <div className="font-black italic text-white">POS <span className="text-2xl text-yellow-300">{p.rank}</span><span> / {Math.max(1,p.players.length)}</span></div>
+        <div className="font-black italic text-white">POS <span className="text-2xl text-yellow-300">{p.rank}</span><span> / {Math.max(1,safePlayers.length)}</span></div>
         <div className="mt-1 flex items-center gap-1.5"><span className="text-base text-sky-300">ϟ</span><span className="text-[9px] font-black italic text-white">NITRO</span></div>
         <div className="h-2.5 overflow-hidden rounded-full border border-sky-300/50 bg-slate-900"><div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-200 shadow-[0_0_12px_#00bfff]" style={{width:p.nitroPercent+'%'}}/></div>
       </div>
@@ -432,7 +443,7 @@ function CarRacing3DViewportInner(p:Props) {
       </div>
     </div>
         {p.me.collisionEvent && Date.now()-p.me.collisionEvent.at<2200 && <div role="status" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-orange-300/70 bg-red-950/85 px-5 py-3 text-center text-sm font-black tracking-widest text-orange-100 shadow-[0_0_30px_rgba(255,90,30,.45)]">IMPACT · {p.me.collisionEvent.severity.toUpperCase()}</div>}
-    <div className="sr-only" aria-live="polite">{Math.round(p.speed)} kilometers per hour, position {p.rank} of {p.players.length}</div>
+    <div className="sr-only" aria-live="polite">{Math.round(p.speed)} kilometers per hour, position {p.rank} of {safePlayers.length}</div>
   </div>;
 }
 
