@@ -184,7 +184,7 @@ test('single-player test drive starts alone, rejects multiplayer joins and ends 
   f.advance(600_100);
   const ended = f.service.getState(f.a).room;
   assert.equal(ended.status, 'finished');
-  assert.equal(ended.endReason, undefined);
+  assert.equal(ended.endReason, null);
   assert.equal(ended.settlement.reason, 'time_limit');
   assert.equal(ended.winner.userId, f.a.id);
 });
