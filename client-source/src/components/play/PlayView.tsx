@@ -249,8 +249,8 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
               aria-label={free ? labels.free : `${LETTERS[c]} ${value}`}
               data-marked={marked && !free ? 'true' : undefined}
               style={marked && !free ? ({
-                '--bingo-mark-color': wasCalled ? '#ec4899' : markColor,
-                '--bingo-mark-text-color': wasCalled ? '#ffffff' : readableMarkText(markColor),
+                '--bingo-mark-color': markColor,
+                '--bingo-mark-text-color': readableMarkText(markColor),
               } as CSSProperties) : undefined}
               className={[
                 'relative grid aspect-square min-w-0 place-items-center border text-[clamp(13px,3vw,22px)] font-black leading-none transition',
