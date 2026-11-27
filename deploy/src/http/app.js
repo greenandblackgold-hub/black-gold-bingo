@@ -476,7 +476,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
       if (!res.destroyed && !res.writableEnded) res.write(`event: turbo-bingo\ndata: ${JSON.stringify(state)}\n\n`);
     });
     turboBingo.getState().then((state) => {
-      if (!res.destroyed && !res.writableEnded) res.write(`event: turbo-bingo\\ndata: ${JSON.stringify(state)}\\n\\n`);
+      if (!res.destroyed && !res.writableEnded) res.write(`event: turbo-bingo\ndata: ${JSON.stringify(state)}\n\n`);
     }).catch(() => undefined);
     const beat = setInterval(() => res.write(': keep-alive\n\n'), 25_000);
     req.on('close', () => {
