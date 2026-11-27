@@ -66,6 +66,7 @@ export function setSpeechRateMultiplier(multiplier: number): void {
 }
 
 export function setBackgroundMusicEnabled(on: boolean): void {
+  if (!on && !backgroundMusicGain) return;
   const c = getContext();
   if (!c || !master || typeof window === 'undefined') return;
   if (!backgroundMusicGain) {
