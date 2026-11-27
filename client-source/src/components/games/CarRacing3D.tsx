@@ -4,9 +4,9 @@ import * as THREE from 'three';
 // Rendering-only layer: server-authoritative race state continues to come from CarRacingGame/API.
 export type RacingCar = { id: string; name: string; color: string; bodyStyle?: string };
 export type RacingPlayer = { userId: string; name: string; carId: string; plateNumber: string; progress: number; lane: number; speed: number; finished: boolean; eliminated: boolean; isMe: boolean; collisionEvent: { id: string; at: number; type: string; severity: 'light' | 'medium' | 'severe'; participants: string[] } | null };
-export type RacingTrack = { name: string; environment: 'city' | 'country' | 'rocky' | 'coastal'; curveType: 'straight' | 'left' | 'right' | 's-bend'; obstacles: { at: number; lane: number; width: number; type: string }[] };
+export type RacingTrack = { name: string; environment: 'city' | 'country' | 'rocky' | 'coastal' | 'airport' | 'village' | 'parking'; curveType: 'straight' | 'left' | 'right' | 's-bend'; obstacles: { at: number; lane: number; width: number; type: string }[] };
 export type RacingView = 'chase' | 'cockpit';
-type Props = { view: RacingView; throttle: number; brake: boolean; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; reverse: boolean; track: RacingTrack; boost: boolean; rank: number; startedAt: number; nitroPercent: number; audioVolume: number; graphicsQuality: 'performance'|'balanced'|'ultra'; soloMode: boolean; onSettings: () => void; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean, brake?: boolean) => void; onGearChange: (reverse: boolean) => void };
+type Props = { view: RacingView; onFoot: boolean; footPosition: {x:number;z:number}; passengerCount: number; onExitVehicle: () => void; onEnterVehicle: () => void; onFootMove: (x:number,z:number) => void; onPassengerAction: () => void; throttle: number; brake: boolean; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; reverse: boolean; track: RacingTrack; boost: boolean; rank: number; startedAt: number; nitroPercent: number; audioVolume: number; graphicsQuality: 'performance'|'balanced'|'ultra'; soloMode: boolean; onSettings: () => void; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean, brake?: boolean) => void; onGearChange: (reverse: boolean) => void };
 type CarModel = { group: THREE.Group; wheels: THREE.Mesh[]; frontWheels: THREE.Mesh[] };
 
 function plateTexture(plate: string) {
@@ -22,7 +22,7 @@ function makeCar(color: string, plate: string, bodyStyle = 'coupe'): CarModel {
   const rubber = new THREE.MeshStandardMaterial({ color: '#08090b', roughness: .95 });
   const chrome = new THREE.MeshStandardMaterial({ color: '#c1c5c9', metalness: .9, roughness: .2 });
   const add = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
-  const suv = bodyStyle === 'suv', roadster = bodyStyle === 'roadster', hyper = ['hypercar','track','concept'].includes(bodyStyle), muscle = bodyStyle === 'muscle';
+  const suv = bodyStyle === 'suv', roadster = bodyStyle === 'roadster', hyper = ['hypercar','track','concept'].includes(bodyStyle), muscle = bodyStyle === 'muscle', electric = bodyStyle === 'electric', grandTourer = bodyStyle === 'grandtourer';
   const bodyLength = suv ? 4.45 : roadster ? 3.95 : hyper ? 4.05 : muscle ? 4.35 : 4.15;
   add(new THREE.BoxGeometry(suv?2.12:2.05,.58,bodyLength),paint,0,.72,0);
   add(new THREE.BoxGeometry(1.92,.18,1.22),paint,0,1.02,-1.34);
@@ -30,6 +30,8 @@ function makeCar(color: string, plate: string, bodyStyle = 'coupe'): CarModel {
   const wind = add(new THREE.BoxGeometry(1.43,.53,.08),glass,0,1.39,-.91); wind.rotation.x=-.2;
   const rear = add(new THREE.BoxGeometry(1.4,.48,.07),glass,0,1.4,1.05); rear.rotation.x=.2;
   add(new THREE.BoxGeometry(1.55,.1,1.22),paint,0,suv?2.02:roadster?1.46:1.76,.05);
+  if(electric){const batteryTrim=new THREE.Mesh(new THREE.BoxGeometry(1.58,.08,1.7),new THREE.MeshStandardMaterial({color:'#101d24',metalness:.8,roughness:.25}));batteryTrim.position.set(0,.48,.08);g.add(batteryTrim);[-.72,.72].forEach(x=>{const charge=new THREE.Mesh(new THREE.BoxGeometry(.08,.06,.32),new THREE.MeshStandardMaterial({color:'#35e0c0',emissive:'#12b997',emissiveIntensity:1.8}));charge.position.set(x,.88,-1.5);g.add(charge);});}
+  if(grandTourer){const bonnet=new THREE.Mesh(new THREE.BoxGeometry(1.6,.08,1.3),paint);bonnet.position.set(0,1.04,-1.35);g.add(bonnet);const sideVent=new THREE.Mesh(new THREE.BoxGeometry(.05,.22,.55),chrome);[-1,1].forEach(side=>{const vent=sideVent.clone();vent.position.set(side*1.04,.9,-.45);g.add(vent);});}
   // Sculpted body details: wheel arches, bumpers, grille, side glass and door lines.
   const dark=new THREE.MeshStandardMaterial({color:'#111820',metalness:.48,roughness:.42});
   const trim=new THREE.MeshStandardMaterial({color:'#aeb8c0',metalness:.88,roughness:.22});
@@ -103,6 +105,8 @@ function building(x:number,z:number,i:number) {
   const podium=new THREE.Mesh(new THREE.BoxGeometry(w+.3,1.1,d+.3),new THREE.MeshStandardMaterial({color:'#171f27',metalness:.35,roughness:.6}));podium.position.y=.55;g.add(podium);
   g.position.set(x,0,z);return g;
 }
+function person(shirt='#c98d48') { const g=new THREE.Group(); const skin=new THREE.MeshStandardMaterial({color:'#a96f4d',roughness:.9}), top=new THREE.MeshStandardMaterial({color:shirt,roughness:.8}), pants=new THREE.MeshStandardMaterial({color:'#202b3c',roughness:.9}); const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.22,.58,4,8),top);torso.position.y=1.05;g.add(torso);const head=new THREE.Mesh(new THREE.SphereGeometry(.17,12,10),skin);head.position.y=1.58;g.add(head);for(const side of [-1,1]){const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.075,.42,3,6),top);arm.position.set(side*.28,1.08,.02);arm.rotation.z=side*.18;g.add(arm);const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.09,.5,3,6),pants);leg.position.set(side*.12,.42,0);g.add(leg);}return g; }
+function animal(color='#8c6844') { const g=new THREE.Group(),coat=new THREE.MeshStandardMaterial({color,roughness:1}),dark=new THREE.MeshStandardMaterial({color:'#30251d'});const body=new THREE.Mesh(new THREE.BoxGeometry(.85,.58,.48),coat);body.position.y=.55;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.23,12,10),coat);head.position.set(0,.86,-.42);g.add(head);for(const x of [-.25,.25])for(const z of [-.15,.15]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.055,.07,.42,7),dark);leg.position.set(x,.22,z);g.add(leg);}return g; }
 function control(label:string,caption:string,tone:string,down:()=>void,up:()=>void) {
   const color=tone==='gold'?'border-amber-200 bg-amber-300 text-black':tone==='nitro'?'border-sky-300 bg-sky-500/25 text-sky-100 shadow-[0_0_24px_rgba(40,190,255,.3)]':tone==='muted'?'border-white/20 bg-slate-800/90 text-white':'border-amber-300/45 bg-black/75 text-amber-100';
   return <button type="button" onPointerDown={(e)=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);down();}} onPointerUp={up} onPointerCancel={up} onLostPointerCapture={up} onContextMenu={(e)=>e.preventDefault()} className={'flex min-h-[62px] min-w-[54px] select-none flex-col items-center justify-center rounded-xl border px-2 py-2 active:scale-95 sm:min-h-[72px] sm:min-w-[68px] '+color} style={{touchAction:'none'}}><span className="text-xl font-black leading-none sm:text-2xl">{label}</span><span className="mt-1 text-[8px] font-black tracking-wider sm:text-[9px]">{caption}</span></button>;
@@ -120,7 +124,7 @@ function CarRacing3DViewportInner(p:Props) {
   // Normalize renderer collections before Three.js or the HUD calls array methods.
   const safeTrack: RacingTrack = {
     ...(p.track ?? {} as RacingTrack),
-    environment: ['city','country','rocky','coastal'].includes(p.track?.environment) ? p.track.environment : 'city',
+    environment: ['city','country','rocky','coastal','airport','village','parking'].includes(p.track?.environment) ? p.track.environment : 'city',
     curveType: ['straight','left','right','s-bend'].includes(p.track?.curveType) ? p.track.curveType : 'straight',
     obstacles: Array.isArray(p.track?.obstacles) ? p.track.obstacles : [],
   };
@@ -288,6 +292,19 @@ function CarRacing3DViewportInner(p:Props) {
     if(safeTrack.environment==='city'){
       for(let i=0;i<5;i++){const trafficCar=makeCar(['#c7d1d8','#d34b35','#e4b84d','#3989a8','#252a31'][i],`CITY-${i+1}`);trafficCar.group.scale.setScalar(.78);trafficCar.group.position.set(i%2?5.35:-5.35,0,-26-i*43);scene.add(trafficCar.group);traffic.push(trafficCar);}
     }
+    // Everyday places and local life: parking bays, airport terminal, homes, pedestrians and livestock.
+    const pedestrians:THREE.Group[]=[];const animals:THREE.Group[]=[];
+    if(['city','village','parking','coastal'].includes(safeTrack.environment))for(let i=0;i<9;i++){const npc=person(['#d6a24b','#4b91b9','#bd5b55','#668e62'][i%4]);npc.position.set(i%2?11.4:-11.4,0,-i*23-7);npc.rotation.y=i%2?-.35:.35;scene.add(npc);pedestrians.push(npc);}
+    if(['country','village','rocky'].includes(safeTrack.environment))for(let i=0;i<5;i++){const livestock=animal(i%2?'#8c6844':'#d2c6a9');livestock.position.set(i%2?13.5:-13.5,0,-i*31-12);livestock.scale.setScalar(i%2?1.1:.85);scene.add(livestock);animals.push(livestock);}
+    if(safeTrack.environment==='village'||safeTrack.environment==='country')for(let i=0;i<10;i++)for(const side of [-1,1]){const fence=new THREE.Mesh(new THREE.BoxGeometry(5,.12,.14),new THREE.MeshStandardMaterial({color:'#9a7547'}));fence.position.set(side*15,.72,-i*17-4);scene.add(fence);for(let j=0;j<5;j++){const post=new THREE.Mesh(new THREE.BoxGeometry(.13,1.1,.13),new THREE.MeshStandardMaterial({color:'#765634'}));post.position.set(side*15-2.5+j*1.25,.55,-i*17-4);scene.add(post);}}
+    if(safeTrack.environment==='airport'){
+      const terminal=new THREE.Mesh(new THREE.BoxGeometry(30,7,10),new THREE.MeshStandardMaterial({color:'#9ba9b5',metalness:.45,roughness:.38}));terminal.position.set(-22,3.5,-45);scene.add(terminal);
+      const glassFront=new THREE.Mesh(new THREE.BoxGeometry(30,4.3,.16),new THREE.MeshPhysicalMaterial({color:'#68b7d5',metalness:.25,roughness:.12,transparent:true,opacity:.72}));glassFront.position.set(-22,3.2,-39.9);scene.add(glassFront);
+      for(let i=0;i<5;i++){const bay=new THREE.Mesh(new THREE.BoxGeometry(2.4,.035,5),new THREE.MeshBasicMaterial({color:'#f7f7f7'}));bay.position.set(-7+i*3.4,.035,-8);scene.add(bay);}
+      const runwayLine=new THREE.Mesh(new THREE.BoxGeometry(.22,.025,240),new THREE.MeshBasicMaterial({color:'#f4f4ee'}));runwayLine.position.set(0,.04,-110);scene.add(runwayLine);
+      const plane=new THREE.Group(),fuselage=new THREE.Mesh(new THREE.CylinderGeometry(.65,.65,13,16),new THREE.MeshStandardMaterial({color:'#e8edf1',metalness:.55,roughness:.3}));fuselage.rotation.x=Math.PI/2;plane.add(fuselage);const wing=new THREE.Mesh(new THREE.BoxGeometry(18,.18,2.1),new THREE.MeshStandardMaterial({color:'#c6d1d9',metalness:.5}));plane.add(wing);plane.position.set(25,3,-72);plane.rotation.y=.22;scene.add(plane);
+    }
+    if(safeTrack.environment==='parking'||safeTrack.environment==='city')for(let row=0;row<3;row++)for(let bay=0;bay<5;bay++){const x=row%2?13.5:-13.5,z=-row*34-bay*5-10;const stripe=new THREE.Mesh(new THREE.BoxGeometry(2.4,.025,4.4),new THREE.MeshBasicMaterial({color:'#e9e5d4'}));stripe.position.set(x,.04,z);scene.add(stripe);if((row+bay)%3===0){const parked=makeCar(['#d4d9df','#b13d37','#3978a2'][bay%3],`PARK-${row}${bay}`);parked.group.scale.setScalar(.72);parked.group.position.set(x,.02,z);scene.add(parked.group);}}
     const obstacleModels = safeTrack.obstacles.map(obstacle => {
       const group = new THREE.Group();
       const laneX = obstacle.lane * 3.45;
@@ -308,7 +325,7 @@ function CarRacing3DViewportInner(p:Props) {
       scene.add(group);
       return {group, obstacle};
     });
-    const ownColor=p.soloMode?'#f5c400':(safeCars.find(c=>c.id===p.me.carId)?.color||'#e9ad3b');const own=makeCar(ownColor,p.me.plateNumber,safeCars.find(c=>c.id===p.me.carId)?.bodyStyle);own.group.scale.setScalar(p.soloMode?1.18:1);scene.add(own.group);
+    const ownColor=safeCars.find(c=>c.id===p.me.carId)?.color||'#f5c400';const own=makeCar(ownColor,p.me.plateNumber,safeCars.find(c=>c.id===p.me.carId)?.bodyStyle);own.group.scale.setScalar(p.soloMode?1.18:1);scene.add(own.group);const pedestrian=person('#e7b34e');pedestrian.scale.setScalar(1.08);scene.add(pedestrian);
     const nitroFlames=new THREE.Group();[-.56,.56].forEach(x=>{const flame=new THREE.Mesh(new THREE.ConeGeometry(.19,1.35,16),new THREE.MeshBasicMaterial({color:'#16baff',transparent:true,opacity:.92}));flame.rotation.x=Math.PI/2;flame.position.set(x,.43,2.82);nitroFlames.add(flame);});const nitroGlow=new THREE.PointLight('#16aaff',0,7,2);nitroGlow.position.set(0,.55,3.25);nitroFlames.add(nitroGlow);own.group.add(nitroFlames);
     const opponents=new Map<string,CarModel>();
     const cockpit=new THREE.Group();
@@ -357,15 +374,15 @@ function CarRacing3DViewportInner(p:Props) {
       scenery.forEach(o=>{o.position.z+=dt*velocity*25;if(o.position.z>18)o.position.z-=240;});
       obstacleModels.forEach(({group,obstacle})=>{const ahead=obstacle.at/10-latest.current.me.progress;group.position.set(obstacle.lane*3.45,0,THREE.MathUtils.clamp(-ahead*3.2,-220,18));group.visible=ahead>-2&&ahead<72;});
       const bend=s.track.curveType==='left'?.22:s.track.curveType==='right'?-.22:s.track.curveType==='s-bend'?Math.sin(travel*.2)*.2:0,offset=s.steer*1.05;
-      own.group.position.set(offset*.7,0,4.5);own.group.rotation.y=-s.steer*.16-bend*.16;own.group.visible=s.view==='chase';nitroFlames.visible=s.boost&&s.speed>1&&latest.current.nitroPercent>0;nitroFlames.scale.setScalar(.78+Math.random()*.32);nitroGlow.intensity=nitroFlames.visible?2.8:0;own.wheels.forEach(w=>{w.rotation.x+=dt*velocity*3;});
-      steering.rotation.z=-s.steer*Math.PI;cockpit.visible=s.view==='cockpit';
-      own.frontWheels.forEach(w=>{w.rotation.y=s.steer*.48;});
+      own.group.position.set(offset*.7,0,4.5);own.group.rotation.y=-s.steer*.34-bend*.16;own.group.visible=!s.onFoot&&s.view==='chase';pedestrian.position.set(s.footPosition.x,0,4.5+s.footPosition.z);pedestrian.visible=s.onFoot;pedestrian.rotation.y=s.steer*.18;nitroFlames.visible=s.boost&&s.speed>1&&latest.current.nitroPercent>0;nitroFlames.scale.setScalar(.78+Math.random()*.32);nitroGlow.intensity=nitroFlames.visible?2.8:0;own.wheels.forEach(w=>{w.rotation.x+=dt*velocity*3;});
+      steering.rotation.z=-s.steer*Math.PI*2;cockpit.visible=!s.onFoot&&s.view==='cockpit';
+      own.frontWheels.forEach(w=>{w.rotation.y=s.steer*.72;});
       gearLever.rotation.z=s.reverse?-.48:0;gearLever.position.x=s.reverse?.58:.48;
       brakePedal.rotation.x=s.brake?-.32:0;accelPedal.rotation.x=s.throttle>.05?-.24:0;
       speedNeedle.rotation.z=-THREE.MathUtils.clamp(s.speed/220,0,1)*Math.PI*.78;
       rpmNeedle.rotation.z=-THREE.MathUtils.clamp((s.speed/220)+(s.boost?.18:0),0,1)*Math.PI*.78;
       const gear=s.reverse?'R':s.speed<8?'1':String(Math.min(6,Math.max(1,Math.ceil(s.speed/38))));const dashboardLabel=(s.reverse?'REVERSE':'DRIVE')+' '+Math.round(s.speed)+' G'+gear;if(speedCtx&&dashboardLabel!==lastDashboardLabel){speedCtx.clearRect(0,0,512,256);speedCtx.fillStyle='#06131d';speedCtx.fillRect(0,0,512,256);speedCtx.fillStyle='#8bdcff';speedCtx.font='bold 38px Arial';speedCtx.textAlign='center';speedCtx.fillText((s.reverse?'REVERSE':'DRIVE')+'  GEAR '+gear,256,54);speedCtx.fillStyle='#ffffff';speedCtx.font='bold 112px Arial';speedCtx.fillText(String(Math.round(s.speed)),256,172);speedCtx.fillStyle='#e9b94f';speedCtx.font='bold 30px Arial';speedCtx.fillText('KM/H',256,222);speedTexture.needsUpdate=true;lastDashboardLabel=dashboardLabel;}
-      if(s.view==='cockpit'){camera.position.set(offset*.18,1.62,3.3);camera.lookAt(offset*.25+bend*2,1.2,-32);}else{camera.position.lerp(new THREE.Vector3(offset*.22,5.3,14.8),.075);camera.lookAt(offset*.18+bend*2,.85,-27);}
+      if(s.onFoot){camera.position.lerp(new THREE.Vector3(s.footPosition.x,3.4,8.5+s.footPosition.z),.12);camera.lookAt(s.footPosition.x,1.1,4.5+s.footPosition.z-7);}else if(s.view==='cockpit'){camera.position.set(offset*.18,1.62,3.3);camera.lookAt(offset*.25+bend*2,1.2,-32);}else{camera.position.lerp(new THREE.Vector3(offset*.22,5.3,14.8),.075);camera.lookAt(offset*.18+bend*2,.85,-27);}
       const ids=new Set<string>();
       s.players.forEach(player=>{if(player.isMe||player.finished)return;ids.add(player.userId);let model=opponents.get(player.userId);if(!model){const car=s.cars.find(c=>c.id===player.carId);model=makeCar(car?.color||'#4b9bd2',player.plateNumber,car?.bodyStyle);opponents.set(player.userId,model);scene.add(model.group);}const delta=player.progress-s.me.progress;model.group.position.set(player.lane*3.45,0,THREE.MathUtils.clamp(-22-delta*.38,-115,8));model.group.visible=!player.eliminated;model.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.3;});model.frontWheels.forEach(w=>{w.rotation.y=(player.lane-s.me.lane)*.16;});});
       opponents.forEach((model,id)=>{if(!ids.has(id)){scene.remove(model.group);opponents.delete(id);}});
