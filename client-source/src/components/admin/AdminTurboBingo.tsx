@@ -5,7 +5,7 @@ type Mode = 'automatic' | 'admin';
 type RoundType = 'quick' | 'standard' | 'full_house' | 'custom';
 type Overview = {
   settings: { enabled: boolean; mode: Mode; roundType: RoundType; target: number; ticketPriceEtb: number; prizeEtb: number; drawIntervalSeconds: number; roundDurationSeconds: number; maxTicketsPerPlayer: number };
-  game: null | { id: string; status: string; target: number; drawnNumbers: number[]; ticketCount: number; mode?: Mode; roundType?: RoundType; prizeEtb?: number; roundDurationSeconds?: number; endsAt?: number | null };
+  game: null | { id: string; status: string; target: number; drawnNumbers: number[]; ticketCount: number; mode?: Mode; roundType?: RoundType; prizeEtb?: number; roundDurationSeconds?: number; endsAt?: number | null; registrationEndsAt?: number | null };
   tickets: Array<{ id: string; userId: string; status: string }>;
   history?: Array<{ id: string; target: number; drawnNumbers: number[]; endReason?: string; winner?: { userId: string; ticketId: string } | null }>;
 };
@@ -104,6 +104,7 @@ export function AdminTurboBingo() {
         {game?.status === 'running' && activeMode === 'admin' && <button type="button" disabled={busy} onClick={() => void action('/api/admin/turbo-bingo/draw')} className="mt-3 w-full rounded-lg bg-amber-300 px-4 py-3 text-sm font-black text-black disabled:opacity-40">CALL NEXT NUMBER · SERVER RANDOM DRAW</button>}
         {game?.drawnNumbers?.length ? <p className="mt-3 text-xs leading-6 text-amber-100/60">Drawn: {game.drawnNumbers.join(' · ')}</p> : null}
       </div>
+      <div className={card}><h3 className="font-black text-amber-100">ROUND HISTORY</h3><div className="mt-2 space-y-2">{(data?.history ?? []).length ? (data?.history ?? []).slice(0, 10).map((item) => <div key={item.id} className="flex flex-wrap justify-between gap-2 border-b border-amber-200/10 pb-2 text-xs text-amber-100/65"><span>{item.id.slice(0, 8)} · Target {item.target} · {item.drawnNumbers.length} balls</span><span>{item.winner ? 'Winner confirmed' : item.endReason ?? 'Ended'}</span></div>) : <p className="text-xs text-amber-100/45">No completed rounds yet.</p>}</div></div>
       <p className="text-[10px] leading-5 text-amber-100/40">All tickets and prizes use the separate non-withdrawable Turbo Bingo demo wallet. No legacy Bingo wallet, deposit, withdrawal, or payment flow is used.</p>
     </section>
   );

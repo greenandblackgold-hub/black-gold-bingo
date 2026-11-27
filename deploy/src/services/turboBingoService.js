@@ -78,8 +78,6 @@ export function createTurboBingoService({ repo }) {
         roundType: game?.roundType ?? config.roundType,
         prizeEtb: game?.prizeEtb ?? config.prizeEtb,
         roundDurationSeconds: game?.roundDurationSeconds ?? config.roundDurationSeconds,
-        registrationEndsAt: game?.registrationEndsAt ?? null,
-        registrationSecondsLeft: game?.status === 'waiting' && game.registrationEndsAt ? Math.max(0, Math.ceil((game.registrationEndsAt - Date.now()) / 1000)) : null,
         maxTicketsPerPlayer: game?.maxTicketsPerPlayer ?? config.maxTicketsPerPlayer,
       },
       game: game ? {
@@ -97,6 +95,8 @@ export function createTurboBingoService({ repo }) {
         roundType: game.roundType ?? config.roundType,
         prizeEtb: game.prizeEtb ?? config.prizeEtb,
         roundDurationSeconds: game.roundDurationSeconds ?? config.roundDurationSeconds,
+        registrationEndsAt: game.registrationEndsAt ?? null,
+        registrationSecondsLeft: game.status === 'waiting' && game.registrationEndsAt ? Math.max(0, Math.ceil((game.registrationEndsAt - Date.now()) / 1000)) : null,
         endsAt: game.endsAt ?? null,
       } : null,
       tickets: tickets.map((ticket) => ({
