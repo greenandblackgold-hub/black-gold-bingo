@@ -14,7 +14,7 @@ type State = {
 
 const copy = {
   am: {
-    back:'← ወደ ጨዋታዎች', live:'ቀጥታ · የሙከራ ክሬዲት', title:'ትርቦ ቢንጎ', subtitle:'80 ኳሶች · ትክክለኛ የድል ቁጥር · የመጀመሪያው ትክክለኛ አሸናፊ',
+    back:'← ወደ ጨዋታዎች', live:'ቀጥታ · የሙከራ ክሬዲት', title:'ትርቦ ቢንጎ', subtitle:'80 ኳሶች · ትክክለኛ የድል ቁጥር · የመጀመሪያው ትክክለኛ አሸናፊ', running:'በመጫወት ላይ', endedStatus:'ተጠናቋል', quick:'ፈጣን', standard:'መደበኛ', full_house:'ሙሉ ካርድ', custom:'ብጁ',
     status:'የጨዋታ ሁኔታ', target:'የድል ቁጥር', called:'የወጡ ቁጥሮች', latest:'የመጨረሻ ቁጥር', round:'የዙር አይነት', prize:'የአሸናፊ ሽልማት', time:'የቀረ ጊዜ',
     machine:'ቀጥታ የቁጥር ማውጫ', cage:'GLASS BINGO CAGE', mixing:'ኳሶች እየተዞሩ ነው', waiting:'በመጠበቅ ላይ', lastBall:'የመጨረሻ የወጣ ኳስ', inventory:'በማሽኑ ውስጥ ያሉ ኳሶች', balls:'ኳሶች',
     lastFive:'የመጨረሻ 5 የተጠሩ ቁጥሮች', countdown:'ቆጣሪ', wallet:'የሙከራ ቦርሳ', demo:'ሊወጣ የማይችል የሙከራ ክሬዲት ብቻ', purchase:'ካርድ መግዣ', price:'የአንድ ካርድ ዋጋ', quantity:'የካርድ ብዛት', buy:'ግዛና መዝግብ', busy:'ቆይ…', salesClosed:'አዲስ ዙር ሲከፈት ካርድ መግዛት ይቻላል።',
@@ -22,7 +22,7 @@ const copy = {
     buySuccess:'ካርዶችህ ተመዝግበዋል።', claimSuccess:'ቢንጎ! ድልህ ተረጋግጧል።', errorLoad:'Turbo Bingo መጫን አልተቻለም።', errorBuy:'ካርድ መግዛት አልተሳካም።', errorClaim:'የቢንጎ ጥያቄው አልተረጋገጠም።', simulation:'Turbo Bingo በአሁኑ ጊዜ የሙከራ ጨዋታ ነው። ክሬዲቶቹ እውነተኛ ገንዘብ አይደሉም።', choose:'ቋንቋ'
   },
   ti: {
-    back:'← ናብ ጸወታታት', live:'ቀጥታ · ናይ ፈተነ ክሬዲት', title:'ትርቦ ቢንጎ', subtitle:'80 ኩዕሶታት · ቅኑዕ ቁጽሪ ዓወት · ቀዳማይ ቅኑዕ ዓዋቲ',
+    back:'← ናብ ጸወታታት', live:'ቀጥታ · ናይ ፈተነ ክሬዲት', title:'ትርቦ ቢንጎ', subtitle:'80 ኩዕሶታት · ቅኑዕ ቁጽሪ ዓወት · ቀዳማይ ቅኑዕ ዓዋቲ', running:'ይካየድ ኣሎ', endedStatus:'ተወዲኡ', quick:'ቅልጡፍ', standard:'ስሩዕ', full_house:'ምሉእ ካርድ', custom:'ፍሉይ',
     status:'ኩነታት ጸወታ', target:'ቁጽሪ ዓወት', called:'ዝወጹ ቁጽሪታት', latest:'ናይ መወዳእታ ቁጽሪ', round:'ዓይነት ዙር', prize:'ሽልማት ዓዋቲ', time:'ዝተረፈ ግዜ',
     machine:'ቀጥታዊ መውጽኢ ቁጽሪ', cage:'GLASS BINGO CAGE', mixing:'ኩዕሶታት ይዘውራ ኣለዋ', waiting:'ይጽበ ኣሎ', lastBall:'ናይ መወዳእታ ዝወጸት ኩዕሶ', inventory:'ኣብ ማሽን ዘለዋ ኩዕሶታት', balls:'ኩዕሶታት',
     lastFive:'ናይ መወዳእታ 5 ዝተጸውዑ ቁጽሪታት', countdown:'ቆጸራ', wallet:'ናይ ፈተነ ቦርሳ', demo:'ክወጽእ ዘይክእል ናይ ፈተነ ክሬዲት ጥራይ', purchase:'መግዝኢ ካርድ', price:'ዋጋ ሓደ ካርድ', quantity:'ብዝሒ ካርድ', buy:'ግዝእን መዝግብን', busy:'ተጸበ…', salesClosed:'ሓድሽ ዙር ምስ ተኸፍተ ካርድ ምግዛእ ይከኣል።',
@@ -30,7 +30,7 @@ const copy = {
     buySuccess:'ካርዳትካ ተመዝጊቦም።', claimSuccess:'ቢንጎ! ዓወትካ ተረጋጊጹ።', errorLoad:'Turbo Bingo ምጽዓን ኣይተኻእለን።', errorBuy:'ካርድ ምግዛእ ኣይተሳኸዐን።', errorClaim:'ሕቶ ቢንጎ ኣይተረጋገጸን።', simulation:'Turbo Bingo ሕጂ ናይ ፈተነ ጸወታ እዩ። ክሬዲታት ሓቀኛ ገንዘብ ኣይኮኑን።', choose:'ቋንቋ'
   },
   en: {
-    back:'← Games', live:'LIVE · DEMO CREDITS', title:'TURBO BINGO', subtitle:'80 balls · Exact winning target · First valid winner',
+    back:'← Games', live:'LIVE · DEMO CREDITS', title:'TURBO BINGO', subtitle:'80 balls · Exact winning target · First valid winner', running:'RUNNING', endedStatus:'ENDED', quick:'QUICK', standard:'STANDARD', full_house:'FULL HOUSE', custom:'CUSTOM',
     status:'GAME STATUS', target:'WINNING TARGET', called:'NUMBERS CALLED', latest:'LATEST NUMBER', round:'ROUND TYPE', prize:'WINNER PRIZE', time:'TIME LEFT',
     machine:'LIVE NUMBER DRAW', cage:'GLASS BINGO CAGE', mixing:'● MIXING', waiting:'WAITING', lastBall:'LAST BALL', inventory:'BALLS IN THE CAGE', balls:'balls',
     lastFive:'LAST 5 CALLED BALLS', countdown:'Countdown', wallet:'DEMO WALLET', demo:'Non-withdrawable demo credits only', purchase:'TICKET PURCHASE', price:'Price per ticket', quantity:'Number of tickets', buy:'BUY & REGISTER', busy:'Please wait…', salesClosed:'Ticket sales open when a new round is opened.',
@@ -137,7 +137,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
         @keyframes turbo-cage-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes turbo-ball-float { 0%,100% { translate:0 0; } 50% { translate:5px -9px; } }
         @keyframes turbo-ball-exit { 0% { opacity:0; transform:translate(-50%,-30px) scale(.45); } 18% { opacity:1; } 55% { transform:translate(-50%,24px) scale(1.08); } 100% { opacity:0; transform:translate(-50%,135px) scale(.82); } }
-        .turbo-cage-rotate { animation:turbo-cage-rotate 16s linear infinite; transform-origin:center; }
+        .turbo-cage-rotate { animation:turbo-cage-rotate 7s linear infinite; transform-origin:center; }
         .turbo-ball-float { animation:turbo-ball-float 2.5s ease-in-out infinite; }
         .turbo-ball-exit { animation:turbo-ball-exit 1.8s cubic-bezier(.2,.72,.25,1) both; }
         @media(prefers-reduced-motion:reduce) { .turbo-cage-rotate,.turbo-ball-float,.turbo-ball-exit { animation:none!important; } }
@@ -155,11 +155,11 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><p className="text-[10px] font-black tracking-[.24em] text-emerald-200/75">TURBO BINGO · 1–80</p><span className="rounded-full border border-emerald-200/25 bg-emerald-300/10 px-3 py-1 text-[10px] font-bold text-emerald-100">{t.live}</span></div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
           {[
-            [t.status, state?.game?.status?.toUpperCase() ?? '—'],
+            [t.status, (state?.game?.status === 'running' ? t.running : state?.game?.status === 'ended' ? t.endedStatus : state?.game?.status === 'waiting' ? t.waiting : '—')],
             [t.target, String(state?.game?.target ?? state?.settings.target ?? '—')],
             [t.called, String(drawnNumbers.length)],
             [t.latest, String(lastNumber ?? '—')],
-            [t.round, String(state?.game?.roundType ?? state?.settings.roundType ?? '—').replace('_',' ').toUpperCase()],
+            [t.round, (t[String(state?.game?.roundType ?? state?.settings.roundType ?? '')] ?? String(state?.game?.roundType ?? state?.settings.roundType ?? '—').replace('_',' ').toUpperCase())],
             [t.prize, `${money(state?.game?.prizeEtb ?? state?.settings.prizeEtb ?? 0)} ETB`],
             [t.time, secondsLeft === null ? '—' : `${secondsLeft}s`]
           ].map(([label,value]) => <div key={label} className="rounded-xl border border-white/10 bg-black/20 p-2.5"><p className="text-[9px] font-bold tracking-wide text-emerald-100/60">{label}</p><p className="mt-1 truncate text-base font-black tabular-nums text-white sm:text-lg">{value}</p></div>)}
@@ -167,7 +167,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
       </section>
 
       <section aria-label={t.cage} className="overflow-hidden rounded-3xl border border-cyan-100/30 bg-[radial-gradient(ellipse_at_50%_35%,rgba(57,180,203,.25),transparent_58%),linear-gradient(145deg,#062c29,#071b25_60%,#101a2a)] p-3 shadow-[inset_0_1px_25px_rgba(111,230,255,.12),0_15px_40px_rgba(0,0,0,.28)] sm:p-5">
-        <div className="mb-2 flex items-center justify-between gap-2"><div><p className="text-[9px] font-black tracking-[.22em] text-cyan-100/70">{t.machine}</p><h2 className="text-lg font-black text-white sm:text-xl">{t.cage}</h2></div><span className="rounded-full border border-cyan-100/25 bg-cyan-200/10 px-2.5 py-1 text-[9px] font-bold text-cyan-50">{state?.game?.status === 'running' ? t.mixing : state?.game?.status?.toUpperCase() ?? t.waiting}</span></div>
+        <div className="mb-2 flex items-center justify-between gap-2"><div><p className="text-[9px] font-black tracking-[.22em] text-cyan-100/70">{t.machine}</p><h2 className="text-lg font-black text-white sm:text-xl">{t.cage}</h2></div><span className="rounded-full border border-cyan-100/25 bg-cyan-200/10 px-2.5 py-1 text-[9px] font-bold text-cyan-50">{state?.game?.status === 'running' ? t.mixing : (state?.game?.status === 'running' ? t.running : state?.game?.status === 'ended' ? t.endedStatus : t.waiting)}</span></div>
         <div className="relative mx-auto h-[235px] max-w-[560px] sm:h-[300px]">
           <div className="absolute bottom-2 left-[10%] right-[10%] h-7 rounded-[50%] bg-cyan-300/20 blur-xl" />
           <div className="absolute bottom-3 left-[12%] right-[12%] h-7 rounded-[50%] border border-cyan-100/35 bg-gradient-to-b from-slate-200/40 via-slate-700/70 to-slate-950 shadow-xl" />
