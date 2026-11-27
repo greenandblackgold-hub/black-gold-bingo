@@ -72,7 +72,7 @@ test('Car Racing renders distinct daytime and nighttime environments with dedica
 test('Car Racing requires a stopped vehicle before exit and supports walking, passenger pickup/drop-off, and re-entry', () => {
   assert.match(view, /key==='e'.*latest\.current\.speed<=2.*latest\.current\.onExitVehicle/);
   assert.match(view, /disabled=\{p\.speed>2\}/);
-  assert.match(game, /setPassengerPosition\(footPosition\)/);
+  assert.match(game, /setPassengerPosition\(\{x:footPosition\.x\+\.8,z:footPosition\.z\}\)/);
   assert.match(game, /Math\.hypot\(footPosition\.x-passengerPosition\.x,footPosition\.z-passengerPosition\.z\)>2\.5/);
   assert.match(view, /disabled=\{Math\.hypot\(p\.footPosition\.x,p\.footPosition\.z\)>2\.5\}/);
   assert.match(view, /PICK UP PASSENGER/);
