@@ -123,6 +123,9 @@ export function createTurboBingoService({ repo }) {
       if (error instanceof RepoError && error.code === 'INSUFFICIENT_FUNDS') {
         throw new HttpError(409, 'insufficient_demo_credits', 'Not enough simulation credits for these tickets.');
       }
+      if (error instanceof RepoError && error.code === 'TURBO_BINGO_TICKET_LIMIT') {
+        throw new HttpError(400, 'ticket_limit', 'You have reached the ticket limit for this game.');
+      }
       if (error instanceof RepoError && error.code === 'TURBO_BINGO_SALES_CLOSED') {
         throw new HttpError(409, 'ticket_sales_closed', 'Ticket sales are closed for this game.');
       }
