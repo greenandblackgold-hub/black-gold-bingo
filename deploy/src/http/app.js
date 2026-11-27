@@ -26,7 +26,7 @@ const PAGE_CSP = [
   "base-uri 'self'", "form-action 'self'",
 ].join('; ');
 
-export function createApp({ config, auth, game, wallet, chapa, repo, push, gamesHub, carRacing }) {
+export function createApp({ config, auth, game, wallet, chapa, repo, push, gamesHub, carRacing, turboBingo }) {
   /* ───────────── rate limiting (per IP, in memory: fine for a single instance) ───────────── */
   const hits = new Map();
   const sweep = setInterval(() => {
@@ -137,6 +137,12 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
 
   /* game (public state; the SSE stream is handled separately below) */
   route('GET', '/api/game', 'public', 'default', () => game.getPublicState());
+
+  /* Turbo Bingo: isolated tickets, exact-target claims and server-authoritative live draws. */
+  route('GET', '/api/games/turbo-bingo/settings', 'user', 'default', () => turboBingo.getSettings());
+  route('GET', '/api/games/turbo-bingo/state', 'user', 'default', ({ user }) => turboBingo.getState(user));
+  route('POST', '/api/games/turbo-bingo/tickets', 'user', 'money', ({ user, body }) => turboBingo.buyTickets(user, body.count ?? 1));
+  route('POST', '/api/games/turbo-bingo/claim', 'user', 'money', ({ user, body }) => turboBingo.claim(user, body.ticketId));
 
   /* Keno and Aviator: isolated game modules sharing the existing signed-in player and demo-credit wallet. */
   route('GET', '/api/games/settings', 'user', 'default', ({ user }) => gamesHub.getPublicSettings(user));
@@ -350,6 +356,11 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
     'money',
   );
 
+  admin('GET', '/api/admin/turbo-bingo/overview', () => turboBingo.getAdminOverview());
+  admin('POST', '/api/admin/turbo-bingo/settings', async ({ body }) => turboBingo.updateSettings(body));
+  admin('POST', '/api/admin/turbo-bingo/open', () => turboBingo.openGame());
+  admin('POST', '/api/admin/turbo-bingo/start', () => turboBingo.startGame());
+  admin('POST', '/api/admin/turbo-bingo/stop', () => turboBingo.stopGame());
   admin('GET', '/api/admin/games/overview', () => gamesHub.getAdminOverview());
   admin('POST', '/api/admin/games/settings', async ({ body }) => gamesHub.updateSettings(body));
 
