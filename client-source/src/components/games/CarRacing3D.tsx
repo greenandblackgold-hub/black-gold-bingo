@@ -29,7 +29,8 @@ function makeCar(color: string, plate: string, bodyStyle = 'coupe'): CarModel {
   add(new THREE.BoxGeometry(1.56,suv?.95:roadster?.48:.78,1.92),paint,0,suv?1.42:roadster?1.2:1.34,.08);
   const wind = add(new THREE.BoxGeometry(1.43,.53,.08),glass,0,1.39,-.91); wind.rotation.x=-.2;
   const rear = add(new THREE.BoxGeometry(1.4,.48,.07),glass,0,1.4,1.05); rear.rotation.x=.2;
-  add(new THREE.BoxGeometry(1.55,.1,1.22),paint,0,suv?2.02:roadster?1.46:1.76,.05);
+  if(!roadster)add(new THREE.BoxGeometry(1.55,.1,1.22),paint,0,suv?2.02:hyper?1.55:1.76,.05);
+  else {const cockpitTrim=new THREE.Mesh(new THREE.BoxGeometry(1.62,.08,1.45),dark);cockpitTrim.position.set(0,1.03,.12);g.add(cockpitTrim);[-.62,.62].forEach(x=>{const hoop=new THREE.Mesh(new THREE.BoxGeometry(.07,.52,.08),chrome);hoop.position.set(x,1.36,.68);g.add(hoop);});}
   if(electric){const batteryTrim=new THREE.Mesh(new THREE.BoxGeometry(1.58,.08,1.7),new THREE.MeshStandardMaterial({color:'#101d24',metalness:.8,roughness:.25}));batteryTrim.position.set(0,.48,.08);g.add(batteryTrim);[-.72,.72].forEach(x=>{const charge=new THREE.Mesh(new THREE.BoxGeometry(.08,.06,.32),new THREE.MeshStandardMaterial({color:'#35e0c0',emissive:'#12b997',emissiveIntensity:1.8}));charge.position.set(x,.88,-1.5);g.add(charge);});}
   if(grandTourer){const bonnet=new THREE.Mesh(new THREE.BoxGeometry(1.6,.08,1.3),paint);bonnet.position.set(0,1.04,-1.35);g.add(bonnet);const sideVent=new THREE.Mesh(new THREE.BoxGeometry(.05,.22,.55),chrome);[-1,1].forEach(side=>{const vent=sideVent.clone();vent.position.set(side*1.04,.9,-.45);g.add(vent);});}
   // Sculpted body details: wheel arches, bumpers, grille, side glass and door lines.
@@ -77,7 +78,27 @@ function makeCar(color: string, plate: string, bodyStyle = 'coupe'): CarModel {
   add(new THREE.BoxGeometry(1.95,.12,.32),new THREE.MeshStandardMaterial({color:'#15191d',metalness:.65}),0,.48,1.92);
   add(new THREE.BoxGeometry(1.9,.09,.42),paint,0,1.93,1.78);
   if(hyper||muscle){add(new THREE.BoxGeometry(1.72,.07,.34),dark,0,1.98,1.78);[-.62,.62].forEach(x=>{const support=add(new THREE.BoxGeometry(.07,.28,.08),trim,x,1.91,1.76);});}
-  if(suv){add(new THREE.BoxGeometry(1.55,.08,.12),dark,0,2.04,.08);}
+  if(suv){
+    add(new THREE.BoxGeometry(1.55,.08,.12),dark,0,2.04,.08);
+    [-.62,.62].forEach(x=>{const rail=add(new THREE.BoxGeometry(.07,.08,1.62),chrome,x,2.13,.08);});
+    add(new THREE.BoxGeometry(2.16,.16,.34),dark,0,.45,-2.12);
+  }
+  if(muscle){
+    [-.42,.42].forEach(x=>{const stripe=add(new THREE.BoxGeometry(.12,.018,1.45),new THREE.MeshStandardMaterial({color:'#f5f0df',metalness:.2,roughness:.4}),x,1.035,-1.35);});
+    const hoodScoop=add(new THREE.BoxGeometry(.58,.18,.72),dark,0,1.13,-1.42);
+  }
+  if(hyper){
+    const splitter=add(new THREE.BoxGeometry(2.25,.09,.5),dark,0,.39,-2.18);
+    const diffuser=add(new THREE.BoxGeometry(1.9,.12,.4),dark,0,.39,2.16);
+    [-.72,.72].forEach(x=>{const vent=add(new THREE.BoxGeometry(.28,.035,.9),dark,x,1.03,-1.25);});
+  }
+  if(roadster){
+    const rearDeck=add(new THREE.BoxGeometry(1.5,.14,.62),paint,0,1.12,.88);
+    const seatBack=add(new THREE.BoxGeometry(1.22,.48,.12),dark,0,1.26,.42);
+  }
+  if(electric){
+    const frontLight=add(new THREE.BoxGeometry(1.6,.055,.06),new THREE.MeshStandardMaterial({color:'#8ffff0',emissive:'#20cdb4',emissiveIntensity:2}),0,.9,-2.16);
+  }
 
   [-1,1].forEach(side=>{add(new THREE.BoxGeometry(.22,.16,.28),paint,side*1.05,1.42,-.65);add(new THREE.BoxGeometry(.12,.12,2.35),new THREE.MeshStandardMaterial({color:'#15191d',metalness:.35}),side*.99,.58,0);});
   add(new THREE.BoxGeometry(1.12,.2,.07),new THREE.MeshStandardMaterial({color:'#080b0e',metalness:.35}),0,.66,-2.12);
