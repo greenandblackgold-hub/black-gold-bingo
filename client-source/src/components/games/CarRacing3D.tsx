@@ -517,12 +517,16 @@ function CarRacing3DViewportInner(p:Props) {
     });
     const ownColor=safeCars.find(c=>c.id===p.me.carId)?.color||'#f5c400';const ownStyle=safeCars.find(c=>c.id===p.me.carId)?.bodyStyle;
     let own=makeCar(ownColor,p.me.plateNumber,ownStyle);own.group.scale.setScalar(p.soloMode?1.18:1);scene.add(own.group);
+    const pedestrian=person('#e7b34e','worker');pedestrian.scale.setScalar(1.08);scene.add(pedestrian);
+    const passenger=person('#4b91b9','feminine');passenger.scale.setScalar(.48);passenger.position.set(.48,.58,.12);own.group.add(passenger);
+    const waitingPassenger=person('#d6a24b','masculine');waitingPassenger.position.set(p.passengerPosition.x,0,4.5+p.passengerPosition.z);scene.add(waitingPassenger);
+    const nitroFlames=new THREE.Group();[-.56,.56].forEach(x=>{const flame=new THREE.Mesh(new THREE.ConeGeometry(.19,1.35,16),new THREE.MeshBasicMaterial({color:'#16baff',transparent:true,opacity:.92}));flame.rotation.x=Math.PI/2;flame.position.set(x,.43,2.82);nitroFlames.add(flame);});const nitroGlow=new THREE.PointLight('#16aaff',0,7,2);nitroGlow.position.set(0,.55,3.25);nitroFlames.add(nitroGlow);own.group.add(nitroFlames);
     assetLoader.load(carAssetUrl(ownStyle),gltf=>{
       if(cancelled)return;
       const realistic=loadedCarModel(gltf.scene);realistic.group.scale.setScalar(p.soloMode?1.18:1);
+      realistic.group.add(passenger,nitroFlames);
       scene.remove(own.group);disposeObject(own.group);own=realistic;scene.add(own.group);
-    },undefined,error=>console.warn('Car Racing premium vehicle model unavailable; using local vehicle model',error));const pedestrian=person('#e7b34e','worker');pedestrian.scale.setScalar(1.08);scene.add(pedestrian);const passenger=person('#4b91b9','feminine');passenger.scale.setScalar(.48);passenger.position.set(.48,.58,.12);own.group.add(passenger);const waitingPassenger=person('#d6a24b','masculine');waitingPassenger.position.set(p.passengerPosition.x,0,4.5+p.passengerPosition.z);scene.add(waitingPassenger);
-    const nitroFlames=new THREE.Group();[-.56,.56].forEach(x=>{const flame=new THREE.Mesh(new THREE.ConeGeometry(.19,1.35,16),new THREE.MeshBasicMaterial({color:'#16baff',transparent:true,opacity:.92}));flame.rotation.x=Math.PI/2;flame.position.set(x,.43,2.82);nitroFlames.add(flame);});const nitroGlow=new THREE.PointLight('#16aaff',0,7,2);nitroGlow.position.set(0,.55,3.25);nitroFlames.add(nitroGlow);own.group.add(nitroFlames);
+    },undefined,error=>console.warn('Car Racing premium vehicle model unavailable; using local vehicle model',error));
     const opponents=new Map<string,CarModel>();
     const cockpit=new THREE.Group();
     const cabin=new THREE.MeshStandardMaterial({color:'#11161b',metalness:.28,roughness:.72});
