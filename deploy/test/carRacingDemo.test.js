@@ -357,7 +357,7 @@ test('frontend source includes all four Three.js track scenes, 3D obstacles and 
   }
   assert.match(scene, /s\.view==='chase'/);
   assert.match(scene, /s\.view==='cockpit'/);
-  assert.match(scene, /steering\.rotation\.z=-s\.steer\*Math\.PI/);
+  assert.match(scene, /steering\.rotation\.z=THREE\.MathUtils\.lerp\(steering\.rotation\.z,-s\.steer\*Math\.PI\*2/);
   assert.match(scene, /own\.frontWheels\.forEach/);
   assert.match(scene, /gearLever\.rotation\.z=s\.reverse/);
   assert.match(scene, /brakePedal\.rotation\.x=s\.brake/);
