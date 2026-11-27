@@ -1,5 +1,6 @@
 import { Component, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from 'react';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // Rendering-only layer: server-authoritative race state continues to come from CarRacingGame/API.
 export type RacingCar = { id: string; name: string; color: string; bodyStyle?: string };
@@ -8,6 +9,31 @@ export type RacingTrack = { name: string; environment: 'city' | 'country' | 'roc
 export type RacingView = 'chase' | 'cockpit';
 type Props = { view: RacingView; onFoot: boolean; footPosition: {x:number;z:number}; passengerCount: number; passengerPosition: {x:number;z:number}; onExitVehicle: () => void; onEnterVehicle: () => void; onFootMove: (x:number,z:number) => void; onPassengerAction: () => void; throttle: number; brake: boolean; players: RacingPlayer[]; me: RacingPlayer; cars: RacingCar[]; speed: number; steer: number; reverse: boolean; track: RacingTrack; boost: boolean; rank: number; startedAt: number; nitroPercent: number; audioVolume: number; graphicsQuality: 'performance'|'balanced'|'ultra'; soloMode: boolean; onSettings: () => void; onViewChange: (v: RacingView) => void; onSteer: (v: number) => void; onThrottle: (v: number, reverse?: boolean, boost?: boolean, brake?: boolean) => void; onGearChange: (reverse: boolean) => void };
 type CarModel = { group: THREE.Group; wheels: THREE.Mesh[]; frontWheels: THREE.Mesh[] };
+const CAR_MODEL_ASSETS: Record<string,string> = {
+  hypercar:'https://tevy.dev/models/supercar/v2/lod1.glb', coupe:'https://tevy.dev/models/classic-coupe/v1/lod1.glb',
+  sedan:'https://tevy.dev/models/family-sedan/v1/lod1.glb', electric:'https://tevy.dev/models/hover-car/v1/lod1.glb',
+  suv:'https://tevy.dev/models/suv/v1/lod1.glb', muscle:'https://tevy.dev/models/muscle-car/v1/lod1.glb',
+  roadster:'https://tevy.dev/models/supercar/v2/lod1.glb', grandtourer:'https://tevy.dev/models/classic-coupe/v1/lod1.glb',
+  track:'https://tevy.dev/models/formula-car/v1/lod1.glb', concept:'https://tevy.dev/models/supercar/v2/lod1.glb',
+};
+function carAssetUrl(style?:string) { return CAR_MODEL_ASSETS[(style||'sedan').toLowerCase().replace(/[-_ ]/g,'')] || CAR_MODEL_ASSETS.sedan; }
+function disposeObject(root:THREE.Object3D) { root.traverse(node=>{if(node instanceof THREE.Mesh){node.geometry.dispose();const mats=Array.isArray(node.material)?node.material:[node.material];mats.forEach(mat=>{Object.values(mat).forEach(value=>{if(value instanceof THREE.Texture)value.dispose();});mat.dispose();});}}); }
+function loadedCarModel(source:THREE.Group):CarModel {
+  const root=source.clone(true);root.rotation.y=Math.PI;root.updateMatrixWorld(true);
+  let bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3());
+  if(size.z<size.x){root.rotation.y+=Math.PI/2;root.updateMatrixWorld(true);bounds=new THREE.Box3().setFromObject(root);size=bounds.getSize(new THREE.Vector3());}
+  root.scale.setScalar(4.35/Math.max(size.x,size.z));root.updateMatrixWorld(true);
+  bounds=new THREE.Box3().setFromObject(root);const center=bounds.getCenter(new THREE.Vector3());
+  root.position.x-=center.x;root.position.y-=bounds.min.y;root.position.z-=center.z;
+  const group=new THREE.Group();group.add(root);const wheels:THREE.Mesh[]=[],frontWheels:THREE.Mesh[]=[];
+  root.traverse(node=>{if(node instanceof THREE.Mesh&&/wheel/i.test(node.name)){wheels.push(node);if(/(fl|fr|front)/i.test(node.name))frontWheels.push(node);}});
+  return {group,wheels,frontWheels};
+}
+function fitWorldAsset(source:THREE.Group,targetLength:number) {
+  const root=source.clone(true);root.updateMatrixWorld(true);const size=new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+  root.scale.setScalar(targetLength/Math.max(size.x,size.z));root.updateMatrixWorld(true);const bounds=new THREE.Box3().setFromObject(root),center=bounds.getCenter(new THREE.Vector3());
+  root.position.set(-center.x,-bounds.min.y,-center.z);return root;
+}
 
 function plateTexture(plate: string) {
   const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 128;
@@ -226,6 +252,8 @@ function CarRacing3DViewportInner(p:Props) {
     let renderer:THREE.WebGLRenderer;
     try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});}catch(error){el.dataset.webglUnavailable='true';setRendererStatus('unavailable');console.warn('Car Racing WebGL is unavailable',error);return;}
     let contextLost=false;
+    let cancelled=false;
+    const assetLoader=new GLTFLoader();
     const onContextLost=(event:Event)=>{event.preventDefault();contextLost=true;setRendererStatus('lost');};
     const onContextRestored=()=>{if(contextLost){setRendererStatus('ready');setRendererAttempt(value=>value+1);}};
     renderer.domElement.addEventListener('webglcontextlost',onContextLost,false);
@@ -235,7 +263,7 @@ function CarRacing3DViewportInner(p:Props) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,p.graphicsQuality==='ultra'?2:p.graphicsQuality==='balanced'?1.5:1));renderer.shadowMap.enabled=p.graphicsQuality!=='performance';renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
     const scene=new THREE.Scene();
     const worldStyle={
-      city:{sky:'#06152c',fogNear:78,fogFar:245,road:'#080e19',ground:'#07162a',shoulder:'#b7a77e',day:false},
+      city:{sky:p.soloMode?'#91c9ed':'#06152c',fogNear:78,fogFar:245,road:p.soloMode?'#555b60':'#080e19',ground:p.soloMode?'#547b45':'#07162a',shoulder:'#b7a77e',day:p.soloMode},
       country:{sky:'#9bc9e8',fogNear:105,fogFar:330,road:'#8b7654',ground:'#4e7d3b',shoulder:'#b7a77e',day:true},
       rocky:{sky:'#91a8bd',fogNear:90,fogFar:300,road:'#68645c',ground:'#625d54',shoulder:'#898176',day:true},
       coastal:{sky:'#8bcde8',fogNear:110,fogFar:340,road:'#555d62',ground:'#c7b17c',shoulder:'#e2d4a8',day:true},
@@ -355,9 +383,9 @@ function CarRacing3DViewportInner(p:Props) {
       }
     }
     scenery.forEach(x=>scene.add(x));
-    // Premium neon night circuit: glowing skyline strips, wet-road reflections and the BLACK GOLD start gantry.
+    // Keep the neon race gantry for multiplayer races; solo free drive uses a daylight open city.
     const rotor=new THREE.Group(),tailRotor=new THREE.Group();
-    if(safeTrack.environment==='city'){
+    if(safeTrack.environment==='city' && !p.soloMode){
     const neonBlue=new THREE.MeshStandardMaterial({color:'#28c9ff',emissive:'#087eb8',emissiveIntensity:2.8,metalness:.35,roughness:.22});
     const neonPink=new THREE.MeshStandardMaterial({color:'#ff4fc8',emissive:'#b40072',emissiveIntensity:2.5,metalness:.3,roughness:.24});
     for(let i=0;i<14;i++)for(const side of [-1,1]){const strip=new THREE.Mesh(new THREE.BoxGeometry(.075,7.5,.12),i%2?neonBlue:neonPink);strip.position.set(side*(14+(i%3)*1.5),5.2,-i*17-12);scene.add(strip);}
@@ -389,8 +417,43 @@ function CarRacing3DViewportInner(p:Props) {
     }
     // Everyday places and local life: parking bays, airport terminal, homes, pedestrians and livestock.
     const pedestrians:THREE.Group[]=[];const animals:THREE.Group[]=[];
+    const loadWorldCopies=(url:string,placements:{x:number;z:number;rotation?:number;scale?:number}[])=>{
+      assetLoader.load(url,gltf=>{
+        if(cancelled)return;
+        placements.forEach(place=>{
+          const model=gltf.scene.clone(true);model.position.set(place.x,0,place.z);model.rotation.y=place.rotation??Math.PI;
+          if(place.scale)model.scale.setScalar(place.scale);addWorldObject(model);
+        });
+      },undefined,error=>console.warn('Car Racing world asset unavailable',url,error));
+    };
+    if(safeTrack.environment==='city'&&p.soloMode){
+      loadWorldCopies('https://tevy.dev/models/apartment-block/v2/lod1.glb',[
+        {x:-42,z:-45,scale:.9},{x:42,z:-105,scale:.9},{x:-42,z:-175,scale:.9},{x:42,z:-245,scale:.9}
+      ]);
+      loadWorldCopies('https://tevy.dev/models/storefront-module/v2/lod1.glb',[
+        {x:-20,z:-18,rotation:0},{x:20,z:-70,rotation:Math.PI},{x:-20,z:-130,rotation:0},{x:20,z:-190,rotation:Math.PI}
+      ]);
+    }
+    if(['country','village'].includes(safeTrack.environment)){
+      loadWorldCopies('https://tevy.dev/models/red-cottage/v2/lod1.glb',[
+        {x:-25,z:-52,rotation:Math.PI,scale:.9},{x:25,z:-148,rotation:0,scale:.9}
+      ]);
+      loadWorldCopies('https://tevy.dev/models/farm-tractor/v1/lod1.glb',[
+        {x:-20,z:-95,rotation:Math.PI/2,scale:.95},{x:22,z:-205,rotation:-Math.PI/2,scale:.95}
+      ]);
+    }
     if(['city','village','parking','coastal','airport'].includes(safeTrack.environment))for(let i=0;i<12;i++){const npc=person(['#d6a24b','#4b91b9','#bd5b55','#668e62','#d8d4c5'][i%5],i%3===0?'feminine':i%3===1?'masculine':'worker');npc.position.set(i%2?11.4+(i%3)*.6:-11.4-(i%3)*.5,0,-i*19-7);npc.rotation.y=i%2?-.35:.35;addWorldObject(npc);pedestrians.push(npc);}
-    if(['country','village','rocky'].includes(safeTrack.environment))for(let i=0;i<8;i++){const livestock=animal(i%3===0?'#d2c6a9':i%2?'#8c6844':'#b7a17e');livestock.position.set(i%2?13.5:-13.5,0,-i*25-12);livestock.scale.setScalar(i%2?1.1:.85);addWorldObject(livestock);animals.push(livestock);}
+    if(['country','village','rocky'].includes(safeTrack.environment))for(let i=0;i<8;i++){
+      const livestock=animal(i%3===0?'#d2c6a9':i%2?'#8c6844':'#b7a17e');
+      const position=new THREE.Vector3(i%2?13.5:-13.5,0,-i*25-12);
+      livestock.position.copy(position);livestock.scale.setScalar(i%2?1.1:.85);addWorldObject(livestock);animals.push(livestock);
+      const assetUrl=i%2?'https://tevy.dev/models/dairy-cow/v2/lod1.glb':'https://tevy.dev/models/sheep/v1/lod1.glb';
+      assetLoader.load(assetUrl,gltf=>{
+        if(cancelled)return;
+        const realistic=fitWorldAsset(gltf.scene,i%2?2.5:1.5);realistic.position.copy(position);realistic.rotation.y=i%2?Math.PI/2:0;
+        scene.remove(livestock);addWorldObject(realistic);
+      },undefined,error=>console.warn('Car Racing farm model unavailable; keeping local model',assetUrl,error));
+    }
     if(safeTrack.environment==='village'||safeTrack.environment==='country')for(let i=0;i<10;i++)for(const side of [-1,1]){const fence=new THREE.Mesh(new THREE.BoxGeometry(5,.12,.14),new THREE.MeshStandardMaterial({color:'#9a7547'}));fence.position.set(side*15,.72,-i*17-4);addWorldObject(fence);for(let j=0;j<5;j++){const post=new THREE.Mesh(new THREE.BoxGeometry(.13,1.1,.13),new THREE.MeshStandardMaterial({color:'#765634'}));post.position.set(side*15-2.5+j*1.25,.55,-i*17-4);scene.add(post);}}
     if(safeTrack.environment==='rocky'){
       const cliffMat=new THREE.MeshStandardMaterial({color:'#6c665e',roughness:1});
@@ -452,8 +515,18 @@ function CarRacing3DViewportInner(p:Props) {
       scene.add(group);
       return {group, obstacle};
     });
-    const ownColor=safeCars.find(c=>c.id===p.me.carId)?.color||'#f5c400';const own=makeCar(ownColor,p.me.plateNumber,safeCars.find(c=>c.id===p.me.carId)?.bodyStyle);own.group.scale.setScalar(p.soloMode?1.18:1);scene.add(own.group);const pedestrian=person('#e7b34e','worker');pedestrian.scale.setScalar(1.08);scene.add(pedestrian);const passenger=person('#4b91b9','feminine');passenger.scale.setScalar(.48);passenger.position.set(.48,.58,.12);own.group.add(passenger);const waitingPassenger=person('#d6a24b','masculine');waitingPassenger.position.set(p.passengerPosition.x,0,4.5+p.passengerPosition.z);scene.add(waitingPassenger);
+    const ownColor=safeCars.find(c=>c.id===p.me.carId)?.color||'#f5c400';const ownStyle=safeCars.find(c=>c.id===p.me.carId)?.bodyStyle;
+    let own=makeCar(ownColor,p.me.plateNumber,ownStyle);own.group.scale.setScalar(p.soloMode?1.18:1);scene.add(own.group);
+    const pedestrian=person('#e7b34e','worker');pedestrian.scale.setScalar(1.08);scene.add(pedestrian);
+    const passenger=person('#4b91b9','feminine');passenger.scale.setScalar(.48);passenger.position.set(.48,.58,.12);own.group.add(passenger);
+    const waitingPassenger=person('#d6a24b','masculine');waitingPassenger.position.set(p.passengerPosition.x,0,4.5+p.passengerPosition.z);scene.add(waitingPassenger);
     const nitroFlames=new THREE.Group();[-.56,.56].forEach(x=>{const flame=new THREE.Mesh(new THREE.ConeGeometry(.19,1.35,16),new THREE.MeshBasicMaterial({color:'#16baff',transparent:true,opacity:.92}));flame.rotation.x=Math.PI/2;flame.position.set(x,.43,2.82);nitroFlames.add(flame);});const nitroGlow=new THREE.PointLight('#16aaff',0,7,2);nitroGlow.position.set(0,.55,3.25);nitroFlames.add(nitroGlow);own.group.add(nitroFlames);
+    assetLoader.load(carAssetUrl(ownStyle),gltf=>{
+      if(cancelled)return;
+      const realistic=loadedCarModel(gltf.scene);realistic.group.scale.setScalar(p.soloMode?1.18:1);
+      realistic.group.add(passenger,nitroFlames);
+      scene.remove(own.group);disposeObject(own.group);own=realistic;scene.add(own.group);
+    },undefined,error=>console.warn('Car Racing premium vehicle model unavailable; using local vehicle model',error));
     const opponents=new Map<string,CarModel>();
     const cockpit=new THREE.Group();
     const cabin=new THREE.MeshStandardMaterial({color:'#11161b',metalness:.28,roughness:.72});
@@ -538,7 +611,7 @@ function CarRacing3DViewportInner(p:Props) {
       }
     };
     raf=requestAnimationFrame(animate);
-    return()=>{cancelAnimationFrame(raf);renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);observer?.disconnect();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});renderer.dispose();renderer.domElement.remove();};
+    return()=>{cancelled=true;cancelAnimationFrame(raf);renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);observer?.disconnect();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});renderer.dispose();renderer.domElement.remove();};
     }catch(error){observer?.disconnect();renderer.domElement.removeEventListener('webglcontextlost',onContextLost);renderer.domElement.removeEventListener('webglcontextrestored',onContextRestored);renderer.dispose();renderer.domElement.remove();setRendererError(error instanceof Error ? error.message : String(error));setRendererStatus('error');console.error('Car Racing 3D initialization failed',error);}
   },[rendererAttempt,p.graphicsQuality]);
   const retryRenderer=()=>{setRendererError('');setRendererStatus('ready');setRendererAttempt(value=>value+1);};
@@ -600,9 +673,10 @@ export function CarRacing3DPreview({car,plateNumber}:{car:RacingCar;plateNumber:
   useEffect(()=>{const el=host.current;if(!el)return;let renderer:THREE.WebGLRenderer;try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});}catch{el.dataset.webglUnavailable='true';return;}
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.shadowMap.enabled=true;renderer.domElement.className='block h-full w-full';el.appendChild(renderer.domElement);
     const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(5.4,3.4,7.2);camera.lookAt(0,.7,0);scene.add(new THREE.HemisphereLight('#e4f1ff','#3c2d16',2.2));const light=new THREE.DirectionalLight('#fff0cf',3);light.position.set(-4,9,6);light.castShadow=true;scene.add(light);
-    const floor=new THREE.Mesh(new THREE.CircleGeometry(5,48),new THREE.MeshStandardMaterial({color:'#16191b',roughness:.9}));floor.rotation.x=-Math.PI/2;floor.position.y=-.04;scene.add(floor);const model=makeCar(car.color,plateNumber,car.bodyStyle);scene.add(model.group);
+    const floor=new THREE.Mesh(new THREE.CircleGeometry(5,48),new THREE.MeshStandardMaterial({color:'#16191b',roughness:.9}));floor.rotation.x=-Math.PI/2;floor.position.y=-.04;scene.add(floor);let model=makeCar(car.color,plateNumber,car.bodyStyle);scene.add(model.group);
+    let cancelled=false;const loader=new GLTFLoader();loader.load(carAssetUrl(car.bodyStyle),gltf=>{if(cancelled)return;const premium=loadedCarModel(gltf.scene);scene.remove(model.group);disposeObject(model.group);model=premium;scene.add(model.group);},undefined,error=>console.warn('Car preview model unavailable; using local model',error));
     const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};const observer=new ResizeObserver(resize);observer.observe(el);resize();let raf=0;const animate=()=>{raf=requestAnimationFrame(animate);model.group.rotation.y+=.003;renderer.render(scene,camera);};raf=requestAnimationFrame(animate);
-    return()=>{cancelAnimationFrame(raf);observer.disconnect();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});renderer.dispose();renderer.domElement.remove();};
+    return()=>{cancelled=true;cancelAnimationFrame(raf);observer.disconnect();scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});renderer.dispose();renderer.domElement.remove();};
   },[car.color,car.bodyStyle,plateNumber]);
   return <div className="overflow-hidden rounded-2xl border border-amber-300/20 bg-[radial-gradient(ellipse_at_top,rgba(202,158,57,.18),transparent_65%),#050505]"><div ref={host} className="h-48 w-full sm:h-56"/><p className="pb-3 text-center text-[10px] font-bold uppercase tracking-[.2em] text-amber-200/65">{car.name} · REAL-TIME 3D MODEL · {plateNumber}</p></div>;
 }
