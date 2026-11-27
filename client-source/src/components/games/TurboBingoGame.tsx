@@ -176,15 +176,11 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
   return (
     <main className="turbo-player mx-auto min-h-screen w-full max-w-6xl space-y-4 px-3 pb-28 pt-3 text-white sm:px-5 sm:pt-5">
       <style>{`
-        @keyframes turbo-cage-rotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-        @keyframes turbo-cage-shake { 0%,100% { transform:translate(0,0) rotate(0); } 15% { transform:translate(-3px,2px) rotate(-1deg); } 30% { transform:translate(3px,-2px) rotate(1deg); } 45% { transform:translate(-4px,-1px) rotate(-1.2deg); } 60% { transform:translate(4px,2px) rotate(1.2deg); } 75% { transform:translate(-2px,3px) rotate(-.7deg); } }
-        @keyframes turbo-ball-float { 0%,100% { transform:translate(0,0) rotate(0); } 18% { transform:translate(10px,-13px) rotate(24deg); } 38% { transform:translate(-12px,9px) rotate(-30deg); } 60% { transform:translate(8px,13px) rotate(42deg); } 82% { transform:translate(-9px,-8px) rotate(-22deg); } }
+        @keyframes turbo-ball-float { 0%,100% { transform:translate(0,0) rotate(0); } 12% { transform:translate(22px,-24px) rotate(75deg); } 27% { transform:translate(-26px,17px) rotate(-95deg); } 43% { transform:translate(18px,29px) rotate(125deg); } 59% { transform:translate(-30px,-18px) rotate(-145deg); } 76% { transform:translate(25px,-28px) rotate(190deg); } 90% { transform:translate(-15px,20px) rotate(-225deg); } }
         @keyframes turbo-ball-exit { 0% { opacity:0; transform:translate(-50%,185px) scale(.48) rotate(-100deg); } 10% { opacity:1; } 34% { opacity:1; transform:translate(-50%,-42px) scale(1.22) rotate(150deg); } 48% { transform:translate(-50%,-66px) scale(1.12) rotate(245deg); } 63% { opacity:1; transform:translate(-50%,8px) scale(1.08) rotate(330deg); } 82% { opacity:1; transform:translate(-50%,150px) scale(1) rotate(470deg); } 100% { opacity:0; transform:translate(-50%,225px) scale(.82) rotate(560deg); } }
-        .turbo-cage-rotate { animation:turbo-cage-rotate 1.15s linear infinite; transform-origin:center; }
-        .turbo-cage-shake { animation:turbo-cage-shake .12s linear infinite; }
-        .turbo-ball-float { animation:turbo-ball-float .42s ease-in-out infinite; }
+        .turbo-ball-float { animation:turbo-ball-float .48s ease-in-out infinite; will-change:transform; }
         .turbo-ball-exit { animation:turbo-ball-exit 1.65s cubic-bezier(.12,.72,.18,1) both; }
-        @media(prefers-reduced-motion:reduce) { .turbo-cage-rotate,.turbo-cage-shake,.turbo-ball-float,.turbo-ball-exit { animation:none!important; } }
+        @media(prefers-reduced-motion:reduce) { .turbo-ball-float,.turbo-ball-exit { animation:none!important; } }
       `}</style>
 
       <header className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200/20 bg-[#073b2b] px-3 py-3 shadow-lg sm:px-5">
@@ -215,13 +211,14 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
         <div className="relative mx-auto h-[275px] max-w-[560px] sm:h-[350px]">
           <div className="absolute bottom-2 left-[10%] right-[10%] h-7 rounded-[50%] bg-red-500/30 blur-xl" />
           <div className="absolute bottom-3 left-[12%] right-[12%] h-7 rounded-[50%] border border-red-200/60 bg-gradient-to-b from-red-400 via-red-800 to-red-950 shadow-xl" />
-          <div className="absolute bottom-2 left-[12%] right-[12%] h-[43%] rounded-b-[18px] border-x-[5px] border-b-[5px] border-[#77130f] bg-gradient-to-r from-[#7f1713] via-[#e83227] to-[#851813] shadow-[0_14px_22px_rgba(0,0,0,.45),inset_0_4px_9px_rgba(255,255,255,.2)]" />
-          <div className="absolute bottom-[42%] left-[12%] right-[12%] z-10 h-[12%] rounded-t-[10px] border-[4px] border-[#991b1b] bg-gradient-to-b from-[#ff6658] via-[#e52b22] to-[#991b1b] shadow-[0_5px_12px_rgba(0,0,0,.35)]" />
+          <div className="absolute bottom-2 left-[12%] right-[12%] top-[13%] rounded-[12px_12px_18px_18px] border-[5px] border-[#8f1713] bg-gradient-to-r from-[#78140f] via-[#ed3429] to-[#80150f] shadow-[0_16px_25px_rgba(0,0,0,.5),inset_0_3px_12px_rgba(255,255,255,.25)]" />
+          <div className="absolute bottom-[3%] left-[13%] right-[13%] z-20 h-[25%] rounded-b-[14px] border-x-2 border-b-2 border-red-950/70 bg-gradient-to-br from-[#f04438] via-[#c91e18] to-[#7f1410] shadow-[inset_0_8px_16px_rgba(255,255,255,.12)]"><div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md border border-yellow-300/70 bg-red-800/70 px-5 py-1.5 text-[10px] font-black tracking-wider text-yellow-200 shadow-md">BINGO PRO</div></div>
+          <div className="absolute top-[12%] left-[11%] right-[11%] z-20 h-[14%] rounded-t-[9px] border-[4px] border-red-950/70 bg-gradient-to-b from-[#ff5549] via-[#e52b22] to-[#9e1812] shadow-[0_5px_12px_rgba(0,0,0,.4)]" />
           <div className="absolute bottom-[5%] left-[18%] z-20 h-2 w-8 rounded-sm bg-gradient-to-b from-slate-300 to-slate-700 shadow-md" />
           <div className="absolute bottom-[5%] right-[18%] z-20 h-2 w-8 rounded-sm bg-gradient-to-b from-slate-300 to-slate-700 shadow-md" />
-          <div className={`absolute bottom-7 left-[14%] right-[14%] top-3 overflow-hidden rounded-t-[18px] border-[3px] border-cyan-50/65 bg-gradient-to-br from-white/25 via-cyan-100/10 to-sky-200/20 shadow-[inset_14px_0_25px_rgba(255,255,255,.18),inset_-14px_0_28px_rgba(70,180,255,.2),0_0_35px_rgba(70,210,255,.18)] backdrop-blur-[2px] ${state?.game?.status === 'running' ? 'turbo-cage-shake' : ''}`}>
-            <div className={`absolute inset-[5%] rounded-[42%] ${state?.game?.status === 'running' ? 'turbo-cage-rotate' : ''}`}>
-              {cageBalls.map((ball) => <span key={ball.number} className={`absolute grid place-items-center rounded-full border border-white/80 text-[9px] font-black text-white shadow-[inset_2px_3px_5px_rgba(255,255,255,.75),inset_-3px_-4px_7px_rgba(0,0,0,.38),0_3px_8px_rgba(0,0,0,.45)] sm:text-[10px] ${state?.game?.status === 'running' ? 'turbo-ball-float' : ''}`} style={{left:`${ball.left}%`,top:`${ball.top}%`,width:ball.size,height:ball.size,marginLeft:-ball.size/2,marginTop:-ball.size/2,animationDelay:`${ball.delay}s`,animationDuration:`${0.42 + (ball.number % 6) * 0.09}s`,background:ball.color}}>{ball.number}</span>)}
+          <div className="absolute bottom-[28%] left-[14%] right-[14%] top-[25%] overflow-hidden rounded-[8px] border-[4px] border-cyan-50/75 bg-gradient-to-br from-white/35 via-cyan-100/15 to-sky-200/25 shadow-[inset_14px_0_25px_rgba(255,255,255,.22),inset_-14px_0_28px_rgba(70,180,255,.25),0_0_22px_rgba(70,210,255,.22)] backdrop-blur-[2px]">
+            <div className="absolute inset-[5%] rounded-[38%]">
+              {cageBalls.map((ball) => <span key={ball.number} className={`absolute grid place-items-center rounded-full border border-white/80 text-[9px] font-black text-white shadow-[inset_2px_3px_5px_rgba(255,255,255,.75),inset_-3px_-4px_7px_rgba(0,0,0,.38),0_3px_8px_rgba(0,0,0,.45)] sm:text-[10px] ${state?.game?.status === 'running' ? 'turbo-ball-float' : ''}`} style={{left:`${ball.left}%`,top:`${ball.top}%`,width:ball.size,height:ball.size,marginLeft:-ball.size/2,marginTop:-ball.size/2,animationDelay:`${ball.delay}s`,animationDuration:`${0.38 + (ball.number % 5) * 0.055}s`,background:ball.color}}>{ball.number}</span>)}
             </div>
             <div className="absolute left-1/2 top-1/2 h-[3px] w-[88%] -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] rounded-full bg-gradient-to-r from-cyan-100/10 via-cyan-50/75 to-cyan-100/10 shadow-[0_0_10px_rgba(130,230,255,.8)]" />
             <div className="absolute -top-2 left-1/2 z-20 h-5 w-16 -translate-x-1/2 rounded-t-xl border-2 border-cyan-50/80 bg-gradient-to-b from-slate-100/80 to-cyan-900/80 shadow-lg sm:w-20" />
