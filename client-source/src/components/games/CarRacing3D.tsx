@@ -225,9 +225,11 @@ function CarRacing3DViewportInner(p:Props) {
       const glow=new THREE.Mesh(new THREE.SphereGeometry(.22,12,10),lampGlow);glow.position.set(x-side*1.05,5.55,z);scene.add(glow);
       if(i%4===0){const beam=new THREE.SpotLight('#ffe2a3',32,22,.78,.65,1.5);beam.position.set(x-side*1.05,5.48,z);beam.target.position.set(x-side*1.05,.1,z-5);scene.add(beam,beam.target);}
     }
+    // Initialize the shared scenery collection and helper before any world object uses them.
+    const scenery:THREE.Object3D[]=[];
+    const addWorldObject=(object:THREE.Object3D)=>{scene.add(object);scenery.push(object);};
     const railMat=new THREE.MeshStandardMaterial({color:'#9ca6ae',metalness:.82,roughness:.3});
     [-8.25,8.25].forEach(x=>{const rail=new THREE.Mesh(new THREE.BoxGeometry(.22,.42,280),railMat);rail.position.set(x,.72,-112);scene.add(rail);for(let i=0;i<24;i++){const post=new THREE.Mesh(new THREE.BoxGeometry(.25,.9,.25),railMat);post.position.set(x,.45,-i*12);addWorldObject(post);}});
-    const scenery:THREE.Object3D[]=[];
     for(let i=0;i<20;i++){
       const z=-i*12-5;
       if(safeTrack.environment==='city'){
@@ -294,7 +296,6 @@ function CarRacing3DViewportInner(p:Props) {
       for(let i=0;i<5;i++){const trafficCar=makeCar(['#c7d1d8','#d34b35','#e4b84d','#3989a8','#252a31'][i],`CITY-${i+1}`);trafficCar.group.scale.setScalar(.78);trafficCar.group.position.set(i%2?5.35:-5.35,0,-26-i*43);scene.add(trafficCar.group);traffic.push(trafficCar);}
     }
     // Everyday places and local life: parking bays, airport terminal, homes, pedestrians and livestock.
-    const addWorldObject=(object:THREE.Object3D)=>{scene.add(object);scenery.push(object);};
     const pedestrians:THREE.Group[]=[];const animals:THREE.Group[]=[];
     if(['city','village','parking','coastal'].includes(safeTrack.environment))for(let i=0;i<9;i++){const npc=person(['#d6a24b','#4b91b9','#bd5b55','#668e62'][i%4]);npc.position.set(i%2?11.4:-11.4,0,-i*23-7);npc.rotation.y=i%2?-.35:.35;addWorldObject(npc);pedestrians.push(npc);}
     if(['country','village','rocky'].includes(safeTrack.environment))for(let i=0;i<5;i++){const livestock=animal(i%2?'#8c6844':'#d2c6a9');livestock.position.set(i%2?13.5:-13.5,0,-i*31-12);livestock.scale.setScalar(i%2?1.1:.85);addWorldObject(livestock);animals.push(livestock);}

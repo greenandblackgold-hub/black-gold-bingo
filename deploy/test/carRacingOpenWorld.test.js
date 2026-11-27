@@ -35,3 +35,11 @@ test('Car Racing supports passenger pickup and drop-off in solo walk mode', () =
   assert.match(view, /DROP PASSENGER/);
   assert.match(view, /passenger\.visible=s\.passengerCount>0&&!s\.onFoot/);
 });
+
+test('Car Racing initializes shared scenery helpers before first use', () => {
+  const collection = view.indexOf('const scenery:THREE.Object3D[]=[];');
+  const helper = view.indexOf('const addWorldObject=(object:THREE.Object3D)=>{scene.add(object);scenery.push(object);};');
+  const firstUse = view.indexOf('addWorldObject(post);');
+  assert.ok(collection >= 0 && helper > collection && firstUse > helper, 'scenery collection and helper must be initialized before roadside posts use them');
+  assert.equal(view.indexOf('const addWorldObject=', helper + 1), -1, 'scenery helper must have one declaration');
+});
