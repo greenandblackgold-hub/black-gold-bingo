@@ -753,7 +753,7 @@ export async function createMongoRepo({ uri, dbName }) {
         return { tickets: newTickets, balance: wallet?.balance ?? 0 };
       });
     },
-    async claimTurboBingoTicket({ gameId, expectedVersion, ticketId, userId, winner }) {
+    async claimTurboBingoTicket({ gameId, expectedVersion, ticketId, userId, winner, prizeAmount = 0 }) {
       return tx(async (session) => {
         const game = await turboBingoGames.findOne({ _id: gameId, status: 'running', version: expectedVersion }, { session });
         const ticket = await turboBingoTickets.findOne({ gameId, id: ticketId, userId, status: 'active' }, { session });
@@ -773,7 +773,14 @@ export async function createMongoRepo({ uri, dbName }) {
           { $set: { status: 'winner', claimedAt: winner.at } },
           { session },
         );
-        return { winner, game: toDoc(updated) };
+        const prizeCents = Math.max(0, Math.round(Number(prizeAmount ?? 0)));
+        if (prizeCents > 0) {
+          const credit = await turboBingoWallets.updateOne({ _id: userId }, { $inc: { balance: prizeCents } }, { session });
+          if (!credit.matchedCount) throw new RepoError('TURBO_BINGO_WALLET_NOT_FOUND');
+          await turboBingoLedger.insertOne({ userId, amount: prizeCents, kind: 'game_prize', ref: `turbo-bingo:prize:${gameId}`, meta: { gameId, ticketId }, createdAt: new Date() }, { session });
+        }
+        const wallet = await turboBingoWallets.findOne({ _id: userId }, { session, projection: { balance: 1 } });
+        return { winner, game: toDoc(updated), balance: wallet?.balance ?? 0 };
       });
     },
 
