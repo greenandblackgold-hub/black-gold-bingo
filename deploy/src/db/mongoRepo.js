@@ -729,6 +729,8 @@ export async function createMongoRepo({ uri, dbName }) {
       return tx(async (session) => {
         const game = await turboBingoGames.findOne({ _id: gameId, status: 'waiting' }, { session });
         if (!game) throw new RepoError('TURBO_BINGO_SALES_CLOSED');
+        const playerTicketCount = await turboBingoTickets.countDocuments({ gameId, userId }, { session });
+        if (playerTicketCount + newTickets.length > (game.maxTicketsPerPlayer ?? 10)) throw new RepoError('TURBO_BINGO_TICKET_LIMIT');
         const ref = 'turbo-bingo:purchase:' + newTickets.map((ticket) => ticket.id).join(':');
         const debit = await turboBingoWallets.updateOne({ _id: userId, balance: { $gte: totalCost } }, { $inc: { balance: -totalCost } }, { session });
         if (!debit.matchedCount) {
