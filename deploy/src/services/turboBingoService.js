@@ -103,6 +103,8 @@ export function createTurboBingoService({ repo }) {
     }
     const game = await repo.getCurrentTurboBingoGame();
     if (!game || game.status !== 'waiting') throw new HttpError(409, 'ticket_sales_closed', 'Ticket sales are closed for this game.');
+    const existingTickets = await repo.listTurboBingoTickets(game.id, user.id);
+    if (existingTickets.length + count > config.maxTicketsPerPlayer) throw new HttpError(400, 'ticket_limit', 'You have reached the ticket limit for this game.');
     const wallet = await repo.getGameHubWallet(user.id, 'legacy-demo');
     const price = Math.round(config.ticketPriceEtb * 100);
     const tickets = Array.from({ length: count }, () => ({
@@ -129,13 +131,8 @@ export function createTurboBingoService({ repo }) {
   async function startGame() {
     const config = await settings();
     if (!config.enabled) throw new HttpError(503, 'turbo_bingo_disabled', 'Turbo Bingo is disabled.');
-    let game = await repo.getCurrentTurboBingoGame();
-    if (!game || game.status === 'ended') {
-      game = await repo.createTurboBingoGame({
-        id: randomUUID(), status: 'waiting', target: config.target,
-        drawnNumbers: [], ticketCount: 0, createdAt: Date.now(),
-      });
-    }
+    const game = await repo.getCurrentTurboBingoGame();
+    if (!game || game.status === 'ended') throw new HttpError(409, 'sales_not_open', 'Open ticket sales before starting the draw.');
     if (game.status !== 'waiting') throw new HttpError(409, 'game_already_running', 'A Turbo Bingo game is already running.');
     if (!game.ticketCount) throw new HttpError(409, 'no_tickets', 'At least one ticket must be registered before starting.');
     const startedAt = Date.now();
@@ -250,7 +247,7 @@ export function createTurboBingoService({ repo }) {
 
   return {
     getState, getSettings: settings, buyTickets, startGame, stopGame, claim,
-    updateSettings, getAdminOverview,
+    updateSettings, getAdminOverview, openGame,
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
     async resume() {
       const current = await repo.getCurrentTurboBingoGame();
