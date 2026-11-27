@@ -9,7 +9,8 @@ const DEFAULT_SETTINGS = Object.freeze({
   maxTicketsPerPlayer: 10,
 });
 const TARGET_MIN = 1;
-const TARGET_MAX = 25;
+const TARGET_MAX = 12;
+const REGISTRATION_WINDOW_MS = 60_000;
 const NUMBER_MAX = 80;
 
 const shuffle = (values) => {
@@ -43,17 +44,20 @@ export function createTurboBingoService({ repo }) {
     const config = await settings();
     if (!config.enabled) throw new HttpError(503, 'turbo_bingo_disabled', 'Turbo Bingo is disabled.');
     const current = await repo.getCurrentTurboBingoGame();
-    if (current && current.status !== 'ended') throw new HttpError(409, 'game_already_open', 'A Turbo Bingo game is already open.');
+    if (current && current.status !== 'ended') return getState();
+    const now = Date.now();
     const game = await repo.createTurboBingoGame({
-      id: randomUUID(), status: 'waiting', target: config.target,
+      id: randomUUID(), roundId: randomUUID(), status: 'waiting', target: config.target,
       ticketPriceEtb: config.ticketPriceEtb, maxTicketsPerPlayer: config.maxTicketsPerPlayer,
-      drawnNumbers: [], ticketCount: 0, createdAt: Date.now(),
+      drawnNumbers: [], ticketCount: 0, createdAt: now, registrationStartedAt: now,
+      registrationEndsAt: now + REGISTRATION_WINDOW_MS, autoRound: true,
     });
     await publish();
     return getState();
   }
 
   async function getState(user) {
+    await advanceRoundLifecycle();
     const [config, game] = await Promise.all([settings(), repo.getCurrentTurboBingoGame()]);
     let tickets = [];
     let wallet = null;
@@ -71,6 +75,10 @@ export function createTurboBingoService({ repo }) {
       },
       game: game ? {
         id: game.id,
+        roundId: game.roundId ?? game.id,
+        registrationEndsAt: game.registrationEndsAt ?? null,
+        nextRoundAt: game.nextRoundAt ?? null,
+        gameTypeLabel: game.target === 12 ? '12 · FULL HOUSE' : `${game.target} NUMBERS`,
         status: game.status,
         target: game.target,
         drawnNumbers: game.drawnNumbers,
@@ -110,7 +118,7 @@ export function createTurboBingoService({ repo }) {
     const price = Math.round((game.ticketPriceEtb ?? config.ticketPriceEtb) * 100);
     const tickets = Array.from({ length: count }, () => ({
       id: randomUUID(),
-      numbers: shuffle(Array.from({ length: NUMBER_MAX }, (_, index) => index + 1)).slice(0, 25).sort((a, b) => a - b),
+      numbers: shuffle(Array.from({ length: NUMBER_MAX }, (_, index) => index + 1)).slice(0, 12).sort((a, b) => a - b),
       status: 'active',
     }));
     try {
@@ -153,7 +161,7 @@ export function createTurboBingoService({ repo }) {
     const game = await repo.getCurrentTurboBingoGame();
     if (!game || game.status !== 'running') throw new HttpError(409, 'game_not_running', 'There is no running Turbo Bingo game.');
     const updated = await repo.updateTurboBingoGame(game.id, game.version, {
-      status: 'ended', endedAt: Date.now(), endReason: 'admin_stopped',
+      status: 'ended', endedAt: Date.now(), nextRoundAt: Date.now() + REGISTRATION_WINDOW_MS, endReason: 'admin_stopped',
     });
     if (!updated) throw new HttpError(409, 'game_changed', 'The game changed. Refresh and try again.');
     await publish();
@@ -174,7 +182,7 @@ export function createTurboBingoService({ repo }) {
     const remaining = Array.from({ length: NUMBER_MAX }, (_, index) => index + 1)
       .filter((number) => !game.drawnNumbers.includes(number));
     if (!remaining.length) {
-      await repo.updateTurboBingoGame(game.id, game.version, { status: 'ended', endedAt: Date.now(), endReason: 'numbers_exhausted' }, []);
+      await repo.updateTurboBingoGame(game.id, game.version, { status: 'ended', endedAt: Date.now(), nextRoundAt: Date.now() + REGISTRATION_WINDOW_MS, endReason: 'numbers_exhausted' }, []);
       await publish();
       return true;
     }
@@ -185,7 +193,7 @@ export function createTurboBingoService({ repo }) {
       drawnNumbers,
       lastDrawnAt: Date.now(),
       nextDrawAt: status === 'running' ? Date.now() + config.drawIntervalSeconds * 1000 : null,
-      ...(status === 'ended' ? { status, endedAt: Date.now(), endReason: 'numbers_exhausted' } : {}),
+      ...(status === 'ended' ? { status, endedAt: Date.now(), nextRoundAt: Date.now() + REGISTRATION_WINDOW_MS, endReason: 'numbers_exhausted' } : {}),
     }, lockedTicketIds);
     if (updated) await publish();
     return Boolean(updated);
@@ -218,7 +226,7 @@ export function createTurboBingoService({ repo }) {
     if (input.enabled !== undefined) next.enabled = input.enabled === true;
     if (input.target !== undefined) {
       if (!Number.isInteger(input.target) || input.target < TARGET_MIN || input.target > TARGET_MAX) {
-        throw new HttpError(400, 'invalid_target', 'Winning target must be a whole number from 1 to 25.');
+        throw new HttpError(400, 'invalid_target', 'Winning target must be a whole number from 1 to 12.');
       }
       next.target = input.target;
     }
@@ -239,27 +247,62 @@ export function createTurboBingoService({ repo }) {
   }
 
   async function getAdminOverview() {
+    await advanceRoundLifecycle();
     const [config, game] = await Promise.all([settings(), repo.getCurrentTurboBingoGame()]);
-    return { settings: config, game, tickets: game ? await repo.listTurboBingoTickets(game.id) : [] };
+    return { settings: config, game, tickets: game ? await repo.listTurboBingoTickets(game.id) : [], history: await repo.listTurboBingoGames(20) };
+  }
+
+  async function advanceRoundLifecycle() {
+    const current = await repo.getCurrentTurboBingoGame();
+    const now = Date.now();
+    if (!current) {
+      const config = await settings();
+      await repo.createTurboBingoGame({
+        id: randomUUID(), roundId: randomUUID(), status: 'waiting', target: config.target,
+        ticketPriceEtb: config.ticketPriceEtb, maxTicketsPerPlayer: config.maxTicketsPerPlayer,
+        drawnNumbers: [], ticketCount: 0, createdAt: now, registrationStartedAt: now,
+        registrationEndsAt: now + REGISTRATION_WINDOW_MS, autoRound: true,
+      });
+      return;
+    }
+    if (current.status === 'ended' && Number(current.nextRoundAt ?? (Number(current.endedAt ?? now) + REGISTRATION_WINDOW_MS)) <= now) {
+      const config = await settings();
+      const target = randomInt(TARGET_MIN, TARGET_MAX + 1);
+      await repo.createTurboBingoGame({
+        id: randomUUID(), roundId: randomUUID(), status: 'waiting', target,
+        ticketPriceEtb: config.ticketPriceEtb, maxTicketsPerPlayer: config.maxTicketsPerPlayer,
+        drawnNumbers: [], ticketCount: 0, createdAt: now, registrationStartedAt: now,
+        registrationEndsAt: now + REGISTRATION_WINDOW_MS, autoRound: true,
+      });
+      await publish();
+      return;
+    }
+    if (current.status === 'waiting' && Number(current.registrationEndsAt ?? 0) > 0 && Number(current.registrationEndsAt) <= now) {
+      const config = await settings();
+      const startedAt = Number(current.registrationEndsAt);
+      const updated = await repo.updateTurboBingoGame(current.id, current.version, {
+        status: 'running', startedAt, nextDrawAt: startedAt + config.drawIntervalSeconds * 1000,
+      });
+      if (updated) await publish();
+    }
   }
 
   async function tick() {
     if (ticking) return;
     ticking = true;
-    try { await drawNext(); } catch { /* the next tick retries transient repository errors */ }
+    try {
+      await advanceRoundLifecycle();
+      await drawNext();
+    } catch { /* persisted deadlines are retried on the next request/tick */ }
     finally { ticking = false; }
   }
 
   return {
     getState, getSettings: settings, buyTickets, startGame, stopGame, claim,
-    updateSettings, getAdminOverview, openGame,
+    updateSettings, getAdminOverview, openGame, advanceRoundLifecycle,
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
     async resume() {
-      const current = await repo.getCurrentTurboBingoGame();
-      if (!current) {
-        const config = await settings();
-        await repo.createTurboBingoGame({ id: randomUUID(), status: 'waiting', target: config.target, ticketPriceEtb: config.ticketPriceEtb, maxTicketsPerPlayer: config.maxTicketsPerPlayer, drawnNumbers: [], ticketCount: 0, createdAt: Date.now() });
-      }
+      await advanceRoundLifecycle();
       if (!timer) { timer = setInterval(() => void tick(), 200); timer.unref?.(); }
     },
     stop() { if (timer) clearInterval(timer); timer = null; listeners.clear(); },
