@@ -1005,7 +1005,9 @@ test('Admin can inspect all Games Center games during General OFF without changi
   const originalRealMoneyEnabled = ctx.config.realMoneyEnabled;
   ctx.config.realMoneyEnabled = false;
   try {
-  const p = await newPlayer('General OFF admin preview player', 100);
+  const registration = await ctx.auth.register({ phone: newPhone(), name: 'General OFF admin preview player', pin: '123456', pinConfirm: '123456' });
+  await ctx.repo.updateUser(registration.user.id, { phoneVerified: true });
+  const p = { ...registration, user: await ctx.repo.findUserById(registration.user.id) };
   const closed = await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: {
     generalEnabled: false, bingoEnabled: false, kenoEnabled: false, aviatorEnabled: false, minesEnabled: false, carRacingEnabled: false,
   } });
