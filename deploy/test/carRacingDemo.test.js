@@ -481,17 +481,17 @@ test('steering supports the full signed range, reverse gear moves backward, and 
 });
 
 
-test('solo test mode uses a local single-driver session, 10-minute timer and persistent working settings', () => {
+test('solo test mode uses a local single-driver session, 60-minute free-drive timer and persistent working settings', () => {
   const frontend = readFileSync(new URL('../../client-source/src/components/games/CarRacingGame.tsx', import.meta.url), 'utf8');
   const scene = readFileSync(new URL('../../client-source/src/components/games/CarRacing3D.tsx', import.meta.url), 'utf8');
   assert.match(frontend, /const room = soloRoom/);
   assert.match(frontend, /roomId:'solo-practice'/);
-  assert.match(frontend, /elapsed>=600/);
+  assert.match(frontend, /elapsed>=3600/);
   assert.match(frontend, /localStorage\.setItem\('black-gold-racing-settings'/);
   assert.match(frontend, /MASTER SOUND/);
   assert.match(frontend, /GRAPHICS QUALITY/);
   assert.match(frontend, /SAVE SETTINGS/);
-  assert.match(scene, /Math\.min\(600/);
+  assert.match(scene, /Math\.min\(3600/);
   assert.match(scene, /BLACK GOLD RACING/);
   assert.match(scene, /STEER LEFT/);
   assert.match(scene, /STEER RIGHT/);
