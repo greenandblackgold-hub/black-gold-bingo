@@ -24,8 +24,12 @@ test('Turbo Bingo tickets are charged only to the separate demo wallet and regis
   const { repo, user, game } = await setup();
   const tickets = await repo.listTurboBingoTickets(game.id, user.id);
   const wallet = await repo.getTurboBingoWallet(user.id);
+  const otherGamesWallet = await repo.getGameHubWallet(user.id, 'legacy-demo');
+  const bingoUser = await repo.findUserById(user.id);
   assert.equal(tickets.length, 1);
   assert.equal(wallet.balance, 99_900);
+  assert.equal(otherGamesWallet.balance, 100_000);
+  assert.equal(bingoUser.balance, 0);
   assert.equal(game.ticketCount, 1);
   assert.equal(game.status, 'waiting');
 });
@@ -69,4 +73,27 @@ test('Turbo Bingo locks an unclaimed exact-target ticket on the next draw', asyn
   assert.equal(saved, null);
   const allTickets = await repo.listTurboBingoTickets(game.id);
   assert.equal(allTickets[0].status, 'locked');
+});
+
+test('Turbo Bingo enforces the per-player ticket cap inside the repository operation', async () => {
+  const repo = createMemoryRepo();
+  const user = await repo.createUser({ phone: '251911000002', name: 'Limit Test', pinHash: 'test-hash' });
+  await repo.getTurboBingoWallet(user.id);
+  const game = await repo.createTurboBingoGame({
+    id: 'turbo-limit-game', status: 'waiting', target: 10, maxTicketsPerPlayer: 1,
+    drawnNumbers: [], ticketCount: 0, createdAt: Date.now(),
+  });
+  await repo.purchaseTurboBingoTickets({
+    gameId: game.id, userId: user.id,
+    tickets: [{ id: 'limit-ticket-1', numbers: Array.from({ length: 25 }, (_, i) => i + 1) }],
+    totalCost: 100,
+  });
+  await assert.rejects(
+    repo.purchaseTurboBingoTickets({
+      gameId: game.id, userId: user.id,
+      tickets: [{ id: 'limit-ticket-2', numbers: Array.from({ length: 25 }, (_, i) => i + 26) }],
+      totalCost: 100,
+    }),
+    (error) => error.code === 'TURBO_BINGO_TICKET_LIMIT',
+  );
 });
