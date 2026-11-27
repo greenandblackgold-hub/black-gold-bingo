@@ -87,7 +87,7 @@ test('Car Racing uses smooth full-lock steering and front-wheel articulation', (
 test('Car Racing is a traversable open world, not an endless scrolling road', () => {
   assert.match(view, /PlaneGeometry\(760,760\)/);
   assert.match(view, /const roadGrid=.*\[-180,-60,0,60,180\]/);
-  assert.match(view, /vehicle\.x\+=Math\.sin\(vehicle\.heading\)\*velocity\*dt/);
+  assert.match(view, /vehicle\.x-=Math\.sin\(vehicle\.heading\)\*velocity\*dt/);
   assert.match(view, /vehicle\.z-=Math\.cos\(vehicle\.heading\)\*velocity\*dt/);
   assert.match(view, /camera\.position\.lerp\(new THREE\.Vector3\(vehicle\.x/);
   assert.doesNotMatch(view, /scenery\.forEach\(o=>\{o\.position\.z\+=/);
