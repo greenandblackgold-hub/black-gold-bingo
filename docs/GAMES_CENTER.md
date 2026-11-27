@@ -84,3 +84,19 @@ npm test
 ```
 
 The regular deployment workflow also runs the frontend TypeScript check, frontend production build, and backend test suite. Production shared-wallet activation is intentionally disabled by default; set `GAMES_HUB_SHARED_WALLET_ENABLED=true` only after the database balance audit and the two written approvals described above. A green GitHub workflow does not prove that the Render deployment or MongoDB production environment is live; those must be checked separately.
+
+## Turbo Bingo
+
+Turbo Bingo is a separate live game module. It does not reuse or modify the legacy Bingo `game`, `cards`, card-signing, pattern, claim or settlement logic.
+
+- Each ticket contains 25 unique numbers selected securely from 1–80.
+- One game has one frozen winning target from 1–25. The winner must have exactly that many matches, and the latest called number must be on the ticket.
+- A claim is accepted only by the server. The first accepted claim atomically ends the game; later claims fail.
+- When another number is drawn after a ticket first reaches the exact target, the ticket is marked `locked` and cannot claim.
+- Number draws are unique, server-generated and persisted in order. The draw interval is configurable from 1–30 seconds.
+- Admin controls include enable/disable, target, ticket price, opening ticket sales, starting the draw and stopping a game. Target, ticket price and per-player ticket limit are frozen when sales open.
+- Tickets and game state are stored in the dedicated `turboBingoTickets`, `turboBingoGames`, `turboBingoState` and `turboBingoSettings` collections. The in-memory repository mirrors the same operations for tests.
+- Ticket charges use the existing **separate, non-withdrawable Games Center simulation wallet** and `gameHubLedger`. They do not debit the legacy Bingo wallet or write to the Bingo ledger.
+- This implementation records the first winner but does not configure or issue a prize payout. Any future prize rule must be separately specified and reviewed; real-money play and cash-out are not enabled by this module.
+
+Automated rule tests are in `deploy/test/turboBingo.test.js`.
