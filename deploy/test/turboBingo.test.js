@@ -166,3 +166,18 @@ test('Turbo Bingo Automatic mode schedules server draws and validates timing and
 
 test('Turbo Bingo history retains ended rounds', async () => { const { repo, game } = await setup(12); await repo.updateTurboBingoGame(game.id, game.version, { status: 'ended', endedAt: Date.now(), endReason: 'test_complete' }); const history = await repo.listTurboBingoHistory(10); assert.equal(history.length, 1); assert.equal(history[0].target, 12); });
 test('Turbo Bingo Full House is 12 and target 13 is rejected', async () => { const repo = createMemoryRepo(); const service = createTurboBingoService({ repo }); await service.updateSettings({ roundType: 'full_house' }); assert.equal((await service.getSettings()).target, 12); await assert.rejects(service.updateSettings({ target: 13 }), /1 to 12/); service.stop(); });
+
+test('Turbo Bingo automatic rounds run for one minute even when nobody buys a ticket', async () => {
+  const repo = createMemoryRepo();
+  const service = createTurboBingoService({ repo });
+  await service.updateSettings({ mode: 'automatic', roundDurationSeconds: 300 });
+  await service.openGame();
+  const waiting = await repo.getCurrentTurboBingoGame();
+  assert.equal(waiting.ticketCount, 0);
+  const started = await service.startGame();
+  assert.equal(started.game.status, 'running');
+  assert.equal(started.game.ticketCount, 0);
+  assert.equal(started.game.endsAt - started.game.startedAt, 60_000);
+  service.stop();
+});
+
