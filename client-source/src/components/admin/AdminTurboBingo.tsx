@@ -35,7 +35,7 @@ export function AdminTurboBingo() {
     finally { setBusy(false); }
   };
   const save = () => void action('/api/admin/turbo-bingo/settings', {
-    enabled, target: Number(target), ticketPriceEtb: Number(price), drawIntervalSeconds: Number(interval),
+    target: Number(target), ticketPriceEtb: Number(price), drawIntervalSeconds: Number(interval),
   });
   const game = data?.game;
   return (
@@ -44,7 +44,24 @@ export function AdminTurboBingo() {
       {error && <p role="alert" className="rounded-lg bg-red-950/40 p-3 text-sm text-red-200">{error}</p>}
       {notice && <p role="status" className="rounded-lg bg-emerald-950/30 p-3 text-sm text-emerald-200">{notice}</p>}
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex items-center justify-between rounded-xl border border-amber-200/15 bg-black/40 p-3 text-sm font-bold text-amber-100">Enable Turbo Bingo<input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="h-5 w-5 accent-amber-400" /></label>
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-amber-200/15 bg-black/40 p-3">
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-amber-100">Turbo Bingo · Player Visibility</p>
+            <p className="mt-1 text-xs text-amber-100/50">{enabled ? 'ON · Visible in the Player Games Center' : 'OFF · Hidden from the Player Games Center'}</p>
+            <p className="mt-1 text-[10px] leading-4 text-amber-100/35">Turn OFF to hide Turbo Bingo from players and block new ticket purchases and game starts.</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enabled}
+            aria-label="Turbo Bingo player visibility"
+            disabled={busy || !data}
+            onClick={() => void action('/api/admin/turbo-bingo/settings', { enabled: !enabled })}
+            className={['relative h-10 w-[4.5rem] shrink-0 rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300 disabled:opacity-50', enabled ? 'bg-emerald-500' : 'bg-red-900 ring-1 ring-red-500/60'].join(' ')}
+          >
+            <span className={['absolute top-2 h-6 w-6 rounded-full bg-[#090907] ring-1 ring-white/70 transition-all', enabled ? 'left-10' : 'left-2'].join(' ')} />
+          </button>
+        </div>
         <label className="rounded-xl border border-amber-200/15 bg-black/40 p-3"><span className="block text-xs text-amber-300">Winning Target (1–25)</span><input type="number" min="1" max="25" value={target} onChange={(e) => setTarget(e.target.value)} className="mt-1 w-full bg-transparent text-lg font-black text-amber-100 outline-none" /></label>
         <label className="rounded-xl border border-amber-200/15 bg-black/40 p-3"><span className="block text-xs text-amber-300">Ticket Price (ETB)</span><input type="number" min="0.1" max="1000" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} className="mt-1 w-full bg-transparent text-lg font-black text-amber-100 outline-none" /></label>
         <label className="rounded-xl border border-amber-200/15 bg-black/40 p-3"><span className="block text-xs text-amber-300">Draw Interval (seconds)</span><input type="number" min="1" max="30" value={interval} onChange={(e) => setInterval(e.target.value)} className="mt-1 w-full bg-transparent text-lg font-black text-amber-100 outline-none" /></label>
