@@ -249,8 +249,8 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
               aria-label={free ? labels.free : `${LETTERS[c]} ${value}`}
               data-marked={marked && !free ? 'true' : undefined}
               style={marked && !free ? ({
-                '--bingo-mark-color': wasCalled ? '#ec4899' : markColor,
-                '--bingo-mark-text-color': wasCalled ? '#ffffff' : readableMarkText(markColor),
+                '--bingo-mark-color': markColor,
+                '--bingo-mark-text-color': readableMarkText(markColor),
               } as CSSProperties) : undefined}
               className={[
                 'relative grid aspect-square min-w-0 place-items-center border text-[clamp(13px,3vw,22px)] font-black leading-none transition',
@@ -366,7 +366,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   const [draftCardsLoadedFor, setDraftCardsLoadedFor] = useState<string | null>(null);
   const [registeringDraftId, setRegisteringDraftId] = useState<string | null>(null);
   const [draftMessage, setDraftMessage] = useState('');
-  const [quickBuyCount, setQuickBuyCount] = useState(15);
+  const [quickBuyCount, setQuickBuyCount] = useState(1);
   const [quickBuyBusy, setQuickBuyBusy] = useState(false);
   const [quickBuyMessage, setQuickBuyMessage] = useState('');
   const [selectedDepositAccount, setSelectedDepositAccount] = useState<DepositAccount | null>(null);
@@ -597,11 +597,11 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   const lastCalls = calledNumbers.slice(-5).reverse();
   const quickBuyTotal = bonusRound ? 0 : quickBuyCount * cardPrice;
   const quickBuyAllowed = bonusRound || phase === 'waiting';
-  const quickBuyInsufficient = bonusRound && quickBuyTotal > balance;
+  const quickBuyInsufficient = !bonusRound && quickBuyTotal > balance;
   const quickBuyOptions = bonusRound ? [1, 2, 3] : [1, 2, 5, 10, 15, 20, 25, 30];
 
   useEffect(() => {
-    setQuickBuyCount(bonusRound ? 1 : 15);
+    setQuickBuyCount(1);
   }, [bonusRound]);
   const addPreviewCards = async (count: number) => {
     if (quickBuyBusy) return;
@@ -994,30 +994,41 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
               ) : (
                 <div className="mb-4 rounded-xl border border-yellow-500/30 bg-yellow-950/30 p-3 text-center">
                   <p className="text-sm font-bold text-yellow-100">የካርቴላ ፓኬጅ ይምረጡ</p>
-                  <p className="mt-1 text-xs text-yellow-100/70">ካርቴላዎቹን በነፃ ይመልከቱ፤ REGISTER ሲጫኑ ብቻ የአንድ ካርቴላ ክፍያ ይፈጸማል።</p>
+                  <p className="mt-1 text-xs text-yellow-100/70">የሚፈልጉትን ፓኬጅ ይምረጡ፤ በግዢ ማረጋገጫው ላይ የተመረጡት ካርቴላዎች በአንድ ጊዜ ይጨመራሉ።</p>
                   <p className="mt-2 text-xs text-yellow-300">{t.cardPrice}: {formatAmount(lang, cardPrice)} ብር / ካርቴላ</p>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-3">
                 {quickBuyOptions.map(count => (
-                  <button key={count} type="button" aria-pressed={bonusRound && quickBuyCount === count} disabled={!quickBuyAllowed || quickBuyBusy} onClick={() => bonusRound ? setQuickBuyCount(count) : void addPreviewCards(count)} className={`rounded-xl border-2 px-3 py-4 text-base font-black transition disabled:opacity-40 ${bonusRound && quickBuyCount === count ? 'border-yellow-200 bg-yellow-400 text-black shadow-[0_0_18px_rgba(250,204,21,.3)]' : 'border-yellow-500/40 bg-black text-yellow-100 hover:bg-yellow-950'}`}>
+                  <button key={count} type="button" aria-pressed={quickBuyCount === count} disabled={!quickBuyAllowed || quickBuyBusy} onClick={() => setQuickBuyCount(count)} className={`rounded-xl border-2 px-3 py-4 text-base font-black transition disabled:opacity-40 ${quickBuyCount === count ? 'border-yellow-200 bg-yellow-400 text-black shadow-[0_0_18px_rgba(250,204,21,.3)]' : 'border-yellow-500/40 bg-black text-yellow-100 hover:bg-yellow-950'}`}>
                     {count} ካርቴላ
                   </button>
                 ))}
               </div>
-              {bonusRound && (
-                <div className="my-4 flex items-center justify-between border-t border-yellow-500/30 pt-3 text-sm">
-                  <span className="text-yellow-100/80">{t.balance}</span><strong className="text-yellow-200">{formatAmount(lang, balance)} ብር</strong>
+              <div className="my-4 space-y-2 border-t border-yellow-500/30 pt-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-yellow-100/80">{t.balance}</span>
+                  <strong className="text-yellow-200">{formatAmount(lang, balance)} ብር</strong>
                 </div>
-              )}
+                {!bonusRound && (
+                  <>
+                    <div className="flex items-center justify-between gap-3 text-yellow-100/80">
+                      <span>{t.cardPrice} × {quickBuyCount}</span>
+                      <strong>{formatAmount(lang, cardPrice)} × {quickBuyCount}</strong>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-yellow-500/20 pt-2">
+                      <span className="font-bold text-yellow-100">{lang === 'am' ? 'ጠቅላላ ዋጋ' : lang === 'ti' ? 'ጠቕላላ ዋጋ' : 'Total'}</span>
+                      <strong className="text-lg text-yellow-300">{formatAmount(lang, quickBuyTotal)} ብር</strong>
+                    </div>
+                  </>
+                )}
+              </div>
               {!quickBuyAllowed && <p role="status" className="mb-3 rounded-lg bg-amber-950/60 p-2 text-xs text-amber-200">{t.buyOnlyWaiting}</p>}
-              {bonusRound && quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">{t.insufficient}</p>}
+              {quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">{t.insufficient}</p>}
               {quickBuyMessage && <p role="status" className="mb-3 text-xs font-bold text-yellow-300">{quickBuyMessage}</p>}
-              {bonusRound && (
-                <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="sticky bottom-0 z-10 mt-3 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
-                  {quickBuyBusy ? t.buying : t.getFreeCards}
-                </button>
-              )}
+              <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="sticky bottom-0 z-10 mt-3 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
+                {quickBuyBusy ? t.buying : bonusRound ? t.getFreeCards : t.buyCards}
+              </button>
             </section>
           </div>
         )}
