@@ -74,6 +74,34 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
           <Stat label="LATEST NUMBER" value={String(state?.game?.lastNumber ?? '—')} />
         </div>
       </section>
+
+      <section aria-label="Live bingo ball machine" className="relative overflow-hidden rounded-3xl border border-cyan-200/30 bg-[radial-gradient(ellipse_at_50%_38%,rgba(40,104,210,.34),transparent_58%),linear-gradient(145deg,#07132b,#090b19_58%,#17102a)] p-3 shadow-[inset_0_1px_25px_rgba(111,190,255,.12),0_15px_40px_rgba(0,0,0,.35)] sm:p-5">
+        <style>{'@keyframes turbo-drum-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}@keyframes turbo-ball-bob{0%,100%{translate:0 0}50%{translate:7px -12px}}@keyframes turbo-extract{0%{opacity:0;transform:translate(-50%,-35px) scale(.45)}16%{opacity:1}52%{transform:translate(-50%,30px) scale(1.08)}100%{opacity:0;transform:translate(-50%,150px) scale(.82)}}.turbo-drum-spin{animation:turbo-drum-spin 7s linear infinite;transform-origin:center}.turbo-ball-bob{animation:turbo-ball-bob 2.4s ease-in-out infinite}.turbo-extract{animation:turbo-extract 1.8s cubic-bezier(.2,.72,.25,1) both}@media(prefers-reduced-motion:reduce){.turbo-drum-spin,.turbo-ball-bob,.turbo-extract{animation-duration:.01ms!important;animation-iteration-count:1!important}}'}</style>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div><p className="text-[10px] font-black tracking-[.24em] text-cyan-200/80">LIVE DRAW MACHINE</p><h2 className="text-lg font-black text-white sm:text-xl">GLASS BINGO CAGE</h2></div>
+          <span className="rounded-full border border-cyan-200/25 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-bold text-cyan-100">{state?.game?.status === 'running' ? '● MIXING' : state?.game?.status?.toUpperCase() ?? 'WAITING'}</span>
+        </div>
+        <div className="relative mx-auto h-[220px] max-w-[520px] sm:h-[280px]">
+          <div className="absolute bottom-2 left-[12%] right-[12%] h-5 rounded-[50%] bg-cyan-300/20 blur-xl" />
+          <div className="absolute bottom-4 left-[14%] right-[14%] h-5 rounded-full border border-blue-200/30 bg-gradient-to-b from-blue-200/25 to-blue-950/80 shadow-lg" />
+          <div className="absolute bottom-7 left-[17%] right-[17%] top-5 rounded-[42%_42%_30%_30%] border-[3px] border-cyan-100/65 bg-gradient-to-br from-white/20 via-blue-300/10 to-indigo-500/20 shadow-[inset_12px_0_22px_rgba(255,255,255,.18),inset_-12px_0_24px_rgba(70,120,255,.2),0_0_30px_rgba(70,170,255,.2)] backdrop-blur-[2px]">
+            <div className="turbo-drum-spin absolute inset-[8%] rounded-full border border-cyan-100/20">
+              {cageBalls.map((ball, index) => <span key={index} className="turbo-ball-bob absolute grid h-8 w-8 place-items-center rounded-full border border-white/70 text-[10px] font-black text-white shadow-[inset_2px_3px_5px_rgba(255,255,255,.75),inset_-3px_-4px_7px_rgba(0,0,0,.35),0_3px_8px_rgba(0,0,0,.5)] sm:h-10 sm:w-10 sm:text-xs" style={{left:ball.x,top:ball.y,animationDelay:ball.delay,background:['radial-gradient(circle at 30% 25%,#fff,#fb7185 25%,#be123c 75%)','radial-gradient(circle at 30% 25%,#fff,#60a5fa 25%,#1d4ed8 75%)','radial-gradient(circle at 30% 25%,#fff,#4ade80 25%,#15803d 75%)','radial-gradient(circle at 30% 25%,#fff,#c084fc 25%,#7e22ce 75%)','radial-gradient(circle at 30% 25%,#fff,#facc15 25%,#b45309 75%)','radial-gradient(circle at 30% 25%,#fff,#67e8f9 25%,#0e7490 75%)'][index%6]}}>{ball.number}</span>)}
+            </div>
+            <div className="absolute left-1/2 top-1/2 h-[3px] w-[86%] -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] rounded-full bg-gradient-to-r from-blue-200/10 via-blue-100/75 to-blue-200/10 shadow-[0_0_10px_rgba(130,190,255,.8)]" />
+            <div className="absolute -top-3 left-1/2 z-20 h-5 w-16 -translate-x-1/2 rounded-t-xl border-2 border-cyan-100/80 bg-gradient-to-b from-slate-200/80 to-blue-800/80 shadow-lg sm:w-20" />
+            <div className="absolute -top-1 left-1/2 z-30 h-3 w-10 -translate-x-1/2 rounded-b-full border-x-2 border-b-2 border-cyan-100 bg-[#07152e] shadow-[0_0_12px_rgba(125,211,252,.65)] sm:w-14" />
+          </div>
+          <div className="absolute bottom-5 left-[10%] h-[72%] w-3 rotate-[12deg] rounded-full border border-blue-200/60 bg-gradient-to-r from-blue-300/60 to-indigo-900/90 shadow-lg" />
+          <div className="absolute bottom-5 right-[10%] h-[72%] w-3 -rotate-[12deg] rounded-full border border-blue-200/60 bg-gradient-to-r from-blue-300/60 to-indigo-900/90 shadow-lg" />
+          {extractedNumber !== null && <div key={extractedNumber} className="turbo-extract absolute left-1/2 top-0 z-40 grid h-14 w-14 place-items-center rounded-full border-[3px] border-white bg-[radial-gradient(circle_at_30%_24%,#fff,#fca5a5_18%,#ef4444_55%,#991b1b)] text-xl font-black text-white shadow-[0_0_0_5px_rgba(248,113,113,.18),0_0_28px_rgba(248,113,113,.9)] sm:h-16 sm:w-16 sm:text-2xl" aria-live="polite">{extractedNumber}</div>}
+        </div>
+        <div className="relative z-10 mx-auto mt-1 flex max-w-[520px] items-center justify-center gap-3 rounded-2xl border border-amber-300/30 bg-black/45 px-3 py-2">
+          <span className="text-[10px] font-black tracking-wider text-amber-200/70">LAST BALL</span>
+          <span className="grid h-11 w-11 place-items-center rounded-full border-2 border-white/80 bg-[radial-gradient(circle_at_30%_25%,#fff,#fca5a5_18%,#ef4444_55%,#991b1b)] text-xl font-black text-white shadow-[0_0_18px_rgba(248,113,113,.45)]">{lastNumber ?? '—'}</span>
+          <span className="text-xs text-amber-100/65">{state?.game?.drawnNumbers.length ?? 0} / 80 called</span>
+        </div>
+      </section>
       {error && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-950/40 p-3 text-sm text-red-200">{error}</p>}
       {notice && <p role="status" className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-3 text-sm text-emerald-200">{notice}</p>}
       <section className="grid gap-4 lg:grid-cols-[1fr_300px]">
