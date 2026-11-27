@@ -183,7 +183,7 @@ function CarRacing3DViewportInner(p:Props) {
       if(ignored(event.target))return;
       const key=event.key.toLowerCase();
       if(latest.current.onFoot){const pos=latest.current.footPosition;const step=.8;if(['arrowup','w'].includes(key)){event.preventDefault();latest.current.onFootMove(pos.x,pos.z-step);}else if(['arrowdown','s'].includes(key)){event.preventDefault();latest.current.onFootMove(pos.x,pos.z+step);}else if(['arrowleft','a'].includes(key)){event.preventDefault();latest.current.onFootMove(pos.x-step,pos.z);}else if(['arrowright','d'].includes(key)){event.preventDefault();latest.current.onFootMove(pos.x+step,pos.z);}else if(key==='e'&&!event.repeat){event.preventDefault();latest.current.onPassengerAction();}else if(key==='f'&&!event.repeat){event.preventDefault();latest.current.onEnterVehicle();}return;}
-      if(key==='e'&&!event.repeat){event.preventDefault();if(latest.current.speed<=2)p.onExitVehicle();return;}
+      if(key==='e'&&!event.repeat){event.preventDefault();if(latest.current.speed<=2)latest.current.onExitVehicle();return;}
       if(['arrowup','w'].includes(key)){event.preventDefault();p.onThrottle(1,latest.current.reverse,false,false);}
       else if(['arrowdown','s',' '].includes(key)){event.preventDefault();p.onThrottle(0,latest.current.reverse,false,true);}
       else if(['arrowleft','a'].includes(key)){event.preventDefault();p.onSteer(Math.max(-1,latest.current.steer-.12));}
@@ -288,6 +288,7 @@ function CarRacing3DViewportInner(p:Props) {
     }
     scenery.forEach(x=>scene.add(x));
     // Premium neon night circuit: glowing skyline strips, wet-road reflections and the BLACK GOLD start gantry.
+    const rotor=new THREE.Group(),tailRotor=new THREE.Group();
     if(safeTrack.environment==='city'){
     const neonBlue=new THREE.MeshStandardMaterial({color:'#28c9ff',emissive:'#087eb8',emissiveIntensity:2.8,metalness:.35,roughness:.22});
     const neonPink=new THREE.MeshStandardMaterial({color:'#ff4fc8',emissive:'#b40072',emissiveIntensity:2.5,metalness:.3,roughness:.24});
@@ -296,8 +297,8 @@ function CarRacing3DViewportInner(p:Props) {
     const heliBody=new THREE.Mesh(new THREE.SphereGeometry(.72,20,16),new THREE.MeshStandardMaterial({color:'#171e2a',metalness:.72,roughness:.28}));heliBody.scale.set(1.55,.72,1);helicopter.add(heliBody);
     const heliGlass=new THREE.Mesh(new THREE.SphereGeometry(.48,18,14),new THREE.MeshPhysicalMaterial({color:'#3f9ed0',metalness:.35,roughness:.12,transparent:true,opacity:.82}));heliGlass.scale.set(1.1,.72,.85);heliGlass.position.set(0,.08,-.55);helicopter.add(heliGlass);
     const tailBoom=new THREE.Mesh(new THREE.CylinderGeometry(.12,.22,3.2,12),new THREE.MeshStandardMaterial({color:'#202a37',metalness:.55}));tailBoom.rotation.x=Math.PI/2;tailBoom.position.set(0,.06,2);helicopter.add(tailBoom);
-    const rotor=new THREE.Group();for(let i=0;i<4;i++){const blade=new THREE.Mesh(new THREE.BoxGeometry(.16,.045,5.8),new THREE.MeshStandardMaterial({color:'#111820',metalness:.55}));blade.rotation.y=i*Math.PI/2;rotor.add(blade);}rotor.position.y=.68;helicopter.add(rotor);
-    const tailRotor=new THREE.Group();for(let i=0;i<3;i++){const blade=new THREE.Mesh(new THREE.BoxGeometry(.08,.12,1.1),new THREE.MeshStandardMaterial({color:'#d7dce2'}));blade.rotation.y=i*Math.PI/3;tailRotor.add(blade);}tailRotor.position.set(0,.18,3.55);helicopter.add(tailRotor);
+    for(let i=0;i<4;i++){const blade=new THREE.Mesh(new THREE.BoxGeometry(.16,.045,5.8),new THREE.MeshStandardMaterial({color:'#111820',metalness:.55}));blade.rotation.y=i*Math.PI/2;rotor.add(blade);}rotor.position.y=.68;helicopter.add(rotor);
+    for(let i=0;i<3;i++){const blade=new THREE.Mesh(new THREE.BoxGeometry(.08,.12,1.1),new THREE.MeshStandardMaterial({color:'#d7dce2'}));blade.rotation.y=i*Math.PI/3;tailRotor.add(blade);}tailRotor.position.set(0,.18,3.55);helicopter.add(tailRotor);
     const searchBeam=new THREE.Mesh(new THREE.ConeGeometry(3.2,12,24),new THREE.MeshBasicMaterial({color:'#318dff',transparent:true,opacity:.13,depthWrite:false}));searchBeam.rotation.x=Math.PI;searchBeam.position.set(0,-6,0);helicopter.add(searchBeam);
     const searchLight=new THREE.SpotLight('#4d9dff',72,48,.58,.72,1.5);searchLight.position.set(0,-.1,0);searchLight.target.position.set(0,-12,-4);helicopter.add(searchLight,searchLight.target);
     helicopter.position.set(8.5,13,-52);scene.add(helicopter);
