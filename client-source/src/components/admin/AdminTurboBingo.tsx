@@ -20,7 +20,14 @@ export function AdminTurboBingo() {
     setData(next); setEnabled(next.settings.enabled); setTarget(String(next.settings.target));
     setPrice(String(next.settings.ticketPriceEtb)); setInterval(String(next.settings.drawIntervalSeconds));
   }, []);
-  useEffect(() => { void load().catch((e) => setError(e instanceof Error ? e.message : 'Unable to load settings.')); }, [load]);
+  useEffect(() => {
+    let active = true;
+    void load().catch((e) => { if (active) setError(e instanceof Error ? e.message : 'Unable to load settings.'); });
+    const poll = window.setInterval(() => {
+      void api.get<Overview>('/api/admin/turbo-bingo/overview').then((next) => { if (active) setData(next); }).catch(() => undefined);
+    }, 1000);
+    return () => { active = false; window.clearInterval(poll); };
+  }, [load]);
   const action = async (path: string, body: unknown = {}) => {
     setBusy(true); setError(''); setNotice('');
     try { await api.post(path, body); await load(); setNotice('Saved successfully.'); }
