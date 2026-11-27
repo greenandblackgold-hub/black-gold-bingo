@@ -23,6 +23,12 @@ export function createMemoryRepo() {
   const gameHubCurrent = new Map();
   const gameHubWallets = new Map();
   const gameHubLedger = new Map();
+  const turboBingoGames = new Map();
+  const turboBingoTickets = new Map();
+  const turboBingoWallets = new Map();
+  const turboBingoLedger = new Map();
+  let turboBingoCurrentId = null;
+  let turboBingoSettings = {};
   let gameHubSettings = { carRacingEnabled: true, kenoEnabled: true, aviatorEnabled: true, minBet: 500, maxBet: 100000, kenoBettingSeconds: 20, aviatorBettingSeconds: 8 };
   let game = { ...DEFAULT_GAME, calledNumbers: [] };
   let nextCardSerial = 10000;
@@ -45,6 +51,15 @@ export function createMemoryRepo() {
       gameHubLedger.set(ref, { userId, amount: 100000, kind: 'demo_grant', ref, meta: { reason: 'initial_demo_wallet' }, createdAt: new Date() });
     }
     return gameHubWallets.get(userId);
+  };
+  const ensureTurboBingoWallet = (userId) => {
+    if (!users.has(userId)) throw new RepoError('USER_NOT_FOUND');
+    if (!turboBingoWallets.has(userId)) {
+      turboBingoWallets.set(userId, { userId, balance: 100000, currency: 'ETB', balanceType: 'TURBO_BINGO_SIMULATION_ONLY', createdAt: new Date() });
+      const ref = 'turbo-bingo:initial-demo-credit:' + userId;
+      turboBingoLedger.set(ref, { userId, amount: 100000, kind: 'demo_grant', ref, meta: { reason: 'initial_turbo_bingo_demo_wallet' }, createdAt: new Date() });
+    }
+    return turboBingoWallets.get(userId);
   };
   const moveGameHubCredits = (userId, amount, kind, ref, meta = {}, walletMode = 'shared') => {
     if (walletMode === 'shared') return credit(userId, amount, kind, ref, meta);
@@ -434,6 +449,67 @@ export function createMemoryRepo() {
       const w = withdrawals.get(id);
       if (!w) throw new RepoError('WITHDRAWAL_NOT_FOUND');
       return credit(w.userId, w.amount, 'withdraw_refund', `wd-refund:${id}`, { id });
+    },
+
+    /* Turbo Bingo is isolated from the legacy Bingo round/card collections. */
+    async getTurboBingoWallet(userId) { return clone(ensureTurboBingoWallet(userId)); },
+    async getTurboBingoSettings() { return clone(turboBingoSettings); },
+    async updateTurboBingoSettings(settings) { turboBingoSettings = clone(settings); return clone(turboBingoSettings); },
+    async getCurrentTurboBingoGame() { return clone(turboBingoGames.get(turboBingoCurrentId) ?? null); },
+    async createTurboBingoGame(input) {
+      const current = turboBingoGames.get(turboBingoCurrentId);
+      if (current && current.status !== 'ended') return clone(current);
+      const game = { ...clone(input), version: 1 };
+      turboBingoGames.set(game.id, game);
+      turboBingoCurrentId = game.id;
+      return clone(game);
+    },
+    async updateTurboBingoGame(gameId, expectedVersion, patch, lockedTicketIds = []) {
+      const game = turboBingoGames.get(gameId);
+      if (!game || game.version !== expectedVersion || !['waiting', 'running'].includes(game.status)) return null;
+      Object.assign(game, clone(patch), { version: game.version + 1 });
+      for (const id of lockedTicketIds) {
+        const ticket = turboBingoTickets.get(id);
+        if (ticket?.gameId === gameId && ticket.status === 'active') Object.assign(ticket, { status: 'locked', lockedAt: Date.now() });
+      }
+      return clone(game);
+    },
+    async listTurboBingoTickets(gameId, userId) {
+      return [...turboBingoTickets.values()].filter((ticket) => ticket.gameId === gameId && (!userId || ticket.userId === userId)).sort((a, b) => a.createdAt - b.createdAt).map(clone);
+    },
+    async getTurboBingoTicket(gameId, ticketId, userId) {
+      const ticket = turboBingoTickets.get(ticketId);
+      return ticket?.gameId === gameId && ticket.userId === userId ? clone(ticket) : null;
+    },
+    async purchaseTurboBingoTickets({ gameId, userId, tickets: newTickets, totalCost }) {
+      const game = turboBingoGames.get(gameId);
+      if (!game || game.status !== 'waiting') throw new RepoError('TURBO_BINGO_SALES_CLOSED');
+      const existingCount = [...turboBingoTickets.values()].filter((ticket) => ticket.gameId === gameId && ticket.userId === userId).length;
+      if (existingCount + newTickets.length > (game.maxTicketsPerPlayer ?? 10)) throw new RepoError('TURBO_BINGO_TICKET_LIMIT');
+      const wallet = ensureTurboBingoWallet(userId);
+      if (wallet.balance < totalCost) throw new RepoError('INSUFFICIENT_FUNDS');
+      const ref = 'turbo-bingo:purchase:' + newTickets.map((ticket) => ticket.id).join(':');
+      wallet.balance -= totalCost;
+      turboBingoLedger.set(ref, { userId, amount: -totalCost, kind: 'ticket_purchase', ref, meta: { gameId, ticketIds: newTickets.map((ticket) => ticket.id) }, createdAt: new Date() });
+      for (const ticket of newTickets) turboBingoTickets.set(ticket.id, {
+        ...clone(ticket), gameId, userId, status: 'active', createdAt: Date.now(),
+      });
+      game.ticketCount = (game.ticketCount ?? 0) + newTickets.length;
+      game.version += 1;
+      return { tickets: clone(newTickets), balance: wallet.balance };
+    },
+    async claimTurboBingoTicket({ gameId, expectedVersion, ticketId, userId, winner }) {
+      const game = turboBingoGames.get(gameId);
+      const ticket = turboBingoTickets.get(ticketId);
+      if (!game || game.status !== 'running' || game.version !== expectedVersion || !ticket ||
+          ticket.gameId !== gameId || ticket.userId !== userId || ticket.status !== 'active') return null;
+      const lastNumber = game.drawnNumbers.at(-1);
+      const called = new Set(game.drawnNumbers);
+      const hits = ticket.numbers.filter((number) => called.has(number));
+      if (hits.length !== game.target || lastNumber == null || !ticket.numbers.includes(lastNumber)) return null;
+      Object.assign(game, { status: 'ended', endedAt: winner.at, winner, version: game.version + 1 });
+      Object.assign(ticket, { status: 'winner', claimedAt: winner.at });
+      return { winner: clone(winner), game: clone(game) };
     },
 
     /* Isolated Keno and Aviator records. Existing Bingo game/card collections are untouched. */
