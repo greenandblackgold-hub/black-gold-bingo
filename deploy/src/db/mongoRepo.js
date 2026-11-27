@@ -115,6 +115,7 @@ export async function createMongoRepo({ uri, dbName }) {
         turboBingoGames.createIndex({ createdAt: -1 }),
         turboBingoTickets.createIndex({ gameId: 1, id: 1 }, { unique: true }),
         turboBingoTickets.createIndex({ gameId: 1, userId: 1 }),
+        turboBingoWallets.createIndex({ createdAt: 1 }),
         turboBingoLedger.createIndex({ ref: 1 }, { unique: true }),
         turboBingoLedger.createIndex({ userId: 1, createdAt: -1 }),
       ]);
