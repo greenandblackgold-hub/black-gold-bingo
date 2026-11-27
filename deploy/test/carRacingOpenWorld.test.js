@@ -27,7 +27,7 @@ test('Car Racing supports exiting and re-entering the vehicle with on-foot movem
 
 test('Car Racing steering animates a full steering-wheel turn and front-wheel articulation', () => {
   assert.match(view, /steering\.rotation\.z=THREE\.MathUtils\.lerp\(steering\.rotation\.z,-s\.steer\*Math\.PI\*2/);
-  assert.match(view, /w\.rotation\.y=s\.steer\*\.72/);
+  assert.match(view, /w\.rotation\.y=THREE\.MathUtils\.lerp\(w\.rotation\.y,s\.steer\*\.72/);
 });
 
 test('Car Racing supports passenger pickup and drop-off in solo walk mode', () => {
