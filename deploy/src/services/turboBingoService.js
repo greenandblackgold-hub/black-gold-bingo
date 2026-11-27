@@ -46,6 +46,7 @@ export function createTurboBingoService({ repo }) {
     if (current && current.status !== 'ended') throw new HttpError(409, 'game_already_open', 'A Turbo Bingo game is already open.');
     const game = await repo.createTurboBingoGame({
       id: randomUUID(), status: 'waiting', target: config.target,
+      ticketPriceEtb: config.ticketPriceEtb, maxTicketsPerPlayer: config.maxTicketsPerPlayer,
       drawnNumbers: [], ticketCount: 0, createdAt: Date.now(),
     });
     await publish();
@@ -64,7 +65,7 @@ export function createTurboBingoService({ repo }) {
       settings: {
         enabled: config.enabled,
         target: config.target,
-        ticketPriceEtb: config.ticketPriceEtb,
+        ticketPriceEtb: game?.ticketPriceEtb ?? config.ticketPriceEtb,
         drawIntervalSeconds: config.drawIntervalSeconds,
         maxTicketsPerPlayer: config.maxTicketsPerPlayer,
       },
@@ -98,15 +99,15 @@ export function createTurboBingoService({ repo }) {
     if (user?.role !== 'player' || user.phoneVerified !== true) {
       throw new HttpError(403, 'player_verification_required', 'Verify your player account before buying tickets.');
     }
-    if (!Number.isInteger(count) || count < 1 || count > config.maxTicketsPerPlayer) {
+    if (!Number.isInteger(count) || count < 1 || count > (game?.maxTicketsPerPlayer ?? config.maxTicketsPerPlayer)) {
       throw new HttpError(400, 'invalid_ticket_count', 'Choose a valid number of tickets.');
     }
     const game = await repo.getCurrentTurboBingoGame();
     if (!game || game.status !== 'waiting') throw new HttpError(409, 'ticket_sales_closed', 'Ticket sales are closed for this game.');
     const existingTickets = await repo.listTurboBingoTickets(game.id, user.id);
-    if (existingTickets.length + count > config.maxTicketsPerPlayer) throw new HttpError(400, 'ticket_limit', 'You have reached the ticket limit for this game.');
+    if (existingTickets.length + count > (game.maxTicketsPerPlayer ?? config.maxTicketsPerPlayer)) throw new HttpError(400, 'ticket_limit', 'You have reached the ticket limit for this game.');
     const wallet = await repo.getGameHubWallet(user.id, 'legacy-demo');
-    const price = Math.round(config.ticketPriceEtb * 100);
+    const price = Math.round((game.ticketPriceEtb ?? config.ticketPriceEtb) * 100);
     const tickets = Array.from({ length: count }, () => ({
       id: randomUUID(),
       numbers: shuffle(Array.from({ length: NUMBER_MAX }, (_, index) => index + 1)).slice(0, 25).sort((a, b) => a - b),
