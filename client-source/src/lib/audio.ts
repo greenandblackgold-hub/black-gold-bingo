@@ -20,6 +20,10 @@ let master: GainNode | null = null;
 let enabled = true;
 let voiceEnabled = true;
 let outputVolume = 0.6;
+let backgroundMusicTimer: number | null = null;
+let backgroundMusicGain: GainNode | null = null;
+let backgroundMusicStep = 0;
+let speechRateMultiplier = 1;
 
 function getContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -55,6 +59,48 @@ export function setVoiceEnabled(on: boolean): void {
   if (!on && typeof window !== 'undefined' && 'speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
+}
+
+export function setSpeechRateMultiplier(multiplier: number): void {
+  speechRateMultiplier = Math.min(1.3, Math.max(0.7, Number.isFinite(multiplier) ? multiplier : 1));
+}
+
+export function setBackgroundMusicEnabled(on: boolean): void {
+  if (!on && !backgroundMusicGain) return;
+  const c = getContext();
+  if (!c || !master || typeof window === 'undefined') return;
+  if (!backgroundMusicGain) {
+    backgroundMusicGain = c.createGain();
+    backgroundMusicGain.gain.value = 0.0001;
+    backgroundMusicGain.connect(master);
+  }
+  if (!on) {
+    if (backgroundMusicTimer !== null) window.clearInterval(backgroundMusicTimer);
+    backgroundMusicTimer = null;
+    backgroundMusicGain.gain.setTargetAtTime(0.0001, c.currentTime, 0.18);
+    return;
+  }
+  if (c.state === 'suspended') void c.resume().catch(() => undefined);
+  backgroundMusicGain.gain.setTargetAtTime(0.16, c.currentTime, 0.3);
+  if (backgroundMusicTimer !== null) return;
+  const chords = [
+    [261.63, 329.63, 392.00],
+    [220.00, 261.63, 329.63],
+    [174.61, 220.00, 261.63],
+    [196.00, 246.94, 293.66],
+  ];
+  const playChord = () => {
+    if (!backgroundMusicGain || !ctx || ctx.state === 'closed') return;
+    const start = ctx.currentTime + 0.03;
+    const chord = chords[backgroundMusicStep % chords.length];
+    chord.forEach((frequency, index) => note(ctx!, backgroundMusicGain!, frequency, start + index * 0.035, 2.35, {
+      type: 'sine',
+      gain: 0.12,
+    }));
+    backgroundMusicStep += 1;
+  };
+  playChord();
+  backgroundMusicTimer = window.setInterval(playChord, 2600);
 }
 
 export function setAudioVolume(volume: number): void {
@@ -179,7 +225,7 @@ export function announceNumber(number: number, lang: Lang): void {
   synth.cancel();
   const utterance = new SpeechSynthesisUtterance(phrase);
   utterance.lang = SPEECH_LOCALES[lang];
-  utterance.rate = lang === 'en' ? 0.92 : 0.86;
+  utterance.rate = (lang === 'en' ? 0.92 : 0.86) * speechRateMultiplier;
   utterance.pitch = 1;
   utterance.volume = outputVolume;
   synth.speak(utterance);

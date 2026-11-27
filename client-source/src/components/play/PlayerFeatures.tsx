@@ -42,7 +42,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const { lang, setLang } = useLanguage();
   const t = gameUi.playerFeatures[lang];
   const { balance, cards, transactions, clearMarks, removeCards, buyCards } = usePlayer();
-  const { cardPrice, audioVolume, setAudioVolume } = useAppSettings();
+  const { cardPrice, audioVolume, setAudioVolume, backgroundMusicEnabled, setBackgroundMusicEnabled, gameSpeed, setGameSpeed } = useAppSettings();
   const { calledNumbers, roundNumber, phase, winner, winPattern, roundPrizeEtb, roundCardCount, verifyCard } = useRound();
   const { soundEnabled, setSoundEnabled, voiceEnabled, setVoiceEnabled } = useAppSettings();
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -58,6 +58,12 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const [markColor, setMarkColor] = useState(() => {
     try { const value = localStorage.getItem('bgb.markColor'); return markColors.includes(value ?? '') ? value! : '#d4af37'; } catch { return '#d4af37'; }
   });
+  const [autoDaub, setAutoDaub] = useState(() => { try { return localStorage.getItem('bgb.autoMark') !== 'off'; } catch { return true; } });
+  const [numberHighlight, setNumberHighlight] = useState(() => { try { return localStorage.getItem('bgb.numberHighlight') !== 'off'; } catch { return true; } });
+  const [autoClaim, setAutoClaim] = useState(() => { try { return localStorage.getItem('bgb.autoClaim') === 'on'; } catch { return false; } });
+  const [autoBuyEnabled, setAutoBuyEnabled] = useState(() => { try { return localStorage.getItem('bgb.autoBuyEnabled') === 'on'; } catch { return false; } });
+  const [autoBuyCount, setAutoBuyCount] = useState(() => { try { const n = Number(localStorage.getItem('bgb.autoBuyCount')); return [1,2,5,10,15,20,25,30].includes(n) ? n : 1; } catch { return 1; } });
+  const [chatMessagesVisible, setChatMessagesVisible] = useState(() => { try { return localStorage.getItem('bgb.chatMessagesVisible') !== 'off'; } catch { return true; } });
   const [removeUnregistered, setRemoveUnregistered] = useState(() => {
     try { return localStorage.getItem('bgb.removeUnregistered') === 'on'; } catch { return false; }
   });
@@ -73,6 +79,13 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
         const color = localStorage.getItem('bgb.markColor');
         setMarkColor(markColors.includes(color ?? '') ? color! : '#d4af37');
         setRemoveUnregistered(localStorage.getItem('bgb.removeUnregistered') === 'on');
+        setAutoDaub(localStorage.getItem('bgb.autoMark') !== 'off');
+        setNumberHighlight(localStorage.getItem('bgb.numberHighlight') !== 'off');
+        setAutoClaim(localStorage.getItem('bgb.autoClaim') === 'on');
+        setAutoBuyEnabled(localStorage.getItem('bgb.autoBuyEnabled') === 'on');
+        const autoCount = Number(localStorage.getItem('bgb.autoBuyCount'));
+        setAutoBuyCount([1,2,5,10,15,20,25,30].includes(autoCount) ? autoCount : 1);
+        setChatMessagesVisible(localStorage.getItem('bgb.chatMessagesVisible') !== 'off');
         const selected: unknown = JSON.parse(localStorage.getItem('bgb.selectedCards') || '[]');
         setSelectedCards(Array.isArray(selected) ? selected.filter((id): id is string => typeof id === 'string') : []);
       } catch { /* Keep the current visible settings if storage is unavailable. */ }
@@ -133,6 +146,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
     if (!on) {
       setNotifications(false);
       try { localStorage.setItem('bgb.playerNotifications', 'off'); } catch { /* ignore */ }
+      window.dispatchEvent(new Event('bgb-player-settings'));
       return;
     }
     if (!('Notification' in window)) return;
@@ -245,7 +259,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
         </div>
       </div>}
       {(menuOnly || settingsOnly || inlineMenuOpen) && <div className={`overflow-hidden rounded-2xl border ${panel}`}>
-        {rows.filter(row => settingsOnly ? row.id === 'settings' : menuOnly ? ['messages','rules','app','history','contact','info'].includes(row.id) : true).map((row) => (
+        {rows.filter(row => (chatMessagesVisible || row.id !== 'messages') && (settingsOnly ? row.id === 'settings' : menuOnly ? ['messages','rules','app','history','contact','info'].includes(row.id) : true)).map((row) => (
           <div key={row.id} className="border-b border-current/10 last:border-0">
             {!settingsOnly && <button type="button" onClick={() => toggle(row.id)} aria-expanded={expanded === row.id} className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left">
               <span className="flex items-center gap-3 font-semibold"><span className={`grid h-9 w-9 place-items-center rounded-xl ${light ? 'bg-amber-100 text-amber-800' : 'bg-gold-500/10 text-gold-300'}`}>{row.icon}</span>{row.label}</span>
@@ -273,14 +287,48 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                         <button type="button" onClick={()=>{clearMarks();setSelectedCards([]);try{localStorage.setItem('bgb.selectedCards','[]');}catch{}window.dispatchEvent(new Event('bgb-player-settings'));}} className="w-full rounded-lg border border-amber-400/40 px-3 py-2 font-bold text-amber-200">{t.clearMarks}</button>
                       </div>
                     </div>
-                    <div><p className={`mb-2 font-semibold ${title}`}>{t.theme}</p><div className="flex gap-2"><button type="button" onClick={() => setPlayerTheme('light')} aria-pressed={light} className={`rounded-lg border px-4 py-2 ${light ? 'border-amber-500 bg-amber-100 text-amber-900' : 'border-current/20'}`}>{t.light}</button><button type="button" onClick={() => setPlayerTheme('dark')} aria-pressed={!light} className={`rounded-lg border px-4 py-2 ${!light ? 'border-amber-400 bg-zinc-900 text-amber-200' : 'border-current/20'}`}>{t.dark}</button></div></div>
+                    <div><p className="mb-2 font-black text-amber-300">5. Theme / Card Color</p><p className={`mb-2 font-semibold ${title}`}>{t.theme}</p><div className="flex gap-2"><button type="button" onClick={() => setPlayerTheme('light')} aria-pressed={light} className={`rounded-lg border px-4 py-2 ${light ? 'border-amber-500 bg-amber-100 text-amber-900' : 'border-current/20'}`}>{t.light}</button><button type="button" onClick={() => setPlayerTheme('dark')} aria-pressed={!light} className={`rounded-lg border px-4 py-2 ${!light ? 'border-amber-400 bg-zinc-900 text-amber-200' : 'border-current/20'}`}>{t.dark}</button></div></div>
+                    <h5 className="font-black text-amber-300">1. Sound Effects</h5>
                     <label className="flex items-center justify-between gap-3"><span>{t.soundEffects}</span><input type="checkbox" checked={soundEnabled} onChange={(e) => setSoundEnabled(e.target.checked)} /></label>
                     <label className="flex items-center justify-between gap-3"><span>{t.numberVoice}</span><input type="checkbox" checked={voiceEnabled} onChange={(e) => setVoiceEnabled(e.target.checked)} /></label>
+                    <h5 className="font-black text-amber-300">3. Volume Slider</h5>
                     <label className="block"><span className="mb-2 block">{t.volume}</span><input type="range" min="0" max="1" step="0.05" value={audioVolume} onChange={(e) => setAudioVolume(Number(e.target.value))} className="w-full accent-yellow-500" /></label>
+                    <div className="space-y-3 rounded-lg border border-amber-400/20 p-3">
+                      <h5 className="font-black text-amber-300">2. Background Music</h5>
+                      <label className="flex items-center justify-between gap-3"><span>{lang === 'am' ? 'ረጋ ያለ የጨዋታ ሙዚቃ' : lang === 'ti' ? 'ህዱእ ሙዚቃ ጸወታ' : 'Calm in-game music'}</span><input type="checkbox" checked={backgroundMusicEnabled} onChange={(e) => setBackgroundMusicEnabled(e.target.checked)} /></label>
+                    </div>
+                    <div className="space-y-2 rounded-lg border border-amber-400/20 p-3">
+                      <h5 className="font-black text-amber-300">4. Auto-Daub</h5>
+                      <label className="flex items-center justify-between gap-3"><span>{lang === 'am' ? 'የተጠሩ ቁጥሮችን በራስ-ሰር ምልክት አድርግ' : lang === 'ti' ? 'ዝተጸውዑ ቁጽርታት ብኣውቶማቲክ ምልክት ግበር' : 'Automatically mark called numbers'}</span><input type="checkbox" checked={autoDaub} onChange={(e) => { const on=e.target.checked; setAutoDaub(on); try { localStorage.setItem('bgb.autoMark',on?'on':'off'); } catch {} window.dispatchEvent(new Event('bgb-player-settings')); }} /></label>
+                    </div>
+                    <div className="space-y-2 rounded-lg border border-amber-400/20 p-3">
+                      <h5 className="font-black text-amber-300">6. Number Highlight / Animation</h5>
+                      <label className="flex items-center justify-between gap-3"><span>{lang === 'am' ? 'የመጨረሻውን የተጠራ ቁጥር አድምቅ' : lang === 'ti' ? 'ናይ መወዳእታ ዝተጸውዐ ቁጽሪ ኣጉልሕ' : 'Highlight the latest called number'}</span><input type="checkbox" checked={numberHighlight} onChange={(e) => { const on=e.target.checked; setNumberHighlight(on); try { localStorage.setItem('bgb.numberHighlight',on?'on':'off'); } catch {} window.dispatchEvent(new Event('bgb-player-settings')); }} /></label>
+                    </div>
+                    <div className="space-y-2 rounded-lg border border-amber-400/20 p-3">
+                      <h5 className="font-black text-amber-300">7. Game Speed</h5>
+                      <label className="block"><span className="mb-2 block">{lang === 'am' ? 'የቁጥር ድምጽ ፍጥነት' : lang === 'ti' ? 'ፍጥነት ድምጺ ቁጽሪ' : 'Number announcement speed'}</span><select value={gameSpeed} onChange={(e) => setGameSpeed(e.target.value as 'slow'|'normal'|'fast')} className="w-full rounded-lg border border-amber-400/40 bg-zinc-950 px-3 py-2 text-amber-100"><option value="slow">Slow</option><option value="normal">Normal</option><option value="fast">Fast</option></select></label>
+                      <p className="text-xs text-amber-100/60">{lang === 'am' ? 'የServer ዙር ጥሪ ጊዜ በHost ይቆጣጠራል፤ ይህ የድምጽ ማሳወቂያ ፍጥነትን ብቻ ይቀይራል።' : lang === 'ti' ? 'ግዜ ጻውዒት Server ብHost ይቆጻጸር፤ እዚ ፍጥነት ድምጺ ጥራይ ይቕይር።' : 'The Host controls shared server call timing; this changes only local spoken announcement speed.'}</p>
+                    </div>
+                    <div className="space-y-3 rounded-lg border border-amber-400/20 p-3">
+                      <h5 className="font-black text-amber-300">8. Auto-Buy Tickets</h5>
+                      <label className="flex items-center justify-between gap-3"><span>{lang === 'am' ? 'ለቀጣዩ ዙር በራስ-ሰር ካርቴላ ግዛ' : lang === 'ti' ? 'ንዝቕጽል ዙር ብኣውቶማቲክ ካርድ ዓድግ' : 'Automatically buy tickets for next rounds'}</span><input type="checkbox" checked={autoBuyEnabled} onChange={(e) => { const on=e.target.checked; setAutoBuyEnabled(on); try { localStorage.setItem('bgb.autoBuyEnabled',on?'on':'off'); if(on) localStorage.setItem('bgb.autoBuyNextRound',String(roundNumber+1)); } catch {} window.dispatchEvent(new Event('bgb-player-settings')); }} /></label>
+                      <label className="block"><span className="mb-2 block">{lang === 'am' ? 'ካርቴላዎች ብዛት' : lang === 'ti' ? 'ብዝሒ ካርድታት' : 'Cards per round'}</span><select value={autoBuyCount} onChange={(e) => { const n=Number(e.target.value); setAutoBuyCount(n); try { localStorage.setItem('bgb.autoBuyCount',String(n)); } catch {} window.dispatchEvent(new Event('bgb-player-settings')); }} className="w-full rounded-lg border border-amber-400/40 bg-zinc-950 px-3 py-2 text-amber-100">{[1,2,5,10,15,20,25,30].map(n=><option key={n} value={n}>{n}</option>)}</select></label>
+                      <p className="text-xs text-amber-100/60">{lang === 'am' ? 'ከቀጣዩ ዙር ጀምሮ የነባሩን የግዢና የዋሌት ማረጋገጫ ይጠቀማል።' : lang === 'ti' ? 'ካብ ዝቕጽል ዙር ጀሚሩ ነቲ ዘሎ ኣገባብ ዕድጊ ይጥቀም።' : 'Starts next round and uses the existing purchase and wallet validation flow.'}</p>
+                    </div>
+                    <div className="space-y-2 rounded-lg border border-amber-400/20 p-3">
+                      <h5 className="font-black text-amber-300">9. Confirm Bingo / Auto-Claim</h5>
+                      <label className="flex items-center justify-between gap-3"><span>{lang === 'am' ? 'ቢንጎ ሲሆን በራስ-ሰር አረጋግጥ' : lang === 'ti' ? 'Bingo ምስ ዝኸውን ብኣውቶማቲክ ኣረጋግጽ' : 'Automatically claim verified Bingo'}</span><input type="checkbox" checked={autoClaim} onChange={(e) => { const on=e.target.checked; setAutoClaim(on); try { localStorage.setItem('bgb.autoClaim',on?'on':'off'); } catch {} window.dispatchEvent(new Event('bgb-player-settings')); }} /></label>
+                    </div>
+                    <div className="space-y-3 rounded-lg border border-amber-400/20 p-3">
+                      <h5 className="font-black text-amber-300">10. Chat Settings</h5>
+                      <label className="flex items-center justify-between gap-3"><span>{lang === 'am' ? 'የመልዕክት ክፍሉን አሳይ' : lang === 'ti' ? 'ክፍሊ መልእኽቲ ኣርኢ' : 'Show messages section'}</span><input type="checkbox" checked={chatMessagesVisible} onChange={(e) => { const on=e.target.checked; setChatMessagesVisible(on); try { localStorage.setItem('bgb.chatMessagesVisible',on?'on':'off'); } catch {} window.dispatchEvent(new Event('bgb-player-settings')); }} /></label>
+                      <label className="flex items-center justify-between gap-3"><span>{t.notifications}</span><input type="checkbox" checked={notifications} onChange={(e) => void enableNotifications(e.target.checked)} /></label>
+                      {'Notification' in window && Notification.permission === 'denied' && <p className="text-xs text-amber-600">{t.notificationBlocked}</p>}
+                      <p className={`text-xs ${muted}`}>{t.notificationPermission}</p>
+                    </div>
                     <div><p className={`mb-2 font-semibold ${title}`}>{t.language}</p><div className="flex flex-wrap gap-2">{[['am','አማርኛ'],['ti','ትግርኛ'],['en','English']].map(([id,label]) => <button key={id} type="button" onClick={() => setLang(id as 'am'|'ti'|'en')} aria-pressed={lang === id} className={`rounded-lg border px-3 py-2 ${lang === id ? 'border-amber-400 bg-amber-400/15' : 'border-current/20'}`}>{label}</button>)}</div></div>
-                    <label className="flex items-center justify-between gap-3"><span>{t.notifications}</span><input type="checkbox" checked={notifications} onChange={(e) => void enableNotifications(e.target.checked)} /></label>
-                    {'Notification' in window && Notification.permission === 'denied' && <p className="text-xs text-amber-600">{t.notificationBlocked}</p>}
-                    <p className={`text-xs ${muted}`}>{t.notificationPermission}</p>
+
                   </div>
                 )}
                 {row.id === 'rules' && <ol className={`list-decimal space-y-2 pl-5 text-sm leading-6 ${muted}`}>{t.rulesList.map((rule) => <li key={rule}>{rule}</li>)}</ol>}

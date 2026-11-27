@@ -307,14 +307,14 @@ function RoundCallTimer({
   return <>{value}</>;
 }
 
-function CalledBall({ number, latest = false }: { number: number; latest?: boolean }) {
+function CalledBall({ number, latest = false, animateLatest = true }: { number: number; latest?: boolean; animateLatest?: boolean }) {
   const letter = letterFor(number);
   const color = letter === 'N' ? 'from-green-400 to-green-700' :
     letter === 'G' ? 'from-purple-500 to-purple-800' :
     letter === 'B' ? 'from-red-500 to-red-800' :
     letter === 'I' ? 'from-blue-400 to-blue-700' : 'from-orange-400 to-orange-700';
   return (
-    <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border border-white/80 bg-gradient-to-br ${color} text-white shadow-[0_0_12px_rgba(255,255,255,.18)] sm:h-12 sm:w-12 sm:border-2 ${latest ? 'ring-2 ring-yellow-200' : ''}`}>
+    <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border border-white/80 bg-gradient-to-br ${color} text-white shadow-[0_0_12px_rgba(255,255,255,.18)] sm:h-12 sm:w-12 sm:border-2 ${latest && animateLatest ? 'ring-2 ring-yellow-200 animate-pulse' : ''}`}>
       <span className="text-[7px] font-black leading-none sm:text-[9px]">{letter}</span>
       <strong className="text-sm leading-none sm:text-xl">{number}</strong>
     </div>
@@ -334,6 +334,11 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   const markUndoStack = useRef<Record<string, number[]>[]>([]);
   const markRedoStack = useRef<Record<string, number[]>[]>([]);
   const [autoMark, setAutoMark] = useState(true);
+  const [autoClaim, setAutoClaim] = useState(() => { try { return localStorage.getItem('bgb.autoClaim') === 'on'; } catch { return false; } });
+  const [autoBuyEnabled, setAutoBuyEnabled] = useState(() => { try { return localStorage.getItem('bgb.autoBuyEnabled') === 'on'; } catch { return false; } });
+  const [autoBuyCount, setAutoBuyCount] = useState(() => { try { const n=Number(localStorage.getItem('bgb.autoBuyCount')); return [1,2,5,10,15,20,25,30].includes(n) ? n : 1; } catch { return 1; } });
+  const [numberHighlight, setNumberHighlight] = useState(() => { try { return localStorage.getItem('bgb.numberHighlight') !== 'off'; } catch { return true; } });
+  const autoBuyRoundRef = useRef<number | null>(null);
   const [claimingCardId, setClaimingCardId] = useState<string | null>(null);
   const [patternOpen, setPatternOpen] = useState(false);
   const [numberBoardMode, setNumberBoardMode] = useState<'all' | 'called'>(() => {
@@ -462,6 +467,11 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         setCardOrder(localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest');
         setPlayerTheme(localStorage.getItem('bgb.playerTheme') === 'light' ? 'light' : 'dark');
         setAutoMark(localStorage.getItem('bgb.autoMark') !== 'off');
+        setAutoClaim(localStorage.getItem('bgb.autoClaim') === 'on');
+        setAutoBuyEnabled(localStorage.getItem('bgb.autoBuyEnabled') === 'on');
+        const autoCount = Number(localStorage.getItem('bgb.autoBuyCount'));
+        setAutoBuyCount([1,2,5,10,15,20,25,30].includes(autoCount) ? autoCount : 1);
+        setNumberHighlight(localStorage.getItem('bgb.numberHighlight') !== 'off');
         setNumberBoardMode(localStorage.getItem('bgb.numberBoardMode') === 'called' ? 'called' : 'all');
         setNumberBoardExpanded(localStorage.getItem('bgb.numberBoardExpanded') !== 'off');
       } catch { /* Keep the current settings if storage is unavailable. */ }
@@ -579,11 +589,16 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     }
   }, []);
 
+  useEffect(() => {
+    if (!autoClaim || claimableCards.length === 0) return;
+    void handleClaim(claimableCards[0].id);
+  }, [autoClaim, claimableCards, handleClaim]);
+
   const lastCalls = calledNumbers.slice(-5).reverse();
   const quickBuyTotal = bonusRound ? 0 : quickBuyCount * cardPrice;
   const quickBuyAllowed = bonusRound || phase === 'waiting';
   const quickBuyInsufficient = bonusRound && quickBuyTotal > balance;
-  const quickBuyOptions = bonusRound ? [1, 2, 3] : [15, 25];
+  const quickBuyOptions = bonusRound ? [1, 2, 3] : [1, 2, 5, 10, 15, 20, 25, 30];
 
   useEffect(() => {
     setQuickBuyCount(bonusRound ? 1 : 15);
@@ -625,6 +640,32 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       setRegisteringDraftId(null);
     }
   }, []);
+  useEffect(() => {
+    if (!loaded || !autoBuyEnabled || phase !== 'waiting') return;
+    let targetRound = 0;
+    try { targetRound = Number(localStorage.getItem('bgb.autoBuyNextRound')); } catch { /* ignore */ }
+    if (!Number.isInteger(targetRound) || targetRound < 1) {
+      try { localStorage.setItem('bgb.autoBuyNextRound', String(roundNumber + 1)); } catch { /* ignore */ }
+      return;
+    }
+    if (roundNumber < targetRound || autoBuyRoundRef.current === roundNumber) return;
+    autoBuyRoundRef.current = roundNumber;
+    void buyCardsRef.current(autoBuyCount).then(result => {
+      if (result.ok) {
+        try { localStorage.setItem('bgb.autoBuyNextRound', String(roundNumber + 1)); } catch { /* ignore */ }
+        setDraftMessage(String(autoBuyCount) + ' ካርቴላ ለዙር ' + String(roundNumber) + ' በራስ-ሰር ተገዝቷል።');
+      } else {
+        setAutoBuyEnabled(false);
+        try { localStorage.setItem('bgb.autoBuyEnabled', 'off'); } catch { /* ignore */ }
+        setDraftMessage(result.error ?? 'Auto-buy አልተሳካም፤ ቅንብሩ ተዘግቷል።');
+      }
+    }).catch(() => {
+      setAutoBuyEnabled(false);
+      try { localStorage.setItem('bgb.autoBuyEnabled', 'off'); } catch { /* ignore */ }
+      setDraftMessage('Auto-buy አልተሳካም፤ ቅንብሩ ተዘግቷል።');
+    });
+  }, [loaded, autoBuyEnabled, autoBuyCount, phase, roundNumber]);
+
   const submitQuickBuy = async () => {
     if (!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy) return;
     setQuickBuyBusy(true);
@@ -829,7 +870,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
           </div>
           <div className="min-w-0">
             <div className="flex min-h-[3.4rem] items-center justify-around gap-0.5 rounded-xl border border-yellow-400 bg-black px-1 py-1">
-              {lastCalls.length ? lastCalls.map((number, index) => <CalledBall key={number} number={number} latest={index === 0} />) : <span className="text-xs text-yellow-100/60">—</span>}
+              {lastCalls.length ? lastCalls.map((number, index) => <CalledBall key={number} number={number} latest={index === 0} animateLatest={numberHighlight} />) : <span className="text-xs text-yellow-100/60">—</span>}
             </div>
           </div>
         </section>
@@ -862,7 +903,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                   {Array.from({ length: 15 }, (_, col) => {
                     const number = row * 15 + col + 1;
                     const isCalled = called.has(number);
-                    const isLatestCall = calledNumbers[calledNumbers.length - 1] === number;
+                    const isLatestCall = numberHighlight && calledNumbers[calledNumbers.length - 1] === number;
                     const visible = numberBoardMode === 'all' || isCalled;
                     return (
                       <div key={number} aria-label={visible ? `${letter} ${number}${isLatestCall ? ', latest called number' : isCalled ? ', called' : ''}` : undefined} className={`grid aspect-square min-w-0 place-items-center rounded-[4px] border text-[clamp(13px,2.2vw,19px)] font-black tabular-nums transition sm:text-[19px] ${!visible ? 'border-transparent bg-transparent text-transparent' : isLatestCall ? 'bingo-latest-called-number border-white text-black shadow-[0_0_18px_rgba(250,204,21,.95)] ring-2 ring-yellow-200' : isCalled ? 'border-yellow-200 bg-blue-600 text-white shadow-[0_0_8px_rgba(59,130,246,.65)]' : 'border-yellow-500/20 bg-zinc-900 text-yellow-100/90'}`}>
