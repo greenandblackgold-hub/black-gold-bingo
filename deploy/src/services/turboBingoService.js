@@ -16,6 +16,7 @@ const TARGET_MIN = 1;
 const TARGET_MAX = 12;
 const TICKET_NUMBER_COUNT = 12;
 const REGISTRATION_WINDOW_MS = 60_000;
+const AUTOMATIC_ROUND_DURATION_MS = 60_000;
 const NUMBER_MAX = 80;
 
 const shuffle = (values) => {
@@ -156,10 +157,10 @@ export function createTurboBingoService({ repo }) {
     const game = await repo.getCurrentTurboBingoGame();
     if (!game || game.status === 'ended') throw new HttpError(409, 'sales_not_open', 'Open ticket sales before starting the draw.');
     if (game.status !== 'waiting') throw new HttpError(409, 'game_already_running', 'A Turbo Bingo game is already running.');
-    if (!game.ticketCount) throw new HttpError(409, 'no_tickets', 'At least one ticket must be registered before starting.');
+    if (!game.ticketCount && (game.mode ?? config.mode) !== 'automatic') throw new HttpError(409, 'no_tickets', 'At least one ticket must be registered before starting.');
     const startedAt = Date.now();
     const mode = game.mode ?? config.mode;
-    const duration = game.roundDurationSeconds ?? config.roundDurationSeconds;
+    const duration = mode === 'automatic' ? AUTOMATIC_ROUND_DURATION_MS / 1000 : (game.roundDurationSeconds ?? config.roundDurationSeconds);
     const interval = game.drawIntervalSeconds ?? config.drawIntervalSeconds;
     const updated = await repo.updateTurboBingoGame(game.id, game.version, {
       status: 'running', startedAt, endsAt: startedAt + duration * 1000,
@@ -309,10 +310,13 @@ export function createTurboBingoService({ repo }) {
       const game = await repo.getCurrentTurboBingoGame();
       const now = Date.now();
       if (game?.status === 'waiting' && game.registrationEndsAt && now >= game.registrationEndsAt) {
-        if (game.ticketCount > 0) await startGame();
-        else await repo.updateTurboBingoGame(game.id, game.version, { status: 'ended', endedAt: now, endReason: 'registration_empty' });
-        const latest = await repo.getCurrentTurboBingoGame();
-        if (latest?.status === 'ended') await openGame();
+        const mode = game.mode ?? (await settings()).mode;
+        if (game.ticketCount > 0 || mode === 'automatic') await startGame();
+        else {
+          await repo.updateTurboBingoGame(game.id, game.version, { status: 'ended', endedAt: now, endReason: 'registration_empty' });
+          const latest = await repo.getCurrentTurboBingoGame();
+          if (latest?.status === 'ended') await openGame();
+        }
       } else if (game?.status === 'ended') await openGame();
       else await drawNext();
     } catch { /* retry transient repository errors on the next tick */ }
