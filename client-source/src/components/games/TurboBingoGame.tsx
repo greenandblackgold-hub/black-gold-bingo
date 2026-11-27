@@ -141,7 +141,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
     setExtractedNumber(lastNumber);
     const timeout = window.setTimeout(() => setExtractedNumber(null), 1800);
     return () => window.clearTimeout(timeout);
-  }, [lastNumber]);
+  }, [lastNumber, soundEnabled]);
 
   // The full 1–80 inventory is visual only. Actual calls always come from the server state.
   const cageBalls = useMemo(() => Array.from({ length: 80 }, (_, index) => index + 1)
