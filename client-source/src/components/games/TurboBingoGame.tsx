@@ -98,29 +98,20 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     const context = audioContextRef.current;
     if (!soundEnabled || state?.game?.status !== 'running' || !context) return;
-    const master = context.createGain();
-    master.gain.value = 0.22;
-    const low = context.createOscillator();
-    const mid = context.createOscillator();
-    const lowGain = context.createGain();
-    const midGain = context.createGain();
-    low.type = 'sawtooth'; low.frequency.value = 47;
-    mid.type = 'triangle'; mid.frequency.value = 73;
-    lowGain.gain.value = 0.55; midGain.gain.value = 0.22;
-    low.connect(lowGain); mid.connect(midGain); lowGain.connect(master); midGain.connect(master); master.connect(context.destination);
-    low.start(); mid.start();
-    const clack = window.setInterval(() => {
-      const now = context.currentTime;
-      const hit = context.createOscillator();
-      const hitGain = context.createGain();
-      hit.type = 'square'; hit.frequency.setValueAtTime(190 + Math.random() * 110, now);
-      hit.frequency.exponentialRampToValueAtTime(55, now + 0.075);
-      hitGain.gain.setValueAtTime(0.0001, now);
-      hitGain.gain.exponentialRampToValueAtTime(0.28, now + 0.008);
-      hitGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
-      hit.connect(hitGain); hitGain.connect(master); hit.start(now); hit.stop(now + 0.12);
-    }, 260);
-    return () => { window.clearInterval(clack); low.stop(); mid.stop(); master.disconnect(); };
+    // Filtered white noise creates a continuous blower / rushing-air sound.
+    const noiseBuffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+    const channel = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < channel.length; i++) channel[i] = (Math.random() * 2 - 1) * 0.7;
+    const blower = context.createBufferSource(); blower.buffer = noiseBuffer; blower.loop = true;
+    const highPass = context.createBiquadFilter(); highPass.type = 'highpass'; highPass.frequency.value = 95;
+    const lowPass = context.createBiquadFilter(); lowPass.type = 'lowpass'; lowPass.frequency.value = 820;
+    const airGain = context.createGain(); airGain.gain.value = 0.34;
+    const pulse = context.createOscillator(); pulse.type = 'sine'; pulse.frequency.value = 3.8;
+    const pulseDepth = context.createGain(); pulseDepth.gain.value = 0.10;
+    pulse.connect(pulseDepth); pulseDepth.connect(airGain.gain);
+    blower.connect(highPass); highPass.connect(lowPass); lowPass.connect(airGain); airGain.connect(context.destination);
+    blower.start(); pulse.start();
+    return () => { blower.stop(); pulse.stop(); airGain.disconnect(); };
   }, [soundEnabled, state?.game?.status]);
 
   useEffect(() => {
@@ -188,11 +179,11 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
         @keyframes turbo-cage-rotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
         @keyframes turbo-cage-shake { 0%,100% { transform:translate(0,0) rotate(0); } 15% { transform:translate(-3px,2px) rotate(-1deg); } 30% { transform:translate(3px,-2px) rotate(1deg); } 45% { transform:translate(-4px,-1px) rotate(-1.2deg); } 60% { transform:translate(4px,2px) rotate(1.2deg); } 75% { transform:translate(-2px,3px) rotate(-.7deg); } }
         @keyframes turbo-ball-float { 0%,100% { transform:translate(0,0) rotate(0); } 18% { transform:translate(10px,-13px) rotate(24deg); } 38% { transform:translate(-12px,9px) rotate(-30deg); } 60% { transform:translate(8px,13px) rotate(42deg); } 82% { transform:translate(-9px,-8px) rotate(-22deg); } }
-        @keyframes turbo-ball-exit { 0% { opacity:0; transform:translate(-50%,-95px) scale(.3) rotate(-160deg); } 12% { opacity:1; } 48% { transform:translate(-50%,45px) scale(1.3) rotate(150deg); } 72% { transform:translate(-50%,150px) scale(1.08) rotate(300deg); } 100% { opacity:0; transform:translate(-50%,245px) scale(.88) rotate(430deg); } }
-        .turbo-cage-rotate { animation:turbo-cage-rotate 2.2s linear infinite; transform-origin:center; }
-        .turbo-cage-shake { animation:turbo-cage-shake .19s linear infinite; }
-        .turbo-ball-float { animation:turbo-ball-float .62s ease-in-out infinite; }
-        .turbo-ball-exit { animation:turbo-ball-exit .95s cubic-bezier(.12,.72,.18,1) both; }
+        @keyframes turbo-ball-exit { 0% { opacity:0; transform:translate(-50%,185px) scale(.48) rotate(-100deg); } 10% { opacity:1; } 34% { opacity:1; transform:translate(-50%,-42px) scale(1.22) rotate(150deg); } 48% { transform:translate(-50%,-66px) scale(1.12) rotate(245deg); } 63% { opacity:1; transform:translate(-50%,8px) scale(1.08) rotate(330deg); } 82% { opacity:1; transform:translate(-50%,150px) scale(1) rotate(470deg); } 100% { opacity:0; transform:translate(-50%,225px) scale(.82) rotate(560deg); } }
+        .turbo-cage-rotate { animation:turbo-cage-rotate 1.15s linear infinite; transform-origin:center; }
+        .turbo-cage-shake { animation:turbo-cage-shake .12s linear infinite; }
+        .turbo-ball-float { animation:turbo-ball-float .42s ease-in-out infinite; }
+        .turbo-ball-exit { animation:turbo-ball-exit 1.65s cubic-bezier(.12,.72,.18,1) both; }
         @media(prefers-reduced-motion:reduce) { .turbo-cage-rotate,.turbo-cage-shake,.turbo-ball-float,.turbo-ball-exit { animation:none!important; } }
       `}</style>
 
@@ -221,17 +212,17 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
 
       <section aria-label={t.cage} className="overflow-hidden rounded-3xl border border-cyan-100/30 bg-[radial-gradient(ellipse_at_50%_35%,rgba(57,180,203,.25),transparent_58%),linear-gradient(145deg,#062c29,#071b25_60%,#101a2a)] p-3 shadow-[inset_0_1px_25px_rgba(111,230,255,.12),0_15px_40px_rgba(0,0,0,.28)] sm:p-5">
         <div className="mb-2 flex items-center justify-between gap-2"><div><p className="text-[9px] font-black tracking-[.22em] text-cyan-100/70">{t.machine}</p><h2 className="text-lg font-black text-white sm:text-xl">{t.cage}</h2></div><div className="flex items-center gap-2"><button type="button" onClick={() => void toggleMachineSound()} className="rounded-full border border-cyan-100/30 bg-cyan-200/10 px-3 py-2 text-[9px] font-black text-cyan-50">{soundEnabled ? t.soundOff : t.soundOn}</button><span className="rounded-full border border-cyan-100/25 bg-cyan-200/10 px-2.5 py-1 text-[9px] font-bold text-cyan-50">{state?.game?.status === 'running' ? t.mixing : state?.game?.status === 'ended' ? t.endedStatus : t.waiting}</span></div></div>
-        <div className="relative mx-auto h-[235px] max-w-[560px] sm:h-[300px]">
-          <div className="absolute bottom-2 left-[10%] right-[10%] h-7 rounded-[50%] bg-cyan-300/20 blur-xl" />
-          <div className="absolute bottom-3 left-[12%] right-[12%] h-7 rounded-[50%] border border-cyan-100/35 bg-gradient-to-b from-slate-200/40 via-slate-700/70 to-slate-950 shadow-xl" />
-          <div className={`absolute bottom-7 left-[14%] right-[14%] top-3 overflow-hidden rounded-[48%_48%_34%_34%] border-[3px] border-cyan-50/65 bg-gradient-to-br from-white/20 via-cyan-100/10 to-blue-500/20 shadow-[inset_14px_0_25px_rgba(255,255,255,.18),inset_-14px_0_28px_rgba(70,180,255,.2),0_0_35px_rgba(70,210,255,.18)] backdrop-blur-[2px] ${state?.game?.status === 'running' ? 'turbo-cage-shake' : ''}`}>
-            <div className={`absolute inset-[5%] rounded-full ${state?.game?.status === 'running' ? 'turbo-cage-rotate' : ''}`}>
+        <div className="relative mx-auto h-[275px] max-w-[560px] sm:h-[350px]">
+          <div className="absolute bottom-2 left-[10%] right-[10%] h-7 rounded-[50%] bg-red-500/30 blur-xl" />
+          <div className="absolute bottom-3 left-[12%] right-[12%] h-7 rounded-[50%] border border-red-200/60 bg-gradient-to-b from-red-400 via-red-800 to-red-950 shadow-xl" />
+          <div className={`absolute bottom-7 left-[14%] right-[14%] top-3 overflow-hidden rounded-t-[18px] border-[3px] border-cyan-50/65 bg-gradient-to-br from-white/25 via-cyan-100/10 to-sky-200/20 shadow-[inset_14px_0_25px_rgba(255,255,255,.18),inset_-14px_0_28px_rgba(70,180,255,.2),0_0_35px_rgba(70,210,255,.18)] backdrop-blur-[2px] ${state?.game?.status === 'running' ? 'turbo-cage-shake' : ''}`}>
+            <div className={`absolute inset-[5%] rounded-[42%] ${state?.game?.status === 'running' ? 'turbo-cage-rotate' : ''}`}>
               {cageBalls.map((ball) => <span key={ball.number} className={`absolute grid place-items-center rounded-full border border-white/80 text-[9px] font-black text-white shadow-[inset_2px_3px_5px_rgba(255,255,255,.75),inset_-3px_-4px_7px_rgba(0,0,0,.38),0_3px_8px_rgba(0,0,0,.45)] sm:text-[10px] ${state?.game?.status === 'running' ? 'turbo-ball-float' : ''}`} style={{left:`${ball.left}%`,top:`${ball.top}%`,width:ball.size,height:ball.size,marginLeft:-ball.size/2,marginTop:-ball.size/2,animationDelay:`${ball.delay}s`,animationDuration:`${0.42 + (ball.number % 6) * 0.09}s`,background:ball.color}}>{ball.number}</span>)}
             </div>
             <div className="absolute left-1/2 top-1/2 h-[3px] w-[88%] -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] rounded-full bg-gradient-to-r from-cyan-100/10 via-cyan-50/75 to-cyan-100/10 shadow-[0_0_10px_rgba(130,230,255,.8)]" />
             <div className="absolute -top-2 left-1/2 z-20 h-5 w-16 -translate-x-1/2 rounded-t-xl border-2 border-cyan-50/80 bg-gradient-to-b from-slate-100/80 to-cyan-900/80 shadow-lg sm:w-20" />
           </div>
-          <div className="absolute bottom-5 left-[8%] h-[70%] w-3 rotate-[12deg] rounded-full border border-cyan-100/60 bg-gradient-to-r from-cyan-200/60 to-blue-950/90 shadow-lg" />
+          <div className="absolute bottom-5 left-[8%] h-[70%] w-3 rotate-[12deg] rounded-full border border-cyan-100/60 bg-gradient-to-r from-red-950 via-red-600 to-red-950 shadow-lg" />
           <div className="absolute bottom-5 right-[8%] h-[70%] w-3 -rotate-[12deg] rounded-full border border-cyan-100/60 bg-gradient-to-r from-cyan-200/60 to-blue-950/90 shadow-lg" />
           {extractedNumber !== null && <div key={extractedNumber} className="turbo-ball-exit absolute left-1/2 top-0 z-40 grid h-14 w-14 place-items-center rounded-full border-[3px] border-white bg-[radial-gradient(circle_at_30%_24%,#fff,#fca5a5_18%,#ef4444_55%,#991b1b)] text-xl font-black text-white shadow-[0_0_0_5px_rgba(248,113,113,.18),0_0_28px_rgba(248,113,113,.9)] sm:h-16 sm:w-16 sm:text-2xl" aria-live="polite">{extractedNumber}</div>}
         </div>
