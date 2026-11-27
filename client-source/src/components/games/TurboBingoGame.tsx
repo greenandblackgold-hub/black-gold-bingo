@@ -3,8 +3,8 @@ import { api } from '@/lib/api';
 
 type Ticket = { id: string; numbers: number[]; matchedNumbers: number[]; status: 'active' | 'locked' | 'winner'; lockedAt: number | null };
 type State = {
-  settings: { enabled: boolean; target: number; ticketPriceEtb: number; drawIntervalSeconds: number; maxTicketsPerPlayer: number };
-  game: null | { id: string; status: 'waiting' | 'running' | 'ended'; target: number; drawnNumbers: number[]; lastNumber: number | null; winner: { userId: string; ticketId: string; at: number } | null; ticketCount: number };
+  settings: { enabled: boolean; target: number; ticketPriceEtb: number; prizeEtb: number; drawIntervalSeconds: number; roundDurationSeconds: number; roundType: string; mode: 'automatic' | 'admin'; maxTicketsPerPlayer: number };
+  game: null | { id: string; status: 'waiting' | 'running' | 'ended'; target: number; drawnNumbers: number[]; lastNumber: number | null; winner: { userId: string; ticketId: string; at: number; prizeEtb?: number } | null; ticketCount: number; roundType?: string; prizeEtb?: number; endsAt?: number | null };
   tickets: Ticket[];
   balanceEtb: number | null;
   balanceType: 'SIMULATION_ONLY';
@@ -31,6 +31,9 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
   }, [refresh]);
   const drawn = useMemo(() => new Set(state?.game?.drawnNumbers ?? []), [state?.game?.drawnNumbers]);
   const lastNumber = state?.game?.lastNumber ?? null;
+  const [clock, setClock] = useState(Date.now());
+  useEffect(() => { const timer = window.setInterval(() => setClock(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
+  const secondsLeft = state?.game?.endsAt ? Math.max(0, Math.ceil((state.game.endsAt - clock) / 1000)) : null;
   useEffect(() => {
     if (lastNumber === null) return;
     setExtractedNumber(lastNumber);
@@ -51,7 +54,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
     setBusy(true); setError(''); setNotice('');
     try {
       await api.post('/api/games/turbo-bingo/claim', { ticketId });
-      setNotice('BINGO! ድልህ በServer ተረጋግጧል።');
+      setNotice(`BINGO! ድልህ ተረጋግጧል። ${money(state?.game?.prizeEtb ?? state?.settings.prizeEtb ?? 0)} ETB የDemo ሽልማት ወደ Turbo Bingo ቀሪ ሂሳብህ ተጨምሯል።`);
       await refresh();
     } catch (e) { setError(e instanceof Error ? e.message : 'Bingo claim failed.'); await refresh(); }
     finally { setBusy(false); }
@@ -67,11 +70,14 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
         <p className="text-[10px] font-black uppercase tracking-[.3em] text-amber-400">BLACK GOLD GAME CENTER</p>
         <h1 className="mt-2 text-3xl font-black sm:text-4xl">TURBO BINGO</h1>
         <p className="mt-1 text-sm text-amber-100/65">ትርቦ ቢንጎ · One game · One exact target · First valid winner</p>
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Stat label="GAME STATUS" value={state?.game?.status?.toUpperCase() ?? 'LOADING'} />
           <Stat label="WINNING TARGET" value={String(state?.game?.target ?? state?.settings.target ?? '—')} />
           <Stat label="NUMBERS CALLED" value={String(state?.game?.drawnNumbers.length ?? 0)} />
           <Stat label="LATEST NUMBER" value={String(state?.game?.lastNumber ?? '—')} />
+          <Stat label="ROUND TYPE" value={String(state?.game?.roundType ?? state?.settings.roundType ?? "—").replace("_", " ").toUpperCase()} />
+          <Stat label="WINNER PRIZE" value={`${money(state?.game?.prizeEtb ?? state?.settings.prizeEtb ?? 0)} ETB`} />
+          <Stat label="TIME LEFT" value={secondsLeft === null ? "—" : `${secondsLeft}s`} />
         </div>
       </section>
 
