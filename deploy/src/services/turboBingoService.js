@@ -59,7 +59,7 @@ export function createTurboBingoService({ repo }) {
     let wallet = null;
     if (user) {
       tickets = game ? await repo.listTurboBingoTickets(game.id, user.id) : [];
-      wallet = await repo.getGameHubWallet(user.id, 'legacy-demo');
+      wallet = await repo.getTurboBingoWallet(user.id);
     }
     return {
       settings: {
@@ -106,7 +106,7 @@ export function createTurboBingoService({ repo }) {
     if (!game || game.status !== 'waiting') throw new HttpError(409, 'ticket_sales_closed', 'Ticket sales are closed for this game.');
     const existingTickets = await repo.listTurboBingoTickets(game.id, user.id);
     if (existingTickets.length + count > (game.maxTicketsPerPlayer ?? config.maxTicketsPerPlayer)) throw new HttpError(400, 'ticket_limit', 'You have reached the ticket limit for this game.');
-    await repo.getGameHubWallet(user.id, 'legacy-demo');
+    await repo.getTurboBingoWallet(user.id);
     const price = Math.round((game.ticketPriceEtb ?? config.ticketPriceEtb) * 100);
     const tickets = Array.from({ length: count }, () => ({
       id: randomUUID(),
