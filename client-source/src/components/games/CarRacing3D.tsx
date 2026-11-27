@@ -136,8 +136,8 @@ function CarRacing3DViewportInner(p:Props) {
   const [rendererError,setRendererError]=useState('');
   const [rendererAttempt,setRendererAttempt]=useState(0);
   const [elapsedSeconds,setElapsedSeconds]=useState(0);
-  useEffect(()=>{const update=()=>setElapsedSeconds(Math.min(600,Math.floor((Date.now()-p.startedAt)/1000)));update();const timer=window.setInterval(update,200);return()=>window.clearInterval(timer);},[p.startedAt]);
-  const remainingSeconds=Math.max(0,600-elapsedSeconds);
+  useEffect(()=>{const update=()=>setElapsedSeconds(Math.min(3600,Math.floor((Date.now()-p.startedAt)/1000)));update();const timer=window.setInterval(update,200);return()=>window.clearInterval(timer);},[p.startedAt]);
+  const remainingSeconds=Math.max(0,3600-elapsedSeconds);
   const elapsedLabel=`${String(Math.floor(remainingSeconds/60)).padStart(2,'0')}:${String(remainingSeconds%60).padStart(2,'0')}`;
   const lap=Math.min(3,Math.floor(Math.max(0,p.me.progress)/33.34)+1);
   const audioRig=useRef<{ctx:AudioContext;engine:OscillatorNode;sub:OscillatorNode;engineGain:GainNode;subGain:GainNode;engineFilter:BiquadFilterNode;wind:AudioBufferSourceNode;windGain:GainNode;windFilter:BiquadFilterNode;tires:AudioBufferSourceNode;tiresGain:GainNode;tiresFilter:BiquadFilterNode}|null>(null);
@@ -326,7 +326,7 @@ function CarRacing3DViewportInner(p:Props) {
       scene.add(group);
       return {group, obstacle};
     });
-    const ownColor=safeCars.find(c=>c.id===p.me.carId)?.color||'#f5c400';const own=makeCar(ownColor,p.me.plateNumber,safeCars.find(c=>c.id===p.me.carId)?.bodyStyle);own.group.scale.setScalar(p.soloMode?1.18:1);scene.add(own.group);const pedestrian=person('#e7b34e');pedestrian.scale.setScalar(1.08);scene.add(pedestrian);
+    const ownColor=safeCars.find(c=>c.id===p.me.carId)?.color||'#f5c400';const own=makeCar(ownColor,p.me.plateNumber,safeCars.find(c=>c.id===p.me.carId)?.bodyStyle);own.group.scale.setScalar(p.soloMode?1.18:1);scene.add(own.group);const pedestrian=person('#e7b34e');pedestrian.scale.setScalar(1.08);scene.add(pedestrian);const passenger=person('#4b91b9');passenger.scale.setScalar(.48);passenger.position.set(.48,.58,.12);own.group.add(passenger);const waitingPassenger=person('#d6a24b');waitingPassenger.position.set(2.9,0,4.5);scene.add(waitingPassenger);
     const nitroFlames=new THREE.Group();[-.56,.56].forEach(x=>{const flame=new THREE.Mesh(new THREE.ConeGeometry(.19,1.35,16),new THREE.MeshBasicMaterial({color:'#16baff',transparent:true,opacity:.92}));flame.rotation.x=Math.PI/2;flame.position.set(x,.43,2.82);nitroFlames.add(flame);});const nitroGlow=new THREE.PointLight('#16aaff',0,7,2);nitroGlow.position.set(0,.55,3.25);nitroFlames.add(nitroGlow);own.group.add(nitroFlames);
     const opponents=new Map<string,CarModel>();
     const cockpit=new THREE.Group();
@@ -375,7 +375,7 @@ function CarRacing3DViewportInner(p:Props) {
       scenery.forEach(o=>{o.position.z+=dt*velocity*25;if(o.position.z>18)o.position.z-=240;});
       obstacleModels.forEach(({group,obstacle})=>{const ahead=obstacle.at/10-latest.current.me.progress;group.position.set(obstacle.lane*3.45,0,THREE.MathUtils.clamp(-ahead*3.2,-220,18));group.visible=ahead>-2&&ahead<72;});
       const bend=s.track.curveType==='left'?.22:s.track.curveType==='right'?-.22:s.track.curveType==='s-bend'?Math.sin(travel*.2)*.2:0,offset=s.steer*1.05;
-      own.group.position.set(offset*.7,0,4.5);own.group.rotation.y=-s.steer*.34-bend*.16;own.group.visible=!s.onFoot&&s.view==='chase';pedestrian.position.set(s.footPosition.x,0,4.5+s.footPosition.z);pedestrian.visible=s.onFoot;pedestrian.rotation.y=s.steer*.18;nitroFlames.visible=s.boost&&s.speed>1&&latest.current.nitroPercent>0;nitroFlames.scale.setScalar(.78+Math.random()*.32);nitroGlow.intensity=nitroFlames.visible?2.8:0;own.wheels.forEach(w=>{w.rotation.x+=dt*velocity*3;});
+      own.group.position.set(offset*.7,0,4.5);own.group.rotation.y=-s.steer*.34-bend*.16;own.group.visible=s.onFoot||s.view==='chase';pedestrian.position.set(s.footPosition.x,0,4.5+s.footPosition.z);pedestrian.visible=s.onFoot;pedestrian.rotation.y=s.steer*.18;passenger.visible=s.passengerCount>0&&!s.onFoot;waitingPassenger.visible=s.onFoot&&s.passengerCount===0;nitroFlames.visible=s.boost&&s.speed>1&&latest.current.nitroPercent>0;nitroFlames.scale.setScalar(.78+Math.random()*.32);nitroGlow.intensity=nitroFlames.visible?2.8:0;own.wheels.forEach(w=>{w.rotation.x+=dt*velocity*3;});
       steering.rotation.z=-s.steer*Math.PI*2;cockpit.visible=!s.onFoot&&s.view==='cockpit';
       own.frontWheels.forEach(w=>{w.rotation.y=s.steer*.72;});
       gearLever.rotation.z=s.reverse?-.48:0;gearLever.position.x=s.reverse?.58:.48;
