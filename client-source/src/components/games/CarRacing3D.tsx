@@ -248,17 +248,34 @@ function CarRacing3DViewportInner(p:Props) {
     scene.add(new THREE.HemisphereLight(worldStyle.day?'#e8f5ff':'#a9c8f0',worldStyle.day?'#5a6548':'#080b18',worldStyle.day?1.75:1.22));
     const sun=new THREE.DirectionalLight(worldStyle.day?'#fff0d4':'#9fcaff',worldStyle.day?2.25:1.55);sun.position.set(-22,28,12);sun.castShadow=true;sun.shadow.mapSize.set(1536,1536);scene.add(sun);
     if(!worldStyle.day)scene.add(new THREE.AmbientLight('#3850a0',.58));
-    const road=new THREE.Mesh(new THREE.PlaneGeometry(17,300),new THREE.MeshStandardMaterial({color:worldStyle.road,roughness:safeTrack.environment==='coastal'?.48:.82,metalness:safeTrack.environment==='city'?.32:.04}));road.rotation.x=-Math.PI/2;road.position.set(0,0,-118);road.receiveShadow=true;scene.add(road);
+    // A real, stationary road network replaces the old endless scrolling runway.
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(760,760),new THREE.MeshStandardMaterial({color:worldStyle.ground,roughness:.96,metalness:.01}));ground.rotation.x=-Math.PI/2;ground.position.set(0,-.08,0);ground.receiveShadow=true;scene.add(ground);
+    const roadMat=new THREE.MeshStandardMaterial({color:worldStyle.road,roughness:safeTrack.environment==='coastal'?.52:.88,metalness:safeTrack.environment==='city'?.22:.02});
     const shoulderMat=new THREE.MeshStandardMaterial({color:worldStyle.shoulder,roughness:.95});
-    [-8.45,8.45].forEach(x=>{const shoulder=new THREE.Mesh(new THREE.BoxGeometry(.55,.035,300),shoulderMat);shoulder.position.set(x,.015,-118);scene.add(shoulder);});
-    const centerGlow=new THREE.MeshStandardMaterial({color:'#f3e4b5',emissive:'#d5b66c',emissiveIntensity:.12});
-    if(['city','parking'].includes(safeTrack.environment))[-4,4].forEach(x=>{const line=new THREE.Mesh(new THREE.BoxGeometry(.075,.03,300),centerGlow);line.position.set(x,.035,-118);scene.add(line);});
-    else for(let i=0;i<36;i++){const line=new THREE.Mesh(new THREE.BoxGeometry(.13,.03,2.6),centerGlow);line.position.set(0,.035,-i*8-2);scene.add(line);}
-    const ground=new THREE.Mesh(new THREE.PlaneGeometry(420,300),new THREE.MeshStandardMaterial({color:worldStyle.ground,roughness:.94,metalness:.02}));ground.rotation.x=-Math.PI/2;ground.position.set(0,-.08,-110);scene.add(ground);
-    const markers:THREE.Mesh[]=[];
+    const centerGlow=new THREE.MeshStandardMaterial({color:'#f3e4b5',emissive:'#d5b66c',emissiveIntensity:.18});
     const lanePaint=new THREE.MeshStandardMaterial({color:'#e7dfc4',roughness:.72});
-    const laneCount=['city','parking'].includes(safeTrack.environment)?3:1;
-     for(let lane=1;lane<=laneCount;lane++)for(let i=0;i<28;i++){const x=laneCount===1?(lane===1?-7.5:7.5):-8+lane*4;const m=new THREE.Mesh(new THREE.BoxGeometry(.095,.026,3.1),lanePaint);m.position.set(x,.026,-i*9);scene.add(m);markers.push(m);}
+    const markers:THREE.Mesh[]=[];
+    const roadWidth=safeTrack.environment==='city'||safeTrack.environment==='airport'?22:16;
+    const roadGrid=safeTrack.environment==='city'||safeTrack.environment==='parking'?[-180,-60,60,180]:[-150,0,150];
+    for(const x of roadGrid){
+      const strip=new THREE.Mesh(new THREE.PlaneGeometry(roadWidth,700),roadMat);strip.rotation.x=-Math.PI/2;strip.position.set(x,.005,0);strip.receiveShadow=true;scene.add(strip);
+      for(const side of [-1,1]){const walk=new THREE.Mesh(new THREE.PlaneGeometry(3.2,700),shoulderMat);walk.rotation.x=-Math.PI/2;walk.position.set(x+side*(roadWidth/2+1.8),.018,0);scene.add(walk);}
+      for(let z=-340;z<350;z+=9){const dash=new THREE.Mesh(new THREE.BoxGeometry(.16,.025,4.2),centerGlow);dash.position.set(x,.035,z);scene.add(dash);}
+    }
+    for(const z of roadGrid){
+      const strip=new THREE.Mesh(new THREE.PlaneGeometry(700,roadWidth),roadMat);strip.rotation.x=-Math.PI/2;strip.position.set(0,.008,z);strip.receiveShadow=true;scene.add(strip);
+      for(const side of [-1,1]){const walk=new THREE.Mesh(new THREE.PlaneGeometry(700,3.2),shoulderMat);walk.rotation.x=-Math.PI/2;walk.position.set(0,.019,z+side*(roadWidth/2+1.8));scene.add(walk);}
+      for(let x=-340;x<350;x+=9){const dash=new THREE.Mesh(new THREE.BoxGeometry(4.2,.025,.16),centerGlow);dash.position.set(x,.036,z);scene.add(dash);}
+    }
+    // Zebra crossings and stop bars make every junction readable from the cockpit.
+    for(const x of roadGrid)for(const z of roadGrid){
+      for(let i=-5;i<=5;i++){const stripe=new THREE.Mesh(new THREE.BoxGeometry(1.05,.035,.28),lanePaint);stripe.position.set(x+i*1.65,.045,z-roadWidth*.34);scene.add(stripe);}
+      const stop=new THREE.Mesh(new THREE.BoxGeometry(roadWidth*.72,.035,.22),lanePaint);stop.position.set(x,.045,z-roadWidth*.48);scene.add(stop);
+    }
+    // Broad city blocks and landscaped plots beyond the road grid.
+    const blockMat=new THREE.MeshStandardMaterial({color:safeTrack.environment==='city'?'#242c36':'#4f7040',roughness:.92});
+    for(const x of roadGrid)for(const z of roadGrid){const plot=new THREE.Mesh(new THREE.PlaneGeometry(roadWidth*1.45,roadWidth*1.45),blockMat);plot.rotation.x=-Math.PI/2;plot.position.set(x+roadWidth*.95,-.025,z+roadWidth*.95);scene.add(plot);}
+    const mapLimit=320;
     const lampMat=new THREE.MeshStandardMaterial({color:'#343b42',metalness:.8,roughness:.28});
     const lampGlow=new THREE.MeshStandardMaterial({color:'#fff0bd',emissive:'#ffd77c',emissiveIntensity:3.2});
     if(safeTrack.environment==='city'||safeTrack.environment==='airport')for(let i=0;i<18;i++)for(const side of [-1,1]){
@@ -287,6 +304,36 @@ function CarRacing3DViewportInner(p:Props) {
         for(let leaf=0;leaf<6;leaf++){const frond=new THREE.Mesh(new THREE.ConeGeometry(.28,3,5),new THREE.MeshStandardMaterial({color:'#287a50'}));frond.position.set(Math.cos(leaf*Math.PI/3)*1.2,3.7,Math.sin(leaf*Math.PI/3)*1.2);frond.rotation.z=Math.PI/2-Math.cos(leaf*Math.PI/3)*.45;frond.rotation.x=Math.sin(leaf*Math.PI/3)*.45;palm.add(frond);}
         palm.position.set(i%2?15:-15,0,z-3);scenery.push(palm);
       }
+    }
+    // Expanded explorable district: connected side streets, block-scale architecture and local activity.
+    if(safeTrack.environment==='city'||safeTrack.environment==='parking'){
+      for(let bx=-2;bx<=2;bx++)for(let bz=-2;bz<=2;bz++){
+        if(Math.abs(bx)+Math.abs(bz)<2)continue;
+        const cx=bx*120+60,cz=bz*120+60;
+        const height=16+((bx*bz+7)%5)*7;
+        const tower=building(cx,cz,Math.abs(bx*7+bz*11));
+        tower.scale.set(1.25,height/18,1.25);addWorldObject(tower);
+        const plaza=new THREE.Mesh(new THREE.BoxGeometry(26,.16,24),new THREE.MeshStandardMaterial({color:'#68717a',roughness:.9}));plaza.position.set(cx+25,.03,cz+20);addWorldObject(plaza);
+        for(let treeIndex=0;treeIndex<4;treeIndex++)addWorldObject(tree(cx+12+(treeIndex%2)*24,cz+38+Math.floor(treeIndex/2)*18));
+      }
+    }
+    if(safeTrack.environment==='country'||safeTrack.environment==='village'){
+      for(let field=0;field<18;field++){
+        const side=field%2?1:-1,x=side*(70+(field%3)*65),z=-260+Math.floor(field/2)*58;
+        const cropPatch=new THREE.Mesh(new THREE.PlaneGeometry(44,48),new THREE.MeshStandardMaterial({color:field%3?'#78964a':'#b0a05a',roughness:1}));cropPatch.rotation.x=-Math.PI/2;cropPatch.position.set(x,.005,z);addWorldObject(cropPatch);
+        if(field%3===0){const tractor=makeCar('#b64b2f',`FARM-${field}`,'suv');tractor.group.scale.setScalar(.82);tractor.group.position.set(x+13,.02,z+8);addWorldObject(tractor.group);}
+      }
+    }
+    if(safeTrack.environment==='rocky'){
+      const ridgeMat=new THREE.MeshStandardMaterial({color:'#77736b',roughness:1});
+      for(let i=0;i<28;i++){const ridge=new THREE.Mesh(new THREE.DodecahedronGeometry(10+(i%4)*5,1),ridgeMat);ridge.position.set((i%2?1:-1)*(100+(i%5)*28),7+(i%4)*4,-280+i*20);ridge.scale.y=1.2;addWorldObject(ridge);}
+    }
+    if(safeTrack.environment==='coastal'){
+      const ocean=new THREE.Mesh(new THREE.PlaneGeometry(260,760),new THREE.MeshStandardMaterial({color:'#087ca5',metalness:.25,roughness:.22,transparent:true,opacity:.94}));ocean.rotation.x=-Math.PI/2;ocean.position.set(260,-.04,0);addWorldObject(ocean);
+      for(let i=0;i<35;i++){const dune=new THREE.Mesh(new THREE.SphereGeometry(4+(i%4),12,8),new THREE.MeshStandardMaterial({color:'#d6c18c',roughness:1}));dune.scale.set(2,.3,3);dune.position.set(120+(i%4)*28,.15,-340+i*20);addWorldObject(dune);}
+    }
+    if(safeTrack.environment==='airport'){
+      for(let i=0;i<5;i++){const hangar=new THREE.Group(),shell=new THREE.Mesh(new THREE.BoxGeometry(34,10,26),new THREE.MeshStandardMaterial({color:'#aeb9c2',metalness:.3,roughness:.62}));shell.position.y=5;hangar.add(shell);const door=new THREE.Mesh(new THREE.BoxGeometry(18,7,.12),new THREE.MeshStandardMaterial({color:'#3e6278',metalness:.25,roughness:.3}));door.position.set(0,3.5,-13.1);hangar.add(door);hangar.position.set(-190+i*95,0,-210);addWorldObject(hangar);}
     }
     // Street-level storefronts, illuminated signs and roadside advertising like an urban night circuit.
     if(safeTrack.environment==='city'){
@@ -447,15 +494,15 @@ function CarRacing3DViewportInner(p:Props) {
     camera.add(cockpit);scene.add(camera);
     const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
     observer=new ResizeObserver(resize);observer.observe(el);resize();
-    let last=performance.now(),travel=0,raf=0;
+    let last=performance.now(),raf=0;
+    const vehicle={x:0,z:0,heading:0};
     let lastDashboardLabel='';
     let lowGraphicsFallbackUsed=false;
-    const animate=(now:number)=>{if(contextLost)return;raf=requestAnimationFrame(animate);try{const dt=Math.min((now-last)/1000,.05);last=now;rotor.rotation.y+=dt*18;tailRotor.rotation.y+=dt*22;const s=latest.current,velocity=(s.speed>0?Math.max(.15,s.speed/90):0)*(s.reverse?-1:1);travel+=dt*Math.abs(velocity)*(s.boost?2.2:1);
-      markers.forEach(m=>{m.position.z+=dt*velocity*34;if(m.position.z>15)m.position.z-=240;});
-      scenery.forEach(o=>{o.position.z+=dt*velocity*25;if(o.position.z>18)o.position.z-=240;});
+    const animate=(now:number)=>{if(contextLost)return;raf=requestAnimationFrame(animate);try{const dt=Math.min((now-last)/1000,.05);last=now;rotor.rotation.y+=dt*18;tailRotor.rotation.y+=dt*22;const s=latest.current,velocity=(s.speed>0?Math.max(.0,s.speed/3.6*.82):0)*(s.reverse?-1:1);
+      if(!s.onFoot&&s.speed>.8){vehicle.heading+=s.steer*(.18+Math.min(1,s.speed/100)*.92)*dt*(s.reverse?-1:1);vehicle.x+=Math.sin(vehicle.heading)*velocity*dt*(s.reverse?-1:1);vehicle.z-=Math.cos(vehicle.heading)*velocity*dt*(s.reverse?-1:1);vehicle.x=THREE.MathUtils.clamp(vehicle.x,-mapLimit,mapLimit);vehicle.z=THREE.MathUtils.clamp(vehicle.z,-mapLimit,mapLimit);}
       obstacleModels.forEach(({group,obstacle})=>{const ahead=obstacle.at/10-latest.current.me.progress;group.position.set(obstacle.lane*3.45,0,THREE.MathUtils.clamp(-ahead*3.2,-220,18));group.visible=ahead>-2&&ahead<72;});
-      const bend=s.track.curveType==='left'?.22:s.track.curveType==='right'?-.22:s.track.curveType==='s-bend'?Math.sin(travel*.2)*.2:0,offset=s.steer*1.05;
-      own.group.position.set(offset*.7,0,4.5);own.group.rotation.y=-s.steer*.34-bend*.16;own.group.visible=s.onFoot||s.view==='chase';pedestrian.position.set(s.footPosition.x,0,4.5+s.footPosition.z);pedestrian.visible=s.onFoot;pedestrian.rotation.y=s.steer*.18;passenger.visible=s.passengerCount>0&&!s.onFoot;waitingPassenger.position.set(s.passengerPosition.x,0,4.5+s.passengerPosition.z);waitingPassenger.visible=s.onFoot&&s.passengerCount===0;
+      const c=Math.cos(vehicle.heading),sn=Math.sin(vehicle.heading),footX=vehicle.x+s.footPosition.x*c+s.footPosition.z*sn,footZ=vehicle.z-s.footPosition.x*sn+s.footPosition.z*c;
+      own.group.position.set(vehicle.x,0,vehicle.z);own.group.rotation.y=vehicle.heading;own.group.visible=!s.onFoot&&s.view==='chase';pedestrian.position.set(footX,0,footZ);pedestrian.visible=s.onFoot;pedestrian.rotation.y=vehicle.heading;passenger.visible=s.passengerCount>0&&!s.onFoot;waitingPassenger.position.set(vehicle.x+s.passengerPosition.x*c+s.passengerPosition.z*sn,0,vehicle.z-s.passengerPosition.x*sn+s.passengerPosition.z*c);waitingPassenger.visible=s.onFoot&&s.passengerCount===0;
       const walkCycle=now*.009;const playerArms=pedestrian.userData.arms as THREE.Mesh[]|undefined,playerLegs=pedestrian.userData.legs as THREE.Mesh[]|undefined;if(playerArms&&playerLegs){playerArms[0].rotation.x=Math.sin(walkCycle)*.24;playerArms[1].rotation.x=-Math.sin(walkCycle)*.24;playerLegs[0].rotation.x=-Math.sin(walkCycle)*.3;playerLegs[1].rotation.x=Math.sin(walkCycle)*.3;}for(const npc of pedestrians){const arms=npc.userData.arms as THREE.Mesh[]|undefined,legs=npc.userData.legs as THREE.Mesh[]|undefined;if(arms&&legs){arms[0].rotation.x=Math.sin(walkCycle)*.22;arms[1].rotation.x=-Math.sin(walkCycle)*.22;legs[0].rotation.x=-Math.sin(walkCycle)*.28;legs[1].rotation.x=Math.sin(walkCycle)*.28;}}for(const animalModel of animals){const legs=animalModel.userData.legs as THREE.Mesh[]|undefined;if(legs)legs.forEach((leg,index)=>{leg.rotation.x=Math.sin(walkCycle+(index%2)*Math.PI)*.12;});}nitroFlames.visible=s.boost&&s.speed>1&&latest.current.nitroPercent>0;nitroFlames.scale.setScalar(.78+Math.random()*.32);nitroGlow.intensity=nitroFlames.visible?2.8:0;own.wheels.forEach(w=>{w.rotation.x+=dt*velocity*3;});
       steering.rotation.z=THREE.MathUtils.lerp(steering.rotation.z,-s.steer*Math.PI*2,Math.min(1,dt*8));cockpit.visible=!s.onFoot&&s.view==='cockpit';
       own.frontWheels.forEach(w=>{w.rotation.y=THREE.MathUtils.lerp(w.rotation.y,s.steer*.72,Math.min(1,dt*9));});
@@ -464,12 +511,12 @@ function CarRacing3DViewportInner(p:Props) {
       speedNeedle.rotation.z=-THREE.MathUtils.clamp(s.speed/220,0,1)*Math.PI*.78;
       rpmNeedle.rotation.z=-THREE.MathUtils.clamp((s.speed/220)+(s.boost?.18:0),0,1)*Math.PI*.78;
       const gear=s.reverse?'R':s.speed<8?'1':String(Math.min(6,Math.max(1,Math.ceil(s.speed/38))));const dashboardLabel=(s.reverse?'REVERSE':'DRIVE')+' '+Math.round(s.speed)+' G'+gear;if(speedCtx&&dashboardLabel!==lastDashboardLabel){speedCtx.clearRect(0,0,512,256);speedCtx.fillStyle='#06131d';speedCtx.fillRect(0,0,512,256);speedCtx.fillStyle='#8bdcff';speedCtx.font='bold 38px Arial';speedCtx.textAlign='center';speedCtx.fillText((s.reverse?'REVERSE':'DRIVE')+'  GEAR '+gear,256,54);speedCtx.fillStyle='#ffffff';speedCtx.font='bold 112px Arial';speedCtx.fillText(String(Math.round(s.speed)),256,172);speedCtx.fillStyle='#e9b94f';speedCtx.font='bold 30px Arial';speedCtx.fillText('KM/H',256,222);speedTexture.needsUpdate=true;lastDashboardLabel=dashboardLabel;}
-      if(s.onFoot){camera.position.lerp(new THREE.Vector3(s.footPosition.x,3.4,8.5+s.footPosition.z),.12);camera.lookAt(s.footPosition.x,1.1,4.5+s.footPosition.z-7);}else if(s.view==='cockpit'){camera.position.set(offset*.18,1.62,3.3);camera.lookAt(offset*.25+bend*2,1.2,-32);}else{camera.position.lerp(new THREE.Vector3(offset*.22,5.3,14.8),.075);camera.lookAt(offset*.18+bend*2,.85,-27);}
+      if(s.onFoot){camera.position.lerp(new THREE.Vector3(footX+Math.sin(vehicle.heading)*-5,3.4,footZ+Math.cos(vehicle.heading)*7),.12);camera.lookAt(footX+Math.sin(vehicle.heading)*8,1.1,footZ-Math.cos(vehicle.heading)*8);}else if(s.view==='cockpit'){camera.position.set(vehicle.x,1.62,vehicle.z);camera.lookAt(vehicle.x+Math.sin(vehicle.heading)*32,1.2,vehicle.z-Math.cos(vehicle.heading)*32);}else{camera.position.lerp(new THREE.Vector3(vehicle.x-Math.sin(vehicle.heading)*9,5.3,vehicle.z+Math.cos(vehicle.heading)*14.8),.075);camera.lookAt(vehicle.x+Math.sin(vehicle.heading)*10,.85,vehicle.z-Math.cos(vehicle.heading)*18);}
       const ids=new Set<string>();
       s.players.forEach(player=>{if(player.isMe||player.finished)return;ids.add(player.userId);let model=opponents.get(player.userId);if(!model){const car=s.cars.find(c=>c.id===player.carId);model=makeCar(car?.color||'#4b9bd2',player.plateNumber,car?.bodyStyle);opponents.set(player.userId,model);scene.add(model.group);}const delta=player.progress-s.me.progress;model.group.position.set(player.lane*3.45,0,THREE.MathUtils.clamp(-22-delta*.38,-115,8));model.group.visible=!player.eliminated;model.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.3;});model.frontWheels.forEach(w=>{w.rotation.y=(player.lane-s.me.lane)*.16;});});
       opponents.forEach((model,id)=>{if(!ids.has(id)){scene.remove(model.group);opponents.delete(id);}});
       scene.background=new THREE.Color(worldStyle.sky);scene.fog=new THREE.Fog(worldStyle.sky,worldStyle.fogNear,worldStyle.fogFar);
-      traffic.forEach((car,i)=>{car.group.position.z+=dt*velocity*(23+i%2*4);if(car.group.position.z>16)car.group.position.z=-205-i*8;car.wheels.forEach(w=>{w.rotation.x+=dt*velocity*2.2;});});
+      traffic.forEach((car,i)=>{const loop=(now*.0025+i*1.7)%(Math.PI*2);car.group.position.set(Math.sin(loop)*(i%2?60:180),0,Math.cos(loop)*(i%2?180:60));car.group.rotation.y=Math.atan2(Math.cos(loop)*(i%2?60:180),-Math.sin(loop)*(i%2?180:60));car.wheels.forEach(w=>{w.rotation.x+=dt*.8;});});
       renderer.render(scene,camera);
       }catch(error){
         cancelAnimationFrame(raf);
