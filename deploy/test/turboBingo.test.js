@@ -8,7 +8,7 @@ async function setup(target = 2) {
     phone: '251911000001', name: 'Turbo Test', pinHash: 'test-hash',
     role: 'player', phoneVerified: true,
   });
-  await repo.getGameHubWallet(user.id, 'legacy-demo');
+  await repo.getTurboBingoWallet(user.id);
   const game = await repo.createTurboBingoGame({
     id: 'turbo-test-game', status: 'waiting', target,
     drawnNumbers: [], ticketCount: 0, createdAt: Date.now(),
@@ -23,7 +23,7 @@ async function setup(target = 2) {
 test('Turbo Bingo tickets are charged only to the separate demo wallet and registered once', async () => {
   const { repo, user, game } = await setup();
   const tickets = await repo.listTurboBingoTickets(game.id, user.id);
-  const wallet = await repo.getGameHubWallet(user.id, 'legacy-demo');
+  const wallet = await repo.getTurboBingoWallet(user.id);
   assert.equal(tickets.length, 1);
   assert.equal(wallet.balance, 99_900);
   assert.equal(game.ticketCount, 1);
