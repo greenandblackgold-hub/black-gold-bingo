@@ -138,7 +138,7 @@ export function AdminApp({ onExit }: { onExit: () => void }) {
           </section>
 
           <div className="min-w-0">
-            {SERVER_MODE && <AdminGamesHub activeGame={activeGame} />}
+            {SERVER_MODE && activeGame !== 'turbo-bingo' && <AdminGamesHub activeGame={activeGame} />}
             {activeGame === 'bingo' && <div className="mt-3"><HostView /></div>}
             {activeGame === 'turbo-bingo' && <div className="mt-3"><AdminTurboBingo /></div>}
           </div>
