@@ -708,7 +708,7 @@ export async function createMongoRepo({ uri, dbName }) {
         });
         const createdAt = Date.now();
         await turboBingoTickets.insertMany(newTickets.map((ticket) => ({
-          ...ticket, gameId, userId, status: 'active', createdAt,
+          ...ticket, _id: ticket.id, gameId, userId, status: 'active', createdAt,
         })), { session });
         const updated = await turboBingoGames.findOneAndUpdate(
           { _id: gameId, status: 'waiting', version: game.version },
