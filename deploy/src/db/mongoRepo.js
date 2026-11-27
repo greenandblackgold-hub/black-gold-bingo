@@ -34,6 +34,10 @@ export async function createMongoRepo({ uri, dbName }) {
   const gameHubSettings = db.collection('gameHubSettings');
   const gameHubWallets = db.collection('gameHubWallets');
   const gameHubLedger = db.collection('gameHubLedger');
+  const turboBingoGames = db.collection('turboBingoGames');
+  const turboBingoTickets = db.collection('turboBingoTickets');
+  const turboBingoState = db.collection('turboBingoState');
+  const turboBingoSettings = db.collection('turboBingoSettings');
 
   async function tx(fn) {
     const session = client.startSession();
@@ -106,6 +110,9 @@ export async function createMongoRepo({ uri, dbName }) {
         gameHubRounds.createIndex({ game: 1, roundId: 1 }, { unique: true }),
         gameHubLedger.createIndex({ ref: 1 }, { unique: true }),
         gameHubLedger.createIndex({ userId: 1, createdAt: -1 }),
+        turboBingoGames.createIndex({ createdAt: -1 }),
+        turboBingoTickets.createIndex({ gameId: 1, id: 1 }, { unique: true }),
+        turboBingoTickets.createIndex({ gameId: 1, userId: 1 }),
       ]);
       await games.updateOne({ _id: 'state' }, { $setOnInsert: { ...DEFAULT_GAME, nextCardSerial: 10000 } }, { upsert: true });
       // Keep the existing game document field as the allocator; no schema or collection changes.
@@ -634,6 +641,107 @@ export async function createMongoRepo({ uri, dbName }) {
       const w = await withdrawals.findOne({ _id: id });
       if (!w) throw new RepoError('WITHDRAWAL_NOT_FOUND');
       return this.applyLedger({ userId: w.userId, amount: w.amount, kind: 'withdraw_refund', ref: `wd-refund:${id}`, meta: { id } });
+    },
+
+    /* Turbo Bingo owns separate game, ticket and settings collections; it only uses the non-withdrawable Games Center demo wallet. */
+    async getTurboBingoSettings() {
+      const saved = await turboBingoSettings.findOne({ _id: 'settings' });
+      if (!saved) return {};
+      const { _id, ...settings } = saved;
+      return settings;
+    },
+    async updateTurboBingoSettings(settings) {
+      await turboBingoSettings.updateOne({ _id: 'settings' }, { $set: { ...settings, updatedAt: new Date() } }, { upsert: true });
+      return this.getTurboBingoSettings();
+    },
+    async getCurrentTurboBingoGame() {
+      const state = await turboBingoState.findOne({ _id: 'current' });
+      return state?.gameId ? toDoc(await turboBingoGames.findOne({ _id: state.gameId })) : null;
+    },
+    async createTurboBingoGame(game) {
+      return tx(async (session) => {
+        const state = await turboBingoState.findOne({ _id: 'current' }, { session });
+        if (state?.gameId) {
+          const current = await turboBingoGames.findOne({ _id: state.gameId }, { session });
+          if (current && current.status !== 'ended') return toDoc(current);
+        }
+        const doc = { ...game, _id: game.id, version: 1 };
+        await turboBingoGames.insertOne(doc, { session });
+        await turboBingoState.updateOne({ _id: 'current' }, { $set: { gameId: doc._id, updatedAt: new Date() } }, { upsert: true, session });
+        return toDoc(doc);
+      });
+    },
+    async updateTurboBingoGame(gameId, expectedVersion, patch, lockedTicketIds = []) {
+      return tx(async (session) => {
+        const updated = await turboBingoGames.findOneAndUpdate(
+          { _id: gameId, version: expectedVersion, status: 'running' },
+          { $set: patch, $inc: { version: 1 } },
+          { returnDocument: 'after', session },
+        );
+        if (!updated) return null;
+        if (lockedTicketIds.length) {
+          await turboBingoTickets.updateMany(
+            { gameId, id: { $in: lockedTicketIds }, status: 'active' },
+            { $set: { status: 'locked', lockedAt: Date.now() } },
+            { session },
+          );
+        }
+        return toDoc(updated);
+      });
+    },
+    async listTurboBingoTickets(gameId, userId) {
+      const filter = { gameId, ...(userId ? { userId } : {}) };
+      return (await turboBingoTickets.find(filter).sort({ createdAt: 1 }).toArray()).map(toDoc);
+    },
+    async getTurboBingoTicket(gameId, ticketId, userId) {
+      return toDoc(await turboBingoTickets.findOne({ gameId, id: ticketId, userId }));
+    },
+    async purchaseTurboBingoTickets({ gameId, userId, tickets: newTickets, totalCost }) {
+      return tx(async (session) => {
+        const game = await turboBingoGames.findOne({ _id: gameId, status: 'waiting' }, { session });
+        if (!game) throw new RepoError('TURBO_BINGO_SALES_CLOSED');
+        const ref = 'turbo-bingo:purchase:' + newTickets.map((ticket) => ticket.id).join(':');
+        await moveGameHubCredits(session, {
+          userId, amount: -totalCost, kind: 'game_bet', ref,
+          meta: { game: 'turbo-bingo', gameId, ticketIds: newTickets.map((ticket) => ticket.id) },
+          walletMode: 'legacy-demo',
+        });
+        const createdAt = Date.now();
+        await turboBingoTickets.insertMany(newTickets.map((ticket) => ({
+          ...ticket, gameId, userId, status: 'active', createdAt,
+        })), { session });
+        const updated = await turboBingoGames.findOneAndUpdate(
+          { _id: gameId, status: 'waiting', version: game.version },
+          { $inc: { ticketCount: newTickets.length, version: 1 } },
+          { returnDocument: 'after', session },
+        );
+        if (!updated) throw new RepoError('TURBO_BINGO_SALES_CLOSED');
+        const wallet = await gameHubWallets.findOne({ _id: userId }, { session });
+        return { tickets: newTickets, balance: wallet?.balance ?? 0 };
+      });
+    },
+    async claimTurboBingoTicket({ gameId, expectedVersion, ticketId, userId, winner }) {
+      return tx(async (session) => {
+        const game = await turboBingoGames.findOne({ _id: gameId, status: 'running', version: expectedVersion }, { session });
+        const ticket = await turboBingoTickets.findOne({ gameId, id: ticketId, userId, status: 'active' }, { session });
+        if (!game || !ticket) return null;
+        const lastNumber = game.drawnNumbers?.at(-1);
+        const called = new Set(game.drawnNumbers ?? []);
+        const hits = ticket.numbers.filter((number) => called.has(number));
+        if (hits.length !== game.target || lastNumber == null || !ticket.numbers.includes(lastNumber)) return null;
+        const updated = await turboBingoGames.findOneAndUpdate(
+          { _id: gameId, status: 'running', version: expectedVersion },
+          { $set: { status: 'ended', endedAt: winner.at, winner }, $inc: { version: 1 } },
+          { returnDocument: 'after', session },
+        );
+        if (!updated) return null;
+        await turboBingoTickets.updateOne(
+          { gameId, id: ticketId, userId, status: 'active' },
+          { $set: { status: 'winner', claimedAt: winner.at } },
+          { session },
+        );
+        return { winner, game: toDoc(updated) };
+      });
     },
 
     /* Isolated Keno and Aviator persistence; the existing Bingo collections and methods remain unchanged. */
