@@ -484,6 +484,8 @@ export function createMemoryRepo() {
     async purchaseTurboBingoTickets({ gameId, userId, tickets: newTickets, totalCost }) {
       const game = turboBingoGames.get(gameId);
       if (!game || game.status !== 'waiting') throw new RepoError('TURBO_BINGO_SALES_CLOSED');
+      const existingCount = [...turboBingoTickets.values()].filter((ticket) => ticket.gameId === gameId && ticket.userId === userId).length;
+      if (existingCount + newTickets.length > (game.maxTicketsPerPlayer ?? 10)) throw new RepoError('TURBO_BINGO_TICKET_LIMIT');
       const wallet = ensureTurboBingoWallet(userId);
       if (wallet.balance < totalCost) throw new RepoError('INSUFFICIENT_FUNDS');
       const ref = 'turbo-bingo:purchase:' + newTickets.map((ticket) => ticket.id).join(':');
