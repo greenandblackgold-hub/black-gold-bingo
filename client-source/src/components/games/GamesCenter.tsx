@@ -6,10 +6,10 @@ import { minesLocale } from '@/lib/minesLocalization';
 
 const money = (n: number) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-type Props = { generalDisabled: boolean; onOpenBingo: () => void; onOpenKeno: () => void; onOpenAviator: () => void; onOpenMines: () => void; onOpenCarRacing: () => void; onOpenHelp: () => void; serverMode: boolean };
+type Props = { generalDisabled: boolean; onOpenBingo: () => void; onOpenKeno: () => void; onOpenAviator: () => void; onOpenMines: () => void; onOpenCarRacing: () => void; onOpenTurboBingo: () => void; onOpenHelp: () => void; serverMode: boolean };
 
 function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured = false, disabled = false, disabledLabel = '' }: {
-  title: string; subtitle: string; detail: string; icon: 'bingo' | 'keno' | 'aviator' | 'mines' | 'racing' | 'virtual' | 'live'; onClick: () => void; openLabel: string; featured?: boolean; disabled?: boolean; disabledLabel?: string;
+  title: string; subtitle: string; detail: string; icon: 'bingo' | 'keno' | 'aviator' | 'mines' | 'racing' | 'turbo' | 'virtual' | 'live'; onClick: () => void; openLabel: string; featured?: boolean; disabled?: boolean; disabledLabel?: string;
 }) {
   return (
     <button type="button" disabled={disabled} onClick={onClick} className={`games-center-card group relative disabled:cursor-not-allowed disabled:opacity-100 flex min-h-64 w-full flex-col overflow-hidden rounded-3xl border text-left ${featured ? 'border-amber-300/50 bg-gradient-to-br from-[#28200d] via-[#100f0b] to-black' : 'border-amber-500/20 bg-gradient-to-br from-[#17150f] via-[#0b0b0a] to-black'} p-4 sm:p-5`}>
@@ -21,6 +21,7 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
       ) : (
         <span className={icon === 'keno' ? 'games-center-artwork relative mt-1 block w-full shrink-0 overflow-hidden rounded-2xl border border-lime-400/35 bg-[#00110f] shadow-[inset_0_1px_rgba(255,255,255,.08)]' : 'relative mt-1 grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-amber-300/30 bg-black/60 text-amber-300 shadow-[inset_0_1px_rgba(255,255,255,.08)]'}>
           {icon === 'racing' && <span className="grid h-full w-full place-items-center text-6xl" aria-hidden="true">🏎️</span>}
+          {icon === 'turbo' && <span className="grid h-full w-full place-items-center text-6xl" aria-hidden="true">⚡</span>}
           {icon === 'keno' && <img loading="eager" decoding="async" draggable={false} src="/images/fast-keno-card-v4.jpg" alt="FAST KENO — Kiza.bet" className="block h-full w-full min-h-0 min-w-0 object-contain object-center" />}
         </span>
       )}
@@ -33,12 +34,25 @@ function GameCard({ title, subtitle, detail, icon, onClick, openLabel, featured 
   );
 }
 
-export function GamesCenter({ generalDisabled, onOpenBingo, onOpenKeno, onOpenAviator, onOpenMines, onOpenCarRacing, onOpenHelp, serverMode }: Props) {
+export function GamesCenter({ generalDisabled, onOpenBingo, onOpenKeno, onOpenAviator, onOpenMines, onOpenCarRacing, onOpenTurboBingo, onOpenHelp, serverMode }: Props) {
   const { lang } = useLanguage();
   const t = gameUi.gamesCenter[lang];
   const mt = (key: Parameters<typeof minesLocale>[1]) => minesLocale(lang, key);
   const [availability, setAvailability] = useState<{ generalEnabled: boolean; announcement: string | null; bingoEnabled: boolean; kenoEnabled: boolean; aviatorEnabled: boolean; minesEnabled: boolean; carRacingEnabled: boolean; balanceEtb: number; walletMode: 'shared' | 'legacy-demo' } | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
+  const [turboBingoEnabled, setTurboBingoEnabled] = useState(false);
+  useEffect(() => {
+    if (!serverMode) return;
+    let active = true;
+    const refresh = async () => {
+      try { const value = await api.get<{ enabled: boolean }>('/api/games/turbo-bingo/settings'); if (active) setTurboBingoEnabled(value.enabled === true); }
+      catch { if (active) setTurboBingoEnabled(false); }
+    };
+    void refresh();
+    const poll = window.setInterval(() => void refresh(), 30_000);
+    window.addEventListener('bgb:admin-change', refresh);
+    return () => { active = false; window.clearInterval(poll); window.removeEventListener('bgb:admin-change', refresh); };
+  }, [serverMode]);
   useEffect(() => {
     if (!serverMode) return;
     let active = true;
@@ -130,6 +144,7 @@ export function GamesCenter({ generalDisabled, onOpenBingo, onOpenKeno, onOpenAv
         {(!serverMode || availability?.aviatorEnabled === true) && <GameCard title="Aviator" subtitle={t.aviatorSubtitle} detail={t.aviatorDetail} icon="aviator" onClick={onOpenAviator} openLabel={t.openGame} />}
         {(!serverMode || availability?.minesEnabled === true) && <GameCard title="Mines" subtitle={mt('cardSubtitle')} detail={mt('cardDetail')} icon="mines" onClick={onOpenMines} openLabel={t.openGame} /> }
         {serverMode && availability?.carRacingEnabled === true && <GameCard title="Multiplayer Car Racing" subtitle="LIVE MULTIPLAYER · DEMO ONLY" detail="Choose a car, join a room and race across changing tracks. Simulation credits only." icon="racing" onClick={onOpenCarRacing} openLabel={t.openGame} featured />}
+        {serverMode && turboBingoEnabled && <GameCard title="Turbo Bingo · ትርቦ ቢንጎ" subtitle="LIVE ONLINE · 1–80" detail="Buy registered tickets, follow live calls and claim your exact target before the next number." icon="turbo" onClick={onOpenTurboBingo} openLabel={t.openGame} featured />}
         <GameCard title="Virtual Sports" subtitle={t.virtualSportsSubtitle} detail={t.virtualSportsDetail} icon="virtual" onClick={() => {}} openLabel={t.openGame} disabled disabledLabel={t.comingSoon} />
         <GameCard title="Live Sports" subtitle={t.liveSportsSubtitle} detail={t.liveSportsDetail} icon="live" onClick={() => {}} openLabel={t.openGame} disabled disabledLabel={t.comingSoon} />
         </div>
