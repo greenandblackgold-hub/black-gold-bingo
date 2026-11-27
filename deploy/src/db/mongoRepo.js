@@ -674,7 +674,7 @@ export async function createMongoRepo({ uri, dbName }) {
     async updateTurboBingoGame(gameId, expectedVersion, patch, lockedTicketIds = []) {
       return tx(async (session) => {
         const updated = await turboBingoGames.findOneAndUpdate(
-          { _id: gameId, version: expectedVersion, status: 'running' },
+          { _id: gameId, version: expectedVersion, status: { $in: ['waiting', 'running'] } },
           { $set: patch, $inc: { version: 1 } },
           { returnDocument: 'after', session },
         );
