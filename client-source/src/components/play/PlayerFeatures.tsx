@@ -328,9 +328,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                       <p className={`text-xs ${muted}`}>{t.notificationPermission}</p>
                     </div>
                     <div><p className={`mb-2 font-semibold ${title}`}>{t.language}</p><div className="flex flex-wrap gap-2">{[['am','አማርኛ'],['ti','ትግርኛ'],['en','English']].map(([id,label]) => <button key={id} type="button" onClick={() => setLang(id as 'am'|'ti'|'en')} aria-pressed={lang === id} className={`rounded-lg border px-3 py-2 ${lang === id ? 'border-amber-400 bg-amber-400/15' : 'border-current/20'}`}>{label}</button>)}</div></div>
-                    <label className="flex items-center justify-between gap-3"><span>{t.notifications}</span><input type="checkbox" checked={notifications} onChange={(e) => void enableNotifications(e.target.checked)} /></label>
-                    {'Notification' in window && Notification.permission === 'denied' && <p className="text-xs text-amber-600">{t.notificationBlocked}</p>}
-                    <p className={`text-xs ${muted}`}>{t.notificationPermission}</p>
+
                   </div>
                 )}
                 {row.id === 'rules' && <ol className={`list-decimal space-y-2 pl-5 text-sm leading-6 ${muted}`}>{t.rulesList.map((rule) => <li key={rule}>{rule}</li>)}</ol>}
