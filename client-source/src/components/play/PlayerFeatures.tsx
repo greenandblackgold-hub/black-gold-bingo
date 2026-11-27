@@ -100,7 +100,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const [expanded, setExpanded] = useState<string | null>(settingsOnly ? 'settings' : null);
   const [inlineMenuOpen, setInlineMenuOpen] = useState(false);
   const [showCardPurchase, setShowCardPurchase] = useState(false);
-  const [purchaseCount, setPurchaseCount] = useState(5);
+  const [purchaseCount, setPurchaseCount] = useState(1);
   const [purchaseBusy, setPurchaseBusy] = useState(false);
   const [purchaseMessage, setPurchaseMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [showPatternOptions, setShowPatternOptions] = useState(false);
@@ -127,7 +127,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
       const result = await buyCards(purchaseCount);
       if (result.ok) {
         setPurchaseMessage({ kind: 'ok', text: `${purchaseCount} ${t.cards} ${t.purchaseSuccess}` });
-        setPurchaseCount(5);
+        setPurchaseCount(1);
       } else {
         setPurchaseMessage({ kind: 'err', text: t.purchaseError });
       }
@@ -227,8 +227,8 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                 </div>
                 <div className="space-y-3 rounded-xl border border-amber-400/20 p-3">
                   <p className="text-sm font-semibold">{t.chooseCardCount}</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[5, 10, 20, 30, 40, 50].map((count) => (
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {[1, 2, 5, 10, 15, 20, 25, 30].map((count) => (
                       <button key={count} type="button" disabled={purchaseBusy} onClick={() => setPurchaseCount(count)} aria-pressed={purchaseCount === count} className={`rounded-lg border px-2 py-3 text-sm font-black transition disabled:opacity-50 ${purchaseCount === count ? 'border-amber-300 bg-amber-400 text-zinc-950' : 'border-amber-400/40 bg-black/30 text-amber-200 hover:border-amber-300'}`}>
                         {count} {t.card}
                       </button>
