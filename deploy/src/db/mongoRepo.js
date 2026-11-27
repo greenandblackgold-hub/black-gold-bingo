@@ -38,6 +38,8 @@ export async function createMongoRepo({ uri, dbName }) {
   const turboBingoTickets = db.collection('turboBingoTickets');
   const turboBingoState = db.collection('turboBingoState');
   const turboBingoSettings = db.collection('turboBingoSettings');
+  const turboBingoWallets = db.collection('turboBingoWallets');
+  const turboBingoLedger = db.collection('turboBingoLedger');
 
   async function tx(fn) {
     const session = client.startSession();
@@ -113,6 +115,8 @@ export async function createMongoRepo({ uri, dbName }) {
         turboBingoGames.createIndex({ createdAt: -1 }),
         turboBingoTickets.createIndex({ gameId: 1, id: 1 }, { unique: true }),
         turboBingoTickets.createIndex({ gameId: 1, userId: 1 }),
+        turboBingoLedger.createIndex({ ref: 1 }, { unique: true }),
+        turboBingoLedger.createIndex({ userId: 1, createdAt: -1 }),
       ]);
       await games.updateOne({ _id: 'state' }, { $setOnInsert: { ...DEFAULT_GAME, nextCardSerial: 10000 } }, { upsert: true });
       // Keep the existing game document field as the allocator; no schema or collection changes.
@@ -644,6 +648,31 @@ export async function createMongoRepo({ uri, dbName }) {
     },
 
     /* Turbo Bingo owns separate game, ticket and settings collections; it only uses the non-withdrawable Games Center demo wallet. */
+    async getTurboBingoWallet(userId) {
+      const user = await users.findOne({ _id: userId }, { projection: { _id: 1 } });
+      if (!user) throw new RepoError('USER_NOT_FOUND');
+      const existing = await turboBingoWallets.findOne({ _id: userId });
+      if (existing) return { userId, balance: existing.balance, currency: 'ETB', balanceType: 'TURBO_BINGO_SIMULATION_ONLY' };
+      try {
+        return await tx(async (session) => {
+          const createdAt = new Date();
+          const inserted = await turboBingoWallets.updateOne(
+            { _id: userId },
+            { $setOnInsert: { balance: 100000, currency: 'ETB', createdAt } },
+            { upsert: true, session },
+          );
+          if (inserted.upsertedCount) await turboBingoLedger.insertOne({ userId, amount: 100000, kind: 'demo_grant', ref: 'turbo-bingo:initial-demo-credit:' + userId, meta: { reason: 'initial_turbo_bingo_demo_wallet' }, createdAt }, { session });
+          const wallet = await turboBingoWallets.findOne({ _id: userId }, { session });
+          return { userId, balance: wallet.balance, currency: 'ETB', balanceType: 'TURBO_BINGO_SIMULATION_ONLY' };
+        });
+      } catch (error) {
+        if ([11000, 112].includes(error?.code) || error?.codeName === 'WriteConflict') {
+          const created = await turboBingoWallets.findOne({ _id: userId });
+          if (created) return { userId, balance: created.balance, currency: 'ETB', balanceType: 'TURBO_BINGO_SIMULATION_ONLY' };
+        }
+        throw error;
+      }
+    },
     async getTurboBingoSettings() {
       const saved = await turboBingoSettings.findOne({ _id: 'settings' });
       if (!saved) return {};
@@ -701,11 +730,12 @@ export async function createMongoRepo({ uri, dbName }) {
         const game = await turboBingoGames.findOne({ _id: gameId, status: 'waiting' }, { session });
         if (!game) throw new RepoError('TURBO_BINGO_SALES_CLOSED');
         const ref = 'turbo-bingo:purchase:' + newTickets.map((ticket) => ticket.id).join(':');
-        await moveGameHubCredits(session, {
-          userId, amount: -totalCost, kind: 'game_bet', ref,
-          meta: { game: 'turbo-bingo', gameId, ticketIds: newTickets.map((ticket) => ticket.id) },
-          walletMode: 'legacy-demo',
-        });
+        const debit = await turboBingoWallets.updateOne({ _id: userId, balance: { $gte: totalCost } }, { $inc: { balance: -totalCost } }, { session });
+        if (!debit.matchedCount) {
+          const walletExists = await turboBingoWallets.findOne({ _id: userId }, { session, projection: { _id: 1 } });
+          throw new RepoError(walletExists ? 'INSUFFICIENT_FUNDS' : 'USER_NOT_FOUND');
+        }
+        await turboBingoLedger.insertOne({ userId, amount: -totalCost, kind: 'ticket_purchase', ref, meta: { gameId, ticketIds: newTickets.map((ticket) => ticket.id) }, createdAt: new Date() }, { session });
         const createdAt = Date.now();
         await turboBingoTickets.insertMany(newTickets.map((ticket) => ({
           ...ticket, _id: ticket.id, gameId, userId, status: 'active', createdAt,
@@ -716,7 +746,7 @@ export async function createMongoRepo({ uri, dbName }) {
           { returnDocument: 'after', session },
         );
         if (!updated) throw new RepoError('TURBO_BINGO_SALES_CLOSED');
-        const wallet = await gameHubWallets.findOne({ _id: userId }, { session });
+        const wallet = await turboBingoWallets.findOne({ _id: userId }, { session });
         return { tickets: newTickets, balance: wallet?.balance ?? 0 };
       });
     },
