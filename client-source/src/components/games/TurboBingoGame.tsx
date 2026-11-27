@@ -23,8 +23,10 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
   }, []);
   useEffect(() => {
     void refresh();
-    const poll = window.setInterval(() => void refresh(), 1000);
-    return () => window.clearInterval(poll);
+    const poll = window.setInterval(() => void refresh(), 5000);
+    const stream = new EventSource('/api/stream');
+    stream.addEventListener('turbo-bingo', () => void refresh());
+    return () => { window.clearInterval(poll); stream.close(); };
   }, [refresh]);
   const drawn = useMemo(() => new Set(state?.game?.drawnNumbers ?? []), [state?.game?.drawnNumbers]);
   const buy = async () => {
