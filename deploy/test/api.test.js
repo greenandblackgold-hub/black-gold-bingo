@@ -999,3 +999,67 @@ test('public push availability follows live Host switches for each player servic
   await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: { generalEnabled: true, bingoEnabled: true, kenoEnabled: true, aviatorEnabled: true, minesEnabled: true, carRacingEnabled: true } });
   assert.equal((await read()).json.allowed, true, 'notifications resume after Host re-enables the Games Center and Bingo');
 });
+
+
+test('Admin can inspect all Games Center games during General OFF without changing Host settings or bypassing player bet restrictions', async () => {
+  const originalRealMoneyEnabled = ctx.config.realMoneyEnabled;
+  ctx.config.realMoneyEnabled = false;
+  try {
+  const registration = await ctx.auth.register({ phone: newPhone(), name: 'General OFF admin preview player', pin: '123456', pinConfirm: '123456' });
+  await ctx.repo.updateUser(registration.user.id, { phoneVerified: true });
+  const p = { ...registration, user: await ctx.repo.findUserById(registration.user.id) };
+  const closed = await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: {
+    generalEnabled: false, bingoEnabled: false, kenoEnabled: false, aviatorEnabled: false, minesEnabled: false, carRacingEnabled: false,
+  } });
+  assert.equal(closed.status, 200);
+
+  const playerSettings = await api('GET', '/api/games/settings', { token: p.token });
+  assert.equal(playerSettings.json.generalEnabled, false);
+  assert.equal(playerSettings.json.bingoEnabled, false);
+  assert.equal(playerSettings.json.kenoEnabled, false);
+  assert.equal(playerSettings.json.aviatorEnabled, false);
+  assert.equal(playerSettings.json.minesEnabled, false);
+  assert.equal(playerSettings.json.carRacingEnabled, false);
+
+  const adminSettings = await api('GET', '/api/games/settings', { token: ctx.adminToken });
+  assert.equal(adminSettings.status, 200, JSON.stringify(adminSettings.json));
+  assert.equal(adminSettings.json.generalEnabled, true);
+  assert.equal(adminSettings.json.adminPreview, true);
+  for (const key of ['bingoEnabled', 'kenoEnabled', 'aviatorEnabled', 'minesEnabled', 'carRacingEnabled']) {
+    assert.equal(adminSettings.json[key], true, `Admin preview should expose ${key}`);
+  }
+
+  assert.equal((await api('GET', '/api/game')).status, 200);
+  assert.equal((await api('GET', '/api/cards', { token: ctx.adminToken })).status, 200);
+  assert.equal((await api('GET', '/api/games/keno/state', { token: ctx.adminToken })).status, 200);
+  assert.equal((await api('GET', '/api/games/aviator/state', { token: ctx.adminToken })).status, 200);
+  assert.equal((await api('GET', '/api/games/car-racing/catalog', { token: ctx.adminToken })).status, 200);
+  assert.equal((await api('GET', '/api/games/turbo-bingo/settings', { token: ctx.adminToken })).json.enabled, true);
+  assert.equal((await api('GET', '/api/games/turbo-bingo/state', { token: ctx.adminToken })).status, 200);
+
+  assert.equal((await api('GET', '/api/games/keno/state', { token: p.token })).status, 503);
+  assert.equal((await api('GET', '/api/games/aviator/state', { token: p.token })).status, 503);
+  assert.equal((await api('GET', '/api/games/car-racing/catalog', { token: p.token })).status, 503);
+
+  const adminKenoBet = await api('POST', '/api/games/keno/bets', { token: ctx.adminToken, body: { requestId: 'admin_preview_keno_01', amount: 2, selectedNumbers: [1] } });
+  assert.equal(adminKenoBet.status, 403);
+  assert.equal(adminKenoBet.json.error, 'verified_player_required');
+  const adminAviatorBet = await api('POST', '/api/games/aviator/bets', { token: ctx.adminToken, body: { requestId: 'admin_preview_aviator_01', amount: 5 } });
+  assert.equal(adminAviatorBet.status, 403);
+  assert.equal(adminAviatorBet.json.error, 'verified_player_required');
+  const adminTurboPurchase = await api('POST', '/api/games/turbo-bingo/tickets', { token: ctx.adminToken, body: { count: 1 } });
+  assert.equal(adminTurboPurchase.status, 403);
+
+  const persistedHostSettings = await api('GET', '/api/admin/games/overview', { token: ctx.adminToken });
+  assert.equal(persistedHostSettings.json.settings.generalEnabled, false);
+  assert.equal(persistedHostSettings.json.settings.kenoEnabled, false);
+  assert.equal(persistedHostSettings.json.settings.aviatorEnabled, false);
+  assert.equal(persistedHostSettings.json.settings.minesEnabled, false);
+  assert.equal(persistedHostSettings.json.settings.carRacingEnabled, false);
+  await api('POST', '/api/admin/games/settings', { token: ctx.adminToken, body: {
+    generalEnabled: true, bingoEnabled: true, kenoEnabled: true, aviatorEnabled: true, minesEnabled: true, carRacingEnabled: true,
+  } });
+  } finally {
+    ctx.config.realMoneyEnabled = originalRealMoneyEnabled;
+  }
+});

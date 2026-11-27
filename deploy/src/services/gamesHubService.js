@@ -333,7 +333,7 @@ export function createGamesHubService({ repo, config, now = Date.now, onCarRacin
     if (!GAME_IDS.includes(game)) throw new HttpError(404, 'game_not_found', 'Unknown game.');
     ensureSimulationMode();
     const currentSettings = await settings();
-    if (currentSettings.generalEnabled === false) throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
+    if (currentSettings.generalEnabled === false && user?.role !== 'admin') throw new HttpError(503, 'games_center_disabled', 'Games Center is temporarily unavailable.');
     const round = game === 'keno' && now() < nextKenoTickAt
       ? await repo.getCurrentGameHubRound('keno')
       : await tickGame(game, currentSettings);
@@ -672,14 +672,17 @@ export function createGamesHubService({ repo, config, now = Date.now, onCarRacin
       const current = await settings();
       const walletMode = !config.prod && config.gamesHubSharedWalletEnabled === true ? 'shared' : 'legacy-demo';
       const wallet = await repo.getGameHubWallet(user.id, walletMode);
+      const adminMaintenanceAccess = user?.role === 'admin' && current.generalEnabled === false;
       return {
-        generalEnabled: current.generalEnabled !== false,
-        announcement: current.generalEnabled === false && current.announcementVisible === true && current.announcementText ? current.announcementText : null,
-        bingoEnabled: current.bingoEnabled === true,
-        kenoEnabled: current.kenoEnabled === true,
-        aviatorEnabled: current.aviatorEnabled === true,
-        minesEnabled: current.minesEnabled === true,
-        carRacingEnabled: current.generalEnabled !== false && current.carRacingEnabled === true && config.realMoneyEnabled !== true,
+        // Admin-only preview bypasses the General OFF gate without changing saved Host switches.
+        generalEnabled: adminMaintenanceAccess || current.generalEnabled !== false,
+        adminPreview: adminMaintenanceAccess,
+        announcement: !adminMaintenanceAccess && current.generalEnabled === false && current.announcementVisible === true && current.announcementText ? current.announcementText : null,
+        bingoEnabled: adminMaintenanceAccess || current.bingoEnabled === true,
+        kenoEnabled: adminMaintenanceAccess || current.kenoEnabled === true,
+        aviatorEnabled: adminMaintenanceAccess || current.aviatorEnabled === true,
+        minesEnabled: adminMaintenanceAccess || current.minesEnabled === true,
+        carRacingEnabled: (adminMaintenanceAccess || (current.generalEnabled !== false && current.carRacingEnabled === true)) && config.realMoneyEnabled !== true,
         minBetEtb: current.minBet / 100,
         maxBetEtb: current.maxBet / 100,
         balanceEtb: wallet.balance / 100,
