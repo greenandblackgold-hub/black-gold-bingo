@@ -135,19 +135,19 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
       <section className="space-y-3">
         <div className="flex items-center justify-between"><h2 className="text-lg font-black">MY REGISTERED TICKETS</h2><span className="text-xs text-amber-400">{state?.tickets.length ?? 0} tickets</span></div>
         {!state?.tickets.length && <p className="rounded-xl border border-white/10 bg-black/40 p-5 text-center text-sm text-amber-100/50">No tickets registered for this game yet.</p>}
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3">
           {state?.tickets.map((ticket, index) => {
             const eligible = ticket.status === 'active' && state.game?.status === 'running' &&
               ticket.matchedNumbers.length === state.game.target &&
               state.game.lastNumber !== null && ticket.numbers.includes(state.game.lastNumber);
             return (
-              <article key={ticket.id} className="rounded-2xl border border-amber-300/20 bg-[#0c0b08] p-3">
-                <div className="mb-2 flex items-center justify-between"><span className="text-xs font-black text-amber-300">TICKET {index + 1}</span><span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${ticket.status === 'locked' ? 'bg-red-500/15 text-red-300' : ticket.status === 'winner' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-300/10 text-amber-200'}`}>{ticket.status}</span></div>
-                <div className="grid grid-cols-5 gap-1">
-                  {ticket.numbers.map((number) => <div key={number} className={`grid aspect-square place-items-center rounded-md text-xs font-black tabular-nums ${ticket.matchedNumbers.includes(number) ? 'bg-emerald-500/25 text-emerald-200 ring-1 ring-emerald-400/50' : 'bg-white/[.06] text-amber-100/75'}`}>{number}</div>)}
+              <article key={ticket.id} className="min-w-0 rounded-2xl border border-amber-300/35 bg-gradient-to-b from-[#fffdf7] to-[#e8e6df] p-2 text-slate-900 shadow-[0_5px_18px_rgba(0,0,0,.3)] sm:p-3">
+                <div className="mb-2 flex items-center justify-between"><span className="text-[10px] font-black text-rose-700 sm:text-xs">TICKET {index + 1}</span><span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${ticket.status === 'locked' ? 'bg-red-500/15 text-red-300' : ticket.status === 'winner' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-300/10 text-amber-200'}`}>{ticket.status}</span></div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {ticket.numbers.map((number) => <div key={number} className={`grid aspect-square place-items-center rounded-full border border-white/80 text-[10px] font-black tabular-nums shadow-[inset_1px_2px_3px_rgba(255,255,255,.8),inset_-2px_-3px_5px_rgba(0,0,0,.18),0_2px_4px_rgba(0,0,0,.12)] sm:text-xs ${ticket.matchedNumbers.includes(number) ? 'bg-[radial-gradient(circle_at_30%_25%,#fff,#86efac_25%,#059669_85%)] text-white ring-2 ring-emerald-500/50' : 'bg-[radial-gradient(circle_at_30%_25%,#fff,#fecaca_24%,#dc2626_85%)] text-white'}`}>{number}</div>)}
                 </div>
-                <p className="mt-2 text-[10px] text-amber-100/50">{ticket.matchedNumbers.length}/{state.game?.target ?? state.settings.target} matched</p>
-                <button type="button" disabled={!eligible || busy} onClick={() => void claim(ticket.id)} className="mt-2 w-full rounded-lg bg-amber-300 px-3 py-2.5 text-xs font-black text-black disabled:cursor-not-allowed disabled:opacity-30">BINGO</button>
+                <p className="mt-2 text-[9px] font-bold text-slate-600">{ticket.matchedNumbers.length}/{state.game?.target ?? state.settings.target} matched</p>
+                <button type="button" disabled={!eligible || busy} onClick={() => void claim(ticket.id)} className="mt-2 w-full rounded-xl border border-rose-200 bg-gradient-to-b from-red-500 to-red-700 px-2 py-2.5 text-[10px] font-black tracking-wider text-white shadow-[0_3px_0_#7f1d1d,0_5px_12px_rgba(127,29,29,.25)] disabled:cursor-not-allowed disabled:opacity-35 sm:text-xs">BINGO</button>
               </article>
             );
           })}
