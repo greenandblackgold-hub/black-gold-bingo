@@ -3,9 +3,13 @@ import { HttpError, RepoError } from '../util/errors.js';
 
 const DEFAULT_SETTINGS = Object.freeze({
   enabled: true,
+  mode: 'automatic',
+  roundType: 'standard',
   target: 10,
   ticketPriceEtb: 1,
+  prizeEtb: 50,
   drawIntervalSeconds: 2,
+  roundDurationSeconds: 300,
   maxTicketsPerPlayer: 10,
 });
 const TARGET_MIN = 1;
@@ -41,12 +45,13 @@ export function createTurboBingoService({ repo }) {
   }
   async function openGame() {
     const config = await settings();
-    if (!config.enabled) throw new HttpError(503, 'turbo_bingo_disabled', 'Turbo Bingo is disabled.');
     const current = await repo.getCurrentTurboBingoGame();
     if (current && current.status !== 'ended') throw new HttpError(409, 'game_already_open', 'A Turbo Bingo game is already open.');
     const game = await repo.createTurboBingoGame({
       id: randomUUID(), status: 'waiting', target: config.target,
-      ticketPriceEtb: config.ticketPriceEtb, maxTicketsPerPlayer: config.maxTicketsPerPlayer,
+      ticketPriceEtb: config.ticketPriceEtb, prizeEtb: config.prizeEtb,
+      mode: config.mode, roundType: config.roundType, drawIntervalSeconds: config.drawIntervalSeconds,
+      roundDurationSeconds: config.roundDurationSeconds, maxTicketsPerPlayer: config.maxTicketsPerPlayer,
       drawnNumbers: [], ticketCount: 0, createdAt: Date.now(),
     });
     await publish();
@@ -66,7 +71,11 @@ export function createTurboBingoService({ repo }) {
         enabled: config.enabled,
         target: config.target,
         ticketPriceEtb: game?.ticketPriceEtb ?? config.ticketPriceEtb,
-        drawIntervalSeconds: config.drawIntervalSeconds,
+        drawIntervalSeconds: game?.drawIntervalSeconds ?? config.drawIntervalSeconds,
+        mode: game?.mode ?? config.mode,
+        roundType: game?.roundType ?? config.roundType,
+        prizeEtb: game?.prizeEtb ?? config.prizeEtb,
+        roundDurationSeconds: game?.roundDurationSeconds ?? config.roundDurationSeconds,
         maxTicketsPerPlayer: game?.maxTicketsPerPlayer ?? config.maxTicketsPerPlayer,
       },
       game: game ? {
@@ -80,6 +89,11 @@ export function createTurboBingoService({ repo }) {
         endedAt: game.endedAt ?? null,
         winner: game.winner ?? null,
         ticketCount: game.ticketCount ?? 0,
+        mode: game.mode ?? config.mode,
+        roundType: game.roundType ?? config.roundType,
+        prizeEtb: game.prizeEtb ?? config.prizeEtb,
+        roundDurationSeconds: game.roundDurationSeconds ?? config.roundDurationSeconds,
+        endsAt: game.endsAt ?? null,
       } : null,
       tickets: tickets.map((ticket) => ({
         id: ticket.id,
@@ -135,14 +149,17 @@ export function createTurboBingoService({ repo }) {
 
   async function startGame() {
     const config = await settings();
-    if (!config.enabled) throw new HttpError(503, 'turbo_bingo_disabled', 'Turbo Bingo is disabled.');
     const game = await repo.getCurrentTurboBingoGame();
     if (!game || game.status === 'ended') throw new HttpError(409, 'sales_not_open', 'Open ticket sales before starting the draw.');
     if (game.status !== 'waiting') throw new HttpError(409, 'game_already_running', 'A Turbo Bingo game is already running.');
     if (!game.ticketCount) throw new HttpError(409, 'no_tickets', 'At least one ticket must be registered before starting.');
     const startedAt = Date.now();
+    const mode = game.mode ?? config.mode;
+    const duration = game.roundDurationSeconds ?? config.roundDurationSeconds;
+    const interval = game.drawIntervalSeconds ?? config.drawIntervalSeconds;
     const updated = await repo.updateTurboBingoGame(game.id, game.version, {
-      status: 'running', startedAt, nextDrawAt: startedAt + config.drawIntervalSeconds * 1000,
+      status: 'running', startedAt, endsAt: startedAt + duration * 1000,
+      nextDrawAt: mode === 'automatic' ? startedAt + interval * 1000 : null,
     });
     if (!updated) throw new HttpError(409, 'game_changed', 'The game changed. Refresh and try again.');
     await publish();
@@ -160,10 +177,19 @@ export function createTurboBingoService({ repo }) {
     return getState();
   }
 
-  async function drawNext() {
+  async function drawNext(forceManual = false) {
     const config = await settings();
     const game = await repo.getCurrentTurboBingoGame();
-    if (!game || game.status !== 'running' || Date.now() < Number(game.nextDrawAt ?? 0)) return false;
+    if (!game || game.status !== 'running') return false;
+    const now = Date.now();
+    if (game.endsAt && now >= game.endsAt) {
+      const ended = await repo.updateTurboBingoGame(game.id, game.version, { status: 'ended', endedAt: now, endReason: 'duration_elapsed', nextDrawAt: null });
+      if (ended) await publish();
+      return Boolean(ended);
+    }
+    const mode = game.mode ?? config.mode;
+    if (mode === 'admin' && !forceManual) return false;
+    if (mode === 'automatic' && now < Number(game.nextDrawAt ?? 0)) return false;
     const tickets = await repo.listTurboBingoTickets(game.id);
     const previousLast = game.drawnNumbers.at(-1);
     const lockedTicketIds = tickets.filter((ticket) => {
@@ -184,7 +210,7 @@ export function createTurboBingoService({ repo }) {
     const updated = await repo.updateTurboBingoGame(game.id, game.version, {
       drawnNumbers,
       lastDrawnAt: Date.now(),
-      nextDrawAt: status === 'running' ? Date.now() + config.drawIntervalSeconds * 1000 : null,
+      nextDrawAt: status === 'running' && mode === 'automatic' ? Date.now() + Number(game.drawIntervalSeconds ?? config.drawIntervalSeconds) * 1000 : null,
       ...(status === 'ended' ? { status, endedAt: Date.now(), endReason: 'numbers_exhausted' } : {}),
     }, lockedTicketIds);
     if (updated) await publish();
@@ -205,8 +231,9 @@ export function createTurboBingoService({ repo }) {
     if (hits.length !== game.target || lastNumber == null || !ticket.numbers.includes(lastNumber)) {
       throw new HttpError(409, 'not_a_winner', 'Your ticket does not meet the exact target on the latest called number.');
     }
-    const winner = { userId: user.id, ticketId, at: Date.now() };
-    const result = await repo.claimTurboBingoTicket({ gameId: game.id, expectedVersion: game.version, ticketId, userId: user.id, winner });
+    const prizeEtb = Number(game.prizeEtb ?? (await settings()).prizeEtb ?? 0);
+    const winner = { userId: user.id, ticketId, at: Date.now(), prizeEtb };
+    const result = await repo.claimTurboBingoTicket({ gameId: game.id, expectedVersion: game.version, ticketId, userId: user.id, winner, prizeAmount: Math.round(prizeEtb * 100) });
     if (!result) throw new HttpError(409, 'claim_too_late', 'The game changed before your claim was accepted. The ticket may be locked.');
     await publish();
     return { ok: true, winner: result.winner, game: await getState() };
@@ -216,11 +243,29 @@ export function createTurboBingoService({ repo }) {
     const current = await settings();
     const next = { ...current };
     if (input.enabled !== undefined) next.enabled = input.enabled === true;
+    if (input.mode !== undefined) {
+      if (!['automatic', 'admin'].includes(input.mode)) throw new HttpError(400, 'invalid_mode', 'Choose Automatic or Admin-controlled mode.');
+      next.mode = input.mode;
+    }
+    if (input.roundType !== undefined) {
+      if (!['quick', 'standard', 'full_house', 'custom'].includes(input.roundType)) throw new HttpError(400, 'invalid_round_type', 'Choose a valid Turbo Bingo round type.');
+      next.roundType = input.roundType;
+      if (input.target === undefined) next.target = input.roundType === 'quick' ? 5 : input.roundType === 'standard' ? 10 : input.roundType === 'full_house' ? 25 : next.target;
+    }
     if (input.target !== undefined) {
       if (!Number.isInteger(input.target) || input.target < TARGET_MIN || input.target > TARGET_MAX) {
         throw new HttpError(400, 'invalid_target', 'Winning target must be a whole number from 1 to 25.');
       }
       next.target = input.target;
+    }
+    if (input.prizeEtb !== undefined) {
+      const prize = Number(input.prizeEtb);
+      if (!Number.isFinite(prize) || prize < 0 || prize > 10000 || Math.round(prize * 100) !== prize * 100) throw new HttpError(400, 'invalid_prize', 'Prize must be ETB 0–10,000 in whole cents.');
+      next.prizeEtb = prize;
+    }
+    if (input.roundDurationSeconds !== undefined) {
+      if (!Number.isInteger(input.roundDurationSeconds) || input.roundDurationSeconds < 30 || input.roundDurationSeconds > 3600) throw new HttpError(400, 'invalid_round_duration', 'Round duration must be 30–3,600 seconds.');
+      next.roundDurationSeconds = input.roundDurationSeconds;
     }
     if (input.ticketPriceEtb !== undefined) {
       const price = Number(input.ticketPriceEtb);
@@ -235,7 +280,17 @@ export function createTurboBingoService({ repo }) {
       }
       next.drawIntervalSeconds = input.drawIntervalSeconds;
     }
-    return repo.updateTurboBingoSettings(next);
+    const currentGame = await repo.getCurrentTurboBingoGame();
+    const saved = await repo.updateTurboBingoSettings(next);
+    if (currentGame?.status === 'waiting' && Number(currentGame.ticketCount ?? 0) === 0) {
+      const refreshed = await repo.updateTurboBingoGame(currentGame.id, currentGame.version, {
+        target: next.target, ticketPriceEtb: next.ticketPriceEtb, prizeEtb: next.prizeEtb,
+        mode: next.mode, roundType: next.roundType, drawIntervalSeconds: next.drawIntervalSeconds,
+        roundDurationSeconds: next.roundDurationSeconds,
+      });
+      if (!refreshed) throw new HttpError(409, 'game_changed', 'The waiting round changed while saving settings. Refresh and try again.');
+    }
+    return saved;
   }
 
   async function getAdminOverview() {
@@ -253,12 +308,20 @@ export function createTurboBingoService({ repo }) {
   return {
     getState, getSettings: settings, buyTickets, startGame, stopGame, claim,
     updateSettings, getAdminOverview, openGame,
+    async drawNextManually() {
+      const game = await repo.getCurrentTurboBingoGame();
+      if (!game || game.status !== 'running') throw new HttpError(409, 'game_not_running', 'Start a game before calling the next number.');
+      if ((game.mode ?? (await settings()).mode) !== 'admin') throw new HttpError(409, 'not_manual_mode', 'Manual number calls are available only in Admin mode.');
+      const changed = await drawNext(true);
+      if (!changed) throw new HttpError(409, 'draw_not_available', 'The next number could not be called. Refresh and try again.');
+      return getState();
+    },
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
     async resume() {
       const current = await repo.getCurrentTurboBingoGame();
       if (!current) {
         const config = await settings();
-        await repo.createTurboBingoGame({ id: randomUUID(), status: 'waiting', target: config.target, ticketPriceEtb: config.ticketPriceEtb, maxTicketsPerPlayer: config.maxTicketsPerPlayer, drawnNumbers: [], ticketCount: 0, createdAt: Date.now() });
+        await repo.createTurboBingoGame({ id: randomUUID(), status: 'waiting', target: config.target, ticketPriceEtb: config.ticketPriceEtb, prizeEtb: config.prizeEtb, mode: config.mode, roundType: config.roundType, drawIntervalSeconds: config.drawIntervalSeconds, roundDurationSeconds: config.roundDurationSeconds, maxTicketsPerPlayer: config.maxTicketsPerPlayer, drawnNumbers: [], ticketCount: 0, createdAt: Date.now() });
       }
       if (!timer) { timer = setInterval(() => void tick(), 200); timer.unref?.(); }
     },

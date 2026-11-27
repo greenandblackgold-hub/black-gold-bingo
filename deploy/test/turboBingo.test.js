@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMemoryRepo } from '../src/db/memoryRepo.js';
+import { createTurboBingoService } from '../src/services/turboBingoService.js';
 
 async function setup(target = 2) {
   const repo = createMemoryRepo();
@@ -96,4 +97,67 @@ test('Turbo Bingo enforces the per-player ticket cap inside the repository opera
     }),
     (error) => error.code === 'TURBO_BINGO_TICKET_LIMIT',
   );
+});
+
+
+test('Turbo Bingo Admin mode manually calls server-random numbers and credits only its isolated demo wallet', async () => {
+  const repo = createMemoryRepo();
+  const user = await repo.createUser({
+    phone: '251911000099', name: 'Turbo Admin Mode Test', pinHash: 'test-hash',
+    role: 'player', phoneVerified: true,
+  });
+  await repo.getTurboBingoWallet(user.id);
+  const service = createTurboBingoService({ repo });
+  await service.updateSettings({
+    mode: 'admin', roundType: 'quick', target: 5, ticketPriceEtb: 1,
+    prizeEtb: 12.5, drawIntervalSeconds: 4, roundDurationSeconds: 120,
+  });
+  await service.openGame();
+  let game = await repo.getCurrentTurboBingoGame();
+  assert.equal(game.mode, 'admin');
+  assert.equal(game.roundType, 'quick');
+  assert.equal(game.target, 5);
+  assert.equal(game.prizeEtb, 12.5);
+  assert.equal(game.roundDurationSeconds, 120);
+
+  const ticket = { id: 'turbo-manual-ticket', numbers: Array.from({ length: 25 }, (_, i) => i + 1), status: 'active' };
+  await repo.purchaseTurboBingoTickets({ gameId: game.id, userId: user.id, tickets: [ticket], totalCost: 100 });
+  await service.startGame();
+  game = await repo.getCurrentTurboBingoGame();
+  assert.equal(game.status, 'running');
+  assert.equal(game.nextDrawAt, null, 'manual mode must not schedule automatic calls');
+
+  let won = false;
+  for (let i = 0; i < 80 && !won; i += 1) {
+    await service.drawNextManually();
+    const state = await service.getState(user);
+    assert.equal(state.game.drawnNumbers.length, i + 1);
+    const ownedTicket = state.tickets[0];
+    if (ownedTicket.matchedNumbers.length === 5) {
+      await service.claim(user, ownedTicket.id);
+      won = true;
+    }
+  }
+  assert.equal(won, true, 'the server-random draw sequence eventually completes the quick target');
+  const wallet = await repo.getTurboBingoWallet(user.id);
+  assert.equal(wallet.balance, 101150, 'ticket debit and ETB 12.50 demo prize must reconcile exactly');
+  service.stop();
+});
+
+test('Turbo Bingo Automatic mode schedules server draws and validates timing and prize bounds', async () => {
+  const repo = createMemoryRepo();
+  const service = createTurboBingoService({ repo });
+  await service.updateSettings({ mode: 'automatic', roundType: 'standard', target: 10, drawIntervalSeconds: 3, roundDurationSeconds: 180, prizeEtb: 25 });
+  await service.openGame();
+  const game = await repo.getCurrentTurboBingoGame();
+  const user = await repo.createUser({ phone: '251911000098', name: 'Turbo Auto Test', pinHash: 'test-hash', role: 'player', phoneVerified: true });
+  await repo.getTurboBingoWallet(user.id);
+  await repo.purchaseTurboBingoTickets({ gameId: game.id, userId: user.id, tickets: [{ id: 'turbo-auto-ticket', numbers: Array.from({ length: 25 }, (_, i) => i + 1) }], totalCost: 100 });
+  await service.startGame();
+  const running = await repo.getCurrentTurboBingoGame();
+  assert.equal(running.mode, 'automatic');
+  assert.ok(running.nextDrawAt >= running.startedAt + 3000);
+  await assert.rejects(service.updateSettings({ roundDurationSeconds: 29 }), /Round duration/);
+  await assert.rejects(service.updateSettings({ prizeEtb: 10000.001 }), /Prize/);
+  service.stop();
 });
