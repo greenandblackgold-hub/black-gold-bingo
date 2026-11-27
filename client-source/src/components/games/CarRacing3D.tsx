@@ -127,7 +127,7 @@ function building(x:number,z:number,i:number) {
   g.position.set(x,0,z);return g;
 }
 function person(shirt='#c98d48',style:'masculine'|'feminine'|'worker'='worker') {
-  const g=new THREE.Group(),skin=new THREE.MeshStandardMaterial({color:style==='feminine'?'#b77b5a':'#a96f4d',roughness:.9}),top=new THREE.MeshStandardMaterial({color:shirt,roughness:.82}),pants=new THREE.MeshStandardMaterial({color:style==='feminine'?'#303449':'#202b3c',roughness:.9}),hair=new THREE.MeshStandardMaterial({color:style==='feminine'?'#241a16':'#29221d',roughness:1});
+  const g=new THREE.Group(),skin=new THREE.MeshStandardMaterial({color:style==='feminine'?'#b77b5a':'#a96f4d',roughness:.9}),top=new THREE.MeshStandardMaterial({color:shirt,roughness:.82}),pants=new THREE.MeshStandardMaterial({color:style==='feminine'?'#303449':'#202b3c',roughness:.9}),hair=new THREE.MeshStandardMaterial({color:style==='masculine'?'#29221d':style==='feminine'?'#241a16':'#38261d',roughness:1});
   const torso=new THREE.Mesh(new THREE.CapsuleGeometry(style==='feminine'?.2:.23,.58,4,10),top);torso.position.y=1.05;g.add(torso);
   const head=new THREE.Mesh(new THREE.SphereGeometry(.17,14,12),skin);head.position.y=1.58;g.add(head);
   const cap=new THREE.Mesh(new THREE.SphereGeometry(.176,14,10,0,Math.PI*2,0,Math.PI*.55),hair);cap.position.y=1.64;g.add(cap);
