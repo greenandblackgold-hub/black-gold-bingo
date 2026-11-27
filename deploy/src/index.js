@@ -10,6 +10,7 @@ import { createBonusService } from './services/bonusService.js';
 import { createPushService } from './services/pushService.js';
 import { createWalletService } from './services/walletService.js';
 import { createGamesHubService } from './services/gamesHubService.js';
+import { createTurboBingoService } from './services/turboBingoService.js';
 import { createCarRacingDemoService } from './services/carRacingDemoService.js';
 import { createChapa } from './payments/chapa.js';
 import { createApp } from './http/app.js';
@@ -28,6 +29,7 @@ export async function createRepo(config) {
 export async function build(config = loadConfig()) {
   const repo = await createRepo(config);
   let gamesHub = null;
+  let turboBingo = null;
   try {
     await repo.init();
     const auth = createAuthService({ repo, config });
@@ -38,6 +40,7 @@ export async function build(config = loadConfig()) {
     const wallet = createWalletService({ repo, config, chapa });
     let carRacing = null;
     gamesHub = createGamesHubService({ repo, config, onCarRacingRunningChanged: (enabled) => carRacing?.setRunning(enabled) });
+    turboBingo = createTurboBingoService({ repo });
     carRacing = createCarRacingDemoService({ isRealMoneyEnabled: () => config.realMoneyEnabled === true });
     const carRacingSettings = await gamesHub.getSettings();
     carRacing.setRunning(carRacingSettings.carRacingRunning !== false);
@@ -54,10 +57,12 @@ export async function build(config = loadConfig()) {
     await game.resume();
     await bonus.resume();
     await gamesHub.resume();
-    const app = createApp({ config, auth, game, wallet, chapa, repo, push, gamesHub, carRacing });
-    return { config, repo, auth, game, bonus, push, wallet, chapa, gamesHub, carRacing, app };
+    await turboBingo.resume();
+    const app = createApp({ config, auth, game, wallet, chapa, repo, push, gamesHub, carRacing, turboBingo });
+    return { config, repo, auth, game, bonus, push, wallet, chapa, gamesHub, carRacing, turboBingo, app };
   } catch (error) {
     gamesHub?.stop();
+    turboBingo?.stop();
     gameStopIfCreated();
     await repo.close().catch(() => undefined);
     throw error;
@@ -82,6 +87,7 @@ if (process.env.RUN_SERVER === 'true' && isMainModule) {
     ctx.game.stop();
     ctx.bonus.stop();
     ctx.gamesHub.stop();
+    ctx.turboBingo.stop();
     ctx.app.close();
     await ctx.repo.close();
   };
