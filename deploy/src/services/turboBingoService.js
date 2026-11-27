@@ -39,7 +39,20 @@ export function createTurboBingoService({ repo }) {
       try { listener(state); } catch { /* a disconnected subscriber cannot stop the game */ }
     }
   }
-  async function openGame() {\n    const config = await settings();\n    if (!config.enabled) throw new HttpError(503, 'turbo_bingo_disabled', 'Turbo Bingo is disabled.');\n    const current = await repo.getCurrentTurboBingoGame();\n    if (current && current.status !== 'ended') throw new HttpError(409, 'game_already_open', 'A Turbo Bingo game is already open.');\n    const game = await repo.createTurboBingoGame({\n      id: randomUUID(), status: 'waiting', target: config.target,\n      drawnNumbers: [], ticketCount: 0, createdAt: Date.now(),\n    });\n    await publish();\n    return getState();\n  }\n\n  async function getState(user) {
+  async function openGame() {
+    const config = await settings();
+    if (!config.enabled) throw new HttpError(503, 'turbo_bingo_disabled', 'Turbo Bingo is disabled.');
+    const current = await repo.getCurrentTurboBingoGame();
+    if (current && current.status !== 'ended') throw new HttpError(409, 'game_already_open', 'A Turbo Bingo game is already open.');
+    const game = await repo.createTurboBingoGame({
+      id: randomUUID(), status: 'waiting', target: config.target,
+      drawnNumbers: [], ticketCount: 0, createdAt: Date.now(),
+    });
+    await publish();
+    return getState();
+  }
+
+  async function getState(user) {
     const [config, game] = await Promise.all([settings(), repo.getCurrentTurboBingoGame()]);
     let tickets = [];
     let wallet = null;
@@ -239,7 +252,14 @@ export function createTurboBingoService({ repo }) {
     getState, getSettings: settings, buyTickets, startGame, stopGame, claim,
     updateSettings, getAdminOverview,
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); },
-    async resume() {\n      const current = await repo.getCurrentTurboBingoGame();\n      if (!current) {\n        const config = await settings();\n        await repo.createTurboBingoGame({ id: randomUUID(), status: 'waiting', target: config.target, drawnNumbers: [], ticketCount: 0, createdAt: Date.now() });\n      }\n      if (!timer) { timer = setInterval(() => void tick(), 200); timer.unref?.(); }\n    },
+    async resume() {
+      const current = await repo.getCurrentTurboBingoGame();
+      if (!current) {
+        const config = await settings();
+        await repo.createTurboBingoGame({ id: randomUUID(), status: 'waiting', target: config.target, drawnNumbers: [], ticketCount: 0, createdAt: Date.now() });
+      }
+      if (!timer) { timer = setInterval(() => void tick(), 200); timer.unref?.(); }
+    },
     stop() { if (timer) clearInterval(timer); timer = null; listeners.clear(); },
   };
 }
