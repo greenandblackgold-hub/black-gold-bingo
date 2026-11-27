@@ -298,6 +298,17 @@ function CarRacing3DViewportInner(p:Props) {
     if(['city','village','parking','coastal'].includes(safeTrack.environment))for(let i=0;i<9;i++){const npc=person(['#d6a24b','#4b91b9','#bd5b55','#668e62'][i%4]);npc.position.set(i%2?11.4:-11.4,0,-i*23-7);npc.rotation.y=i%2?-.35:.35;scene.add(npc);pedestrians.push(npc);}
     if(['country','village','rocky'].includes(safeTrack.environment))for(let i=0;i<5;i++){const livestock=animal(i%2?'#8c6844':'#d2c6a9');livestock.position.set(i%2?13.5:-13.5,0,-i*31-12);livestock.scale.setScalar(i%2?1.1:.85);scene.add(livestock);animals.push(livestock);}
     if(safeTrack.environment==='village'||safeTrack.environment==='country')for(let i=0;i<10;i++)for(const side of [-1,1]){const fence=new THREE.Mesh(new THREE.BoxGeometry(5,.12,.14),new THREE.MeshStandardMaterial({color:'#9a7547'}));fence.position.set(side*15,.72,-i*17-4);scene.add(fence);for(let j=0;j<5;j++){const post=new THREE.Mesh(new THREE.BoxGeometry(.13,1.1,.13),new THREE.MeshStandardMaterial({color:'#765634'}));post.position.set(side*15-2.5+j*1.25,.55,-i*17-4);scene.add(post);}}
+    if(safeTrack.environment==='rocky'){
+      const cliffMat=new THREE.MeshStandardMaterial({color:'#6c665e',roughness:1});
+      for(let i=0;i<18;i++)for(const side of [-1,1]){const peak=new THREE.Mesh(new THREE.ConeGeometry(7+(i%3)*2,15+(i%4)*5,7),cliffMat);peak.position.set(side*(19+(i%2)*4),5,-i*15-8);peak.rotation.z=side*.12;scene.add(peak);const snowcap=new THREE.Mesh(new THREE.ConeGeometry(2.1,4.4,7),new THREE.MeshStandardMaterial({color:'#c9c8c3',roughness:1}));snowcap.position.set(peak.position.x,peak.position.y+7.2,-i*15-8);scene.add(snowcap);}
+    }
+    if(safeTrack.environment==='village'){
+      for(let i=0;i<8;i++)for(const side of [-1,1]){const home=new THREE.Group();const walls=new THREE.Mesh(new THREE.BoxGeometry(5,2.8,4),new THREE.MeshStandardMaterial({color:i%2?'#c8a77a':'#b8b0a0',roughness:.95}));walls.position.y=1.4;home.add(walls);const roof=new THREE.Mesh(new THREE.ConeGeometry(3.8,2.1,4),new THREE.MeshStandardMaterial({color:i%2?'#754b32':'#5c5147',roughness:1}));roof.position.y=3.8;roof.rotation.y=Math.PI/4;home.add(roof);const door=new THREE.Mesh(new THREE.BoxGeometry(.8,1.7,.08),new THREE.MeshStandardMaterial({color:'#4c3326'}));door.position.set(.8,.85,-2.05);home.add(door);home.position.set(side*19,0,-i*27-12);scene.add(home);}
+    }
+    if(safeTrack.environment==='coastal'){
+      const sea=new THREE.Mesh(new THREE.PlaneGeometry(90,300),new THREE.MeshStandardMaterial({color:'#075b86',metalness:.35,roughness:.2,transparent:true,opacity:.9}));sea.rotation.x=-Math.PI/2;sea.position.set(48,-.06,-110);scene.add(sea);
+      for(let i=0;i<12;i++){const wave=new THREE.Mesh(new THREE.BoxGeometry(24,.025,.12),new THREE.MeshBasicMaterial({color:'#75d8ee',transparent:true,opacity:.45}));wave.position.set(42,.02,-i*22-5);scene.add(wave);}
+    }
     if(safeTrack.environment==='airport'){
       const terminal=new THREE.Mesh(new THREE.BoxGeometry(30,7,10),new THREE.MeshStandardMaterial({color:'#9ba9b5',metalness:.45,roughness:.38}));terminal.position.set(-22,3.5,-45);scene.add(terminal);
       const glassFront=new THREE.Mesh(new THREE.BoxGeometry(30,4.3,.16),new THREE.MeshPhysicalMaterial({color:'#68b7d5',metalness:.25,roughness:.12,transparent:true,opacity:.72}));glassFront.position.set(-22,3.2,-39.9);scene.add(glassFront);
