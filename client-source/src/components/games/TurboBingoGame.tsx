@@ -51,7 +51,7 @@ const ballPaint = [
 
 export function TurboBingoGame({ onBack }: { onBack: () => void }) {
   const { lang, setLang } = useLanguage();
-  const t = copy[lang];
+  const t: Record<string, string> = copy[lang];
   const [state, setState] = useState<State | null>(null);
   const [count, setCount] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -167,7 +167,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
       </section>
 
       <section aria-label={t.cage} className="overflow-hidden rounded-3xl border border-cyan-100/30 bg-[radial-gradient(ellipse_at_50%_35%,rgba(57,180,203,.25),transparent_58%),linear-gradient(145deg,#062c29,#071b25_60%,#101a2a)] p-3 shadow-[inset_0_1px_25px_rgba(111,230,255,.12),0_15px_40px_rgba(0,0,0,.28)] sm:p-5">
-        <div className="mb-2 flex items-center justify-between gap-2"><div><p className="text-[9px] font-black tracking-[.22em] text-cyan-100/70">{t.machine}</p><h2 className="text-lg font-black text-white sm:text-xl">{t.cage}</h2></div><span className="rounded-full border border-cyan-100/25 bg-cyan-200/10 px-2.5 py-1 text-[9px] font-bold text-cyan-50">{state?.game?.status === 'running' ? t.mixing : (state?.game?.status === 'running' ? t.running : state?.game?.status === 'ended' ? t.endedStatus : t.waiting)}</span></div>
+        <div className="mb-2 flex items-center justify-between gap-2"><div><p className="text-[9px] font-black tracking-[.22em] text-cyan-100/70">{t.machine}</p><h2 className="text-lg font-black text-white sm:text-xl">{t.cage}</h2></div><span className="rounded-full border border-cyan-100/25 bg-cyan-200/10 px-2.5 py-1 text-[9px] font-bold text-cyan-50">{state?.game?.status === 'running' ? t.mixing : state?.game?.status === 'ended' ? t.endedStatus : t.waiting}</span></div>
         <div className="relative mx-auto h-[235px] max-w-[560px] sm:h-[300px]">
           <div className="absolute bottom-2 left-[10%] right-[10%] h-7 rounded-[50%] bg-cyan-300/20 blur-xl" />
           <div className="absolute bottom-3 left-[12%] right-[12%] h-7 rounded-[50%] border border-cyan-100/35 bg-gradient-to-b from-slate-200/40 via-slate-700/70 to-slate-950 shadow-xl" />
