@@ -17,6 +17,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [extractedNumber, setExtractedNumber] = useState<number | null>(null);
   const refresh = useCallback(async () => {
     try { setState(await api.get<State>('/api/games/turbo-bingo/state')); setError(''); }
     catch (e) { setError(e instanceof Error ? e.message : 'Unable to load Turbo Bingo.'); }
@@ -29,6 +30,14 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
     return () => { window.clearInterval(poll); stream.close(); };
   }, [refresh]);
   const drawn = useMemo(() => new Set(state?.game?.drawnNumbers ?? []), [state?.game?.drawnNumbers]);
+  const lastNumber = state?.game?.lastNumber ?? null;
+  useEffect(() => {
+    if (lastNumber === null) return;
+    setExtractedNumber(lastNumber);
+    const timeout = window.setTimeout(() => setExtractedNumber(null), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [lastNumber]);
+  const cageBalls = useMemo(() => Array.from({ length: 24 }, (_, index) => ({ number: index * 3 + 2, delay: `${(index % 8) * -0.37}s`, x: `${12 + ((index * 29) % 76)}%`, y: `${18 + ((index * 17) % 62)}%` })), []);
   const buy = async () => {
     setBusy(true); setError(''); setNotice('');
     try {
