@@ -1017,7 +1017,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                       <strong>{formatAmount(lang, cardPrice)} × {quickBuyCount}</strong>
                     </div>
                     <div className="flex items-center justify-between gap-3 border-t border-yellow-500/20 pt-2">
-                      <span className="font-bold text-yellow-100">{t.payable}</span>
+                      <span className="font-bold text-yellow-100">{lang === 'am' ? 'ጠቅላላ ዋጋ' : lang === 'ti' ? 'ጠቕላላ ዋጋ' : 'Total'}</span>
                       <strong className="text-lg text-yellow-300">{formatAmount(lang, quickBuyTotal)} ብር</strong>
                     </div>
                   </>
