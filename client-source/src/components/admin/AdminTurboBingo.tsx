@@ -5,8 +5,9 @@ type Mode = 'automatic' | 'admin';
 type RoundType = 'quick' | 'standard' | 'full_house' | 'custom';
 type Overview = {
   settings: { enabled: boolean; mode: Mode; roundType: RoundType; target: number; ticketPriceEtb: number; prizeEtb: number; drawIntervalSeconds: number; roundDurationSeconds: number; maxTicketsPerPlayer: number };
-  game: null | { id: string; status: string; target: number; drawnNumbers: number[]; ticketCount: number; mode?: Mode; roundType?: RoundType; prizeEtb?: number; roundDurationSeconds?: number; endsAt?: number | null };
+  game: null | { id: string; status: string; target: number; drawnNumbers: number[]; ticketCount: number; mode?: Mode; roundType?: RoundType; prizeEtb?: number; roundDurationSeconds?: number; endsAt?: number | null; registrationEndsAt?: number | null };
   tickets: Array<{ id: string; userId: string; status: string }>;
+  history?: Array<{ id: string; target: number; drawnNumbers: number[]; endReason?: string; winner?: { userId: string; ticketId: string } | null }>;
 };
 const field = 'mt-1 w-full rounded-lg border border-amber-400/20 bg-black px-3 py-2.5 text-sm font-bold text-amber-100';
 const card = 'rounded-xl border border-amber-200/15 bg-black/40 p-3';
@@ -58,7 +59,7 @@ export function AdminTurboBingo() {
     setRoundType(value);
     if (value === 'quick') setTarget('5');
     else if (value === 'standard') setTarget('10');
-    else if (value === 'full_house') setTarget('25');
+    else if (value === 'full_house') setTarget('12');
   };
   return (
     <section className="space-y-4 rounded-2xl border border-amber-400/30 bg-[#090907] p-4 sm:p-5">
@@ -79,8 +80,8 @@ export function AdminTurboBingo() {
       <div className={card + ' space-y-3'}>
         <h3 className="font-black text-amber-100">2. ROUND SETTINGS</h3>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className={label}>Round Type<select value={roundType} onChange={e => chooseRound(e.target.value as RoundType)} className={field}><option value="quick">Quick Round · 5 matches</option><option value="standard">Standard Round · 10 matches</option><option value="full_house">Full House · 25 matches</option><option value="custom">Custom Target</option></select></label>
-          <label className={label}>Winning Target (1–25)<input type="number" min="1" max="25" value={target} onChange={e => { setTarget(e.target.value); setRoundType('custom'); }} className={field} /></label>
+          <label className={label}>Round Type<select value={roundType} onChange={e => chooseRound(e.target.value as RoundType)} className={field}><option value="quick">Quick Round · 5 matches</option><option value="standard">Standard Round · 10 matches</option><option value="full_house">Full House · 12 matches</option><option value="custom">Custom Target</option></select></label>
+          <label className={label}>Winning Target (1–12)<input type="number" min="1" max="12" value={target} onChange={e => { setTarget(e.target.value); setRoundType('custom'); }} className={field} /></label>
           <label className={label}>Ticket Price (ETB)<input type="number" min="0.1" max="1000" step="0.01" value={price} onChange={e => setPrice(e.target.value)} className={field} /></label>
           <label className={label}>Winner Prize (ETB · demo credits)<input type="number" min="0" max="10000" step="0.01" value={prize} onChange={e => setPrize(e.target.value)} className={field} /></label>
           <label className={label}>Draw Interval (seconds)<input type="number" min="1" max="30" value={interval} onChange={e => setInterval(e.target.value)} className={field} /></label>
@@ -103,6 +104,7 @@ export function AdminTurboBingo() {
         {game?.status === 'running' && activeMode === 'admin' && <button type="button" disabled={busy} onClick={() => void action('/api/admin/turbo-bingo/draw')} className="mt-3 w-full rounded-lg bg-amber-300 px-4 py-3 text-sm font-black text-black disabled:opacity-40">CALL NEXT NUMBER · SERVER RANDOM DRAW</button>}
         {game?.drawnNumbers?.length ? <p className="mt-3 text-xs leading-6 text-amber-100/60">Drawn: {game.drawnNumbers.join(' · ')}</p> : null}
       </div>
+      <div className={card}><h3 className="font-black text-amber-100">ROUND HISTORY</h3><div className="mt-2 space-y-2">{(data?.history ?? []).length ? (data?.history ?? []).slice(0, 10).map((item) => <div key={item.id} className="flex flex-wrap justify-between gap-2 border-b border-amber-200/10 pb-2 text-xs text-amber-100/65"><span>{item.id.slice(0, 8)} · Target {item.target} · {item.drawnNumbers.length} balls</span><span>{item.winner ? 'Winner confirmed' : item.endReason ?? 'Ended'}</span></div>) : <p className="text-xs text-amber-100/45">No completed rounds yet.</p>}</div></div>
       <p className="text-[10px] leading-5 text-amber-100/40">All tickets and prizes use the separate non-withdrawable Turbo Bingo demo wallet. No legacy Bingo wallet, deposit, withdrawal, or payment flow is used.</p>
     </section>
   );

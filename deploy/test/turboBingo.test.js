@@ -14,7 +14,7 @@ async function setup(target = 2) {
     id: 'turbo-test-game', status: 'waiting', target,
     drawnNumbers: [], ticketCount: 0, createdAt: Date.now(),
   });
-  const ticket = { id: 'turbo-test-ticket', numbers: Array.from({ length: 25 }, (_, i) => i + 1), status: 'active' };
+  const ticket = { id: 'turbo-test-ticket', numbers: Array.from({ length: 12 }, (_, i) => i + 1), status: 'active' };
   await repo.purchaseTurboBingoTickets({
     gameId: game.id, userId: user.id, tickets: [ticket], totalCost: 100,
   });
@@ -28,6 +28,7 @@ test('Turbo Bingo tickets are charged only to the separate demo wallet and regis
   const otherGamesWallet = await repo.getGameHubWallet(user.id, 'legacy-demo');
   const bingoUser = await repo.findUserById(user.id);
   assert.equal(tickets.length, 1);
+  assert.equal(tickets[0].numbers.length, 12);
   assert.equal(wallet.balance, 99_900);
   assert.equal(otherGamesWallet.balance, 100_000);
   assert.equal(bingoUser.balance, 0);
@@ -92,7 +93,7 @@ test('Turbo Bingo enforces the per-player ticket cap inside the repository opera
   await assert.rejects(
     repo.purchaseTurboBingoTickets({
       gameId: game.id, userId: user.id,
-      tickets: [{ id: 'limit-ticket-2', numbers: Array.from({ length: 25 }, (_, i) => i + 26) }],
+      tickets: [{ id: 'limit-ticket-2', numbers: Array.from({ length: 12 }, (_, i) => i + 26) }],
       totalCost: 100,
     }),
     (error) => error.code === 'TURBO_BINGO_TICKET_LIMIT',
@@ -161,3 +162,7 @@ test('Turbo Bingo Automatic mode schedules server draws and validates timing and
   await assert.rejects(service.updateSettings({ prizeEtb: 10000.001 }), /Prize/);
   service.stop();
 });
+
+
+test('Turbo Bingo history retains ended rounds', async () => { const { repo, game } = await setup(12); await repo.updateTurboBingoGame(game.id, game.version, { status: 'ended', endedAt: Date.now(), endReason: 'test_complete' }); const history = await repo.listTurboBingoHistory(10); assert.equal(history.length, 1); assert.equal(history[0].target, 12); });
+test('Turbo Bingo Full House is 12 and target 13 is rejected', async () => { const repo = createMemoryRepo(); const service = createTurboBingoService({ repo }); await service.updateSettings({ roundType: 'full_house' }); assert.equal((await service.getSettings()).target, 12); await assert.rejects(service.updateSettings({ target: 13 }), /1 to 12/); service.stop(); });

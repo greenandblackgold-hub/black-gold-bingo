@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 type Ticket = { id: string; numbers: number[]; matchedNumbers: number[]; status: 'active' | 'locked' | 'winner'; lockedAt: number | null };
 type State = {
   settings: { enabled: boolean; target: number; ticketPriceEtb: number; prizeEtb: number; drawIntervalSeconds: number; roundDurationSeconds: number; roundType: string; mode: 'automatic' | 'admin'; maxTicketsPerPlayer: number };
-  game: null | { id: string; status: 'waiting' | 'running' | 'ended'; target: number; drawnNumbers: number[]; lastNumber: number | null; winner: { userId: string; ticketId: string; at: number; prizeEtb?: number } | null; ticketCount: number; roundType?: string; prizeEtb?: number; endsAt?: number | null };
+  game: null | { id: string; status: 'waiting' | 'running' | 'ended'; target: number; drawnNumbers: number[]; lastNumber: number | null; winner: { userId: string; ticketId: string; at: number; prizeEtb?: number } | null; ticketCount: number; roundType?: string; prizeEtb?: number; endsAt?: number | null; registrationEndsAt?: number | null; registrationSecondsLeft?: number | null };
   tickets: Ticket[];
   balanceEtb: number | null;
   balanceType: 'SIMULATION_ONLY';
@@ -33,14 +33,14 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
   const lastNumber = state?.game?.lastNumber ?? null;
   const [clock, setClock] = useState(Date.now());
   useEffect(() => { const timer = window.setInterval(() => setClock(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
-  const secondsLeft = state?.game?.endsAt ? Math.max(0, Math.ceil((state.game.endsAt - clock) / 1000)) : null;
+  const secondsLeft = state?.game?.status === 'waiting' && state.game.registrationEndsAt ? Math.max(0, Math.ceil((state.game.registrationEndsAt - clock) / 1000)) : state?.game?.endsAt ? Math.max(0, Math.ceil((state.game.endsAt - clock) / 1000)) : null;
   useEffect(() => {
     if (lastNumber === null) return;
     setExtractedNumber(lastNumber);
     const timeout = window.setTimeout(() => setExtractedNumber(null), 1800);
     return () => window.clearTimeout(timeout);
   }, [lastNumber]);
-  const cageBalls = useMemo(() => Array.from({ length: 24 }, (_, index) => ({ number: index * 3 + 2, delay: `${(index % 8) * -0.37}s`, x: `${12 + ((index * 29) % 76)}%`, y: `${18 + ((index * 17) % 62)}%` })), []);
+  const cageBalls = useMemo(() => (state?.game?.drawnNumbers ?? []).map((number, index) => ({ number, delay: `${(index % 8) * -0.37}s`, x: `${12 + ((index * 29) % 76)}%`, y: `${18 + ((index * 17) % 62)}%` })), [state?.game?.drawnNumbers]);
   const buy = async () => {
     setBusy(true); setError(''); setNotice('');
     try {
@@ -111,17 +111,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
       {error && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-950/40 p-3 text-sm text-red-200">{error}</p>}
       {notice && <p role="status" className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-3 text-sm text-emerald-200">{notice}</p>}
       <section className="grid gap-4 lg:grid-cols-[1fr_300px]">
-        <div className="rounded-2xl border border-amber-400/20 bg-black/50 p-4">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="font-black text-amber-100">LIVE NUMBER BOARD · 1–80</h2>
-            <span className="text-xs text-amber-400">{state?.game?.drawnNumbers.length ?? 0}/80</span>
-          </div>
-          <div className="grid grid-cols-8 gap-1.5 sm:grid-cols-10">
-            {Array.from({ length: 80 }, (_, index) => index + 1).map((number) => (
-              <div key={number} className={`grid aspect-square place-items-center rounded-lg border text-xs font-black tabular-nums sm:text-sm ${state?.game?.lastNumber === number ? 'border-amber-200 bg-amber-300 text-black shadow-[0_0_18px_rgba(245,190,70,.5)]' : drawn.has(number) ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-200' : 'border-white/10 bg-white/[.035] text-white/40'}`}>{number}</div>
-            ))}
-          </div>
-        </div>
+        <div className="rounded-2xl border border-amber-400/20 bg-black/50 p-4"><h2 className="mb-3 font-black text-amber-100">LAST 5 CALLED BALLS</h2><div className="flex min-h-14 flex-wrap items-center gap-2">{(state?.game?.drawnNumbers ?? []).slice(-5).reverse().map((number, index) => <span key={number} className={`grid h-11 w-11 place-items-center rounded-full border-2 border-white/70 font-black text-white ${index === 0 ? 'bg-red-600' : 'bg-blue-700'}`}>{number}</span>)}</div><p className="mt-3 text-xs text-amber-100/60">{state?.game?.status === 'waiting' ? 'Registration countdown' : 'Round countdown'}: {secondsLeft === null ? '—' : `${secondsLeft}s`}</p></div>
         <aside className="space-y-3">
           <div className="rounded-2xl border border-amber-400/20 bg-black/50 p-4">
             <p className="text-xs font-bold uppercase tracking-wider text-amber-400">SIMULATION WALLET</p>
@@ -149,7 +139,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
             return (
               <article key={ticket.id} className="min-w-0 rounded-2xl border border-amber-300/35 bg-gradient-to-b from-[#fffdf7] to-[#e8e6df] p-2 text-slate-900 shadow-[0_5px_18px_rgba(0,0,0,.3)] sm:p-3">
                 <div className="mb-2 flex items-center justify-between"><span className="text-[10px] font-black text-rose-700 sm:text-xs">TICKET {index + 1}</span><span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${ticket.status === 'locked' ? 'bg-red-500/15 text-red-300' : ticket.status === 'winner' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-300/10 text-amber-200'}`}>{ticket.status}</span></div>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 grid-rows-6 gap-1.5">
                   {ticket.numbers.map((number) => <div key={number} className={`grid aspect-square place-items-center rounded-full border border-white/80 text-[10px] font-black tabular-nums shadow-[inset_1px_2px_3px_rgba(255,255,255,.8),inset_-2px_-3px_5px_rgba(0,0,0,.18),0_2px_4px_rgba(0,0,0,.12)] sm:text-xs ${ticket.matchedNumbers.includes(number) ? 'bg-[radial-gradient(circle_at_30%_25%,#fff,#86efac_25%,#059669_85%)] text-white ring-2 ring-emerald-500/50' : 'bg-[radial-gradient(circle_at_30%_25%,#fff,#fecaca_24%,#dc2626_85%)] text-white'}`}>{number}</div>)}
                 </div>
                 <p className="mt-2 text-[9px] font-bold text-slate-600">{ticket.matchedNumbers.length}/{state.game?.target ?? state.settings.target} matched</p>

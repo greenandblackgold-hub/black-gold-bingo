@@ -13,7 +13,9 @@ const DEFAULT_SETTINGS = Object.freeze({
   maxTicketsPerPlayer: 10,
 });
 const TARGET_MIN = 1;
-const TARGET_MAX = 25;
+const TARGET_MAX = 12;
+const TICKET_NUMBER_COUNT = 12;
+const REGISTRATION_WINDOW_MS = 60_000;
 const NUMBER_MAX = 80;
 
 const shuffle = (values) => {
@@ -52,7 +54,7 @@ export function createTurboBingoService({ repo }) {
       ticketPriceEtb: config.ticketPriceEtb, prizeEtb: config.prizeEtb,
       mode: config.mode, roundType: config.roundType, drawIntervalSeconds: config.drawIntervalSeconds,
       roundDurationSeconds: config.roundDurationSeconds, maxTicketsPerPlayer: config.maxTicketsPerPlayer,
-      drawnNumbers: [], ticketCount: 0, createdAt: Date.now(),
+      drawnNumbers: [], ticketCount: 0, createdAt: Date.now(), registrationStartedAt: Date.now(), registrationEndsAt: Date.now() + REGISTRATION_WINDOW_MS,
     });
     await publish();
     return getState();
@@ -93,6 +95,8 @@ export function createTurboBingoService({ repo }) {
         roundType: game.roundType ?? config.roundType,
         prizeEtb: game.prizeEtb ?? config.prizeEtb,
         roundDurationSeconds: game.roundDurationSeconds ?? config.roundDurationSeconds,
+        registrationEndsAt: game.registrationEndsAt ?? null,
+        registrationSecondsLeft: game.status === 'waiting' && game.registrationEndsAt ? Math.max(0, Math.ceil((game.registrationEndsAt - Date.now()) / 1000)) : null,
         endsAt: game.endsAt ?? null,
       } : null,
       tickets: tickets.map((ticket) => ({
@@ -124,7 +128,7 @@ export function createTurboBingoService({ repo }) {
     const price = Math.round((game.ticketPriceEtb ?? config.ticketPriceEtb) * 100);
     const tickets = Array.from({ length: count }, () => ({
       id: randomUUID(),
-      numbers: shuffle(Array.from({ length: NUMBER_MAX }, (_, index) => index + 1)).slice(0, 25).sort((a, b) => a - b),
+      numbers: shuffle(Array.from({ length: NUMBER_MAX }, (_, index) => index + 1)).slice(0, TICKET_NUMBER_COUNT).sort((a, b) => a - b),
       status: 'active',
     }));
     try {
@@ -250,11 +254,11 @@ export function createTurboBingoService({ repo }) {
     if (input.roundType !== undefined) {
       if (!['quick', 'standard', 'full_house', 'custom'].includes(input.roundType)) throw new HttpError(400, 'invalid_round_type', 'Choose a valid Turbo Bingo round type.');
       next.roundType = input.roundType;
-      if (input.target === undefined) next.target = input.roundType === 'quick' ? 5 : input.roundType === 'standard' ? 10 : input.roundType === 'full_house' ? 25 : next.target;
+      if (input.target === undefined) next.target = input.roundType === 'quick' ? 5 : input.roundType === 'standard' ? 10 : input.roundType === 'full_house' ? 12 : next.target;
     }
     if (input.target !== undefined) {
       if (!Number.isInteger(input.target) || input.target < TARGET_MIN || input.target > TARGET_MAX) {
-        throw new HttpError(400, 'invalid_target', 'Winning target must be a whole number from 1 to 25.');
+        throw new HttpError(400, 'invalid_target', 'Winning target must be a whole number from 1 to 12.');
       }
       next.target = input.target;
     }
@@ -294,14 +298,24 @@ export function createTurboBingoService({ repo }) {
   }
 
   async function getAdminOverview() {
-    const [config, game] = await Promise.all([settings(), repo.getCurrentTurboBingoGame()]);
-    return { settings: config, game, tickets: game ? await repo.listTurboBingoTickets(game.id) : [] };
+    const [config, game, history] = await Promise.all([settings(), repo.getCurrentTurboBingoGame(), repo.listTurboBingoHistory(50)]);
+    return { settings: config, game, tickets: game ? await repo.listTurboBingoTickets(game.id) : [], history };
   }
 
   async function tick() {
     if (ticking) return;
     ticking = true;
-    try { await drawNext(); } catch { /* the next tick retries transient repository errors */ }
+    try {
+      const game = await repo.getCurrentTurboBingoGame();
+      const now = Date.now();
+      if (game?.status === 'waiting' && game.registrationEndsAt && now >= game.registrationEndsAt) {
+        if (game.ticketCount > 0) await startGame();
+        else await repo.updateTurboBingoGame(game.id, game.version, { status: 'ended', endedAt: now, endReason: 'registration_empty' });
+        const latest = await repo.getCurrentTurboBingoGame();
+        if (latest?.status === 'ended') await openGame();
+      } else if (game?.status === 'ended') await openGame();
+      else await drawNext();
+    } catch { /* retry transient repository errors on the next tick */ }
     finally { ticking = false; }
   }
 
@@ -321,7 +335,7 @@ export function createTurboBingoService({ repo }) {
       const current = await repo.getCurrentTurboBingoGame();
       if (!current) {
         const config = await settings();
-        await repo.createTurboBingoGame({ id: randomUUID(), status: 'waiting', target: config.target, ticketPriceEtb: config.ticketPriceEtb, prizeEtb: config.prizeEtb, mode: config.mode, roundType: config.roundType, drawIntervalSeconds: config.drawIntervalSeconds, roundDurationSeconds: config.roundDurationSeconds, maxTicketsPerPlayer: config.maxTicketsPerPlayer, drawnNumbers: [], ticketCount: 0, createdAt: Date.now() });
+        await repo.createTurboBingoGame({ id: randomUUID(), status: 'waiting', target: config.target, ticketPriceEtb: config.ticketPriceEtb, prizeEtb: config.prizeEtb, mode: config.mode, roundType: config.roundType, drawIntervalSeconds: config.drawIntervalSeconds, roundDurationSeconds: config.roundDurationSeconds, maxTicketsPerPlayer: config.maxTicketsPerPlayer, drawnNumbers: [], ticketCount: 0, createdAt: Date.now(), registrationStartedAt: Date.now(), registrationEndsAt: Date.now() + REGISTRATION_WINDOW_MS });
       }
       if (!timer) { timer = setInterval(() => void tick(), 200); timer.unref?.(); }
     },
