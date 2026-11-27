@@ -117,6 +117,7 @@ export function createTurboBingoService({ repo }) {
       const result = await repo.purchaseTurboBingoTickets({
         gameId: game.id, userId: user.id, tickets, totalCost: price * count,
       });
+      await publish();
       return { ...result, balanceEtb: result.balance / 100 };
     } catch (error) {
       if (error instanceof RepoError && error.code === 'INSUFFICIENT_FUNDS') {
