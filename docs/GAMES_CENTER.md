@@ -96,7 +96,7 @@ Turbo Bingo is a separate live game module. It does not reuse or modify the lega
 - Number draws are unique, server-generated and persisted in order. The draw interval is configurable from 1–30 seconds.
 - Admin controls include enable/disable, target, ticket price, opening ticket sales, starting the draw and stopping a game. Target, ticket price and per-player ticket limit are frozen when sales open.
 - Tickets and game state are stored in the dedicated `turboBingoTickets`, `turboBingoGames`, `turboBingoState` and `turboBingoSettings` collections. The in-memory repository mirrors the same operations for tests.
-- Ticket charges use the existing **separate, non-withdrawable Games Center simulation wallet** and `gameHubLedger`. They do not debit the legacy Bingo wallet or write to the Bingo ledger.
+- Ticket charges use a dedicated **non-withdrawable Turbo Bingo simulation wallet** and `turboBingoLedger`. They do not debit the legacy Bingo wallet, Keno/Aviator demo wallet, or write to the Bingo or Games Center ledgers.
 - This implementation records the first winner but does not configure or issue a prize payout. Any future prize rule must be separately specified and reviewed; real-money play and cash-out are not enabled by this module.
 
 Automated rule tests are in `deploy/test/turboBingo.test.js`.
