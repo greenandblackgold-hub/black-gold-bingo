@@ -164,7 +164,7 @@ export function createTurboBingoService({ repo }) {
     const lockedTicketIds = tickets.filter((ticket) => {
       if (ticket.status !== 'active' || previousLast == null) return false;
       const hits = matchedNumbers(ticket, game.drawnNumbers);
-      return hits.length === game.target && ticket.numbers.includes(previousLast);
+      return hits.length === game.target;
     }).map((ticket) => ticket.id);
     const remaining = Array.from({ length: NUMBER_MAX }, (_, index) => index + 1)
       .filter((number) => !game.drawnNumbers.includes(number));
