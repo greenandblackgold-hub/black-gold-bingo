@@ -254,7 +254,7 @@ export function createTurboBingoService({ repo }) {
       const current = await repo.getCurrentTurboBingoGame();
       if (!current) {
         const config = await settings();
-        await repo.createTurboBingoGame({ id: randomUUID(), status: 'waiting', target: config.target, drawnNumbers: [], ticketCount: 0, createdAt: Date.now() });
+        await repo.createTurboBingoGame({ id: randomUUID(), status: 'waiting', target: config.target, ticketPriceEtb: config.ticketPriceEtb, maxTicketsPerPlayer: config.maxTicketsPerPlayer, drawnNumbers: [], ticketCount: 0, createdAt: Date.now() });
       }
       if (!timer) { timer = setInterval(() => void tick(), 200); timer.unref?.(); }
     },
