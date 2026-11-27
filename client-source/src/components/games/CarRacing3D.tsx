@@ -173,6 +173,7 @@ function CarRacing3DViewportInner(p:Props) {
     const down=(event:KeyboardEvent)=>{
       if(ignored(event.target))return;
       const key=event.key.toLowerCase();
+      if(latest.current.onFoot){const pos=latest.current.footPosition;const step=.8;if(['arrowup','w'].includes(key)){event.preventDefault();latest.current.onFootMove(pos.x,pos.z-step);}else if(['arrowdown','s'].includes(key)){event.preventDefault();latest.current.onFootMove(pos.x,pos.z+step);}else if(['arrowleft','a'].includes(key)){event.preventDefault();latest.current.onFootMove(pos.x-step,pos.z);}else if(['arrowright','d'].includes(key)){event.preventDefault();latest.current.onFootMove(pos.x+step,pos.z);}else if(key==='e'&&!event.repeat){event.preventDefault();latest.current.onPassengerAction();}else if(key==='f'&&!event.repeat){event.preventDefault();latest.current.onEnterVehicle();}return;}
       if(['arrowup','w'].includes(key)){event.preventDefault();p.onThrottle(1,latest.current.reverse,false,false);}
       else if(['arrowdown','s',' '].includes(key)){event.preventDefault();p.onThrottle(0,latest.current.reverse,false,true);}
       else if(['arrowleft','a'].includes(key)){event.preventDefault();p.onSteer(Math.max(-1,latest.current.steer-.12));}
@@ -432,6 +433,7 @@ function CarRacing3DViewportInner(p:Props) {
         <div className="h-2.5 overflow-hidden rounded-full border border-sky-300/50 bg-slate-900"><div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-cyan-200 shadow-[0_0_12px_#00bfff]" style={{width:p.nitroPercent+'%'}}/></div>
       </div>
     </div>
+    {p.soloMode&&!p.onFoot&&<button type="button" onClick={p.onExitVehicle} className="absolute left-3 top-[118px] z-20 rounded-xl border border-emerald-300/50 bg-black/85 px-3 py-2 text-[10px] font-black text-emerald-200 shadow-xl">EXIT VEHICLE · E</button>}
     <button type="button" onClick={async()=>{try{await document.documentElement.requestFullscreen?.();const orientation=(window.screen as Screen & {orientation?:{lock?:(mode:string)=>Promise<void>}}).orientation;await orientation?.lock?.('landscape');}catch{/* Browser orientation lock is optional. */}}} aria-label="Rotate screen to landscape" className="absolute right-3 top-[116px] z-20 flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 border-white/60 bg-black/90 text-white shadow-xl sm:top-[124px] sm:h-[76px] sm:w-[76px]"><span className="text-2xl">↻</span><span className="text-[8px] font-black">ROTATE</span><span className="text-[8px] font-black">SCREEN</span></button>
     <button type="button" onClick={p.onSettings} aria-label="Game settings" className="absolute right-20 top-[124px] z-20 flex h-10 w-10 items-center justify-center rounded-full border border-amber-200/60 bg-black/90 text-xl text-amber-200 shadow-xl sm:right-24 sm:top-[140px]">⚙</button>
     <div className="absolute right-3 top-[178px] z-20 flex gap-1 rounded-xl border border-white/20 bg-black/85 p-1 shadow-lg sm:right-24 sm:top-[205px]">
@@ -445,7 +447,7 @@ function CarRacing3DViewportInner(p:Props) {
         <div className="rounded-md border border-amber-300/70 bg-black/80 px-3 py-0.5 font-mono text-lg font-black text-yellow-300 sm:text-2xl">{p.reverse?'R':Math.max(1,Math.min(6,Math.ceil(p.speed/50)))}</div>
       </div>
       <div className="flex min-w-0 flex-wrap items-end justify-end gap-1.5 sm:gap-3">
-        <div className="flex gap-1.5">
+        {!p.onFoot ? <><div className="flex gap-1.5">
           {control('◀','STEER LEFT','gold',()=>p.onSteer(-1),()=>p.onSteer(0))}
           {control('▶','STEER RIGHT','gold',()=>p.onSteer(1),()=>p.onSteer(0))}
         </div>
@@ -456,7 +458,7 @@ function CarRacing3DViewportInner(p:Props) {
             {control('●','BRAKE','muted',()=>p.onThrottle(0,p.reverse,false,true),()=>p.onThrottle(0,p.reverse,false,false))}
           </div>
           {control('▲','GAS','gold',()=>p.onThrottle(1,p.reverse,false,false),()=>p.onThrottle(0,p.reverse,false,false))}
-        </div>
+        </div></> : <div className="flex max-w-[75vw] flex-wrap items-center justify-end gap-2 rounded-xl border border-emerald-300/40 bg-black/85 p-2"><span className="px-2 text-[10px] font-black text-emerald-200">ON FOOT · WASD / ARROWS</span><button type="button" onClick={()=>p.onFootMove(p.footPosition.x-1,p.footPosition.z)} className="rounded-lg bg-slate-700 px-3 py-3 font-black">◀</button><button type="button" onClick={()=>p.onFootMove(p.footPosition.x+1,p.footPosition.z)} className="rounded-lg bg-slate-700 px-3 py-3 font-black">▶</button><button type="button" onClick={()=>p.onFootMove(p.footPosition.x,p.footPosition.z-1)} className="rounded-lg bg-slate-700 px-3 py-3 font-black">▲</button><button type="button" onClick={()=>p.onFootMove(p.footPosition.x,p.footPosition.z+1)} className="rounded-lg bg-slate-700 px-3 py-3 font-black">▼</button><button type="button" onClick={p.onPassengerAction} className="rounded-lg bg-sky-700 px-3 py-3 text-[10px] font-black">{p.passengerCount?'DROP PASSENGER':'PICK UP PASSENGER'} · E</button><button type="button" onClick={p.onEnterVehicle} className="rounded-lg bg-amber-300 px-3 py-3 text-[10px] font-black text-black">ENTER CAR · F</button></div>}
       </div>
     </div>
         {p.me.collisionEvent && Date.now()-p.me.collisionEvent.at<2200 && <div role="status" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-orange-300/70 bg-red-950/85 px-5 py-3 text-center text-sm font-black tracking-widest text-orange-100 shadow-[0_0_30px_rgba(255,90,30,.45)]">IMPACT · {p.me.collisionEvent.severity.toUpperCase()}</div>}
