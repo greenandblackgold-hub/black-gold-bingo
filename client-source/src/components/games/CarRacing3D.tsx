@@ -352,6 +352,27 @@ function CarRacing3DViewportInner(p:Props) {
     if(safeTrack.environment==='village'){
       for(let i=0;i<8;i++)for(const side of [-1,1]){const home=new THREE.Group();const walls=new THREE.Mesh(new THREE.BoxGeometry(5,2.8,4),new THREE.MeshStandardMaterial({color:i%2?'#c8a77a':'#b8b0a0',roughness:.95}));walls.position.y=1.4;home.add(walls);const roof=new THREE.Mesh(new THREE.ConeGeometry(3.8,2.1,4),new THREE.MeshStandardMaterial({color:i%2?'#754b32':'#5c5147',roughness:1}));roof.position.y=3.8;roof.rotation.y=Math.PI/4;home.add(roof);const door=new THREE.Mesh(new THREE.BoxGeometry(.8,1.7,.08),new THREE.MeshStandardMaterial({color:'#4c3326'}));door.position.set(.8,.85,-2.05);home.add(door);home.position.set(side*19,0,-i*27-12);addWorldObject(home);}
     }
+    if(safeTrack.environment==='country'){
+      const fieldMat=new THREE.MeshStandardMaterial({color:'#719746',roughness:1});
+      const cropMat=new THREE.MeshStandardMaterial({color:'#b6a35a',roughness:1});
+      for(let row=0;row<12;row++)for(const side of [-1,1]){
+        const field=new THREE.Mesh(new THREE.BoxGeometry(7,.08,18),fieldMat);field.position.set(side*18,.02,-row*24-8);addWorldObject(field);
+        if(row%2===0)for(let crop=0;crop<8;crop++){const stalk=new THREE.Mesh(new THREE.ConeGeometry(.18,1.1,5),cropMat);stalk.position.set(side*18+(crop%2?-.9:.9),.58,-row*24-14+crop*1.8);addWorldObject(stalk);}
+      }
+      for(const side of [-1,1]){const barn=new THREE.Group(),walls=new THREE.Mesh(new THREE.BoxGeometry(7,3.8,5),new THREE.MeshStandardMaterial({color:'#9c5b43',roughness:1}));walls.position.y=1.9;barn.add(walls);const roof=new THREE.Mesh(new THREE.ConeGeometry(5.1,2.5,4),new THREE.MeshStandardMaterial({color:'#55443b',roughness:1}));roof.position.y=4.7;roof.rotation.y=Math.PI/4;barn.add(roof);barn.position.set(side*21,0,-58);addWorldObject(barn);}
+    }
+    if(safeTrack.environment==='parking'){
+      for(let i=0;i<7;i++)for(const side of [-1,1]){
+        const shop=new THREE.Group(),wall=new THREE.Mesh(new THREE.BoxGeometry(7,4.2,5),new THREE.MeshStandardMaterial({color:i%2?'#c6cbd0':'#b8a27e',roughness:.78}));wall.position.y=2.1;shop.add(wall);
+        const glass=new THREE.Mesh(new THREE.BoxGeometry(5.6,1.8,.08),new THREE.MeshPhysicalMaterial({color:'#4b9bb7',metalness:.2,roughness:.16,transparent:true,opacity:.78}));glass.position.set(0,1.6,-2.55);shop.add(glass);
+        const sign=new THREE.Mesh(new THREE.BoxGeometry(5.9,.48,.1),new THREE.MeshStandardMaterial({color:'#e2b84b',emissive:'#8a5b10',emissiveIntensity:.55}));sign.position.set(0,3.4,-2.58);shop.add(sign);shop.position.set(side*19,0,-i*32-18);addWorldObject(shop);
+      }
+    }
+    if(safeTrack.environment==='airport'){
+      const tower=new THREE.Group(),base=new THREE.Mesh(new THREE.BoxGeometry(3.2,8,3.2),new THREE.MeshStandardMaterial({color:'#8797a5',metalness:.25,roughness:.55}));base.position.y=4;tower.add(base);
+      const cab=new THREE.Mesh(new THREE.BoxGeometry(5.2,2.4,5.2),new THREE.MeshPhysicalMaterial({color:'#3c91b7',metalness:.2,roughness:.12,transparent:true,opacity:.8}));cab.position.y=9.1;tower.add(cab);tower.position.set(23,0,-48);addWorldObject(tower);
+      for(let i=0;i<16;i++)for(const side of [-1,1]){const edgeLight=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8),new THREE.MeshBasicMaterial({color:'#f3f3e5'}));edgeLight.position.set(side*8,.12,-i*15-5);addWorldObject(edgeLight);}
+    }
     if(safeTrack.environment==='coastal'){
       const sea=new THREE.Mesh(new THREE.PlaneGeometry(90,300),new THREE.MeshStandardMaterial({color:'#075b86',metalness:.35,roughness:.2,transparent:true,opacity:.9}));sea.rotation.x=-Math.PI/2;sea.position.set(48,-.06,-110);addWorldObject(sea);
       for(let i=0;i<12;i++){const wave=new THREE.Mesh(new THREE.BoxGeometry(24,.025,.12),new THREE.MeshBasicMaterial({color:'#75d8ee',transparent:true,opacity:.45}));wave.position.set(42,.02,-i*22-5);addWorldObject(wave);}
