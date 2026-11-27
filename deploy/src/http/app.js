@@ -138,9 +138,18 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   /* game (public state; the SSE stream is handled separately below) */
   route('GET', '/api/game', 'public', 'default', () => game.getPublicState());
 
+  /* Admin-only read access while the Host has General Games Center OFF. */
+  const hasAdminMaintenanceAccess = async (user) => user?.role === 'admin' && (await gamesHub.getSettings()).generalEnabled === false;
+
   /* Turbo Bingo: isolated tickets, exact-target claims and server-authoritative live draws. */
-  route('GET', '/api/games/turbo-bingo/settings', 'user', 'default', () => turboBingo.getSettings());
-  route('GET', '/api/games/turbo-bingo/state', 'user', 'default', ({ user }) => turboBingo.getState(user));
+  route('GET', '/api/games/turbo-bingo/settings', 'user', 'default', async ({ user }) => {
+    const settings = await turboBingo.getSettings();
+    return await hasAdminMaintenanceAccess(user) ? { ...settings, enabled: true } : settings;
+  });
+  route('GET', '/api/games/turbo-bingo/state', 'user', 'default', async ({ user }) => {
+    const state = await turboBingo.getState(user);
+    return await hasAdminMaintenanceAccess(user) ? { ...state, settings: { ...state.settings, enabled: true } } : state;
+  });
   route('POST', '/api/games/turbo-bingo/tickets', 'user', 'money', ({ user, body }) => turboBingo.buyTickets(user, body.count ?? 1));
   route('POST', '/api/games/turbo-bingo/claim', 'user', 'money', ({ user, body }) => turboBingo.claim(user, body.ticketId));
 
@@ -156,15 +165,21 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   route('GET', '/api/games/aviator/history', 'user', 'default', ({ user, query }) => gamesHub.getHistory('aviator', user, Number(query.get('limit') || 10)));
 
   /* Multiplayer Car Racing is an isolated in-memory simulation. It never calls the wallet or payment services. */
-  const assertCarRacingAvailable = () => gamesHub.assertGameEnabled('car-racing');
-  route('GET', '/api/games/car-racing/catalog', 'user', 'default', async () => { await assertCarRacingAvailable(); return carRacing.getCatalog(); });
-  route('GET', '/api/games/car-racing/state', 'user', 'car-racing', async ({ user }) => { await assertCarRacingAvailable(); return carRacing.getState(user); });
-  route('POST', '/api/games/car-racing/rooms', 'user', 'money', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.createRoom(user, body); });
-  route('POST', '/api/games/car-racing/join', 'user', 'money', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.joinRoom(user, body); });
-  route('POST', '/api/games/car-racing/car', 'user', 'default', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.chooseCar(user, body); });
-  route('POST', '/api/games/car-racing/ready', 'user', 'default', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.setReady(user, body); });
-  route('POST', '/api/games/car-racing/control', 'user', 'car-racing', async ({ user, body }) => { await assertCarRacingAvailable(); return carRacing.control(user, body); });
-  route('POST', '/api/games/car-racing/leave', 'user', 'default', async ({ user }) => { await assertCarRacingAvailable(); return carRacing.leave(user); });
+  const assertCarRacingAvailable = async (user) => {
+    if (await hasAdminMaintenanceAccess(user)) {
+      if (config.realMoneyEnabled === true) throw new HttpError(503, 'car_racing_demo_only', 'Car Racing is unavailable while real-money play is enabled.');
+      return;
+    }
+    return gamesHub.assertGameEnabled('car-racing');
+  };
+  route('GET', '/api/games/car-racing/catalog', 'user', 'default', async ({ user }) => { await assertCarRacingAvailable(user); return carRacing.getCatalog(); });
+  route('GET', '/api/games/car-racing/state', 'user', 'car-racing', async ({ user }) => { await assertCarRacingAvailable(user); return carRacing.getState(user); });
+  route('POST', '/api/games/car-racing/rooms', 'user', 'money', async ({ user, body }) => { await assertCarRacingAvailable(user); return carRacing.createRoom(user, body); });
+  route('POST', '/api/games/car-racing/join', 'user', 'money', async ({ user, body }) => { await assertCarRacingAvailable(user); return carRacing.joinRoom(user, body); });
+  route('POST', '/api/games/car-racing/car', 'user', 'default', async ({ user, body }) => { await assertCarRacingAvailable(user); return carRacing.chooseCar(user, body); });
+  route('POST', '/api/games/car-racing/ready', 'user', 'default', async ({ user, body }) => { await assertCarRacingAvailable(user); return carRacing.setReady(user, body); });
+  route('POST', '/api/games/car-racing/control', 'user', 'car-racing', async ({ user, body }) => { await assertCarRacingAvailable(user); return carRacing.control(user, body); });
+  route('POST', '/api/games/car-racing/leave', 'user', 'default', async ({ user }) => { await assertCarRacingAvailable(user); return carRacing.leave(user); });
 
   /* opt-in Web Push subscriptions */
   // Public, no-store eligibility check used by each player's Service Worker before displaying a push.
