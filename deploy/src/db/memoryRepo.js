@@ -456,6 +456,7 @@ export function createMemoryRepo() {
     async getTurboBingoSettings() { return clone(turboBingoSettings); },
     async updateTurboBingoSettings(settings) { turboBingoSettings = clone(settings); return clone(turboBingoSettings); },
     async getCurrentTurboBingoGame() { return clone(turboBingoGames.get(turboBingoCurrentId) ?? null); },
+    async listTurboBingoHistory(limit = 50) { return [...turboBingoGames.values()].filter((game) => game.status === 'ended').sort((a, b) => Number(b.endedAt ?? b.createdAt) - Number(a.endedAt ?? a.createdAt)).slice(0, Math.max(1, Math.min(100, limit))).map(clone); },
     async createTurboBingoGame(input) {
       const current = turboBingoGames.get(turboBingoCurrentId);
       if (current && current.status !== 'ended') return clone(current);

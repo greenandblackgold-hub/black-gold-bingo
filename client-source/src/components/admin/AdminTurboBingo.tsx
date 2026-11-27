@@ -7,6 +7,7 @@ type Overview = {
   settings: { enabled: boolean; mode: Mode; roundType: RoundType; target: number; ticketPriceEtb: number; prizeEtb: number; drawIntervalSeconds: number; roundDurationSeconds: number; maxTicketsPerPlayer: number };
   game: null | { id: string; status: string; target: number; drawnNumbers: number[]; ticketCount: number; mode?: Mode; roundType?: RoundType; prizeEtb?: number; roundDurationSeconds?: number; endsAt?: number | null };
   tickets: Array<{ id: string; userId: string; status: string }>;
+  history?: Array<{ id: string; target: number; drawnNumbers: number[]; endReason?: string; winner?: { userId: string; ticketId: string } | null }>;
 };
 const field = 'mt-1 w-full rounded-lg border border-amber-400/20 bg-black px-3 py-2.5 text-sm font-bold text-amber-100';
 const card = 'rounded-xl border border-amber-200/15 bg-black/40 p-3';
@@ -58,7 +59,7 @@ export function AdminTurboBingo() {
     setRoundType(value);
     if (value === 'quick') setTarget('5');
     else if (value === 'standard') setTarget('10');
-    else if (value === 'full_house') setTarget('25');
+    else if (value === 'full_house') setTarget('12');
   };
   return (
     <section className="space-y-4 rounded-2xl border border-amber-400/30 bg-[#090907] p-4 sm:p-5">
@@ -79,8 +80,8 @@ export function AdminTurboBingo() {
       <div className={card + ' space-y-3'}>
         <h3 className="font-black text-amber-100">2. ROUND SETTINGS</h3>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className={label}>Round Type<select value={roundType} onChange={e => chooseRound(e.target.value as RoundType)} className={field}><option value="quick">Quick Round · 5 matches</option><option value="standard">Standard Round · 10 matches</option><option value="full_house">Full House · 25 matches</option><option value="custom">Custom Target</option></select></label>
-          <label className={label}>Winning Target (1–25)<input type="number" min="1" max="25" value={target} onChange={e => { setTarget(e.target.value); setRoundType('custom'); }} className={field} /></label>
+          <label className={label}>Round Type<select value={roundType} onChange={e => chooseRound(e.target.value as RoundType)} className={field}><option value="quick">Quick Round · 5 matches</option><option value="standard">Standard Round · 10 matches</option><option value="full_house">Full House · 12 matches</option><option value="custom">Custom Target</option></select></label>
+          <label className={label}>Winning Target (1–12)<input type="number" min="1" max="12" value={target} onChange={e => { setTarget(e.target.value); setRoundType('custom'); }} className={field} /></label>
           <label className={label}>Ticket Price (ETB)<input type="number" min="0.1" max="1000" step="0.01" value={price} onChange={e => setPrice(e.target.value)} className={field} /></label>
           <label className={label}>Winner Prize (ETB · demo credits)<input type="number" min="0" max="10000" step="0.01" value={prize} onChange={e => setPrize(e.target.value)} className={field} /></label>
           <label className={label}>Draw Interval (seconds)<input type="number" min="1" max="30" value={interval} onChange={e => setInterval(e.target.value)} className={field} /></label>

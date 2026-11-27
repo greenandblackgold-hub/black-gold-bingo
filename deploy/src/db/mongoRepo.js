@@ -688,6 +688,7 @@ export async function createMongoRepo({ uri, dbName }) {
       const state = await turboBingoState.findOne({ _id: 'current' });
       return state?.gameId ? toDoc(await turboBingoGames.findOne({ _id: state.gameId })) : null;
     },
+    async listTurboBingoHistory(limit = 50) { return (await turboBingoGames.find({ status: 'ended' }).sort({ endedAt: -1, createdAt: -1 }).limit(Math.max(1, Math.min(100, limit))).toArray()).map(toDoc); },
     async createTurboBingoGame(game) {
       return tx(async (session) => {
         const state = await turboBingoState.findOne({ _id: 'current' }, { session });
