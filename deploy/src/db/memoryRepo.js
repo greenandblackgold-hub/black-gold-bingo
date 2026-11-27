@@ -498,7 +498,7 @@ export function createMemoryRepo() {
       game.version += 1;
       return { tickets: clone(newTickets), balance: wallet.balance };
     },
-    async claimTurboBingoTicket({ gameId, expectedVersion, ticketId, userId, winner }) {
+    async claimTurboBingoTicket({ gameId, expectedVersion, ticketId, userId, winner, prizeAmount = 0 }) {
       const game = turboBingoGames.get(gameId);
       const ticket = turboBingoTickets.get(ticketId);
       if (!game || game.status !== 'running' || game.version !== expectedVersion || !ticket ||
@@ -507,9 +507,17 @@ export function createMemoryRepo() {
       const called = new Set(game.drawnNumbers);
       const hits = ticket.numbers.filter((number) => called.has(number));
       if (hits.length !== game.target || lastNumber == null || !ticket.numbers.includes(lastNumber)) return null;
+      const prizeCents = Math.max(0, Math.round(Number(prizeAmount ?? 0)));
+      const wallet = ensureTurboBingoWallet(userId);
+      if (prizeCents > 0) {
+        const ref = `turbo-bingo:prize:${gameId}`;
+        if (turboBingoLedger.has(ref)) throw new RepoError('TURBO_BINGO_PRIZE_ALREADY_PAID');
+        wallet.balance += prizeCents;
+        turboBingoLedger.set(ref, { userId, amount: prizeCents, kind: 'game_prize', ref, meta: { gameId, ticketId }, createdAt: new Date() });
+      }
       Object.assign(game, { status: 'ended', endedAt: winner.at, winner, version: game.version + 1 });
       Object.assign(ticket, { status: 'winner', claimedAt: winner.at });
-      return { winner: clone(winner), game: clone(game) };
+      return { winner: clone(winner), game: clone(game), balance: wallet.balance };
     },
 
     /* Isolated Keno and Aviator records. Existing Bingo game/card collections are untouched. */
