@@ -417,6 +417,31 @@ function CarRacing3DViewportInner(p:Props) {
     }
     // Everyday places and local life: parking bays, airport terminal, homes, pedestrians and livestock.
     const pedestrians:THREE.Group[]=[];const animals:THREE.Group[]=[];
+    const loadWorldCopies=(url:string,placements:{x:number;z:number;rotation?:number;scale?:number}[])=>{
+      assetLoader.load(url,gltf=>{
+        if(cancelled)return;
+        placements.forEach(place=>{
+          const model=gltf.scene.clone(true);model.position.set(place.x,0,place.z);model.rotation.y=place.rotation??Math.PI;
+          if(place.scale)model.scale.setScalar(place.scale);addWorldObject(model);
+        });
+      },undefined,error=>console.warn('Car Racing world asset unavailable',url,error));
+    };
+    if(safeTrack.environment==='city'&&p.soloMode){
+      loadWorldCopies('https://tevy.dev/models/apartment-block/v2/lod1.glb',[
+        {x:-42,z:-45,scale:.9},{x:42,z:-105,scale:.9},{x:-42,z:-175,scale:.9},{x:42,z:-245,scale:.9}
+      ]);
+      loadWorldCopies('https://tevy.dev/models/storefront-module/v2/lod1.glb',[
+        {x:-20,z:-18,rotation:0},{x:20,z:-70,rotation:Math.PI},{x:-20,z:-130,rotation:0},{x:20,z:-190,rotation:Math.PI}
+      ]);
+    }
+    if(['country','village'].includes(safeTrack.environment)){
+      loadWorldCopies('https://tevy.dev/models/red-cottage/v2/lod1.glb',[
+        {x:-25,z:-52,rotation:Math.PI,scale:.9},{x:25,z:-148,rotation:0,scale:.9}
+      ]);
+      loadWorldCopies('https://tevy.dev/models/farm-tractor/v1/lod1.glb',[
+        {x:-20,z:-95,rotation:Math.PI/2,scale:.95},{x:22,z:-205,rotation:-Math.PI/2,scale:.95}
+      ]);
+    }
     if(['city','village','parking','coastal','airport'].includes(safeTrack.environment))for(let i=0;i<12;i++){const npc=person(['#d6a24b','#4b91b9','#bd5b55','#668e62','#d8d4c5'][i%5],i%3===0?'feminine':i%3===1?'masculine':'worker');npc.position.set(i%2?11.4+(i%3)*.6:-11.4-(i%3)*.5,0,-i*19-7);npc.rotation.y=i%2?-.35:.35;addWorldObject(npc);pedestrians.push(npc);}
     if(['country','village','rocky'].includes(safeTrack.environment))for(let i=0;i<8;i++){
       const livestock=animal(i%3===0?'#d2c6a9':i%2?'#8c6844':'#b7a17e');
