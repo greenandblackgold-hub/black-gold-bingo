@@ -7,9 +7,9 @@ const view = readFileSync(new URL('../../client-source/src/components/games/CarR
 
 test('Car Racing offers multiple premium vehicle classes and selectable world locations', () => {
   assert.match(game, /state\?\.cars\?\?\[\]\)\.map\(car/);
-  for (const location of ['city','village','country','rocky','coast','airport','parking']) {
+  for (const [location,environment] of [['city','city'],['village','village'],['country','country'],['rocky','rocky'],['coast','coastal'],['airport','airport'],['parking','parking']]) {
     assert.ok(game.includes(`id:'${location}'`) || game.includes(`id: '${location}'`) || game.includes(`id:'${location}',`), `missing ${location} solo world preset`);
-    assert.ok(view.includes(`environment==='\${location}'`) || view.includes(`environment==='\${location}'`) || view.includes(`'${location}'`), `missing ${location} scene support`);
+    assert.ok(view.includes(`environment==='${environment}'`) || view.includes(`'${environment}'`), `missing ${environment} scene support`);
   }
   assert.match(game, /car\.bodyStyle\|\|'sedan'/);
 });
