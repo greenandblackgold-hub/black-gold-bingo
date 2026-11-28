@@ -177,7 +177,8 @@ test('Turbo Bingo automatic draw continues after the configured round timer expi
   const started = await service.startGame();
   assert.equal(started.game.status, 'running');
   assert.equal(started.game.ticketCount, 0);
-  const expired = await repo.updateTurboBingoGame(started.game.id, started.game.version, {
+  const running = await repo.getCurrentTurboBingoGame();
+  const expired = await repo.updateTurboBingoGame(running.id, running.version, {
     endsAt: Date.now() - 1000,
     nextDrawAt: Date.now() - 1,
   });
