@@ -551,6 +551,32 @@ test('cards: buying, balance checks, round gating, server-issued grids', async (
   assert.equal((await api('GET', '/api/cards', { token: p.token })).json.length, 0, 'cards belong to the round they were bought for');
 });
 
+test('only the authenticated admin can buy Bingo cards for free during testing', async () => {
+  await freshRound();
+  const player = await newPlayer('Free-card access control player', 0);
+  const playerAttempt = await api('POST', '/api/cards/buy', {
+    token: player.token,
+    body: { count: 2, adminFree: true },
+  });
+  assert.equal(playerAttempt.status, 402, 'player cannot request free cards by sending an adminFree flag');
+
+  const before = (await api('GET', '/api/me', { token: ctx.adminToken })).json;
+  assert.equal(before.role, 'admin');
+  const bought = await api('POST', '/api/cards/buy', {
+    token: ctx.adminToken,
+    body: { count: 3 },
+  });
+  assert.equal(bought.status, 200, JSON.stringify(bought.json));
+  assert.equal(bought.json.cards.length, 3);
+  assert.equal((await api('GET', '/api/cards', { token: ctx.adminToken })).json.length, 3);
+  const after = (await api('GET', '/api/me', { token: ctx.adminToken })).json;
+  assert.equal(after.balance, before.balance, 'admin free test cards must not debit the account');
+  assert.equal((await api('POST', '/api/cards/buy', {
+    token: player.token,
+    body: { count: 1 },
+  })).status, 402, 'normal player purchase remains balance-gated');
+});
+
 test('card purchase supports up to fifty cards per request', async () => {
   await freshRound();
   const p = await newPlayer('Fifty Card Buyer', 520);
