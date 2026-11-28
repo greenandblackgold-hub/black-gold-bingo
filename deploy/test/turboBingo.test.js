@@ -264,3 +264,42 @@ test('Turbo Bingo automatic draw continues after the configured round timer expi
   service.stop();
 });
 
+
+
+test('Turbo Bingo Host can start an empty manual round, end it while waiting, then call into a fresh round', async () => {
+  const repo = createMemoryRepo();
+  const service = createTurboBingoService({ repo });
+  await service.updateSettings({ mode: 'admin', target: 12 });
+  await service.openGame();
+
+  const started = await service.startGame();
+  assert.equal(started.game.status, 'running');
+  assert.equal(started.game.ticketCount, 0, 'Host can start a round without a ticket-count UI deadlock');
+
+  const ended = await service.stopGame();
+  assert.equal(ended.game.status, 'ended');
+  assert.equal(ended.game.drawnNumbers.length, 0, 'ending a round does not draw another number');
+
+  const called = await service.drawNextManually();
+  assert.equal(called.game.status, 'running', 'Call Next Number opens and starts the next round after End Round');
+  assert.equal(called.game.drawnNumbers.length, 1, 'Call Next Number immediately draws one server-random ball');
+  assert.equal(called.game.target, 12, 'the 1–12 winning target remains intact');
+  assert.ok(called.game.drawnNumbers[0] >= 1 && called.game.drawnNumbers[0] <= 80, 'draw remains in the 1–80 ball range');
+
+  const endedAgain = await service.stopGame();
+  assert.equal(endedAgain.game.status, 'ended');
+  assert.equal(endedAgain.game.drawnNumbers.length, 1, 'End Round preserves the called-number state');
+  service.stop();
+});
+
+test('Turbo Bingo Host can manually call immediately in automatic mode and keep the automatic schedule', async () => {
+  const repo = createMemoryRepo();
+  const service = createTurboBingoService({ repo });
+  await service.updateSettings({ mode: 'automatic', drawIntervalSeconds: 10 });
+  await service.openGame();
+  const state = await service.drawNextManually();
+  assert.equal(state.game.status, 'running');
+  assert.equal(state.game.drawnNumbers.length, 1, 'Host click calls immediately instead of waiting for the interval');
+  assert.ok(state.game.nextDrawAt > Date.now(), 'automatic mode continues on its configured interval after the manual call');
+  service.stop();
+});
