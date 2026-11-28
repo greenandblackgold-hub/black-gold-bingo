@@ -38,7 +38,7 @@ function getAllPatternOptions(labels: Partial<Record<WinPattern, string>>): Patt
 }
 
 
-export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = false, selectionMode = false, selectedCardCount = 0, cardColumns = 2, onToggleSelectionMode, onCardColumnsChange }: { onGoToWallet: () => void; settingsOnly?: boolean; menuOnly?: boolean; selectionMode?: boolean; selectedCardCount?: number; cardColumns?: 2 | 3 | 4; onToggleSelectionMode?: () => void; onCardColumnsChange?: (columns: 2 | 3 | 4) => void }) {
+export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = false, selectionMode = false, selectedCardCount = 0, cardColumns = 2, onToggleSelectionMode, onCardColumnsChange, onCloseSettings }: { onGoToWallet: () => void; onCloseSettings?: () => void; settingsOnly?: boolean; menuOnly?: boolean; selectionMode?: boolean; selectedCardCount?: number; cardColumns?: 2 | 3 | 4; onToggleSelectionMode?: () => void; onCardColumnsChange?: (columns: 2 | 3 | 4) => void }) {
   const { lang, setLang } = useLanguage();
   const t = gameUi.playerFeatures[lang];
   const { balance, cards, transactions, clearMarks, removeCards, buyCards } = usePlayer();
@@ -103,6 +103,20 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
     { id: 'vertical', label: 'ቋሚ መስመሮች', options: [{id:'vertical_line',label:'Vertical Line'},{id:'left_right',label:'Left & Right'}] },
     { id: 'big-t', label: 'ትልቅ T', options: [{id:'t',label:'T Pattern'},{id:'letter_h',label:'H Pattern'}] },
     { id: 'big-z', label: 'ትልቅ Z', options: [{id:'z',label:'Z Pattern'},{id:'lucky_seven',label:'Lucky Seven'}] },
+    { id: 'big-h', label: 'ትልቅ H', options: [{id:'big_h',label:'ትልቅ H'}] },
+    { id: 'big-l', label: 'ትልቅ L', options: [{id:'big_l',label:'ትልቅ L'}] },
+    { id: 'big-u', label: 'ትልቅ U', options: [{id:'big_u',label:'ትልቅ U'}] },
+  ];
+  const [otherShapesOpen, setOtherShapesOpen] = useState(true);
+  const otherShapeOptions = [
+    { id: 'D', label: 'ዲያጎናል መስመር' },
+    { id: 'MC', label: 'ብዙ የተጠሩ' },
+    { id: 'X', label: 'ትንሽ X' },
+    { id: 'T', label: 'ትንሽ T' },
+    { id: '+', label: 'ትንሽ መስቀል (+)' },
+    { id: 'Co', label: 'የመአዝን ኳስ (ነጠብጣብ)' },
+    { id: 'HH', label: 'ግማሽ ቤት' },
+    { id: 'BO', label: 'ትልቅ O (ዙሪያ)' },
   ];
   const [selectedShapePatterns, setSelectedShapePatterns] = useState<string[]>(() => {
     try {
@@ -493,6 +507,31 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                         </div>}
                       </section>
                     ))}
+                    <section className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/90">
+                      <button type="button" onClick={() => setOtherShapesOpen(open => !open)} aria-expanded={otherShapesOpen} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
+                        <span className="text-sm font-black text-sky-200">ሌሎች ቅርጾች</span>
+                        <span className="text-lg text-slate-300">{otherShapesOpen ? '⌃' : '⌄'}</span>
+                      </button>
+                      {otherShapesOpen && <div className="divide-y divide-slate-700 border-t border-slate-700 px-4">
+                        {otherShapeOptions.map(option => (
+                          <label key={option.id} className="flex items-center gap-3 py-3">
+                            <input type="checkbox" checked={selectedShapePatterns.includes(option.id)} onChange={event => toggleShapePattern(option.id, event.target.checked)} className="h-4 w-4 accent-sky-500"/>
+                            <span className="min-w-0 flex-1 text-xs font-semibold text-slate-200">{option.label}</span>
+                            <span className="min-w-9 rounded-md border border-slate-600 bg-slate-900 px-2 py-1 text-center text-[10px] font-black text-sky-200">{option.id}</span>
+                          </label>
+                        ))}
+                      </div>}
+                    </section>
+                    <button type="button" onClick={() => {
+                      try {
+                        localStorage.setItem('bgb.patternPriorityQueue', JSON.stringify(priorityQueue));
+                        localStorage.setItem('bgb.patternNonIntersecting', nonIntersectingOnly ? 'on' : 'off');
+                        localStorage.setItem('bgb.shapePatterns', JSON.stringify(selectedShapePatterns));
+                      } catch { /* Keep current in-memory selections if storage is unavailable. */ }
+                      onCloseSettings?.();
+                    }} className="w-full rounded-xl border border-sky-300/60 bg-sky-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-sky-950/30 transition hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-300">
+                      አሺ
+                    </button>
                   </div>
                 )}
                 {row.id === 'settings' && !settingsOnly && (
