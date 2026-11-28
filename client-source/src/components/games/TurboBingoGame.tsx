@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/context/LanguageContext';
 import type { Lang } from '@/types/game';
@@ -51,6 +51,9 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [extractedNumber, setExtractedNumber] = useState<number | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const [packagesOpen, setPackagesOpen] = useState(false);
   const calledNumbersRef = useRef<HTMLDivElement | null>(null);
   const followLatestRef = useRef(true);
@@ -80,6 +83,69 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
     O: 'from-violet-300 via-purple-500 to-purple-800'
   };
   const ballLetter = (number: number) => number <= 16 ? 'B' : number <= 32 ? 'I' : number <= 48 ? 'N' : number <= 64 ? 'G' : 'O';
+
+  const drawn = useMemo(() => new Set(drawnNumbers), [drawnNumbers]);
+  const lastNumber = state?.game?.lastNumber ?? null;
+  const toggleMachineSound = async () => {
+    const AudioContextClass = window.AudioContext;
+    if (!AudioContextClass) return;
+    if (!audioContextRef.current) audioContextRef.current = new AudioContextClass();
+    if (audioContextRef.current.state === 'suspended') await audioContextRef.current.resume();
+    setSoundEnabled((enabled) => !enabled);
+  };
+  useEffect(() => {
+    const context = audioContextRef.current;
+    if (!soundEnabled || state?.game?.status !== 'running' || !context) return;
+    const noiseBuffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+    const channel = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < channel.length; i++) channel[i] = (Math.random() * 2 - 1) * 0.7;
+    const blower = context.createBufferSource(); blower.buffer = noiseBuffer; blower.loop = true;
+    const highPass = context.createBiquadFilter(); highPass.type = 'highpass'; highPass.frequency.value = 95;
+    const lowPass = context.createBiquadFilter(); lowPass.type = 'lowpass'; lowPass.frequency.value = 820;
+    const airGain = context.createGain(); airGain.gain.value = 0.34;
+    const pulse = context.createOscillator(); pulse.type = 'sine'; pulse.frequency.value = 3.8;
+    const pulseDepth = context.createGain(); pulseDepth.gain.value = 0.10;
+    pulse.connect(pulseDepth); pulseDepth.connect(airGain.gain);
+    blower.connect(highPass); highPass.connect(lowPass); lowPass.connect(airGain); airGain.connect(context.destination);
+    blower.start(); pulse.start();
+    return () => { blower.stop(); pulse.stop(); airGain.disconnect(); };
+  }, [soundEnabled, state?.game?.status]);
+  useEffect(() => {
+    if (lastNumber === null) return;
+    if (soundEnabled && audioContextRef.current) {
+      const context = audioContextRef.current;
+      const now = context.currentTime;
+      const drop = context.createOscillator();
+      const gain = context.createGain();
+      drop.type = 'sawtooth';
+      drop.frequency.setValueAtTime(420, now);
+      drop.frequency.exponentialRampToValueAtTime(72, now + 0.34);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.65, now + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
+      drop.connect(gain); gain.connect(context.destination); drop.start(now); drop.stop(now + 0.44);
+    }
+    setExtractedNumber(lastNumber);
+    const timeout = window.setTimeout(() => setExtractedNumber(null), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [lastNumber, soundEnabled]);
+  const ballPaint = [
+    'radial-gradient(circle at 30% 24%,#fff,#fb7185 26%,#be123c 78%)',
+    'radial-gradient(circle at 30% 24%,#fff,#60a5fa 26%,#1d4ed8 78%)',
+    'radial-gradient(circle at 30% 24%,#fff,#4ade80 26%,#15803d 78%)',
+    'radial-gradient(circle at 30% 24%,#fff,#c084fc 26%,#7e22ce 78%)',
+    'radial-gradient(circle at 30% 24%,#fff,#facc15 26%,#b45309 78%)',
+    'radial-gradient(circle at 30% 24%,#fff,#67e8f9 26%,#92400e 78%)'
+  ];
+  const cageBalls = useMemo(() => Array.from({ length: 80 }, (_, index) => index + 1)
+    .filter((number) => !drawn.has(number))
+    .map((number, index, remaining) => {
+      const angle = index * 2.399963229728653;
+      const radius = 13 + (index % 5) * 2.7;
+      return { number, left: 50 + Math.cos(angle) * radius, top: 50 + Math.sin(angle) * radius * 0.78,
+        delay: -((index * 0.173) % 4.8), color: ballPaint[number % ballPaint.length], size: remaining.length > 55 ? 27 : 31 };
+    }), [drawn]);
+
 
   useEffect(() => {
     const strip = calledNumbersRef.current;
@@ -134,6 +200,33 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
         </div>
         <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-3 text-xs text-amber-100/65">
           <span>{t.calledNumbers}</span><span className="font-black tabular-nums text-white">{drawnNumbers.length}/80</span>
+        </div>
+      </section>
+
+      <style>{`
+        @keyframes turbo-ball-float { 0%,100% { transform:translate(0,0) rotate(0); } 12% { transform:translate(22px,-24px) rotate(75deg); } 27% { transform:translate(-26px,17px) rotate(-95deg); } 43% { transform:translate(18px,29px) rotate(125deg); } 59% { transform:translate(-30px,-18px) rotate(-145deg); } 76% { transform:translate(25px,-28px) rotate(190deg); } 90% { transform:translate(-15px,20px) rotate(-225deg); } }
+        @keyframes turbo-ball-exit { 0% { opacity:0; transform:translate(-50%,185px) scale(.48) rotate(-100deg); } 10% { opacity:1; } 34% { opacity:1; transform:translate(-50%,-42px) scale(1.22) rotate(150deg); } 48% { transform:translate(-50%,-66px) scale(1.12) rotate(245deg); } 63% { opacity:1; transform:translate(-50%,8px) scale(1.08) rotate(330deg); } 82% { opacity:1; transform:translate(-50%,150px) scale(1) rotate(470deg); } 100% { opacity:0; transform:translate(-50%,225px) scale(.82) rotate(560deg); } }
+        .turbo-ball-float { animation:turbo-ball-float .48s ease-in-out infinite; will-change:transform; }
+        .turbo-ball-exit { animation:turbo-ball-exit 1.65s cubic-bezier(.12,.72,.18,1) both; }
+        @media(prefers-reduced-motion:reduce) { .turbo-ball-float,.turbo-ball-exit { animation:none!important; } }
+      `}</style>
+
+      <section aria-label={t.cage} className="overflow-hidden rounded-3xl border-2 border-[#d4af37] bg-gradient-to-b from-[#181818] via-[#09090b] to-[#050505] p-3 shadow-[0_14px_40px_rgba(0,0,0,.55)] sm:p-5">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div><p className="text-[10px] font-black tracking-[.22em] text-amber-200">{t.cage}</p><p className="mt-1 text-[10px] text-amber-100/70">{state?.game?.status === 'running' ? t.mixing : t.waiting}</p></div>
+          <button type="button" onClick={() => void toggleMachineSound()} className="rounded-full border border-amber-100/30 bg-black/30 px-3 py-2 text-[10px] font-black text-white">{soundEnabled ? t.soundOff : t.soundOn}</button>
+        </div>
+        <div className="relative mx-auto w-full max-w-[560px] rounded-[2rem] border-[10px] border-[#d4af37] bg-gradient-to-b from-[#292929] via-[#111111] to-[#050505] p-3 shadow-[inset_0_3px_10px_rgba(255,255,255,.25),0_8px_0_#09090b,0_15px_28px_rgba(0,0,0,.5)]">
+          <div className="pointer-events-none absolute inset-x-5 top-1 h-2 rounded-full bg-gradient-to-r from-transparent via-amber-200/80 to-transparent" />
+          <div className="relative h-[290px] overflow-hidden rounded-[1.5rem] border-[5px] border-[#d4af37] bg-[radial-gradient(ellipse_at_50%_35%,rgba(255,255,255,.35),rgba(160,210,230,.16)_40%,rgba(5,12,24,.75)_100%)] shadow-[inset_0_0_30px_rgba(255,255,255,.28)] sm:h-[340px]">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-transparent to-black/30" />
+            <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#09090b]/80 to-transparent" />
+            {cageBalls.map((ball) => <span key={ball.number} className={state?.game?.status === 'running' ? 'turbo-ball-float absolute grid place-items-center rounded-full border border-white/70 text-[10px] font-black text-white shadow-[inset_2px_2px_4px_rgba(255,255,255,.8),inset_-3px_-4px_7px_rgba(0,0,0,.35),0_3px_7px_rgba(0,0,0,.45)]' : 'absolute grid place-items-center rounded-full border border-white/70 text-[10px] font-black text-white shadow-[inset_2px_2px_4px_rgba(255,255,255,.8),inset_-3px_-4px_7px_rgba(0,0,0,.35),0_3px_7px_rgba(0,0,0,.45)]'} style={{left:`${ball.left}%`,top:`${ball.top}%`,width:ball.size,height:ball.size,background:ball.color,animationDelay:`${ball.delay}s`}}>{ball.number}</span>)}
+            {extractedNumber !== null && <div key={extractedNumber} className="turbo-ball-exit absolute left-1/2 top-1/2 z-20 grid h-16 w-16 place-items-center rounded-full border-[3px] border-white bg-[radial-gradient(circle_at_30%_25%,#fff,#fef3c7_24%,#b8860b_85%)] text-xl font-black text-white shadow-[0_0_25px_rgba(255,220,120,.9)]">{extractedNumber}</div>}
+            <div className="pointer-events-none absolute inset-y-0 left-4 w-5 rotate-12 bg-gradient-to-r from-white/25 to-transparent blur-sm" />
+          </div>
+          <div className="mx-auto mt-3 flex h-7 w-3/4 items-center justify-center rounded-b-2xl border-x-4 border-b-4 border-[#d4af37] bg-gradient-to-b from-[#f59e0b] to-[#8a6418] shadow-lg"><span className="text-[9px] font-black tracking-[.3em] text-[#09090b]">TURBO BINGO</span></div>
+          <div className="mt-3 flex items-center justify-center gap-2"><span className="h-2 w-2 rounded-full bg-[#d4af37] shadow-[0_0_8px_#fecaca]" /><span className="text-[9px] font-bold tracking-[.18em] text-amber-100/80">{drawnNumbers.length}/80 {t.called}</span><span className="h-2 w-2 rounded-full bg-amber-300 shadow-[0_0_8px_#fcd34d]" /></div>
         </div>
       </section>
 
