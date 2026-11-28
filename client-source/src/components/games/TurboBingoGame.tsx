@@ -178,6 +178,9 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
 
   const canBuy = state?.settings.enabled && state.game?.status === 'waiting';
   const unitTicketPrice = state?.isAdmin ? 0 : (state?.settings.ticketPriceEtb ?? 0);
+  const cardBoardRows = Math.max(5, ...(state?.tickets ?? []).map((ticket) =>
+    Math.max(...Array.from({ length: 5 }, (_, column) => ticket.numbers.filter((number) => Math.floor((number - 1) / 16) === column).length))
+  ));
   const langNames: Record<Lang, string> = { am: 'አማርኛ', ti: 'ትግርኛ', en: 'English' };
 
   return (
@@ -287,11 +290,11 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
               <div className="flex min-h-7 w-full items-center justify-center bg-emerald-700 px-2 py-1 text-xs font-black text-white">BINGO</div>
               <div className="grid grid-cols-5 gap-px overflow-hidden bg-zinc-300">
                 {columnHeaders.map((letter, column) => <div key={letter} className={`grid min-h-8 place-items-center py-1 text-center text-sm font-black text-white sm:text-lg ${headerColors[column]}`}>{letter}</div>)}
-                {Array.from({ length: 25 }, (_, cellIndex) => {
+                {Array.from({ length: cardBoardRows * 5 }, (_, cellIndex) => {
                   const row = Math.floor(cellIndex / 5);
                   const column = cellIndex % 5;
                   const number = columns[column][row];
-                  const center = row === 2 && column === 2;
+                  const center = row === Math.floor(cardBoardRows / 2) && column === 2;
                   const matched = number !== undefined && ticket.matchedNumbers.includes(number);
                   return <div key={cellIndex} className={`relative grid aspect-square min-w-0 place-items-center border border-zinc-300 text-[clamp(12px,2.8vw,20px)] font-black leading-none tabular-nums ${center ? 'bg-amber-100 text-amber-800' : matched ? 'bg-amber-300 text-black ring-1 ring-amber-500' : 'bg-white text-slate-900'}`}>
                     {number ?? (center ? '★' : '')}
