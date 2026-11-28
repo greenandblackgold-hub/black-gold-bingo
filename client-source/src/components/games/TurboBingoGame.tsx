@@ -46,7 +46,7 @@ const ballPaint = [
   'radial-gradient(circle at 30% 24%,#fff,#4ade80 26%,#15803d 78%)',
   'radial-gradient(circle at 30% 24%,#fff,#c084fc 26%,#7e22ce 78%)',
   'radial-gradient(circle at 30% 24%,#fff,#facc15 26%,#b45309 78%)',
-  'radial-gradient(circle at 30% 24%,#fff,#67e8f9 26%,#0e7490 78%)'
+  'radial-gradient(circle at 30% 24%,#fff,#67e8f9 26%,#92400e 78%)'
 ];
 
 export function TurboBingoGame({ onBack }: { onBack: () => void }) {
@@ -174,7 +174,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
   const langNames: Record<Lang, string> = { am: 'አማርኛ', ti: 'ትግርኛ', en: 'English' };
 
   return (
-    <main className="turbo-player mx-auto min-h-screen w-full max-w-6xl space-y-4 px-3 pb-28 pt-3 text-white sm:px-5 sm:pt-5">
+    <main className="turbo-player mx-auto min-h-screen w-full max-w-6xl space-y-4 bg-[#1c080b] px-3 pb-28 pt-3 text-white sm:px-5 sm:pt-5">
       <style>{`
         @keyframes turbo-ball-float { 0%,100% { transform:translate(0,0) rotate(0); } 12% { transform:translate(22px,-24px) rotate(75deg); } 27% { transform:translate(-26px,17px) rotate(-95deg); } 43% { transform:translate(18px,29px) rotate(125deg); } 59% { transform:translate(-30px,-18px) rotate(-145deg); } 76% { transform:translate(25px,-28px) rotate(190deg); } 90% { transform:translate(-15px,20px) rotate(-225deg); } }
         @keyframes turbo-ball-exit { 0% { opacity:0; transform:translate(-50%,185px) scale(.48) rotate(-100deg); } 10% { opacity:1; } 34% { opacity:1; transform:translate(-50%,-42px) scale(1.22) rotate(150deg); } 48% { transform:translate(-50%,-66px) scale(1.12) rotate(245deg); } 63% { opacity:1; transform:translate(-50%,8px) scale(1.08) rotate(330deg); } 82% { opacity:1; transform:translate(-50%,150px) scale(1) rotate(470deg); } 100% { opacity:0; transform:translate(-50%,225px) scale(.82) rotate(560deg); } }
@@ -183,16 +183,16 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
         @media(prefers-reduced-motion:reduce) { .turbo-ball-float,.turbo-ball-exit { animation:none!important; } }
       `}</style>
 
-      <header className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200/20 bg-[#073b2b] px-3 py-3 shadow-lg sm:px-5">
-        <button type="button" onClick={onBack} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-bold text-emerald-50 hover:bg-white/10 sm:text-sm">{t.back}</button>
-        <div className="min-w-0 text-center"><p className="text-[9px] font-black tracking-[.2em] text-emerald-200/70">BLACK GOLD GAME CENTER</p><h1 className="text-lg font-black tracking-wide sm:text-2xl">{t.title}</h1></div>
-        <label className="flex shrink-0 items-center gap-1.5 rounded-xl border border-emerald-100/20 bg-black/20 px-2 py-2 text-[10px] font-bold text-white">
-          <span className="sr-only">{t.choose}</span><select aria-label={t.choose} value={lang} onChange={(event) => setLang(event.target.value as Lang)} className="max-w-[92px] bg-transparent text-white outline-none sm:max-w-none">{(['am','ti','en'] as Lang[]).map((key) => <option key={key} value={key} className="bg-[#073b2b] text-white">{langNames[key]}</option>)}</select>
+      <header className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200/20 bg-[#4b1016] px-3 py-3 shadow-lg sm:px-5">
+        <button type="button" onClick={onBack} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-bold text-amber-50 hover:bg-white/10 sm:text-sm">{t.back}</button>
+        <div className="min-w-0 text-center"><p className="text-[9px] font-black tracking-[.2em] text-amber-200/70">BLACK GOLD GAME CENTER</p><h1 className="text-lg font-black tracking-wide sm:text-2xl">{t.title}</h1></div>
+        <label className="flex shrink-0 items-center gap-1.5 rounded-xl border border-amber-100/20 bg-black/20 px-2 py-2 text-[10px] font-bold text-white">
+          <span className="sr-only">{t.choose}</span><select aria-label={t.choose} value={lang} onChange={(event) => setLang(event.target.value as Lang)} className="max-w-[92px] bg-transparent text-white outline-none sm:max-w-none">{(['am','ti','en'] as Lang[]).map((key) => <option key={key} value={key} className="bg-[#4b1016] text-white">{langNames[key]}</option>)}</select>
         </label>
       </header>
 
-      <section className="rounded-2xl border border-emerald-200/20 bg-gradient-to-br from-[#0b563d] via-[#073b2b] to-[#041f18] p-4 shadow-[0_12px_35px_rgba(0,0,0,.25)] sm:p-5">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><p className="text-[10px] font-black tracking-[.24em] text-emerald-200/75">TURBO BINGO · 1–80</p><span className="rounded-full border border-emerald-200/25 bg-emerald-300/10 px-3 py-1 text-[10px] font-bold text-emerald-100">{t.live}</span></div>
+      <section className="rounded-2xl border border-amber-200/20 bg-gradient-to-br from-[#7f1d1d] via-[#4b1016] to-[#1c080b] p-4 shadow-[0_12px_35px_rgba(0,0,0,.25)] sm:p-5">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><p className="text-[10px] font-black tracking-[.24em] text-amber-200/75">TURBO BINGO · 1–80</p><span className="rounded-full border border-amber-200/25 bg-amber-300/10 px-3 py-1 text-[10px] font-bold text-amber-100">{t.live}</span></div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
           {[
             [t.status, (state?.game?.status === 'running' ? t.running : state?.game?.status === 'ended' ? t.endedStatus : state?.game?.status === 'waiting' ? t.waiting : '—')],
@@ -202,48 +202,48 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
             [t.round, (t[String(state?.game?.roundType ?? state?.settings.roundType ?? '')] ?? String(state?.game?.roundType ?? state?.settings.roundType ?? '—').replace('_',' ').toUpperCase())],
             [t.prize, `${money(state?.game?.prizeEtb ?? state?.settings.prizeEtb ?? 0)} ETB`],
             [t.time, secondsLeft === null ? '—' : `${secondsLeft}s`]
-          ].map(([label,value]) => <div key={label} className="rounded-xl border border-white/10 bg-black/20 p-2.5"><p className="text-[9px] font-bold tracking-wide text-emerald-100/60">{label}</p><p className="mt-1 truncate text-base font-black tabular-nums text-white sm:text-lg">{value}</p></div>)}
+          ].map(([label,value]) => <div key={label} className="rounded-xl border border-white/10 bg-black/20 p-2.5"><p className="text-[9px] font-bold tracking-wide text-amber-100/60">{label}</p><p className="mt-1 truncate text-base font-black tabular-nums text-white sm:text-lg">{value}</p></div>)}
         </div>
       </section>
 
-      <section aria-label={t.cage} className="overflow-hidden rounded-3xl border border-white/10 bg-[#071b16] p-3 shadow-lg sm:p-5">
+      <section aria-label={t.cage} className="overflow-hidden rounded-3xl border-2 border-[#d4af37]/70 bg-gradient-to-b from-[#3b0b10] to-[#21090d] p-3 shadow-[0_12px_35px_rgba(0,0,0,.45)] sm:p-5">
         <div className="mb-2 flex justify-end">
-          <button type="button" onClick={() => void toggleMachineSound()} className="rounded-full border border-emerald-100/30 bg-black/30 px-3 py-2 text-[10px] font-black text-white">{soundEnabled ? t.soundOff : t.soundOn}</button>
+          <button type="button" onClick={() => void toggleMachineSound()} className="rounded-full border border-amber-100/30 bg-black/30 px-3 py-2 text-[10px] font-black text-white">{soundEnabled ? t.soundOff : t.soundOn}</button>
         </div>
-        <img src="/turbo-bingo-machine.jpg" alt="Bingo Pro red lottery ball machine" className="mx-auto block h-auto w-full max-w-[560px] object-contain" />
+        <img src="/turbo-bingo-machine.jpg" alt="Bingo Pro red lottery ball machine" className="mx-auto block h-auto w-full max-w-[560px] rounded-xl border-4 border-[#d4af37] bg-[#fff7e6] object-contain p-1 shadow-[0_0_28px_rgba(212,175,55,.28)]" />
       </section>
 
       {error && <p role="alert" className="rounded-xl border border-red-400/30 bg-red-950/50 p-3 text-sm text-red-100">{error}</p>}
-      {notice && <p role="status" className="rounded-xl border border-emerald-300/30 bg-emerald-950/40 p-3 text-sm text-emerald-100">{notice}</p>}
+      {notice && <p role="status" className="rounded-xl border border-amber-300/30 bg-amber-950/40 p-3 text-sm text-amber-100">{notice}</p>}
 
       <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_290px]">
-        <div className="rounded-2xl border border-emerald-100/15 bg-[#082a20] p-4">
-          <h2 className="mb-3 font-black text-emerald-50">{t.lastFive}</h2>
+        <div className="rounded-2xl border border-amber-100/15 bg-[#350d13] p-4">
+          <h2 className="mb-3 font-black text-amber-50">{t.lastFive}</h2>
           <div className="flex min-h-14 flex-wrap items-center gap-2">{drawnNumbers.slice(-5).reverse().map((number,index) => <span key={number} className={`grid h-11 w-11 place-items-center rounded-full border-2 border-white/75 font-black text-white shadow-md ${index===0?'bg-red-600':'bg-blue-700'}`}>{number}</span>)}</div>
-          <p className="mt-3 text-xs text-emerald-100/65">{t.countdown}: {secondsLeft === null ? '—' : `${secondsLeft}s`}</p>
+          <p className="mt-3 text-xs text-amber-100/65">{t.countdown}: {secondsLeft === null ? '—' : `${secondsLeft}s`}</p>
         </div>
         <aside className="space-y-3">
-          <div className="rounded-2xl border border-emerald-100/15 bg-[#082a20] p-4"><p className="text-xs font-bold uppercase tracking-wider text-emerald-200">{t.wallet}</p><p className="mt-2 text-2xl font-black">{state?.balanceEtb == null ? '—' : money(state.balanceEtb)} <span className="text-sm text-emerald-200">ETB</span></p><p className="mt-1 text-[10px] text-emerald-100/50">{t.demo}</p></div>
-          <div className="rounded-2xl border border-emerald-100/15 bg-[#082a20] p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-200">{t.purchase}</p><p className="mt-2 text-sm text-emerald-50/75">{t.price}: {state ? money(state.settings.ticketPriceEtb) : '—'} ETB</p>
-            <label className="mt-3 block text-xs text-emerald-100/70">{t.quantity}</label><input type="number" min={1} max={state?.settings.maxTicketsPerPlayer ?? 10} value={count} onChange={(event) => setCount(Math.max(1,Math.min(state?.settings.maxTicketsPerPlayer ?? 10,Number(event.target.value)||1)))} className="mt-1 w-full rounded-xl border border-emerald-100/20 bg-[#041b14] px-3 py-3 text-lg font-bold text-white" />
-            <button type="button" disabled={!canBuy || busy} onClick={() => void buy()} className="mt-3 w-full rounded-xl bg-gradient-to-r from-emerald-300 to-green-500 px-3 py-3 text-sm font-black text-[#052217] shadow-lg disabled:cursor-not-allowed disabled:opacity-40">{busy ? t.busy : t.buy}</button>
-            {!canBuy && <p className="mt-2 text-[10px] text-emerald-100/45">{t.salesClosed}</p>}
+          <div className="rounded-2xl border border-amber-100/15 bg-[#350d13] p-4"><p className="text-xs font-bold uppercase tracking-wider text-amber-200">{t.wallet}</p><p className="mt-2 text-2xl font-black">{state?.balanceEtb == null ? '—' : money(state.balanceEtb)} <span className="text-sm text-amber-200">ETB</span></p><p className="mt-1 text-[10px] text-amber-100/50">{t.demo}</p></div>
+          <div className="rounded-2xl border border-amber-100/15 bg-[#350d13] p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-amber-200">{t.purchase}</p><p className="mt-2 text-sm text-amber-50/75">{t.price}: {state ? money(state.settings.ticketPriceEtb) : '—'} ETB</p>
+            <label className="mt-3 block text-xs text-amber-100/70">{t.quantity}</label><input type="number" min={1} max={state?.settings.maxTicketsPerPlayer ?? 10} value={count} onChange={(event) => setCount(Math.max(1,Math.min(state?.settings.maxTicketsPerPlayer ?? 10,Number(event.target.value)||1)))} className="mt-1 w-full rounded-xl border border-amber-100/20 bg-[#22090e] px-3 py-3 text-lg font-bold text-white" />
+            <button type="button" disabled={!canBuy || busy} onClick={() => void buy()} className="mt-3 w-full rounded-xl bg-gradient-to-r from-amber-300 to-red-500 px-3 py-3 text-sm font-black text-[#3b0b10] shadow-lg disabled:cursor-not-allowed disabled:opacity-40">{busy ? t.busy : t.buy}</button>
+            {!canBuy && <p className="mt-2 text-[10px] text-amber-100/45">{t.salesClosed}</p>}
           </div>
         </aside>
       </section>
 
       <section className="space-y-3">
-        <div className="flex items-center justify-between gap-2"><h2 className="text-lg font-black text-white">{t.tickets}</h2><span className="text-xs text-emerald-200">{state?.tickets.length ?? 0}</span></div>
-        {!state?.tickets.length && <p className="rounded-xl border border-white/10 bg-[#082a20] p-5 text-center text-sm text-emerald-50/55">{t.noTickets}</p>}
+        <div className="flex items-center justify-between gap-2"><h2 className="text-lg font-black text-white">{t.tickets}</h2><span className="text-xs text-amber-200">{state?.tickets.length ?? 0}</span></div>
+        {!state?.tickets.length && <p className="rounded-xl border border-white/10 bg-[#350d13] p-5 text-center text-sm text-amber-50/55">{t.noTickets}</p>}
         <div className="grid grid-cols-1 gap-3 min-[430px]:grid-cols-2 xl:grid-cols-3">
           {state?.tickets.map((ticket,index) => {
             const eligible = ticket.status === 'active' && state.game?.status === 'running' && ticket.matchedNumbers.length === state.game.target && state.game.lastNumber !== null && ticket.numbers.includes(state.game.lastNumber);
             const statusLabel = ticket.status === 'locked' ? t.locked : ticket.status === 'winner' ? t.winner : t.active;
-            return <article key={ticket.id} className="min-w-0 rounded-2xl border-2 border-emerald-600/40 bg-gradient-to-b from-white to-[#e9f5ed] p-3 text-slate-900 shadow-[0_6px_20px_rgba(0,0,0,.25)]">
-              <div className="mb-2 flex items-center justify-between gap-2"><span className="text-xs font-black text-emerald-800">TICKET {index+1}</span><span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${ticket.status==='locked'?'bg-red-100 text-red-700':ticket.status==='winner'?'bg-emerald-100 text-emerald-800':'bg-slate-100 text-slate-600'}`}>{statusLabel}</span></div>
+            return <article key={ticket.id} className="min-w-0 rounded-2xl border-2 border-amber-600/40 bg-gradient-to-b from-white to-[#fff7e6] p-3 text-slate-900 shadow-[0_6px_20px_rgba(0,0,0,.25)]">
+              <div className="mb-2 flex items-center justify-between gap-2"><span className="text-xs font-black text-amber-800">TICKET {index+1}</span><span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${ticket.status==='locked'?'bg-red-100 text-red-700':ticket.status==='winner'?'bg-amber-100 text-amber-800':'bg-slate-100 text-slate-600'}`}>{statusLabel}</span></div>
               <div className="grid grid-cols-2 grid-rows-6 gap-2">
-                {ticket.numbers.map((number) => <div key={number} className={`grid aspect-square place-items-center rounded-full border border-white/90 text-sm font-black tabular-nums shadow-[inset_1px_2px_4px_rgba(255,255,255,.85),inset_-2px_-3px_6px_rgba(0,0,0,.18),0_3px_5px_rgba(0,0,0,.12)] sm:text-base ${ticket.matchedNumbers.includes(number)?'bg-[radial-gradient(circle_at_30%_25%,#fff,#86efac_25%,#059669_85%)] text-white ring-2 ring-emerald-500/50':'bg-[radial-gradient(circle_at_30%_25%,#fff,#fecaca_24%,#dc2626_85%)] text-white'}`}>{number}</div>)}
+                {ticket.numbers.map((number) => <div key={number} className={`grid aspect-square place-items-center rounded-full border border-white/90 text-sm font-black tabular-nums shadow-[inset_1px_2px_4px_rgba(255,255,255,.85),inset_-2px_-3px_6px_rgba(0,0,0,.18),0_3px_5px_rgba(0,0,0,.12)] sm:text-base ${ticket.matchedNumbers.includes(number)?'bg-[radial-gradient(circle_at_30%_25%,#fff,#fde68a_25%,#b7791f_85%)] text-white ring-2 ring-amber-500/50':'bg-[radial-gradient(circle_at_30%_25%,#fff,#fecaca_24%,#dc2626_85%)] text-white'}`}>{number}</div>)}
               </div>
               <p className="mt-2 text-[10px] font-bold text-slate-600">{ticket.matchedNumbers.length}/{state.game?.target ?? state.settings.target} {t.matched}</p>
               <button type="button" disabled={!eligible || busy} onClick={() => void claim(ticket.id)} className="mt-2 w-full rounded-xl border border-red-200 bg-gradient-to-b from-red-500 to-red-700 px-2 py-3 text-xs font-black tracking-wider text-white shadow-[0_3px_0_#7f1d1d,0_5px_12px_rgba(127,29,29,.25)] disabled:cursor-not-allowed disabled:opacity-35">{t.bingo}</button>
@@ -252,8 +252,8 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
         </div>
       </section>
 
-      {state?.game?.status === 'ended' && <section className="rounded-2xl border border-emerald-300/30 bg-emerald-950/30 p-4 text-center"><h2 className="text-xl font-black text-emerald-100">{state.game.winner ? t.winnerTitle : t.ended}</h2><p className="mt-1 text-sm text-emerald-50/70">{state.game.winner ? t.claimSuccess : t.endedNoWinner}</p></section>}
-      <p className="text-center text-[10px] text-emerald-100/40">{t.simulation}</p>
+      {state?.game?.status === 'ended' && <section className="rounded-2xl border border-amber-300/30 bg-amber-950/30 p-4 text-center"><h2 className="text-xl font-black text-amber-100">{state.game.winner ? t.winnerTitle : t.ended}</h2><p className="mt-1 text-sm text-amber-50/70">{state.game.winner ? t.claimSuccess : t.endedNoWinner}</p></section>}
+      <p className="text-center text-[10px] text-amber-100/40">{t.simulation}</p>
     </main>
   );
 }
