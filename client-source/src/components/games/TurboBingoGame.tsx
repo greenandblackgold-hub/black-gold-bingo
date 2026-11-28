@@ -85,7 +85,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
   const lastNumber = state?.game?.lastNumber ?? null;
   const secondsLeft = state?.game?.status === 'waiting' && state.game.registrationEndsAt
     ? Math.max(0, Math.ceil((state.game.registrationEndsAt - clock) / 1000))
-    : state?.game?.endsAt ? Math.max(0, Math.ceil((state.game.endsAt - clock) / 1000)) : null;
+    : null;
 
   const toggleMachineSound = async () => {
     const AudioContextClass = window.AudioContext;
@@ -191,7 +191,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
         </label>
       </header>
 
-      <section className="rounded-2xl border border-amber-200/20 bg-gradient-to-br from-[#7f1d1d] via-[#111111] to-[#09090b] p-4 shadow-[0_12px_35px_rgba(0,0,0,.25)] sm:p-5">
+      <section className="rounded-2xl border border-amber-200/20 bg-gradient-to-br from-[#292929] via-[#111111] to-[#09090b] p-4 shadow-[0_12px_35px_rgba(0,0,0,.25)] sm:p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><p className="text-[10px] font-black tracking-[.24em] text-amber-200/75">TURBO BINGO · 1–80</p><span className="rounded-full border border-amber-200/25 bg-amber-300/10 px-3 py-1 text-[10px] font-bold text-amber-100">{t.live}</span></div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
           {[
@@ -211,11 +211,11 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
           <div><p className="text-[10px] font-black tracking-[.22em] text-amber-200">{t.cage}</p><p className="mt-1 text-[10px] text-amber-100/70">{state?.game?.status === 'running' ? t.mixing : t.waiting}</p></div>
           <button type="button" onClick={() => void toggleMachineSound()} className="rounded-full border border-amber-100/30 bg-black/30 px-3 py-2 text-[10px] font-black text-white">{soundEnabled ? t.soundOff : t.soundOn}</button>
         </div>
-        <div className="relative mx-auto w-full max-w-[560px] rounded-[2rem] border-[10px] border-[#d4af37] bg-gradient-to-b from-[#292929] via-[#111111] to-[#050505] p-3 shadow-[inset_0_3px_10px_rgba(255,255,255,.25),0_8px_0_#3b080e,0_15px_28px_rgba(0,0,0,.5)]">
+        <div className="relative mx-auto w-full max-w-[560px] rounded-[2rem] border-[10px] border-[#d4af37] bg-gradient-to-b from-[#292929] via-[#111111] to-[#050505] p-3 shadow-[inset_0_3px_10px_rgba(255,255,255,.25),0_8px_0_#09090b,0_15px_28px_rgba(0,0,0,.5)]">
           <div className="pointer-events-none absolute inset-x-5 top-1 h-2 rounded-full bg-gradient-to-r from-transparent via-amber-200/80 to-transparent" />
           <div className="relative h-[290px] overflow-hidden rounded-[1.5rem] border-[5px] border-[#d4af37] bg-[radial-gradient(ellipse_at_50%_35%,rgba(255,255,255,.35),rgba(160,210,230,.16)_40%,rgba(5,12,24,.75)_100%)] shadow-[inset_0_0_30px_rgba(255,255,255,.28)] sm:h-[340px]">
             <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-transparent to-black/30" />
-            <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#1c080b]/80 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#09090b]/80 to-transparent" />
             {cageBalls.map((ball) => <span key={ball.number} className={state?.game?.status === 'running' ? 'turbo-ball-float absolute grid place-items-center rounded-full border border-white/70 text-[10px] font-black text-white shadow-[inset_2px_2px_4px_rgba(255,255,255,.8),inset_-3px_-4px_7px_rgba(0,0,0,.35),0_3px_7px_rgba(0,0,0,.45)]' : 'absolute grid place-items-center rounded-full border border-white/70 text-[10px] font-black text-white shadow-[inset_2px_2px_4px_rgba(255,255,255,.8),inset_-3px_-4px_7px_rgba(0,0,0,.35),0_3px_7px_rgba(0,0,0,.45)]'} style={{left:`${ball.left}%`,top:`${ball.top}%`,width:ball.size,height:ball.size,background:ball.color,animationDelay:`${ball.delay}s`}}>{ball.number}</span>)}
             {extractedNumber !== null && <div key={extractedNumber} className="turbo-ball-exit absolute left-1/2 top-1/2 z-20 grid h-16 w-16 place-items-center rounded-full border-[3px] border-white bg-[radial-gradient(circle_at_30%_25%,#fff,#fef3c7_24%,#b8860b_85%)] text-xl font-black text-white shadow-[0_0_25px_rgba(255,220,120,.9)]">{extractedNumber}</div>}
             <div className="pointer-events-none absolute inset-y-0 left-4 w-5 rotate-12 bg-gradient-to-r from-white/25 to-transparent blur-sm" />
