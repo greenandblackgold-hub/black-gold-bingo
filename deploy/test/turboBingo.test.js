@@ -101,6 +101,37 @@ test('Turbo Bingo enforces the per-player ticket cap inside the repository opera
 });
 
 
+test('Turbo Bingo Admin can add free test tickets with a zero balance and without player phone verification', async () => {
+  const repo = createMemoryRepo();
+  const admin = await repo.createUser({
+    phone: '251911000097', name: 'Turbo Admin Free Test', pinHash: 'test-hash',
+    role: 'admin', phoneVerified: false,
+  });
+  const walletBefore = await repo.getTurboBingoWallet(admin.id);
+  const game = await repo.createTurboBingoGame({
+    id: 'turbo-admin-free-game', status: 'waiting', target: 10,
+    maxTicketsPerPlayer: 11, drawnNumbers: [], ticketCount: 0, createdAt: Date.now(),
+  });
+  const paidTickets = Array.from({ length: 10 }, (_, index) => ({
+    id: `admin-prepaid-${index}`, numbers: Array.from({ length: 12 }, (_, number) => number + 1),
+  }));
+  await repo.purchaseTurboBingoTickets({
+    gameId: game.id, userId: admin.id, tickets: paidTickets, totalCost: walletBefore.balance,
+  });
+  assert.equal((await repo.getTurboBingoWallet(admin.id)).balance, 0);
+
+  const service = createTurboBingoService({ repo });
+  const state = await service.getState(admin);
+  assert.equal(state.isAdmin, true);
+  const result = await service.buyTickets(admin, 1);
+  const tickets = await repo.listTurboBingoTickets(game.id, admin.id);
+  const walletAfter = await repo.getTurboBingoWallet(admin.id);
+  assert.equal(result.tickets.length, 1);
+  assert.equal(tickets.length, 11);
+  assert.equal(walletAfter.balance, 0, 'Admin free test ticket must not require or deduct balance');
+  service.stop();
+});
+
 test('Turbo Bingo Admin mode manually calls server-random numbers and credits only its isolated demo wallet', async () => {
   const repo = createMemoryRepo();
   const user = await repo.createUser({
