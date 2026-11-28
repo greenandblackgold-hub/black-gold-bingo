@@ -168,6 +168,9 @@ test('Turbo Bingo Host can pause, resume and end a round without drawing while p
   assert.equal(ended.game.status, 'ended');
   assert.equal(ended.game.isPaused, false);
   assert.equal(ended.game.endReason, 'admin_stopped');
+  await service.resume();
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  assert.equal((await repo.getCurrentTurboBingoGame()).status, 'ended', 'Admin-ended round remains ended until Host explicitly opens ticket sales');
   service.stop();
 });
 

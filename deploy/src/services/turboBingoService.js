@@ -340,8 +340,10 @@ export function createTurboBingoService({ repo }) {
           const latest = await repo.getCurrentTurboBingoGame();
           if (latest?.status === 'ended') await openGame();
         }
-      } else if (game?.status === 'ended') await openGame();
-      else await drawNext();
+      } else if (game?.status === 'ended') {
+        // An Admin-ended round stays ended until the Host explicitly opens ticket sales.
+        if (game.endReason !== 'admin_stopped') await openGame();
+      } else await drawNext();
     } catch { /* retry transient repository errors on the next tick */ }
     finally { ticking = false; }
   }
