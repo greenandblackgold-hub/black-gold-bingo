@@ -270,7 +270,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
       <section ref={ticketBoardRef} className="scroll-mt-4 space-y-3">
         <div className="flex items-center justify-between gap-2"><h2 className="text-lg font-black text-white">{t.tickets}</h2><span className="text-xs text-amber-200">{state?.tickets.length ?? 0}</span></div>
         {!state?.tickets.length && <p className="rounded-xl border border-white/10 bg-[#111111] p-5 text-center text-sm text-amber-50/55">{t.noTickets}</p>}
-        <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
+        <div className="grid grid-cols-2 items-start gap-1.5 sm:gap-4">
           {state?.tickets.map((ticket,index) => {
             const eligible = ticket.status === 'active' && state.game?.status === 'running' && ticket.matchedNumbers.length === state.game.target && state.game.lastNumber !== null && ticket.numbers.includes(state.game.lastNumber);
             // Spread all 12 ticket numbers evenly across the five visual columns.
@@ -288,7 +288,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
             const columnHeaders = ['B', 'I', 'N', 'G', 'O'];
             const headerColors = ['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'];
             const statusLabel = ticket.status === 'locked' ? t.locked : ticket.status === 'winner' ? t.winner : 'ተመዝግቧል';
-            return <article key={ticket.id} className={`bingo-card-surface relative mx-auto w-full max-w-[360px] min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-0 text-slate-900 shadow-xl ${accent.glow}`}>
+            return <article key={ticket.id} className={`bingo-card-surface relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-0 text-slate-900 shadow-xl ${accent.glow}`}>
               <div className={`flex min-h-7 items-center justify-between gap-1 bg-gradient-to-r ${accent.head} px-1.5 py-1 text-white sm:min-h-9 sm:px-2`}>
                 <div className="flex min-w-0 items-center gap-1.5">
                   <span aria-hidden="true" className="shrink-0 text-xs sm:text-sm">▣</span>
