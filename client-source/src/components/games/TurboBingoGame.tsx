@@ -221,7 +221,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
             <div className="pointer-events-none absolute inset-y-0 left-4 w-5 rotate-12 bg-gradient-to-r from-white/25 to-transparent blur-sm" />
           </div>
           <div className="mx-auto mt-3 flex h-7 w-3/4 items-center justify-center rounded-b-2xl border-x-4 border-b-4 border-[#d4af37] bg-gradient-to-b from-[#f59e0b] to-[#8a6418] shadow-lg"><span className="text-[9px] font-black tracking-[.3em] text-[#09090b]">TURBO BINGO</span></div>
-          <div className="mt-3 flex items-center justify-center gap-2"><span className="h-2 w-2 rounded-full bg-red-300 shadow-[0_0_8px_#fecaca]" /><span className="text-[9px] font-bold tracking-[.18em] text-amber-100/80">{drawnNumbers.length}/80 {t.called}</span><span className="h-2 w-2 rounded-full bg-amber-300 shadow-[0_0_8px_#fcd34d]" /></div>
+          <div className="mt-3 flex items-center justify-center gap-2"><span className="h-2 w-2 rounded-full bg-[#d4af37] shadow-[0_0_8px_#fecaca]" /><span className="text-[9px] font-bold tracking-[.18em] text-amber-100/80">{drawnNumbers.length}/80 {t.called}</span><span className="h-2 w-2 rounded-full bg-amber-300 shadow-[0_0_8px_#fcd34d]" /></div>
         </div>
       </section>
 
