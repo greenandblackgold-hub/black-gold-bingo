@@ -187,11 +187,8 @@ export function createTurboBingoService({ repo }) {
     const game = await repo.getCurrentTurboBingoGame();
     if (!game || game.status !== 'running') return false;
     const now = Date.now();
-    if (game.endsAt && now >= game.endsAt) {
-      const ended = await repo.updateTurboBingoGame(game.id, game.version, { status: 'ended', endedAt: now, endReason: 'duration_elapsed', nextDrawAt: null });
-      if (ended) await publish();
-      return Boolean(ended);
-    }
+    // Automatic draws continue until a server-verified winner claims or all 80 numbers are exhausted.
+    // endsAt is retained as round metadata only; it must never stop a live draw.
     const mode = game.mode ?? config.mode;
     if (mode === 'admin' && !forceManual) return false;
     if (mode === 'automatic' && now < Number(game.nextDrawAt ?? 0)) return false;
