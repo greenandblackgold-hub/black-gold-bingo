@@ -38,7 +38,7 @@ function getAllPatternOptions(labels: Partial<Record<WinPattern, string>>): Patt
 }
 
 
-export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = false }: { onGoToWallet: () => void; settingsOnly?: boolean; menuOnly?: boolean }) {
+export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = false, selectionMode = false, selectedCardCount = 0, cardColumns = 2, onToggleSelectionMode, onCardColumnsChange }: { onGoToWallet: () => void; settingsOnly?: boolean; menuOnly?: boolean; selectionMode?: boolean; selectedCardCount?: number; cardColumns?: 2 | 3 | 4; onToggleSelectionMode?: () => void; onCardColumnsChange?: (columns: 2 | 3 | 4) => void }) {
   const { lang, setLang } = useLanguage();
   const t = gameUi.playerFeatures[lang];
   const { balance, cards, transactions, clearMarks, removeCards, buyCards } = usePlayer();
@@ -64,6 +64,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const [autoBuyEnabled, setAutoBuyEnabled] = useState(() => { try { return localStorage.getItem('bgb.autoBuyEnabled') === 'on'; } catch { return false; } });
   const [autoBuyCount, setAutoBuyCount] = useState(() => { try { const n = Number(localStorage.getItem('bgb.autoBuyCount')); return [1,2,5,10,15,20,25,30].includes(n) ? n : 1; } catch { return 1; } });
   const [chatMessagesVisible, setChatMessagesVisible] = useState(() => { try { return localStorage.getItem('bgb.chatMessagesVisible') !== 'off'; } catch { return true; } });
+  const [hideUnregistered, setHideUnregistered] = useState(() => { try { return localStorage.getItem('bgb.hideUnregistered') === 'on'; } catch { return false; } });
   const [removeUnregistered, setRemoveUnregistered] = useState(() => {
     try { return localStorage.getItem('bgb.removeUnregistered') === 'on'; } catch { return false; }
   });
@@ -79,6 +80,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
         const color = localStorage.getItem('bgb.markColor');
         setMarkColor(markColors.includes(color ?? '') ? color! : '#d4af37');
         setRemoveUnregistered(localStorage.getItem('bgb.removeUnregistered') === 'on');
+        setHideUnregistered(localStorage.getItem('bgb.hideUnregistered') === 'on');
         setAutoDaub(localStorage.getItem('bgb.autoMark') !== 'off');
         setNumberHighlight(localStorage.getItem('bgb.numberHighlight') !== 'off');
         setAutoClaim(localStorage.getItem('bgb.autoClaim') === 'on');
@@ -273,7 +275,64 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                 {row.id === 'history' && <div className="space-y-2 rounded-xl border border-amber-400/25 bg-black/25 p-3"><div className="space-y-2 px-2 py-1">{(transactions ?? []).length === 0 ? <p className="py-3 text-center text-xs text-gold-600">{t.noTransactions}</p> : (transactions ?? []).slice().sort((a,b)=>b.at-a.at).map(tx => <div key={tx.id} className="flex items-center justify-between gap-3 border-b border-gold-700/20 py-2 text-xs"><div className="min-w-0"><p className="font-semibold text-gold-200">{tx.label ?? (tx.kind === 'deposit' ? t.deposit : t.cardPurchaseLabel)}</p><p className="text-[10px] text-gold-700">{formatDateTime(lang, tx.at)}</p></div><strong className={tx.amount >= 0 ? 'shrink-0 text-emerald-300' : 'shrink-0 text-amber-300'}>{tx.amount >= 0 ? '+' : '−'}{formatAmount(lang, Math.abs(tx.amount))} {translations.wallet[lang].etb}</strong></div>)}</div><p className="px-3 py-3 text-xs leading-5 text-gold-600">{t.noPreviousRounds}</p><button type="button" onClick={onGoToWallet} className="w-full rounded-lg bg-amber-400/10 px-3 py-2 text-xs font-bold text-amber-200">{t.goWalletHistory}</button></div>}
                 {row.id === 'wallet' && <button type="button" onClick={onGoToWallet} className="w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-600 px-4 py-3 font-bold text-zinc-950">{t.goWallet}</button>}
                 {row.id === 'gameHistory' && <p className={`text-sm ${muted}`}>{t.gameHistoryUnavailable}</p>}
-                {row.id === 'settings' && (
+                {row.id === 'settings' && settingsOnly && (
+                  <div className="space-y-4 text-sm text-slate-100">
+                    <div className="grid grid-cols-2 gap-3">
+                      <button type="button" onClick={onToggleSelectionMode} aria-pressed={selectionMode} className={`flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border p-3 text-center transition ${selectionMode ? 'border-sky-300 bg-sky-950/70' : 'border-sky-500/40 bg-sky-950/35 hover:border-sky-300'}`}>
+                        <span className="grid h-11 w-11 place-items-center rounded-xl bg-sky-600 text-2xl font-black text-white">☑</span>
+                        <span className="text-sm font-bold">ብዙ ካርቴላዎችን ምረጥ (Select)</span>
+                        {selectionMode && <span className="text-[11px] text-sky-200">{selectedCardCount} ተመርጠዋል</span>}
+                      </button>
+                      <button type="button" onClick={clearMarks} className="flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-red-500/35 bg-red-950/25 p-3 text-center transition hover:border-red-400">
+                        <span className="grid h-11 w-11 place-items-center rounded-full bg-red-700/80 text-2xl font-black text-white">↻</span>
+                        <span className="text-sm font-bold">ምልክት የተደረጉ ቁጥሮችን አጥፋ (Reset)</span>
+                      </button>
+                    </div>
+
+                    <section className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
+                      <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-sky-200">▦ <span>ሰሌዳ</span></h3>
+                      <div className="grid grid-cols-3 gap-2">
+                        {([2, 3, 4] as const).map(columns => (
+                          <button key={columns} type="button" aria-pressed={cardColumns === columns} onClick={() => onCardColumnsChange?.(columns)} className={`rounded-xl border p-2 transition ${cardColumns === columns ? 'border-sky-300 bg-sky-950/70 ring-2 ring-sky-400/70' : 'border-slate-600 bg-slate-950/70'}`}>
+                            <span className="mx-auto grid h-12 w-full max-w-16 gap-1" style={{gridTemplateColumns: `repeat(${columns}, minmax(0,1fr))`, gridTemplateRows: 'repeat(2,minmax(0,1fr))'}}>
+                              {Array.from({length: columns * 2}, (_, i) => <span key={i} className={`rounded-sm ${cardColumns === columns ? 'bg-sky-500' : 'bg-slate-500'}`} />)}
+                            </span>
+                            <span className="mt-1 block text-center text-sm font-black">{columns}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-700 pt-3">
+                        <span className="text-sm font-semibold text-slate-200">⚙ የካርቴላዎች አደራደር</span>
+                        <div className="flex gap-1">
+                          <button type="button" aria-pressed={cardOrder === 'oldest'} onClick={() => {setCardOrder('oldest');try{localStorage.setItem('bgb.cardOrder','oldest');}catch{}window.dispatchEvent(new Event('bgb-player-settings'));}} className={`rounded-lg border px-2 py-1.5 text-xs font-bold ${cardOrder === 'oldest' ? 'border-sky-300 bg-sky-900 text-white' : 'border-slate-600 text-slate-300'}`}>L·LT</button>
+                          <button type="button" aria-pressed={cardOrder === 'newest'} onClick={() => {setCardOrder('newest');try{localStorage.setItem('bgb.cardOrder','newest');}catch{}window.dispatchEvent(new Event('bgb-player-settings'));}} className={`rounded-lg border px-2 py-1.5 text-xs font-bold ${cardOrder === 'newest' ? 'border-sky-300 bg-sky-900 text-white' : 'border-slate-600 text-slate-300'}`}>LT·L</button>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
+                      <h3 className="mb-2 flex items-center gap-2 text-sm font-black text-sky-200">ϟ <span>በጨዋታ ጊዜ</span></h3>
+                      <div className="divide-y divide-slate-700">
+                        <label className="flex items-center gap-3 py-3">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/15 text-xl text-amber-300">★</span>
+                          <span className="min-w-0 flex-1"><strong className="block text-sm">አውቶማቲክ አጥቁር</strong><small className="block text-xs leading-5 text-slate-400">የተጠራ ቁጥር ሁሉ በካርቴላው ላይ በራሱ ይመረጣል።</small></span>
+                          <input type="checkbox" className="h-5 w-5 accent-sky-500" checked={autoDaub} onChange={e => {const on=e.target.checked;setAutoDaub(on);try{localStorage.setItem('bgb.autoMark',on?'on':'off');}catch{}window.dispatchEvent(new Event('bgb-player-settings'));}} />
+                        </label>
+                        <label className="flex items-center gap-3 py-3">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-700 text-xl text-slate-300">◉̸</span>
+                          <span className="min-w-0 flex-1"><strong className="block text-sm">ያልተመዘገቡ ካርቴላዎችን ደብቅ</strong><small className="block text-xs leading-5 text-slate-400">ያስመዘገቧቸው ካርቴላዎች ብቻ በሰሌዳው ላይ ይቀራሉ።</small></span>
+                          <input type="checkbox" className="h-5 w-5 accent-sky-500" checked={hideUnregistered} onChange={e => {const on=e.target.checked;setHideUnregistered(on);try{localStorage.setItem('bgb.hideUnregistered',on?'on':'off');}catch{}window.dispatchEvent(new Event('bgb-player-settings'));}} />
+                        </label>
+                        <label className="flex items-center gap-3 py-3">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-500/15 text-xl text-emerald-300">🔊</span>
+                          <span className="min-w-0 flex-1"><strong className="block text-sm">ድምጽ</strong><small className="block text-xs leading-5 text-slate-400">የእስቱ የቢንጎ እና የጨዋታ መጀመሪያ ድምጾች።</small></span>
+                          <input type="checkbox" className="h-5 w-5 accent-sky-500" checked={soundEnabled} onChange={e => setSoundEnabled(e.target.checked)} />
+                        </label>
+                      </div>
+                    </section>
+                  </div>
+                )}
+                {row.id === 'settings' && !settingsOnly && (
                   <div className="space-y-4 text-sm">
                     <div className="rounded-xl border border-amber-400/25 bg-black/20 p-3">
                       <h4 className="mb-3 font-black text-amber-300">{t.gameSettings}</h4>
