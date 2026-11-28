@@ -5,7 +5,7 @@ type Mode = 'automatic' | 'admin';
 type RoundType = 'quick' | 'standard' | 'full_house' | 'custom';
 type Overview = {
   settings: { enabled: boolean; mode: Mode; roundType: RoundType; target: number; ticketPriceEtb: number; prizeEtb: number; drawIntervalSeconds: number; roundDurationSeconds: number; maxTicketsPerPlayer: number };
-  game: null | { id: string; status: string; target: number; drawnNumbers: number[]; ticketCount: number; mode?: Mode; roundType?: RoundType; prizeEtb?: number; roundDurationSeconds?: number; endsAt?: number | null; registrationEndsAt?: number | null };
+  game: null | { id: string; status: string; target: number; drawnNumbers: number[]; ticketCount: number; mode?: Mode; roundType?: RoundType; prizeEtb?: number; roundDurationSeconds?: number; endsAt?: number | null; registrationEndsAt?: number | null; pausedAt?: number | null };
   tickets: Array<{ id: string; userId: string; status: string }>;
   history?: Array<{ id: string; target: number; drawnNumbers: number[]; endReason?: string; winner?: { userId: string; ticketId: string } | null }>;
 };
@@ -91,18 +91,38 @@ export function AdminTurboBingo() {
       </div>
       <button type="button" disabled={busy || !data} onClick={save} className="w-full rounded-xl bg-amber-300 px-4 py-3 font-black text-black disabled:opacity-50">SAVE TURBO BINGO SETTINGS</button>
       <div className={card}>
-        <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-black text-amber-100">CURRENT GAME</h3><span className="rounded-full bg-amber-300/10 px-3 py-1 text-[10px] font-black uppercase text-amber-300">{game?.status ?? 'NOT OPEN'}</span></div>
+        <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-black text-amber-100">CURRENT GAME · HOST CONTROL</h3><span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase ${game?.pausedAt ? 'bg-amber-300/15 text-amber-200' : game?.status === 'running' ? 'bg-emerald-400/15 text-emerald-200' : 'bg-amber-300/10 text-amber-300'}`}>{game?.pausedAt ? 'PAUSED' : game?.status ?? 'NOT OPEN'}</span></div>
+        <div className="my-4 flex flex-col items-center gap-3 rounded-xl border border-amber-300/20 bg-gradient-to-b from-amber-300/[.08] to-black/40 p-4">
+          <div className="grid h-36 w-36 place-items-center rounded-full border-2 border-amber-300/70 bg-[radial-gradient(circle_at_30%_25%,#fff0b3,#d4af37_55%,#3b2600)] p-4 text-center text-black shadow-[0_0_35px_rgba(212,175,55,.2)]">
+            {game?.drawnNumbers?.length ? <div><span className="block text-sm font-black tracking-widest">{game.drawnNumbers.at(-1)! <= 16 ? 'B' : game.drawnNumbers.at(-1)! <= 32 ? 'I' : game.drawnNumbers.at(-1)! <= 48 ? 'N' : game.drawnNumbers.at(-1)! <= 64 ? 'G' : 'O'}</span><strong className="block text-5xl font-black tabular-nums">{game.drawnNumbers.at(-1)}</strong></div> : <span className="text-sm font-black leading-6">እስካሁን አልተጠራም</span>}
+          </div>
+          <p className="text-xs font-bold tracking-wide text-amber-200">{game?.pausedAt ? 'ROUND PAUSED' : game?.drawnNumbers?.length ? 'LATEST CALLED NUMBER' : 'WAITING FOR FIRST CALL'}</p>
+        </div>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Metric label="TARGET" value={String(game?.target ?? target)} /><Metric label="TICKETS" value={String(game?.ticketCount ?? 0)} /><Metric label="CALLED" value={String(game?.drawnNumbers.length ?? 0)} /><Metric label="PRIZE ETB" value={String(activePrize)} />
         </div>
         <p className="mt-3 text-xs text-amber-100/60">Round: {activeRoundType.replace('_', ' ')} · Control: {activeMode === 'admin' ? 'Admin manual' : 'Automatic'}</p>
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <button type="button" disabled={busy || (game != null && game.status !== 'ended')} onClick={() => void action('/api/admin/turbo-bingo/open')} className="rounded-lg border border-amber-300/40 px-3 py-3 text-xs font-black text-amber-200 disabled:opacity-30">OPEN TICKET SALES</button>
-          <button type="button" disabled={busy || game?.status !== 'waiting' || !game.ticketCount} onClick={() => void action('/api/admin/turbo-bingo/start')} className="rounded-lg bg-emerald-400 px-3 py-3 text-xs font-black text-black disabled:opacity-30">START ROUND</button>
-          <button type="button" disabled={busy || game?.status !== 'running'} onClick={() => void action('/api/admin/turbo-bingo/stop')} className="rounded-lg border border-red-400/40 px-3 py-3 text-xs font-black text-red-200 disabled:opacity-30">STOP ROUND</button>
+          <button type="button" disabled={busy || (game?.status !== 'waiting' && !(game?.status === 'running' && Boolean(game.pausedAt))) || (game?.status === 'waiting' && !game.ticketCount && activeMode !== 'automatic')} onClick={() => void action('/api/admin/turbo-bingo/start')} className="rounded-lg bg-emerald-400 px-3 py-3 text-xs font-black text-black disabled:opacity-30">{game?.pausedAt ? 'RESUME ROUND' : 'START ROUND'}</button>
+          <button type="button" disabled={busy || game?.status !== 'running' || Boolean(game.pausedAt)} onClick={() => void action('/api/admin/turbo-bingo/pause')} className="rounded-lg border border-amber-300/40 bg-black/40 px-3 py-3 text-xs font-black text-amber-200 disabled:opacity-30">PAUSE ROUND</button>
+          <button type="button" disabled={busy || game?.status !== 'running'} onClick={() => void action('/api/admin/turbo-bingo/stop')} className="rounded-lg border border-zinc-500/50 bg-zinc-950 px-3 py-3 text-xs font-black text-zinc-200 disabled:opacity-30">END ROUND</button>
         </div>
-        {game?.status === 'running' && activeMode === 'admin' && <button type="button" disabled={busy} onClick={() => void action('/api/admin/turbo-bingo/draw')} className="mt-3 w-full rounded-lg bg-amber-300 px-4 py-3 text-sm font-black text-black disabled:opacity-40">CALL NEXT NUMBER · SERVER RANDOM DRAW</button>}
-        {game?.drawnNumbers?.length ? <p className="mt-3 text-xs leading-6 text-amber-100/60">Drawn: {game.drawnNumbers.join(' · ')}</p> : null}
+        {game?.status === 'running' && !game.pausedAt && activeMode === 'admin' && <button type="button" disabled={busy} onClick={() => void action('/api/admin/turbo-bingo/draw')} className="mt-3 w-full rounded-lg bg-amber-300 px-4 py-3 text-sm font-black text-black disabled:opacity-40">ቀጣይ ቁጥር ጥራ · CALL NEXT NUMBER</button>}
+        <div className="mt-4 space-y-2">
+          <h4 className="text-xs font-black uppercase tracking-widest text-amber-300">የተጠሩ ቁጥሮች · LAST CALLED BALLS</h4>
+          {game?.drawnNumbers?.length ? <div className="flex flex-wrap gap-2">{game.drawnNumbers.slice(-7).reverse().map((number) => <span key={number} className="rounded-lg border border-amber-300/35 bg-amber-300/10 px-3 py-2 text-sm font-black tabular-nums text-amber-100">{number <= 16 ? 'B' : number <= 32 ? 'I' : number <= 48 ? 'N' : number <= 64 ? 'G' : 'O'}-{number}</span>)}</div> : <p className="rounded-lg border border-dashed border-amber-300/25 bg-black/30 px-3 py-3 text-center text-sm text-amber-100/55">እስካሁን ምንም ቁጥር አልተጠራም</p>}
+        </div>
+        <div className="mt-4 space-y-2">
+          <h4 className="text-xs font-black uppercase tracking-widest text-amber-300">የወጡ ቁጥሮች · CALLED NUMBERS (1–80)</h4>
+          <div className="overflow-x-auto rounded-lg border border-amber-300/20">
+            <table className="w-full table-fixed border-collapse text-center text-xs">
+              <thead><tr>{['B','I','N','G','O'].map((letter) => <th key={letter} className="border border-amber-300/20 bg-amber-300/15 py-2 font-black text-amber-200">{letter}</th>)}</tr></thead>
+              <tbody>{Array.from({ length: 16 }, (_, row) => <tr key={row}>{[0,1,2,3,4].map((column) => { const number = column * 16 + row + 1; const wasCalled = (game?.drawnNumbers ?? []).includes(number); return <td key={number} aria-label={`${number}${wasCalled ? ' called' : ''}`} className={`border border-amber-300/10 py-2 font-bold tabular-nums ${wasCalled ? 'bg-amber-300 text-black shadow-[inset_0_0_0_1px_rgba(0,0,0,.15)]' : 'bg-black/25 text-amber-100/45'}`}>{number}</td>; })}</tr>)}</tbody>
+            </table>
+          </div>
+          <p className="text-[10px] leading-4 text-amber-100/40">Turbo Bingo 80-ball columns: B 1–16 · I 17–32 · N 33–48 · G 49–64 · O 65–80. Winning target remains 1–12.</p>
+        </div>
       </div>
       <div className={card}><h3 className="font-black text-amber-100">ROUND HISTORY</h3><div className="mt-2 space-y-2">{(data?.history ?? []).length ? (data?.history ?? []).slice(0, 10).map((item) => <div key={item.id} className="flex flex-wrap justify-between gap-2 border-b border-amber-200/10 pb-2 text-xs text-amber-100/65"><span>{item.id.slice(0, 8)} · Target {item.target} · {item.drawnNumbers.length} balls</span><span>{item.winner ? 'Winner confirmed' : item.endReason ?? 'Ended'}</span></div>) : <p className="text-xs text-amber-100/45">No completed rounds yet.</p>}</div></div>
       <p className="text-[10px] leading-5 text-amber-100/40">All tickets and prizes use the separate non-withdrawable Turbo Bingo demo wallet. No legacy Bingo wallet, deposit, withdrawal, or payment flow is used.</p>
