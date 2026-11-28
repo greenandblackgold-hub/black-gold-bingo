@@ -716,7 +716,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 <h2 className="text-lg font-black text-amber-200">⚙ {t.settings}</h2>
                 <button type="button" onClick={() => onSettingsOpenChange(false)} aria-label={t.close} className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold text-amber-100">{t.close} ✕</button>
               </div>
-              <PlayerFeatures onGoToWallet={onGoToWallet} settingsOnly selectionMode={selectionMode} selectedCardCount={selectedCardIds.length} cardColumns={cardColumns} onToggleSelectionMode={() => setSelectionMode(value => !value)} onCardColumnsChange={columns => {setCardColumns(columns);try{localStorage.setItem('bgb.cardColumns',String(columns));}catch{}}} />
+              <PlayerFeatures onGoToWallet={onGoToWallet} onCloseSettings={() => onSettingsOpenChange(false)} settingsOnly selectionMode={selectionMode} selectedCardCount={selectedCardIds.length} cardColumns={cardColumns} onToggleSelectionMode={() => setSelectionMode(value => !value)} onCardColumnsChange={columns => {setCardColumns(columns);try{localStorage.setItem('bgb.cardColumns',String(columns));}catch{}}} />
             </section>
           </div>
         )}
