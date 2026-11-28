@@ -154,16 +154,14 @@ test('Turbo Bingo Host can pause, resume and end a round without drawing while p
   assert.equal(paused.game.status, 'running', 'pause preserves the running round state');
   assert.equal(paused.game.isPaused, true);
   assert.ok(paused.game.pausedAt);
-  await assert.rejects(service.drawNextManually(), /resume the round/i);
   await assert.rejects(service.claim(admin, 'turbo-pause-ticket'), /active Turbo Bingo game/i);
   await new Promise((resolve) => setTimeout(resolve, 250));
   assert.equal((await repo.getCurrentTurboBingoGame()).drawnNumbers.length, 0, 'no numbers are drawn while paused');
-  const resumed = await service.startGame();
+  const resumed = await service.drawNextManually();
   assert.equal(resumed.game.status, 'running');
   assert.equal(resumed.game.isPaused, false);
   assert.equal(resumed.game.pausedAt, null);
-  await service.drawNextManually();
-  assert.equal((await repo.getCurrentTurboBingoGame()).drawnNumbers.length, 1);
+  assert.equal(resumed.game.drawnNumbers.length, 1, 'Call Next Number resumes and immediately draws');
   const ended = await service.stopGame();
   assert.equal(ended.game.status, 'ended');
   assert.equal(ended.game.isPaused, false);
