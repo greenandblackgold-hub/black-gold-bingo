@@ -112,15 +112,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
 
   return (
     <main className="turbo-player mx-auto min-h-screen w-full max-w-6xl space-y-4 bg-[#09090b] px-3 pb-28 pt-3 text-white sm:px-5 sm:pt-5">
-      <style>{`
-        @keyframes turbo-ball-float { 0%,100% { transform:translate(0,0) rotate(0); } 12% { transform:translate(22px,-24px) rotate(75deg); } 27% { transform:translate(-26px,17px) rotate(-95deg); } 43% { transform:translate(18px,29px) rotate(125deg); } 59% { transform:translate(-30px,-18px) rotate(-145deg); } 76% { transform:translate(25px,-28px) rotate(190deg); } 90% { transform:translate(-15px,20px) rotate(-225deg); } }
-        @keyframes turbo-ball-exit { 0% { opacity:0; transform:translate(-50%,185px) scale(.48) rotate(-100deg); } 10% { opacity:1; } 34% { opacity:1; transform:translate(-50%,-42px) scale(1.22) rotate(150deg); } 48% { transform:translate(-50%,-66px) scale(1.12) rotate(245deg); } 63% { opacity:1; transform:translate(-50%,8px) scale(1.08) rotate(330deg); } 82% { opacity:1; transform:translate(-50%,150px) scale(1) rotate(470deg); } 100% { opacity:0; transform:translate(-50%,225px) scale(.82) rotate(560deg); } }
-        .turbo-ball-float { animation:turbo-ball-float .48s ease-in-out infinite; will-change:transform; }
-        .turbo-ball-exit { animation:turbo-ball-exit 1.65s cubic-bezier(.12,.72,.18,1) both; }
-        @media(prefers-reduced-motion:reduce) { .turbo-ball-float,.turbo-ball-exit { animation:none!important; } }
-      `}</style>
-
-      <header className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200/20 bg-[#111111] px-3 py-3 shadow-lg sm:px-5">
+<header className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200/20 bg-[#111111] px-3 py-3 shadow-lg sm:px-5">
         <button type="button" onClick={onBack} className="rounded-xl border border-white/20 px-3 py-2 text-xs font-bold text-amber-50 hover:bg-white/10 sm:text-sm">{t.back}</button>
         <div className="min-w-0 text-center"><p className="text-[9px] font-black tracking-[.2em] text-amber-200/70">BLACK GOLD GAME CENTER</p><h1 className="text-lg font-black tracking-wide sm:text-2xl">{t.title}</h1></div>
         <label className="flex shrink-0 items-center gap-1.5 rounded-xl border border-amber-100/20 bg-black/20 px-2 py-2 text-[10px] font-bold text-white">
