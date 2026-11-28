@@ -163,6 +163,9 @@ type CardProps = {
   registering?: boolean;
   onRegister?: () => void;
   gameStarted: boolean;
+  selectionMode?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
 };
 
 function sameCardGrid(a: BingoCard, b: BingoCard): boolean {
@@ -198,7 +201,7 @@ function readableMarkText(hexColor: string): string {
   return luminance > 0.42 ? '#111827' : '#ffffff';
 }
 
-const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, called, markColor, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister, gameStarted }: CardProps) {
+const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, called, markColor, pattern, claimable, claiming, onClaim, onToggle, onRemove, draft = false, registering = false, onRegister, gameStarted, selectionMode = false, selected = false, onSelect }: CardProps) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
   const winning = useMemo(() => {
     const result = findWinningPattern(card.grid, new Set([...called].filter(n => marks.has(n))), pattern);
@@ -217,6 +220,8 @@ const BingoCardView = memo(function BingoCardView({ labels, card, index, marks, 
         </div>
         {draft ? (
           <button type="button" aria-label={`Remove card #${card.serial}`} onClick={(event) => { event.stopPropagation(); onRemove(); }} className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-xl font-medium leading-none text-white/95 transition hover:bg-black/20 focus:outline-none focus:ring-2 focus:ring-white/80 sm:h-7 sm:w-7">×</button>
+        ) : selectionMode ? (
+          <button type="button" aria-label={`Select card #${card.serial}`} aria-pressed={selected} onClick={onSelect} className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg border text-sm font-black ${selected ? 'border-sky-200 bg-sky-500 text-white' : 'border-white/50 bg-black/30 text-white'}`}>{selected ? '✓' : ''}</button>
         ) : (
           <span aria-label={`Card #${card.serial} locked`} title="Locked" className="grid h-6 w-6 shrink-0 place-items-center text-base text-white/95 sm:h-7 sm:w-7">🔒</span>
         )}
@@ -335,6 +340,10 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   const markUndoStack = useRef<Record<string, number[]>[]>([]);
   const markRedoStack = useRef<Record<string, number[]>[]>([]);
   const [autoMark, setAutoMark] = useState(true);
+  const [cardColumns, setCardColumns] = useState<2 | 3 | 4>(() => { try { const value = Number(localStorage.getItem('bgb.cardColumns')); return value === 3 || value === 4 ? value : 2; } catch { return 2; } });
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
+  const [hideUnregistered, setHideUnregistered] = useState(() => { try { return localStorage.getItem('bgb.hideUnregistered') === 'on'; } catch { return false; } });
   const [autoClaim, setAutoClaim] = useState(() => { try { return localStorage.getItem('bgb.autoClaim') === 'on'; } catch { return false; } });
   const [autoBuyEnabled, setAutoBuyEnabled] = useState(() => { try { return localStorage.getItem('bgb.autoBuyEnabled') === 'on'; } catch { return false; } });
   const [autoBuyCount, setAutoBuyCount] = useState(() => { try { const n=Number(localStorage.getItem('bgb.autoBuyCount')); return [1,2,5,10,15,20,25,30].includes(n) ? n : 1; } catch { return 1; } });
@@ -468,6 +477,9 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         setCardOrder(localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest');
         setPlayerTheme(localStorage.getItem('bgb.playerTheme') === 'light' ? 'light' : 'dark');
         setAutoMark(localStorage.getItem('bgb.autoMark') !== 'off');
+        setHideUnregistered(localStorage.getItem('bgb.hideUnregistered') === 'on');
+        const columns = Number(localStorage.getItem('bgb.cardColumns'));
+        setCardColumns(columns === 3 || columns === 4 ? columns : 2);
         setAutoClaim(localStorage.getItem('bgb.autoClaim') === 'on');
         setAutoBuyEnabled(localStorage.getItem('bgb.autoBuyEnabled') === 'on');
         const autoCount = Number(localStorage.getItem('bgb.autoBuyCount'));
@@ -704,7 +716,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 <h2 className="text-lg font-black text-amber-200">⚙ {t.settings}</h2>
                 <button type="button" onClick={() => onSettingsOpenChange(false)} aria-label={t.close} className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold text-amber-100">{t.close} ✕</button>
               </div>
-              <PlayerFeatures onGoToWallet={onGoToWallet} settingsOnly />
+              <PlayerFeatures onGoToWallet={onGoToWallet} settingsOnly selectionMode={selectionMode} selectedCardCount={selectedCardIds.length} cardColumns={cardColumns} onToggleSelectionMode={() => setSelectionMode(value => !value)} onCardColumnsChange={columns => {setCardColumns(columns);try{localStorage.setItem('bgb.cardColumns',String(columns));}catch{}}} />
             </section>
           </div>
         )}
@@ -919,8 +931,8 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         </section>
 
         {(draftCards.length > 0 || cards.length > 0) && (
-          <section className="grid grid-cols-2 items-start gap-1.5 sm:gap-4">
-            {orderedDraftCards.map((card, index) => (
+          <section className={`grid items-start gap-1.5 sm:gap-4 ${cardColumns === 2 ? 'grid-cols-2' : cardColumns === 3 ? 'grid-cols-3' : 'grid-cols-4'}`}>
+            {!hideUnregistered && orderedDraftCards.map((card, index) => (
               <BingoCardView
                 labels={t}
                 key={card.id}
@@ -968,6 +980,9 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 onClaim={() => void handleClaim(card.id)}
                 onToggle={number => handleManualMark(card.id, number)}
                 onRemove={() => removeCards([card.id])}
+                selectionMode={selectionMode}
+                selected={selectedCardIds.includes(card.id)}
+                onSelect={() => setSelectedCardIds(ids => ids.includes(card.id) ? ids.filter(id => id !== card.id) : [...ids, card.id])}
               />
             ))}
           </section>
