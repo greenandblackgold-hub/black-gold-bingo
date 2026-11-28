@@ -997,6 +997,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                   <p className="text-sm font-bold text-yellow-100">የካርቴላ ፓኬጅ ይምረጡ</p>
                   <p className="mt-1 text-xs text-yellow-100/70">የሚፈልጉትን ፓኬጅ ይምረጡ፤ በግዢ ማረጋገጫው ላይ የተመረጡት ካርቴላዎች በአንድ ጊዜ ይጨመራሉ።</p>
                   <p className="mt-2 text-xs text-yellow-300">{isAdmin ? 'ADMIN TEST · ነጻ ካርቴላ' : `${t.cardPrice}: ${formatAmount(lang, cardPrice)} ብር / ካርቴላ`}</p>
+                  {isAdmin && <p className="mt-1 text-[11px] font-bold text-emerald-300">Admin account only · No balance deduction · Testing use</p>}
                 </div>
               )}
               <div className="grid grid-cols-2 gap-3">
@@ -1023,6 +1024,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                     </div>
                   </>
                 )}
+                {isAdmin && !bonusRound && <p className="flex items-center justify-between gap-3 border-t border-yellow-500/20 pt-2 text-emerald-300"><span className="font-bold">Admin test total</span><strong className="text-lg">FREE · 0 ETB</strong></p>}
               </div>
               {!quickBuyAllowed && <p role="status" className="mb-3 rounded-lg bg-amber-950/60 p-2 text-xs text-amber-200">{t.buyOnlyWaiting}</p>}
               {quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">{t.insufficient}</p>}
