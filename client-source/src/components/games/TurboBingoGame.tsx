@@ -206,32 +206,11 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
         </div>
       </section>
 
-      <section aria-label={t.cage} className="overflow-hidden rounded-3xl border border-cyan-100/30 bg-[radial-gradient(ellipse_at_50%_35%,rgba(57,180,203,.25),transparent_58%),linear-gradient(145deg,#062c29,#071b25_60%,#101a2a)] p-3 shadow-[inset_0_1px_25px_rgba(111,230,255,.12),0_15px_40px_rgba(0,0,0,.28)] sm:p-5">
-        <div className="mb-2 flex items-center justify-between gap-2"><div><p className="text-[9px] font-black tracking-[.22em] text-cyan-100/70">{t.machine}</p><h2 className="text-lg font-black text-white sm:text-xl">{t.cage}</h2></div><div className="flex items-center gap-2"><button type="button" onClick={() => void toggleMachineSound()} className="rounded-full border border-cyan-100/30 bg-cyan-200/10 px-3 py-2 text-[9px] font-black text-cyan-50">{soundEnabled ? t.soundOff : t.soundOn}</button><span className="rounded-full border border-cyan-100/25 bg-cyan-200/10 px-2.5 py-1 text-[9px] font-bold text-cyan-50">{state?.game?.status === 'running' ? t.mixing : state?.game?.status === 'ended' ? t.endedStatus : t.waiting}</span></div></div>
-        <div className="relative mx-auto h-[275px] max-w-[560px] sm:h-[350px]">
-          <div className="absolute bottom-2 left-[10%] right-[10%] h-7 rounded-[50%] bg-red-500/30 blur-xl" />
-          <div className="absolute bottom-3 left-[12%] right-[12%] h-7 rounded-[50%] border border-red-200/60 bg-gradient-to-b from-red-400 via-red-800 to-red-950 shadow-xl" />
-          <div className="absolute bottom-2 left-[12%] right-[12%] top-[13%] rounded-[12px_12px_18px_18px] border-[5px] border-[#8f1713] bg-gradient-to-r from-[#78140f] via-[#ed3429] to-[#80150f] shadow-[0_16px_25px_rgba(0,0,0,.5),inset_0_3px_12px_rgba(255,255,255,.25)]" />
-          <div className="absolute bottom-[3%] left-[13%] right-[13%] z-20 h-[25%] rounded-b-[14px] border-x-2 border-b-2 border-red-950/70 bg-gradient-to-br from-[#f04438] via-[#c91e18] to-[#7f1410] shadow-[inset_0_8px_16px_rgba(255,255,255,.12)]"><div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md border border-yellow-300/70 bg-red-800/70 px-5 py-1.5 text-[10px] font-black tracking-wider text-yellow-200 shadow-md">BINGO PRO</div></div>
-          <div className="absolute top-[12%] left-[11%] right-[11%] z-20 h-[14%] rounded-t-[9px] border-[4px] border-red-950/70 bg-gradient-to-b from-[#ff5549] via-[#e52b22] to-[#9e1812] shadow-[0_5px_12px_rgba(0,0,0,.4)]" />
-          <div className="absolute bottom-[5%] left-[18%] z-20 h-2 w-8 rounded-sm bg-gradient-to-b from-slate-300 to-slate-700 shadow-md" />
-          <div className="absolute bottom-[5%] right-[18%] z-20 h-2 w-8 rounded-sm bg-gradient-to-b from-slate-300 to-slate-700 shadow-md" />
-          <div className="absolute bottom-[28%] left-[14%] right-[14%] top-[25%] overflow-hidden rounded-[8px] border-[4px] border-cyan-50/75 bg-gradient-to-br from-white/35 via-cyan-100/15 to-sky-200/25 shadow-[inset_14px_0_25px_rgba(255,255,255,.22),inset_-14px_0_28px_rgba(70,180,255,.25),0_0_22px_rgba(70,210,255,.22)] backdrop-blur-[2px]">
-            <div className="absolute inset-[5%] rounded-[38%]">
-              {cageBalls.map((ball) => <span key={ball.number} className={`absolute grid place-items-center rounded-full border border-white/80 text-[9px] font-black text-white shadow-[inset_2px_3px_5px_rgba(255,255,255,.75),inset_-3px_-4px_7px_rgba(0,0,0,.38),0_3px_8px_rgba(0,0,0,.45)] sm:text-[10px] ${state?.game?.status === 'running' ? 'turbo-ball-float' : ''}`} style={{left:`${ball.left}%`,top:`${ball.top}%`,width:ball.size,height:ball.size,marginLeft:-ball.size/2,marginTop:-ball.size/2,animationDelay:`${ball.delay}s`,animationDuration:`${0.38 + (ball.number % 5) * 0.055}s`,background:ball.color}}>{ball.number}</span>)}
-            </div>
-            <div className="absolute left-1/2 top-1/2 h-[3px] w-[88%] -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] rounded-full bg-gradient-to-r from-cyan-100/10 via-cyan-50/75 to-cyan-100/10 shadow-[0_0_10px_rgba(130,230,255,.8)]" />
-            <div className="absolute -top-2 left-1/2 z-20 h-5 w-16 -translate-x-1/2 rounded-t-xl border-2 border-cyan-50/80 bg-gradient-to-b from-slate-100/80 to-cyan-900/80 shadow-lg sm:w-20" />
-          </div>
-          <div className="absolute bottom-5 left-[8%] h-[70%] w-3 rotate-[12deg] rounded-full border border-cyan-100/60 bg-gradient-to-r from-red-950 via-red-600 to-red-950 shadow-lg" />
-          <div className="absolute bottom-5 right-[8%] h-[70%] w-3 -rotate-[12deg] rounded-full border border-cyan-100/60 bg-gradient-to-r from-cyan-200/60 to-blue-950/90 shadow-lg" />
-          {extractedNumber !== null && <div key={extractedNumber} className="turbo-ball-exit absolute left-1/2 top-0 z-40 grid h-14 w-14 place-items-center rounded-full border-[3px] border-white bg-[radial-gradient(circle_at_30%_24%,#fff,#fca5a5_18%,#ef4444_55%,#991b1b)] text-xl font-black text-white shadow-[0_0_0_5px_rgba(248,113,113,.18),0_0_28px_rgba(248,113,113,.9)] sm:h-16 sm:w-16 sm:text-2xl" aria-live="polite">{extractedNumber}</div>}
+      <section aria-label={t.cage} className="overflow-hidden rounded-3xl border border-white/10 bg-[#071b16] p-3 shadow-lg sm:p-5">
+        <div className="mb-2 flex justify-end">
+          <button type="button" onClick={() => void toggleMachineSound()} className="rounded-full border border-emerald-100/30 bg-black/30 px-3 py-2 text-[10px] font-black text-white">{soundEnabled ? t.soundOff : t.soundOn}</button>
         </div>
-        <div className="mx-auto mt-1 flex max-w-[560px] items-center justify-between gap-2 rounded-2xl border border-cyan-100/20 bg-black/40 px-3 py-2">
-          <div className="min-w-0"><p className="text-[9px] font-black tracking-wider text-cyan-50/60">{t.lastBall}</p><p className="text-xs text-cyan-50/50">{drawnNumbers.length} / 80 {t.called.toLowerCase()}</p></div>
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 border-white/80 bg-[radial-gradient(circle_at_30%_25%,#fff,#fca5a5_18%,#ef4444_55%,#991b1b)] text-xl font-black text-white shadow-[0_0_18px_rgba(248,113,113,.45)]">{lastNumber ?? '—'}</span>
-          <div className="text-right"><p className="text-[9px] font-black tracking-wider text-cyan-50/60">{t.inventory}</p><p className="text-sm font-black text-white">{cageBalls.length} / 80 {t.balls}</p></div>
-        </div>
+        <img src="/turbo-bingo-machine.jpg" alt="Bingo Pro red lottery ball machine" className="mx-auto block h-auto w-full max-w-[560px] object-contain" />
       </section>
 
       {error && <p role="alert" className="rounded-xl border border-red-400/30 bg-red-950/50 p-3 text-sm text-red-100">{error}</p>}
