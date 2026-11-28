@@ -178,9 +178,6 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
 
   const canBuy = state?.settings.enabled && state.game?.status === 'waiting';
   const unitTicketPrice = state?.isAdmin ? 0 : (state?.settings.ticketPriceEtb ?? 0);
-  const cardBoardRows = Math.max(5, ...(state?.tickets ?? []).map((ticket) =>
-    Math.max(...Array.from({ length: 5 }, (_, column) => ticket.numbers.filter((number) => Math.floor((number - 1) / 16) === column).length))
-  ));
   const langNames: Record<Lang, string> = { am: 'አማርኛ', ti: 'ትግርኛ', en: 'English' };
 
   return (
@@ -273,37 +270,58 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
       <section ref={ticketBoardRef} className="scroll-mt-4 space-y-3">
         <div className="flex items-center justify-between gap-2"><h2 className="text-lg font-black text-white">{t.tickets}</h2><span className="text-xs text-amber-200">{state?.tickets.length ?? 0}</span></div>
         {!state?.tickets.length && <p className="rounded-xl border border-white/10 bg-[#111111] p-5 text-center text-sm text-amber-50/55">{t.noTickets}</p>}
-        <div className="grid grid-cols-1 items-stretch gap-3 min-[430px]:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
           {state?.tickets.map((ticket,index) => {
             const eligible = ticket.status === 'active' && state.game?.status === 'running' && ticket.matchedNumbers.length === state.game.target && state.game.lastNumber !== null && ticket.numbers.includes(state.game.lastNumber);
-            const statusLabel = ticket.status === 'locked' ? t.locked : ticket.status === 'winner' ? t.winner : t.active;
             const columns = Array.from({ length: 5 }, (_, column) =>
               ticket.numbers.filter((number) => Math.floor((number - 1) / 16) === column).sort((a, b) => a - b)
             );
+            // Turbo tickets contain 12 numbers, so size the board to their actual
+            // column count instead of forcing a mostly-empty 5x5 board.
+            const cardRows = Math.max(3, ...columns.map((column) => column.length));
+            const accent = [
+              { border: 'border-blue-500', glow: 'shadow-[0_0_18px_rgba(37,99,235,.55)]', head: 'from-blue-700 via-blue-500 to-blue-700' },
+              { border: 'border-lime-500', glow: 'shadow-[0_0_18px_rgba(132,204,22,.5)]', head: 'from-green-700 via-lime-600 to-green-700' },
+              { border: 'border-fuchsia-500', glow: 'shadow-[0_0_18px_rgba(217,70,239,.5)]', head: 'from-purple-700 via-fuchsia-600 to-purple-700' },
+              { border: 'border-orange-500', glow: 'shadow-[0_0_18px_rgba(249,115,22,.5)]', head: 'from-orange-700 via-orange-500 to-orange-700' },
+            ][index % 4];
             const columnHeaders = ['B', 'I', 'N', 'G', 'O'];
-            const headerColors = ['bg-blue-700', 'bg-red-600', 'bg-emerald-700', 'bg-amber-500', 'bg-orange-600'];
-            return <article key={ticket.id} className="flex h-full min-w-0 flex-col overflow-hidden rounded-[1.2rem] border-2 border-amber-500/70 bg-black p-0 text-slate-900 shadow-[0_8px_24px_rgba(0,0,0,.35)]">
-              <div className="flex min-h-9 items-center justify-between gap-1 bg-gradient-to-r from-amber-800 via-amber-500 to-amber-800 px-2 py-1 text-white">
-                <span className="truncate text-xs font-black tabular-nums">▣ TURBO · {String(index + 1).padStart(2, '0')}</span>
-                <span className={`shrink-0 rounded-full border border-white/25 bg-black/25 px-2 py-0.5 text-[9px] font-black uppercase ${ticket.status==='locked'?'text-red-100':ticket.status==='winner'?'text-yellow-100':'text-white'}`}>{statusLabel}</span>
+            const headerColors = ['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'];
+            const statusLabel = ticket.status === 'locked' ? t.locked : ticket.status === 'winner' ? t.winner : 'ተመዝግቧል';
+            return <article key={ticket.id} className={`bingo-card-surface relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-0 text-slate-900 shadow-xl ${accent.glow}`}>
+              <div className={`flex min-h-7 items-center justify-between gap-1 bg-gradient-to-r ${accent.head} px-1.5 py-1 text-white sm:min-h-9 sm:px-2`}>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span aria-hidden="true" className="shrink-0 text-xs sm:text-sm">▣</span>
+                  <span className="truncate text-xs font-black tabular-nums sm:text-sm">TICKET · {String(index + 1).padStart(2, '0')}</span>
+                  <span className="shrink-0 rounded-full border border-white/25 bg-black/25 px-1.5 py-0.5 text-[9px] font-black leading-none text-white sm:text-[10px]">N-{drawnNumbers.length}</span>
+                  {ticket.status === 'locked' && <span className="shrink-0 rounded bg-red-700 px-1.5 py-0.5 text-[9px] font-black">{t.locked}</span>}
+                </div>
+                <span aria-label={`Card ${index + 1} locked`} title="Locked" className="grid h-6 w-6 shrink-0 place-items-center text-base text-white/95 sm:h-7 sm:w-7">🔒</span>
               </div>
-              <div className="flex min-h-7 w-full items-center justify-center bg-emerald-700 px-2 py-1 text-xs font-black text-white">BINGO</div>
+              <div className="flex min-h-7 w-full items-center justify-center bg-emerald-700 px-2 py-1 text-xs font-black text-white sm:min-h-8 sm:text-xs">
+                {state.game?.status === 'waiting' ? statusLabel : 'BINGO'}
+              </div>
               <div className="grid grid-cols-5 gap-px overflow-hidden bg-zinc-300">
-                {columnHeaders.map((letter, column) => <div key={letter} className={`grid min-h-8 place-items-center py-1 text-center text-sm font-black text-white sm:text-lg ${headerColors[column]}`}>{letter}</div>)}
-                {Array.from({ length: cardBoardRows * 5 }, (_, cellIndex) => {
+                {columnHeaders.map((letter, column) => <div key={letter} className={`grid min-h-7 place-items-center py-0.5 text-center text-sm font-black text-white sm:min-h-8 sm:text-lg ${headerColors[column]}`}>{letter}</div>)}
+                {Array.from({ length: cardRows * 5 }, (_, cellIndex) => {
                   const row = Math.floor(cellIndex / 5);
                   const column = cellIndex % 5;
                   const number = columns[column][row];
-                  const center = row === Math.floor(cardBoardRows / 2) && column === 2;
+                  const center = row === Math.floor(cardRows / 2) && column === 2;
                   const matched = number !== undefined && ticket.matchedNumbers.includes(number);
-                  return <div key={cellIndex} className={`relative grid aspect-square min-w-0 place-items-center border border-zinc-300 text-[clamp(12px,2.8vw,20px)] font-black leading-none tabular-nums ${center ? 'bg-amber-100 text-amber-800' : matched ? 'bg-amber-300 text-black ring-1 ring-amber-500' : 'bg-white text-slate-900'}`}>
+                  return <div key={cellIndex} className={[
+                    'relative grid aspect-square min-w-0 place-items-center border text-[clamp(12px,2.8vw,20px)] font-black leading-none tabular-nums transition',
+                    center && number === undefined ? 'rounded-full border-blue-300 bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
+                      matched ? 'rounded-full border-pink-300 bg-pink-600 text-white shadow-[0_0_7px_rgba(236,72,153,.35)]' :
+                      'rounded-[3px] border-zinc-300 bg-white text-black',
+                  ].join(' ')}>
                     {number ?? (center ? '★' : '')}
-                    {center && number !== undefined && <span aria-hidden="true" className="absolute right-1 top-0.5 text-[8px] text-amber-700">★</span>}
+                    {center && number !== undefined && <span aria-label="Free star" className="absolute bottom-0.5 right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full border border-blue-200 bg-blue-600 text-[8px] text-white shadow-sm">★</span>}
                   </div>;
                 })}
               </div>
               <p className="px-2 pt-2 text-[10px] font-bold text-amber-100/75">{ticket.matchedNumbers.length}/{state.game?.target ?? state.settings.target} {t.matched}</p>
-              <button type="button" disabled={!eligible || busy} onClick={() => void claim(ticket.id)} className="mx-2 mb-2 mt-2 rounded-lg border border-amber-200 bg-gradient-to-r from-yellow-200 to-amber-500 px-2 py-2.5 text-xs font-black tracking-wider text-black shadow-[0_3px_0_#785719] disabled:cursor-not-allowed disabled:opacity-35">{t.bingo}</button>
+              {eligible && <button type="button" disabled={busy} onClick={() => void claim(ticket.id)} className="mx-2 mb-2 mt-2 w-[calc(100%-1rem)] rounded-lg bg-gradient-to-r from-yellow-200 to-amber-500 py-1.5 text-sm font-black text-black disabled:opacity-60">{t.bingo}</button>}
             </article>;
           })}
         </div>
