@@ -178,6 +178,11 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
 
   const canBuy = state?.settings.enabled && state.game?.status === 'waiting';
   const unitTicketPrice = state?.isAdmin ? 0 : (state?.settings.ticketPriceEtb ?? 0);
+  // One shared compact row count keeps every ticket the same size while avoiding
+  // the old forced five-row layout that left many empty cells.
+  const cardBoardRows = Math.max(3, ...(state?.tickets ?? []).map((ticket) =>
+    Math.max(...Array.from({ length: 5 }, (_, column) => ticket.numbers.filter((number) => Math.floor((number - 1) / 16) === column).length))
+  ));
   const langNames: Record<Lang, string> = { am: 'አማርኛ', ti: 'ትግርኛ', en: 'English' };
 
   return (
@@ -276,9 +281,6 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
             const columns = Array.from({ length: 5 }, (_, column) =>
               ticket.numbers.filter((number) => Math.floor((number - 1) / 16) === column).sort((a, b) => a - b)
             );
-            // Turbo tickets contain 12 numbers, so size the board to their actual
-            // column count instead of forcing a mostly-empty 5x5 board.
-            const cardRows = Math.max(3, ...columns.map((column) => column.length));
             const accent = [
               { border: 'border-blue-500', glow: 'shadow-[0_0_18px_rgba(37,99,235,.55)]', head: 'from-blue-700 via-blue-500 to-blue-700' },
               { border: 'border-lime-500', glow: 'shadow-[0_0_18px_rgba(132,204,22,.5)]', head: 'from-green-700 via-lime-600 to-green-700' },
@@ -303,11 +305,11 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
               </div>
               <div className="grid grid-cols-5 gap-px overflow-hidden bg-zinc-300">
                 {columnHeaders.map((letter, column) => <div key={letter} className={`grid min-h-7 place-items-center py-0.5 text-center text-sm font-black text-white sm:min-h-8 sm:text-lg ${headerColors[column]}`}>{letter}</div>)}
-                {Array.from({ length: cardRows * 5 }, (_, cellIndex) => {
+                {Array.from({ length: cardBoardRows * 5 }, (_, cellIndex) => {
                   const row = Math.floor(cellIndex / 5);
                   const column = cellIndex % 5;
                   const number = columns[column][row];
-                  const center = row === Math.floor(cardRows / 2) && column === 2;
+                  const center = row === Math.floor(cardBoardRows / 2) && column === 2;
                   const matched = number !== undefined && ticket.matchedNumbers.includes(number);
                   return <div key={cellIndex} className={[
                     'relative grid aspect-square min-w-0 place-items-center border text-[clamp(12px,2.8vw,20px)] font-black leading-none tabular-nums transition',
