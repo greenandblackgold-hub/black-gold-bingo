@@ -429,7 +429,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                         <button type="button" onClick={() => setPriorityPanelOpen(false)} aria-label="የመደርደሪያ ክፍልን ዝጋ" className="grid h-8 w-8 place-items-center rounded-lg border border-slate-600 text-lg text-slate-300 hover:border-sky-300 hover:text-white">×</button>
                       </div>
                       <p className="mb-3 text-xs leading-5 text-slate-400">የመረጡት ቅደም ተከተል ቅድሚያውን ይወስናል። እስከ 3።</p>
-                      {lineSectionOpen ? (
+                      {priorityPanelOpen ? (
                         <div className="space-y-2">
                           {priorityQueue.map((item, index) => (
                             <div key={item.id} className="grid grid-cols-[1.8rem_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 p-2">
