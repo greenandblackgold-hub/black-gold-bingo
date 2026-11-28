@@ -93,6 +93,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const [nonIntersectingOnly, setNonIntersectingOnly] = useState(() => {
     try { return localStorage.getItem('bgb.patternNonIntersecting') === 'on'; } catch { return false; }
   });
+  const [priorityPanelOpen, setPriorityPanelOpen] = useState(true);
   const [lineSectionOpen, setLineSectionOpen] = useState(true);
   const [shapeSectionsOpen, setShapeSectionsOpen] = useState<Record<string, boolean>>({});
   const shapeGroups = [
@@ -425,7 +426,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                     <section className="rounded-2xl border border-slate-700 bg-slate-950/90 p-4">
                       <div className="mb-1 flex items-center justify-between gap-3">
                         <h3 className="text-base font-black text-sky-200">መደርደሪያ</h3>
-                        <button type="button" onClick={() => setLineSectionOpen(false)} aria-label="የመደርደሪያ ክፍልን ዝጋ" className="grid h-8 w-8 place-items-center rounded-lg border border-slate-600 text-lg text-slate-300 hover:border-sky-300 hover:text-white">×</button>
+                        <button type="button" onClick={() => setPriorityPanelOpen(false)} aria-label="የመደርደሪያ ክፍልን ዝጋ" className="grid h-8 w-8 place-items-center rounded-lg border border-slate-600 text-lg text-slate-300 hover:border-sky-300 hover:text-white">×</button>
                       </div>
                       <p className="mb-3 text-xs leading-5 text-slate-400">የመረጡት ቅደም ተከተል ቅድሚያውን ይወስናል። እስከ 3።</p>
                       {lineSectionOpen ? (
@@ -455,7 +456,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                           </div>
                         </div>
                       ) : (
-                        <button type="button" onClick={() => setLineSectionOpen(true)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-left text-xs font-bold text-slate-300">መደርደሪያውን ክፈት ▾</button>
+                        <button type="button" onClick={() => setPriorityPanelOpen(true)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-left text-xs font-bold text-slate-300">መደርደሪያውን ክፈት ▾</button>
                       )}
                     </section>
 
