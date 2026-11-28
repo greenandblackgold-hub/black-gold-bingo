@@ -216,12 +216,31 @@ function ServerPlayerProvider({ children }: { children: ReactNode }) {
   const buyCards = useCallback(
     async (count: number, serial?: string, preview?: { grid: (number | null)[][]; token?: string }) => {
       try {
-        await api.post('/api/cards/buy', { count, ...(serial ? { serial } : {}), ...(preview ? { previewGrid: preview.grid, ...(preview.token ? { previewToken: preview.token } : {}) } : {}) });
+        // The purchase endpoint is authoritative. Render its returned cards immediately;
+        // background profile/ledger refreshes must never leave the Buy button spinning.
+        const result = await api.post<{ balance: number; cards: BingoCard[]; free?: boolean }>(
+          '/api/cards/buy',
+          { count, ...(serial ? { serial } : {}), ...(preview ? { previewGrid: preview.grid, ...(preview.token ? { previewToken: preview.token } : {}) } : {}) },
+        );
+        const purchased = Array.isArray(result.cards) ? result.cards : [];
+        if (purchased.length) {
+          setCards(current => {
+            const byId = new Map(current.map(card => [card.id, card]));
+            for (const card of purchased) byId.set(card.id, card);
+            const nextCards = [...byId.values()].sort((a, b) => Number(a.serial) - Number(b.serial));
+            try {
+              const ownerId = currentUserIdRef.current;
+              if (ownerId) localStorage.setItem(cardsCacheKeyFor(ownerId), JSON.stringify(nextCards));
+            } catch { /* in-memory state remains available */ }
+            return nextCards;
+          });
+        }
         play('coin');
-        await Promise.all([reloadCards(), reloadLedger(), refresh()]);
+        void reloadCards();
+        if (!result.free) void Promise.allSettled([reloadLedger(), refresh()]);
         return { ok: true };
       } catch (e) {
-        return { ok: false, error: e instanceof ApiError && e.code === 'card_number_taken' ? 'ይህ ቁጥር ቀድሞ ተይዟል። ሌላ ቁጥር ይምረጡ።' : e instanceof ApiError && e.status !== 402 ? e.message : undefined };
+        return { ok: false, error: e instanceof ApiError ? e.message : e instanceof Error ? e.message : 'የካርቴላ ግዢ አልተሳካም። እንደገና ይሞክሩ።' };
       }
     },
     [reloadCards, reloadLedger, refresh],
