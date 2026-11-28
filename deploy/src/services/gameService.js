@@ -289,7 +289,10 @@ export function createGameService({ repo, config, now = Date.now }) {
 
     async previewCards(user, count = 1) {
       const n = Number(count);
-      if (user.role !== 'player' || user.phoneVerified !== true) throw new HttpError(403, 'player_only', 'Verified player accounts only');
+      const isAdminTestAccount = user.role === 'admin';
+      if (!isAdminTestAccount && (user.role !== 'player' || user.phoneVerified !== true)) {
+        throw new HttpError(403, 'player_only', 'Verified player accounts only');
+      }
       if (!Number.isInteger(n) || n < 1 || n > 25) throw new HttpError(400, 'invalid_count', 'Preview 1 to 25 cards at a time');
       const g = await repo.getGame();
       if (g.phase !== 'waiting' || g.bonusRound === true) throw new HttpError(409, 'round_not_open', 'Cards can only be prepared before a regular round starts');

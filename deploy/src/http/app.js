@@ -210,11 +210,13 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   route('GET', '/api/cards/previews', 'user', 'default', ({ user }) => game.myPreviews(user));
   route('POST', '/api/cards/previews/remove', 'user', 'default', ({ user, body }) => game.removePreview(user, body.serial));
   route('POST', '/api/cards/preview', 'user', 'default', async ({ user, body }) => {
-    await gamesHub.assertGameEnabled('bingo');
+    // Admin maintenance/testing access remains available even when Host disables Games Center.
+    if (user.role !== 'admin') await gamesHub.assertGameEnabled('bingo');
     return game.previewCards(user, body.count ?? 1);
   });
   route('POST', '/api/cards/buy', 'user', 'default', async ({ user, body }) => {
-    await gamesHub.assertGameEnabled('bingo');
+    // Only authenticated admins bypass Host game switches; player purchases retain all gates.
+    if (user.role !== 'admin') await gamesHub.assertGameEnabled('bingo');
     return game.buyCards(user, body.count, body.serial, body.previewGrid, body.previewToken);
   });
   route('POST', '/api/claim', 'user', 'default', ({ user, body }) => game.claim(user, body.cardId, body.expectedCallCount));

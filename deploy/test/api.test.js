@@ -1028,6 +1028,7 @@ test('public push availability follows live Host switches for each player servic
 
 
 test('Admin can inspect all Games Center games during General OFF without changing Host settings or bypassing player bet restrictions', async () => {
+  await freshRound();
   const originalRealMoneyEnabled = ctx.config.realMoneyEnabled;
   ctx.config.realMoneyEnabled = false;
   try {
@@ -1057,6 +1058,27 @@ test('Admin can inspect all Games Center games during General OFF without changi
 
   assert.equal((await api('GET', '/api/game')).status, 200);
   assert.equal((await api('GET', '/api/cards', { token: ctx.adminToken })).status, 200);
+  const adminBalanceBefore = (await api('GET', '/api/me', { token: ctx.adminToken })).json.balance;
+  const adminPreview = await api('POST', '/api/cards/preview', { token: ctx.adminToken, body: { count: 1 } });
+  assert.equal(adminPreview.status, 200, JSON.stringify(adminPreview.json));
+  assert.equal(adminPreview.json.length, 1);
+  const adminCardPurchase = await api('POST', '/api/cards/buy', {
+    token: ctx.adminToken,
+    body: {
+      count: 1,
+      serial: adminPreview.json[0].serial,
+      previewGrid: adminPreview.json[0].grid,
+      previewToken: adminPreview.json[0].previewToken,
+    },
+  });
+  assert.equal(adminCardPurchase.status, 200, JSON.stringify(adminCardPurchase.json));
+  assert.equal(adminCardPurchase.json.cards.length, 1);
+  assert.equal((await api('GET', '/api/me', { token: ctx.adminToken })).json.balance, adminBalanceBefore,
+    'admin test card must not debit balance while General is OFF');
+  assert.equal((await api('POST', '/api/cards/preview', { token: p.token, body: { count: 1 } })).status, 503,
+    'players cannot prepare cards while General is OFF');
+  assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 1 } })).status, 503,
+    'players cannot buy cards while General is OFF');
   assert.equal((await api('GET', '/api/games/keno/state', { token: ctx.adminToken })).status, 200);
   assert.equal((await api('GET', '/api/games/aviator/state', { token: ctx.adminToken })).status, 200);
   assert.equal((await api('GET', '/api/games/car-racing/catalog', { token: ctx.adminToken })).status, 200);
