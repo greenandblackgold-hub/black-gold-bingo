@@ -1059,6 +1059,7 @@ test('Admin can inspect all Games Center games during General OFF without changi
   assert.equal((await api('GET', '/api/game')).status, 200);
   assert.equal((await api('GET', '/api/cards', { token: ctx.adminToken })).status, 200);
   const adminBalanceBefore = (await api('GET', '/api/me', { token: ctx.adminToken })).json.balance;
+  const adminLedgerBefore = (await api('GET', '/api/ledger', { token: ctx.adminToken })).json;
   const adminPreview = await api('POST', '/api/cards/preview', { token: ctx.adminToken, body: { count: 1 } });
   assert.equal(adminPreview.status, 200, JSON.stringify(adminPreview.json));
   assert.equal(adminPreview.json.length, 1);
@@ -1075,6 +1076,9 @@ test('Admin can inspect all Games Center games during General OFF without changi
   assert.equal(adminCardPurchase.json.cards.length, 1);
   assert.equal((await api('GET', '/api/me', { token: ctx.adminToken })).json.balance, adminBalanceBefore,
     'admin test card must not debit balance while General is OFF');
+  const adminLedgerAfter = (await api('GET', '/api/ledger', { token: ctx.adminToken })).json;
+  assert.equal(adminLedgerAfter.length, adminLedgerBefore.length,
+    'admin test card issuance must not write to the production wallet ledger');
   assert.equal((await api('POST', '/api/cards/preview', { token: p.token, body: { count: 1 } })).status, 503,
     'players cannot prepare cards while General is OFF');
   assert.equal((await api('POST', '/api/cards/buy', { token: p.token, body: { count: 1 } })).status, 503,
