@@ -410,6 +410,19 @@ export function createGameService({ repo, config, now = Date.now }) {
         return { code, serial: serials[i], grid, sig: signCard(code, g.roundNumber, grid) };
       });
       try {
+        // Admin test cards are issued directly to the admin account. Do not route a zero-cost
+        // test purchase through the production wallet/ledger transaction.
+        if (adminFreePurchase) {
+          await repo.insertFreeCards({ userId: user.id, round: g.roundNumber, cards });
+          if (requestedSerial !== undefined && requestedSerial !== null) pendingCardPreviews.delete(user.id + ':' + String(requestedSerial));
+          const latestGame = await repo.getGame();
+          broadcast(latestGame);
+          return {
+            balance: Number(currentPlayer.balance ?? 0) / 100,
+            free: true,
+            cards: cards.map((c) => ({ id: c.code, serial: c.serial, grid: c.grid })),
+          };
+        }
         const res = await repo.purchaseCards({
           userId: user.id,
           cost: purchaseCost,
