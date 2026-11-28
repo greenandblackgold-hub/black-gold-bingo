@@ -118,18 +118,6 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
     { id: 'HH', label: 'ግማሽ ቤት' },
     { id: 'BO', label: 'ትልቅ O (ዙሪያ)' },
   ];
-  const [selectedOtherShapes, setSelectedOtherShapes] = useState<string[]>(() => {
-    try {
-      const raw: unknown = JSON.parse(localStorage.getItem('bgb.otherShapePatterns') || '[]');
-      const allowed = otherShapeOptions.map(option => option.id);
-      return Array.isArray(raw) ? raw.filter((value): value is string => typeof value === 'string' && allowed.includes(value)) : [];
-    } catch { return []; }
-  });
-  const toggleOtherShape = (id: string, checked: boolean) => {
-    const next = checked ? [...selectedOtherShapes.filter(value => value !== id), id] : selectedOtherShapes.filter(value => value !== id);
-    setSelectedOtherShapes(next);
-    try { localStorage.setItem('bgb.otherShapePatterns', JSON.stringify(next)); } catch { /* Keep in-memory settings. */ }
-  };
   const [selectedShapePatterns, setSelectedShapePatterns] = useState<string[]>(() => {
     try {
       const raw: unknown = JSON.parse(localStorage.getItem('bgb.shapePatterns') || '[]');
@@ -527,7 +515,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                       {otherShapesOpen && <div className="divide-y divide-slate-700 border-t border-slate-700 px-4">
                         {otherShapeOptions.map(option => (
                           <label key={option.id} className="flex items-center gap-3 py-3">
-                            <input type="checkbox" checked={selectedOtherShapes.includes(option.id)} onChange={event => toggleOtherShape(option.id, event.target.checked)} className="h-4 w-4 accent-sky-500"/>
+                            <input type="checkbox" checked={selectedShapePatterns.includes(option.id)} onChange={event => toggleShapePattern(option.id, event.target.checked)} className="h-4 w-4 accent-sky-500"/>
                             <span className="min-w-0 flex-1 text-xs font-semibold text-slate-200">{option.label}</span>
                             <span className="min-w-9 rounded-md border border-slate-600 bg-slate-900 px-2 py-1 text-center text-[10px] font-black text-sky-200">{option.id}</span>
                           </label>
@@ -539,7 +527,6 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                         localStorage.setItem('bgb.patternPriorityQueue', JSON.stringify(priorityQueue));
                         localStorage.setItem('bgb.patternNonIntersecting', nonIntersectingOnly ? 'on' : 'off');
                         localStorage.setItem('bgb.shapePatterns', JSON.stringify(selectedShapePatterns));
-                        localStorage.setItem('bgb.otherShapePatterns', JSON.stringify(selectedOtherShapes));
                       } catch { /* Keep current in-memory selections if storage is unavailable. */ }
                       onCloseSettings?.();
                     }} className="w-full rounded-xl border border-sky-300/60 bg-sky-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-sky-950/30 transition hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-300">
