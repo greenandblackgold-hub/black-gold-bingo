@@ -273,9 +273,12 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
         <div className="grid grid-cols-1 items-start gap-1.5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
           {state?.tickets.map((ticket,index) => {
             const eligible = ticket.status === 'active' && state.game?.status === 'running' && ticket.matchedNumbers.length === state.game.target && state.game.lastNumber !== null && ticket.numbers.includes(state.game.lastNumber);
-            const columns = Array.from({ length: 5 }, (_, column) =>
-              ticket.numbers.filter((number) => Math.floor((number - 1) / 16) === column).sort((a, b) => a - b)
-            );
+            // Spread all 12 ticket numbers evenly across the five visual columns.
+            // Matching and winning continue to use the original ticket number values.
+            const columns = Array.from({ length: 5 }, () => [] as number[]);
+            [...ticket.numbers].sort((a, b) => a - b).forEach((number, numberIndex) => {
+              columns[numberIndex % 5].push(number);
+            });
             const accent = [
               { border: 'border-blue-500', glow: 'shadow-[0_0_18px_rgba(37,99,235,.55)]', head: 'from-blue-700 via-blue-500 to-blue-700' },
               { border: 'border-lime-500', glow: 'shadow-[0_0_18px_rgba(132,204,22,.5)]', head: 'from-green-700 via-lime-600 to-green-700' },
@@ -323,7 +326,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
                       'rounded-[3px] border-zinc-300 bg-white text-black',
                   ].join(' ')}>
                     {number ?? ''}
-                    {center && <span aria-label="Center star" className={`absolute ${number === undefined ? 'inset-0' : 'bottom-0.5 right-0.5'} grid ${number === undefined ? 'place-items-center' : 'h-4 w-4'} rounded-full border border-blue-200 bg-blue-600 text-[9px] font-black text-white shadow-[0_0_10px_rgba(0,140,255,.75)]`}>★</span>}
+                    {center && <span aria-label="Center star" className={`absolute ${number === undefined ? 'inset-0' : 'bottom-0.5 right-0.5'} grid place-items-center ${number === undefined ? '' : 'h-4 w-4'} rounded-full border border-blue-200 bg-blue-600 text-[9px] font-black text-white shadow-[0_0_10px_rgba(0,140,255,.75)]`}>★</span>}
                   </div>;
                 })}
               </div>
