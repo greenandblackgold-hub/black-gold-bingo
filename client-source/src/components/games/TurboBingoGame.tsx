@@ -178,11 +178,6 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
 
   const canBuy = state?.settings.enabled && state.game?.status === 'waiting';
   const unitTicketPrice = state?.isAdmin ? 0 : (state?.settings.ticketPriceEtb ?? 0);
-  // One shared compact row count keeps every ticket the same size while avoiding
-  // the old forced five-row layout that left many empty cells.
-  const cardBoardRows = Math.max(3, ...(state?.tickets ?? []).map((ticket) =>
-    Math.max(...Array.from({ length: 5 }, (_, column) => ticket.numbers.filter((number) => Math.floor((number - 1) / 16) === column).length))
-  ));
   const langNames: Record<Lang, string> = { am: 'አማርኛ', ti: 'ትግርኛ', en: 'English' };
 
   return (
@@ -290,7 +285,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
             const columnHeaders = ['B', 'I', 'N', 'G', 'O'];
             const headerColors = ['bg-blue-700','bg-sky-600','bg-orange-500','bg-fuchsia-700','bg-green-700'];
             const statusLabel = ticket.status === 'locked' ? t.locked : ticket.status === 'winner' ? t.winner : 'ተመዝግቧል';
-            return <article key={ticket.id} className={`bingo-card-surface relative min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-0 text-slate-900 shadow-xl ${accent.glow}`}>
+            return <article key={ticket.id} className={`bingo-card-surface relative mx-auto w-full max-w-[360px] min-w-0 overflow-hidden rounded-[1.2rem] border-2 ${accent.border} bg-black p-0 text-slate-900 shadow-xl ${accent.glow}`}>
               <div className={`flex min-h-7 items-center justify-between gap-1 bg-gradient-to-r ${accent.head} px-1.5 py-1 text-white sm:min-h-9 sm:px-2`}>
                 <div className="flex min-w-0 items-center gap-1.5">
                   <span aria-hidden="true" className="shrink-0 text-xs sm:text-sm">▣</span>
@@ -303,22 +298,32 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
               <div className="flex min-h-7 w-full items-center justify-center bg-emerald-700 px-2 py-1 text-xs font-black text-white sm:min-h-8 sm:text-xs">
                 {state.game?.status === 'waiting' ? statusLabel : 'BINGO'}
               </div>
-              <div className="grid grid-cols-5 gap-px overflow-hidden bg-zinc-300">
-                {columnHeaders.map((letter, column) => <div key={letter} className={`grid min-h-7 place-items-center py-0.5 text-center text-sm font-black text-white sm:min-h-8 sm:text-lg ${headerColors[column]}`}>{letter}</div>)}
-                {Array.from({ length: cardBoardRows * 5 }, (_, cellIndex) => {
+              <div className="grid grid-cols-5 gap-px overflow-hidden rounded-t-md bg-zinc-300">
+                {columnHeaders.map((letter, column) => <div key={letter} className={`grid h-8 place-items-center text-center text-sm font-black text-white sm:h-9 sm:text-lg ${headerColors[column]}`}>{letter}</div>)}
+              </div>
+              <div className="grid aspect-square grid-cols-5 grid-rows-5 gap-px overflow-hidden bg-zinc-300">
+                {Array.from({ length: 25 }, (_, cellIndex) => {
                   const row = Math.floor(cellIndex / 5);
                   const column = cellIndex % 5;
-                  const number = columns[column][row];
-                  const center = row === Math.floor(cardBoardRows / 2) && column === 2;
+                  const columnNumbers = columns[column];
+                  const rowSlots = columnNumbers.length === 3
+                    ? [0, 2, 4]
+                    : column === 0 ? [0, 2]
+                    : column === 1 ? [1, 3]
+                    : column === 2 ? [0, 4]
+                    : column === 3 ? [1, 3]
+                    : [2, 4];
+                  const numberIndex = rowSlots.indexOf(row);
+                  const number = numberIndex >= 0 ? columnNumbers[numberIndex] : undefined;
+                  const center = row === 2 && column === 2;
                   const matched = number !== undefined && ticket.matchedNumbers.includes(number);
                   return <div key={cellIndex} className={[
-                    'relative grid aspect-square min-w-0 place-items-center border text-[clamp(12px,2.8vw,20px)] font-black leading-none tabular-nums transition',
-                    center && number === undefined ? 'rounded-full border-blue-300 bg-blue-600 text-white shadow-[0_0_12px_rgba(0,140,255,.9)]' :
-                      matched ? 'rounded-full border-pink-300 bg-pink-600 text-white shadow-[0_0_7px_rgba(236,72,153,.35)]' :
+                    'relative grid min-h-0 min-w-0 aspect-square place-items-center border text-[clamp(12px,2.8vw,20px)] font-black leading-none tabular-nums transition',
+                    matched ? 'rounded-full border-pink-300 bg-pink-600 text-white shadow-[0_0_7px_rgba(236,72,153,.35)]' :
                       'rounded-[3px] border-zinc-300 bg-white text-black',
                   ].join(' ')}>
-                    {number ?? (center ? '★' : '')}
-                    {center && number !== undefined && <span aria-label="Free star" className="absolute bottom-0.5 right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full border border-blue-200 bg-blue-600 text-[8px] text-white shadow-sm">★</span>}
+                    {number ?? ''}
+                    {center && <span aria-label="Center star" className={`absolute ${number === undefined ? 'inset-0' : 'bottom-0.5 right-0.5'} grid ${number === undefined ? 'place-items-center' : 'h-4 w-4'} rounded-full border border-blue-200 bg-blue-600 text-[9px] font-black text-white shadow-[0_0_10px_rgba(0,140,255,.75)]`}>★</span>}
                   </div>;
                 })}
               </div>
