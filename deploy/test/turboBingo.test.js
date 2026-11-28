@@ -183,6 +183,7 @@ test('Turbo Bingo automatic draw continues after the configured round timer expi
     nextDrawAt: Date.now() - 1,
   });
   assert.ok(expired);
+  await service.resume();
   await new Promise((resolve) => setTimeout(resolve, 300));
   const afterExpiry = await repo.getCurrentTurboBingoGame();
   assert.equal(afterExpiry.status, 'running', 'timer expiry must not end an active draw');
