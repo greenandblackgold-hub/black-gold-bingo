@@ -70,6 +70,7 @@ export function createTurboBingoService({ repo }) {
       wallet = await repo.getTurboBingoWallet(user.id);
     }
     return {
+      isAdmin: user?.role === 'admin',
       settings: {
         enabled: config.enabled,
         target: config.target,
@@ -115,7 +116,8 @@ export function createTurboBingoService({ repo }) {
   async function buyTickets(user, count = 1) {
     const config = await settings();
     if (!config.enabled) throw new HttpError(503, 'turbo_bingo_disabled', 'Turbo Bingo is temporarily unavailable.');
-    if (user?.role !== 'player' || user.phoneVerified !== true) {
+    const isAdmin = user?.role === 'admin';
+    if (!isAdmin && (user?.role !== 'player' || user.phoneVerified !== true)) {
       throw new HttpError(403, 'player_verification_required', 'Verify your player account before buying tickets.');
     }
     const game = await repo.getCurrentTurboBingoGame();
@@ -126,7 +128,7 @@ export function createTurboBingoService({ repo }) {
     const existingTickets = await repo.listTurboBingoTickets(game.id, user.id);
     if (existingTickets.length + count > (game.maxTicketsPerPlayer ?? config.maxTicketsPerPlayer)) throw new HttpError(400, 'ticket_limit', 'You have reached the ticket limit for this game.');
     await repo.getTurboBingoWallet(user.id);
-    const price = Math.round((game.ticketPriceEtb ?? config.ticketPriceEtb) * 100);
+    const price = isAdmin ? 0 : Math.round((game.ticketPriceEtb ?? config.ticketPriceEtb) * 100);
     const tickets = Array.from({ length: count }, () => ({
       id: randomUUID(),
       numbers: shuffle(Array.from({ length: NUMBER_MAX }, (_, index) => index + 1)).slice(0, TICKET_NUMBER_COUNT).sort((a, b) => a - b),
