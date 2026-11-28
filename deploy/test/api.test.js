@@ -1099,8 +1099,13 @@ test('Admin can inspect all Games Center games during General OFF without changi
   const adminAviatorBet = await api('POST', '/api/games/aviator/bets', { token: ctx.adminToken, body: { requestId: 'admin_preview_aviator_01', amount: 5 } });
   assert.equal(adminAviatorBet.status, 403);
   assert.equal(adminAviatorBet.json.error, 'verified_player_required');
+  const adminTurboStateBefore = await api('GET', '/api/games/turbo-bingo/state', { token: ctx.adminToken });
   const adminTurboPurchase = await api('POST', '/api/games/turbo-bingo/tickets', { token: ctx.adminToken, body: { count: 1 } });
-  assert.equal(adminTurboPurchase.status, 403);
+  assert.equal(adminTurboPurchase.status, 200, JSON.stringify(adminTurboPurchase.json));
+  assert.equal(adminTurboPurchase.json.tickets.length, 1);
+  const adminTurboStateAfter = await api('GET', '/api/games/turbo-bingo/state', { token: ctx.adminToken });
+  assert.equal(adminTurboStateAfter.json.balanceEtb, adminTurboStateBefore.json.balanceEtb,
+    'Admin Turbo Bingo test ticket must not debit the isolated demo balance');
 
   const persistedHostSettings = await api('GET', '/api/admin/games/overview', { token: ctx.adminToken });
   assert.equal(persistedHostSettings.json.settings.generalEnabled, false);
