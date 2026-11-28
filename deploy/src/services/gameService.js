@@ -361,7 +361,14 @@ export function createGameService({ repo, config, now = Date.now }) {
       const sold = config.cardPrice > 0 ? Math.floor((g.pot ?? 0) / config.cardPrice) : 0;
       if (sold + n > roundCardLimit) throw new HttpError(409, 'card_pool_full', 'All available Bingo cards for this round have been taken.');
       const currentPlayer = await repo.findUserById(user.id);
-      if (!currentPlayer || Number(currentPlayer.balance ?? 0) < n * config.cardPrice) throw new HttpError(402, 'insufficient_funds', 'Not enough balance');
+      if (!currentPlayer) throw new HttpError(404, 'user_not_found', 'Account not found');
+      // Only the authenticated admin account receives free cards for controlled testing.
+      // Regular players continue through the exact existing paid-card purchase path.
+      const adminFreePurchase = user.role === 'admin';
+      const purchaseCost = adminFreePurchase ? 0 : n * config.cardPrice;
+      if (!adminFreePurchase && Number(currentPlayer.balance ?? 0) < purchaseCost) {
+        throw new HttpError(402, 'insufficient_funds', 'Not enough balance');
+      }
       if (requestedSerial !== undefined && requestedSerial !== null && (n !== 1 || !/^\d{5}$/.test(String(requestedSerial)))) {
         throw new HttpError(400, 'invalid_card_number', 'Enter one unique five-digit card number and buy one card at a time');
       }
@@ -402,7 +409,7 @@ export function createGameService({ repo, config, now = Date.now }) {
       try {
         const res = await repo.purchaseCards({
           userId: user.id,
-          cost: n * config.cardPrice,
+          cost: purchaseCost,
           cards,
           round: g.roundNumber,
           ref: `buy:${g.roundNumber}:${user.id}:${randomToken(6)}`,

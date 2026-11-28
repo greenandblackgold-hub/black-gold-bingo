@@ -323,6 +323,7 @@ function CalledBall({ number, latest = false, animateLatest = true }: { number: 
 
 export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: { onGoToWallet: () => void; settingsOpen: boolean; onSettingsOpenChange: (open: boolean) => void }) {
   const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const { lang } = useLanguage();
   const t = gameUi.bingoScreen[lang];
   const { cards, markedByCard, toggleMark, removeCards, balance, buyCards } = usePlayer();
@@ -595,9 +596,9 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
   }, [autoClaim, claimableCards, handleClaim]);
 
   const lastCalls = calledNumbers.slice(-5).reverse();
-  const quickBuyTotal = bonusRound ? 0 : quickBuyCount * cardPrice;
+  const quickBuyTotal = bonusRound || isAdmin ? 0 : quickBuyCount * cardPrice;
   const quickBuyAllowed = bonusRound || phase === 'waiting';
-  const quickBuyInsufficient = !bonusRound && quickBuyTotal > balance;
+  const quickBuyInsufficient = !bonusRound && !isAdmin && quickBuyTotal > balance;
   const quickBuyOptions = bonusRound ? [1, 2, 3] : [1, 2, 5, 10, 15, 20, 25, 30];
 
   useEffect(() => {
@@ -631,7 +632,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       const result = await buyCardsRef.current(1, String(card.serial), { grid: card.grid, token: card.previewToken });
       if (result.ok) {
         setDraftCards(current => current.filter(item => item.id !== card.id));
-        setDraftMessage('ካርቴላው ተመዝግቧል። BINGO!');
+        setDraftMessage(isAdmin ? 'የAdmin ሙከራ ካርቴላ ያለ ክፍያ ተመዝግቧል።' : 'ካርቴላው ተመዝግቧል። BINGO!');
       } else {
         setDraftMessage(result.error ?? 'በቂ ቀሪ ሂሳብ የለም። ካርቴላው አልተመዘገበም።');
       }
@@ -639,7 +640,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       registeringDraftIdRef.current = null;
       setRegisteringDraftId(null);
     }
-  }, []);
+  }, [isAdmin]);
   useEffect(() => {
     if (!loaded || !autoBuyEnabled || phase !== 'waiting') return;
     let targetRound = 0;
@@ -653,7 +654,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     void buyCardsRef.current(autoBuyCount).then(result => {
       if (result.ok) {
         try { localStorage.setItem('bgb.autoBuyNextRound', String(roundNumber + 1)); } catch { /* ignore */ }
-        setDraftMessage(String(autoBuyCount) + ' ካርቴላ ለዙር ' + String(roundNumber) + ' በራስ-ሰር ተገዝቷል።');
+        setDraftMessage(String(autoBuyCount) + ' ካርቴላ ለዙር ' + String(roundNumber) + (isAdmin ? ' በAdmin ሙከራ ነጻ ተመዝግቧል።' : ' በራስ-ሰር ተገዝቷል።'));
       } else {
         setAutoBuyEnabled(false);
         try { localStorage.setItem('bgb.autoBuyEnabled', 'off'); } catch { /* ignore */ }
@@ -664,7 +665,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
       try { localStorage.setItem('bgb.autoBuyEnabled', 'off'); } catch { /* ignore */ }
       setDraftMessage('Auto-buy አልተሳካም፤ ቅንብሩ ተዘግቷል።');
     });
-  }, [loaded, autoBuyEnabled, autoBuyCount, phase, roundNumber]);
+  }, [loaded, autoBuyEnabled, autoBuyCount, phase, roundNumber, isAdmin]);
 
   const submitQuickBuy = async () => {
     if (!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy) return;
@@ -673,7 +674,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
     try {
       const result = await buyCards(quickBuyCount);
       if (result.ok) {
-        setQuickBuyMessage('ካርዶቹ በተሳካ ሁኔታ ተጨምረዋል።');
+        setQuickBuyMessage(isAdmin ? 'የAdmin ሙከራ ካርዶች ያለ ክፍያ ተጨምረዋል።' : 'ካርዶቹ በተሳካ ሁኔታ ተጨምረዋል።');
         setQuickBuyOpen(false);
         setQuickBuyCount(1);
       } else {
@@ -995,7 +996,8 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                 <div className="mb-4 rounded-xl border border-yellow-500/30 bg-yellow-950/30 p-3 text-center">
                   <p className="text-sm font-bold text-yellow-100">የካርቴላ ፓኬጅ ይምረጡ</p>
                   <p className="mt-1 text-xs text-yellow-100/70">የሚፈልጉትን ፓኬጅ ይምረጡ፤ በግዢ ማረጋገጫው ላይ የተመረጡት ካርቴላዎች በአንድ ጊዜ ይጨመራሉ።</p>
-                  <p className="mt-2 text-xs text-yellow-300">{t.cardPrice}: {formatAmount(lang, cardPrice)} ብር / ካርቴላ</p>
+                  <p className="mt-2 text-xs text-yellow-300">{isAdmin ? 'ADMIN TEST · ነጻ ካርቴላ' : `${t.cardPrice}: ${formatAmount(lang, cardPrice)} ብር / ካርቴላ`}</p>
+                  {isAdmin && <p className="mt-1 text-[11px] font-bold text-emerald-300">Admin account only · No balance deduction · Testing use</p>}
                 </div>
               )}
               <div className="grid grid-cols-2 gap-3">
@@ -1010,7 +1012,7 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                   <span className="text-yellow-100/80">{t.balance}</span>
                   <strong className="text-yellow-200">{formatAmount(lang, balance)} ብር</strong>
                 </div>
-                {!bonusRound && (
+                {!bonusRound && !isAdmin && (
                   <>
                     <div className="flex items-center justify-between gap-3 text-yellow-100/80">
                       <span>{t.cardPrice} × {quickBuyCount}</span>
@@ -1022,12 +1024,13 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
                     </div>
                   </>
                 )}
+                {isAdmin && !bonusRound && <p className="flex items-center justify-between gap-3 border-t border-yellow-500/20 pt-2 text-emerald-300"><span className="font-bold">Admin test total</span><strong className="text-lg">FREE · 0 ETB</strong></p>}
               </div>
               {!quickBuyAllowed && <p role="status" className="mb-3 rounded-lg bg-amber-950/60 p-2 text-xs text-amber-200">{t.buyOnlyWaiting}</p>}
               {quickBuyInsufficient && <p role="alert" className="mb-3 text-xs text-red-300">{t.insufficient}</p>}
               {quickBuyMessage && <p role="status" className="mb-3 text-xs font-bold text-yellow-300">{quickBuyMessage}</p>}
               <button type="button" onClick={() => void submitQuickBuy()} disabled={!quickBuyAllowed || quickBuyInsufficient || quickBuyBusy} className="sticky bottom-0 z-10 mt-3 w-full rounded-xl border-t border-yellow-500/30 bg-zinc-950 bg-gradient-to-r from-yellow-200 to-amber-500 px-4 py-3 font-black text-black shadow-[0_-8px_18px_rgba(0,0,0,.7)] disabled:opacity-40">
-                {quickBuyBusy ? t.buying : bonusRound ? t.getFreeCards : t.buyCards}
+                {quickBuyBusy ? t.buying : bonusRound ? t.getFreeCards : isAdmin ? 'GET FREE ADMIN TEST CARDS' : t.buyCards}
               </button>
             </section>
           </div>
