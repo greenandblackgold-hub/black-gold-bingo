@@ -132,6 +132,48 @@ test('Turbo Bingo Admin can add free test tickets with a zero balance and withou
   service.stop();
 });
 
+
+test('Turbo Bingo Host can pause, resume and end a round without drawing while paused', async () => {
+  const repo = createMemoryRepo();
+  const service = createTurboBingoService({ repo });
+  await service.updateSettings({ mode: 'admin', drawIntervalSeconds: 1 });
+  await service.openGame();
+  const game = await repo.getCurrentTurboBingoGame();
+  const admin = await repo.createUser({
+    phone: '251911000096', name: 'Turbo Host Pause Test', pinHash: 'test-hash',
+    role: 'admin', phoneVerified: false,
+  });
+  await repo.getTurboBingoWallet(admin.id);
+  await repo.purchaseTurboBingoTickets({
+    gameId: game.id, userId: admin.id,
+    tickets: [{ id: 'turbo-pause-ticket', numbers: Array.from({ length: 12 }, (_, i) => i + 1) }],
+    totalCost: 0,
+  });
+  await service.startGame();
+  const paused = await service.pauseGame();
+  assert.equal(paused.game.status, 'running', 'pause preserves the running round state');
+  assert.equal(paused.game.isPaused, true);
+  assert.ok(paused.game.pausedAt);
+  await assert.rejects(service.drawNextManually(), /resume the round/i);
+  await assert.rejects(service.claim(admin, 'turbo-pause-ticket'), /active Turbo Bingo game/i);
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  assert.equal((await repo.getCurrentTurboBingoGame()).drawnNumbers.length, 0, 'no numbers are drawn while paused');
+  const resumed = await service.startGame();
+  assert.equal(resumed.game.status, 'running');
+  assert.equal(resumed.game.isPaused, false);
+  assert.equal(resumed.game.pausedAt, null);
+  await service.drawNextManually();
+  assert.equal((await repo.getCurrentTurboBingoGame()).drawnNumbers.length, 1);
+  const ended = await service.stopGame();
+  assert.equal(ended.game.status, 'ended');
+  assert.equal(ended.game.isPaused, false);
+  assert.equal((await repo.getCurrentTurboBingoGame()).endReason, 'admin_stopped');
+  await service.resume();
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  assert.equal((await repo.getCurrentTurboBingoGame()).status, 'ended', 'Admin-ended round remains ended until Host explicitly opens ticket sales');
+  service.stop();
+});
+
 test('Turbo Bingo Admin mode manually calls server-random numbers and credits only its isolated demo wallet', async () => {
   const repo = createMemoryRepo();
   const user = await repo.createUser({

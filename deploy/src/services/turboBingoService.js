@@ -85,6 +85,8 @@ export function createTurboBingoService({ repo }) {
       game: game ? {
         id: game.id,
         status: game.status,
+        isPaused: Boolean(game.pausedAt),
+        pausedAt: game.pausedAt ?? null,
         target: game.target,
         drawnNumbers: game.drawnNumbers,
         lastNumber: game.drawnNumbers.at(-1) ?? null,
@@ -158,6 +160,17 @@ export function createTurboBingoService({ repo }) {
     const config = await settings();
     const game = await repo.getCurrentTurboBingoGame();
     if (!game || game.status === 'ended') throw new HttpError(409, 'sales_not_open', 'Open ticket sales before starting the draw.');
+    if (game.status === 'running') {
+      if (!game.pausedAt) throw new HttpError(409, 'game_already_running', 'A Turbo Bingo game is already running.');
+      const interval = game.drawIntervalSeconds ?? config.drawIntervalSeconds;
+      const resumed = await repo.updateTurboBingoGame(game.id, game.version, {
+        pausedAt: null,
+        nextDrawAt: (game.mode ?? config.mode) === 'automatic' ? Date.now() + interval * 1000 : null,
+      });
+      if (!resumed) throw new HttpError(409, 'game_changed', 'The game changed. Refresh and try again.');
+      await publish();
+      return getState();
+    }
     if (game.status !== 'waiting') throw new HttpError(409, 'game_already_running', 'A Turbo Bingo game is already running.');
     if (!game.ticketCount && (game.mode ?? config.mode) !== 'automatic') throw new HttpError(409, 'no_tickets', 'At least one ticket must be registered before starting.');
     const startedAt = Date.now();
@@ -173,11 +186,22 @@ export function createTurboBingoService({ repo }) {
     return getState();
   }
 
+  async function pauseGame() {
+    const game = await repo.getCurrentTurboBingoGame();
+    if (!game || game.status !== 'running' || game.pausedAt) throw new HttpError(409, 'game_not_running', 'There is no unpaused Turbo Bingo round to pause.');
+    const updated = await repo.updateTurboBingoGame(game.id, game.version, {
+      pausedAt: Date.now(), nextDrawAt: null,
+    });
+    if (!updated) throw new HttpError(409, 'game_changed', 'The game changed. Refresh and try again.');
+    await publish();
+    return getState();
+  }
+
   async function stopGame() {
     const game = await repo.getCurrentTurboBingoGame();
     if (!game || game.status !== 'running') throw new HttpError(409, 'game_not_running', 'There is no running Turbo Bingo game.');
     const updated = await repo.updateTurboBingoGame(game.id, game.version, {
-      status: 'ended', endedAt: Date.now(), endReason: 'admin_stopped',
+      status: 'ended', pausedAt: null, nextDrawAt: null, endedAt: Date.now(), endReason: 'admin_stopped',
     });
     if (!updated) throw new HttpError(409, 'game_changed', 'The game changed. Refresh and try again.');
     await publish();
@@ -187,7 +211,7 @@ export function createTurboBingoService({ repo }) {
   async function drawNext(forceManual = false) {
     const config = await settings();
     const game = await repo.getCurrentTurboBingoGame();
-    if (!game || game.status !== 'running') return false;
+    if (!game || game.status !== 'running' || game.pausedAt) return false;
     const now = Date.now();
     // Automatic draws continue until a server-verified winner claims or all 80 numbers are exhausted.
     // endsAt is retained as round metadata only; it must never stop a live draw.
@@ -226,7 +250,7 @@ export function createTurboBingoService({ repo }) {
       throw new HttpError(400, 'invalid_ticket', 'Select a valid ticket.');
     }
     const game = await repo.getCurrentTurboBingoGame();
-    if (!game || game.status !== 'running') throw new HttpError(409, 'game_not_running', 'There is no active Turbo Bingo game.');
+    if (!game || game.status !== 'running' || game.pausedAt) throw new HttpError(409, 'game_not_running', 'There is no active Turbo Bingo game.');
     const ticket = await repo.getTurboBingoTicket(game.id, ticketId, user.id);
     if (!ticket) throw new HttpError(404, 'ticket_not_found', 'This ticket was not found in your account.');
     if (ticket.status !== 'active') throw new HttpError(409, 'ticket_locked', 'This ticket is no longer eligible to claim.');
@@ -316,18 +340,20 @@ export function createTurboBingoService({ repo }) {
           const latest = await repo.getCurrentTurboBingoGame();
           if (latest?.status === 'ended') await openGame();
         }
-      } else if (game?.status === 'ended') await openGame();
-      else await drawNext();
+      } else if (game?.status === 'ended') {
+        // An Admin-ended round stays ended until the Host explicitly opens ticket sales.
+        if (game.endReason !== 'admin_stopped') await openGame();
+      } else await drawNext();
     } catch { /* retry transient repository errors on the next tick */ }
     finally { ticking = false; }
   }
 
   return {
-    getState, getSettings: settings, buyTickets, startGame, stopGame, claim,
+    getState, getSettings: settings, buyTickets, startGame, pauseGame, stopGame, claim,
     updateSettings, getAdminOverview, openGame,
     async drawNextManually() {
       const game = await repo.getCurrentTurboBingoGame();
-      if (!game || game.status !== 'running') throw new HttpError(409, 'game_not_running', 'Start a game before calling the next number.');
+      if (!game || game.status !== 'running' || game.pausedAt) throw new HttpError(409, 'game_not_running', 'Start or resume the round before calling the next number.');
       if ((game.mode ?? (await settings()).mode) !== 'admin') throw new HttpError(409, 'not_manual_mode', 'Manual number calls are available only in Admin mode.');
       const changed = await drawNext(true);
       if (!changed) throw new HttpError(409, 'draw_not_available', 'The next number could not be called. Refresh and try again.');

@@ -377,6 +377,7 @@ export function createApp({ config, auth, game, wallet, chapa, repo, push, games
   admin('POST', '/api/admin/turbo-bingo/settings', async ({ body }) => turboBingo.updateSettings(body));
   admin('POST', '/api/admin/turbo-bingo/open', () => turboBingo.openGame());
   admin('POST', '/api/admin/turbo-bingo/start', () => turboBingo.startGame());
+  admin('POST', '/api/admin/turbo-bingo/pause', () => turboBingo.pauseGame());
   admin('POST', '/api/admin/turbo-bingo/stop', () => turboBingo.stopGame());
   admin('POST', '/api/admin/turbo-bingo/draw', () => turboBingo.drawNextManually());
   admin('GET', '/api/admin/games/overview', () => gamesHub.getAdminOverview());
