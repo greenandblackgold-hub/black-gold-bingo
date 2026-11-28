@@ -710,8 +710,8 @@ export function PlayView({ onGoToWallet, settingsOpen, onSettingsOpenChange }: {
         </div>
 
         {settingsOpen && (
-          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-label={t.settings}>
-            <section className="relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-amber-400/40 bg-[#090909] p-4 shadow-2xl sm:p-5">
+          <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/80 p-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] backdrop-blur-sm sm:items-center sm:pb-3" role="dialog" aria-modal="true" aria-label={t.settings}>
+            <section className="relative max-h-[calc(100dvh-7.25rem-env(safe-area-inset-bottom))] w-full max-w-3xl overflow-y-auto rounded-2xl border border-amber-400/40 bg-[#090909] p-4 shadow-2xl sm:max-h-[92dvh] sm:p-5">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="text-lg font-black text-amber-200">⚙ {t.settings}</h2>
                 <button type="button" onClick={() => onSettingsOpenChange(false)} aria-label={t.close} className="rounded-lg border border-amber-300/30 px-3 py-2 text-sm font-bold text-amber-100">{t.close} ✕</button>
