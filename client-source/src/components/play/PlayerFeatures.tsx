@@ -54,7 +54,7 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const [cardOrder, setCardOrder] = useState<'oldest' | 'newest'>(() => {
     try { return localStorage.getItem('bgb.cardOrder') === 'newest' ? 'newest' : 'oldest'; } catch { return 'oldest'; }
   });
-  const markColors = ['#d4af37','#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#ec4899','#ffffff'];
+  const markColors = ['#3b82f6','#ec4899','#06b6d4','#22c55e','#f97316','#ef4444','#a855f7','#1e3a8a','#d4af37','#ffffff'];
   const [markColor, setMarkColor] = useState(() => {
     try { const value = localStorage.getItem('bgb.markColor'); return markColors.includes(value ?? '') ? value! : '#d4af37'; } catch { return '#d4af37'; }
   });
@@ -328,6 +328,38 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                           <span className="min-w-0 flex-1"><strong className="block text-sm">ድምጽ</strong><small className="block text-xs leading-5 text-slate-400">የእስቱ የቢንጎ እና የጨዋታ መጀመሪያ ድምጾች።</small></span>
                           <input type="checkbox" className="h-5 w-5 accent-sky-500" checked={soundEnabled} onChange={e => setSoundEnabled(e.target.checked)} />
                         </label>
+                      </div>
+                    </section>
+                  </div>
+                )}
+                {row.id === 'settings' && settingsOnly && (
+                  <div className="space-y-4 text-sm text-slate-100">
+                    <section className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
+                      <div className="mb-4 flex items-center justify-between gap-2">
+                        <h3 className="flex items-center gap-2 text-sm font-black text-sky-200"><span className="text-lg">☆</span> ማጣቀሻ ቀለም</h3>
+                        <div className="flex items-center gap-1.5" aria-label="የቀለም ምሳሌ">
+                          {[7,23,61].map(number => <span key={number} className="grid h-8 min-w-8 place-items-center rounded-full px-1.5 text-xs font-black text-white shadow" style={{backgroundColor:markColor}}>{number}</span>)}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-5 gap-3 sm:grid-cols-8">
+                        {markColors.map(color => (
+                          <button key={color} type="button" aria-label={`ማጣቀሻ ቀለም ${color}`} aria-pressed={markColor===color} onClick={() => {setMarkColor(color);try{localStorage.setItem('bgb.markColor',color);}catch{}window.dispatchEvent(new Event('bgb-player-settings'));}} className={`mx-auto grid h-10 w-10 place-items-center rounded-xl border-2 transition focus:outline-none focus:ring-2 focus:ring-sky-300 ${markColor===color?'border-white ring-2 ring-sky-300 ring-offset-2 ring-offset-slate-900':'border-white/25 hover:border-white/80'}`} style={{backgroundColor:color}}>
+                            {markColor===color && <span className="text-lg font-black text-white drop-shadow">✓</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
+                      <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-sky-200"><span className="text-lg">◎</span> ቋንቋ</h3>
+                      <div className="grid grid-cols-3 gap-2">
+                        {([
+                          {value:'ti' as const,label:'ትግርኛ'},
+                          {value:'am' as const,label:'አማርኛ'},
+                          {value:'en' as const,label:'እንግሊዝኛ'},
+                        ]).map(option => (
+                          <button key={option.value} type="button" aria-pressed={lang===option.value} onClick={() => setLang(option.value)} className={`min-h-11 rounded-full border px-2 py-2 text-xs font-black transition sm:text-sm ${lang===option.value?'border-sky-300 bg-sky-500 text-white shadow-[0_0_14px_rgba(56,189,248,.25)]':'border-slate-600 bg-slate-950 text-slate-300 hover:border-slate-400'}`}>{option.label}</button>
+                        ))}
                       </div>
                     </section>
                   </div>
