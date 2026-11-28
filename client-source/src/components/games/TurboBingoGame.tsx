@@ -6,6 +6,7 @@ import type { Lang } from '@/types/game';
 type Ticket = { id: string; numbers: number[]; matchedNumbers: number[]; status: 'active' | 'locked' | 'winner'; lockedAt: number | null };
 type State = {
   settings: { enabled: boolean; target: number; ticketPriceEtb: number; prizeEtb: number; drawIntervalSeconds: number; roundDurationSeconds: number; roundType: string; mode?: 'automatic' | 'admin'; maxTicketsPerPlayer: number };
+  isAdmin: boolean;
   game: null | { id: string; status: 'waiting' | 'running' | 'ended'; target: number; drawnNumbers: number[]; lastNumber: number | null; winner: { userId: string; ticketId: string; at: number; prizeEtb?: number } | null; ticketCount: number; roundType?: string; prizeEtb?: number; endsAt?: number | null; registrationEndsAt?: number | null; registrationSecondsLeft?: number | null };
   tickets: Ticket[];
   balanceEtb: number | null;
@@ -16,7 +17,7 @@ const copy = {
   am: {
     back:'← ወደ ጨዋታዎች', live:'ቀጥታ · የሙከራ ክሬዲት', title:'ትርቦ ቢንጎ', subtitle:'80 ኳሶች · ትክክለኛ የድል ቁጥር · የመጀመሪያው ትክክለኛ አሸናፊ', running:'በመጫወት ላይ', endedStatus:'ተጠናቋል', quick:'ፈጣን', standard:'መደበኛ', full_house:'ሙሉ ካርድ', custom:'ብጁ',
     status:'የጨዋታ ሁኔታ', target:'የድል ቁጥር', called:'የወጡ ቁጥሮች', latest:'የመጨረሻ ቁጥር', round:'የዙር አይነት', prize:'የአሸናፊ ሽልማት', time:'የቀረ ጊዜ',
-    calledNumbers:'የተጠሩ ኳሶች', noCalledNumbers:'እስካሁን ምንም ኳስ አልተጠራም።', addCards:'ካርዶች ጨምር', packages:'የካርድ ፓኬጆች', choosePackage:'የሚፈልጉትን ፓኬጅ ይምረጡ', cardUnit:'ካርድ', cardsUnit:'ካርዶች', total:'ጠቅላላ', close:'ዝጋ',
+    calledNumbers:'የተጠሩ ኳሶች', noCalledNumbers:'እስካሁን ምንም ኳስ አልተጠራም።', addCards:'ካርዶች ጨምር', packages:'የካርድ ፓኬጆች', choosePackage:'የሚፈልጉትን ፓኬጅ ይምረጡ', cardUnit:'ካርድ', cardsUnit:'ካርዶች', total:'ጠቅላላ', close:'ዝጋ', adminFree:'የAdmin ነፃ ሙከራ', adminNote:'ለAdmin አካውንት ብቻ · 0 ብር · ባላንስ አይቀነስም', adminAdd:'ነፃ የሙከራ ካርዶች ጨምር',
     machine:'ቀጥታ የቁጥር ማውጫ', soundOn:'ድምፅ አብራ', soundOff:'ድምፅ አጥፋ', cage:'GLASS BINGO CAGE', mixing:'ኳሶች እየተዞሩ ነው', waiting:'በመጠበቅ ላይ', lastBall:'የመጨረሻ የወጣ ኳስ', inventory:'በማሽኑ ውስጥ ያሉ ኳሶች', balls:'ኳሶች',
     lastFive:'የመጨረሻ 5 የተጠሩ ቁጥሮች', countdown:'ቆጣሪ', wallet:'የሙከራ ቦርሳ', demo:'ሊወጣ የማይችል የሙከራ ክሬዲት ብቻ', purchase:'ካርድ መግዣ', price:'የአንድ ካርድ ዋጋ', quantity:'የካርድ ብዛት', buy:'ግዛና መዝግብ', busy:'ቆይ…', salesClosed:'አዲስ ዙር ሲከፈት ካርድ መግዛት ይቻላል።',
     tickets:'የተመዘገቡ ካርዶቼ', noTickets:'ለዚህ ጨዋታ ካርድ አልተመዘገበም።', matched:'የተዛመዱ', bingo:'ቢንጎ!', active:'ንቁ', locked:'ተቆልፏል', winner:'አሸናፊ', ended:'ጨዋታው ተጠናቋል', winnerTitle:'አሸናፊው ተረጋግጧል', endedNoWinner:'ዙሩ ያለ ትክክለኛ የድል ጥያቄ ተጠናቋል',
@@ -25,7 +26,7 @@ const copy = {
   ti: {
     back:'← ናብ ጸወታታት', live:'ቀጥታ · ናይ ፈተነ ክሬዲት', title:'ትርቦ ቢንጎ', subtitle:'80 ኩዕሶታት · ቅኑዕ ቁጽሪ ዓወት · ቀዳማይ ቅኑዕ ዓዋቲ', running:'ይካየድ ኣሎ', endedStatus:'ተወዲኡ', quick:'ቅልጡፍ', standard:'ስሩዕ', full_house:'ምሉእ ካርድ', custom:'ፍሉይ',
     status:'ኩነታት ጸወታ', target:'ቁጽሪ ዓወት', called:'ዝወጹ ቁጽሪታት', latest:'ናይ መወዳእታ ቁጽሪ', round:'ዓይነት ዙር', prize:'ሽልማት ዓዋቲ', time:'ዝተረፈ ግዜ',
-    calledNumbers:'ዝተጸውዑ ኩዕሶታት', noCalledNumbers:'ክሳብ ሕጂ ዝተጸውዐ ኩዕሶ የለን።', addCards:'ካርድ ወስኽ', packages:'ፓኬጃት ካርድ', choosePackage:'ዝደለኻዮ ፓኬጅ ምረጽ', cardUnit:'ካርድ', cardsUnit:'ካርዳት', total:'ጠቕላላ', close:'ዕጸው',
+    calledNumbers:'ዝተጸውዑ ኩዕሶታት', noCalledNumbers:'ክሳብ ሕጂ ዝተጸውዐ ኩዕሶ የለን።', addCards:'ካርድ ወስኽ', packages:'ፓኬጃት ካርድ', choosePackage:'ዝደለኻዮ ፓኬጅ ምረጽ', cardUnit:'ካርድ', cardsUnit:'ካርዳት', total:'ጠቕላላ', close:'ዕጸው', adminFree:'ናይ Admin ነጻ ፈተነ', adminNote:'ንAdmin ኣካውንት ጥራይ · 0 ብር · ባላንስ ኣይንኪን', adminAdd:'ነጻ ናይ ፈተነ ካርዳት ወስኽ',
     machine:'ቀጥታዊ መውጽኢ ቁጽሪ', soundOn:'ድምጺ ኣብርህ', soundOff:'ድምጺ ኣጥፍእ', cage:'GLASS BINGO CAGE', mixing:'ኩዕሶታት ይዘውራ ኣለዋ', waiting:'ይጽበ ኣሎ', lastBall:'ናይ መወዳእታ ዝወጸት ኩዕሶ', inventory:'ኣብ ማሽን ዘለዋ ኩዕሶታት', balls:'ኩዕሶታት',
     lastFive:'ናይ መወዳእታ 5 ዝተጸውዑ ቁጽሪታት', countdown:'ቆጸራ', wallet:'ናይ ፈተነ ቦርሳ', demo:'ክወጽእ ዘይክእል ናይ ፈተነ ክሬዲት ጥራይ', purchase:'መግዝኢ ካርድ', price:'ዋጋ ሓደ ካርድ', quantity:'ብዝሒ ካርድ', buy:'ግዝእን መዝግብን', busy:'ተጸበ…', salesClosed:'ሓድሽ ዙር ምስ ተኸፍተ ካርድ ምግዛእ ይከኣል።',
     tickets:'ዝተመዝገቡ ካርዳተይ', noTickets:'ንዚ ጸወታ ዝተመዝገበ ካርድ የለን።', matched:'ዝተሰማምዑ', bingo:'ቢንጎ!', active:'ንጡፍ', locked:'ተዓጽዩ', winner:'ዓዋቲ', ended:'ጸወታ ተወዲኡ', winnerTitle:'ዓዋቲ ተረጋጊጹ', endedNoWinner:'ዙር ብዘይ ቅኑዕ ሕቶ ዓወት ተወዲኡ',
@@ -34,7 +35,7 @@ const copy = {
   en: {
     back:'← Games', live:'LIVE · DEMO CREDITS', title:'TURBO BINGO', subtitle:'80 balls · Exact winning target · First valid winner', running:'RUNNING', endedStatus:'ENDED', quick:'QUICK', standard:'STANDARD', full_house:'FULL HOUSE', custom:'CUSTOM',
     status:'GAME STATUS', target:'WINNING TARGET', called:'NUMBERS CALLED', latest:'LATEST NUMBER', round:'ROUND TYPE', prize:'WINNER PRIZE', time:'TIME LEFT',
-    calledNumbers:'CALLED BALLS', noCalledNumbers:'No balls have been called yet.', addCards:'Add cards', packages:'CARD PACKAGES', choosePackage:'Choose a card package', cardUnit:'card', cardsUnit:'cards', total:'Total', close:'Close',
+    calledNumbers:'CALLED BALLS', noCalledNumbers:'No balls have been called yet.', addCards:'Add cards', packages:'CARD PACKAGES', choosePackage:'Choose a card package', cardUnit:'card', cardsUnit:'cards', total:'Total', close:'Close', adminFree:'ADMIN FREE TEST', adminNote:'Admin account only · 0 ETB · no balance deduction', adminAdd:'ADD FREE TEST CARDS',
     machine:'LIVE NUMBER DRAW', soundOn:'SOUND ON', soundOff:'SOUND OFF', cage:'GLASS BINGO CAGE', mixing:'● MIXING', waiting:'WAITING', lastBall:'LAST BALL', inventory:'BALLS IN THE CAGE', balls:'balls',
     lastFive:'LAST 5 CALLED BALLS', countdown:'Countdown', wallet:'DEMO WALLET', demo:'Non-withdrawable demo credits only', purchase:'TICKET PURCHASE', price:'Price per ticket', quantity:'Number of tickets', buy:'BUY & REGISTER', busy:'Please wait…', salesClosed:'Ticket sales open when a new round is opened.',
     tickets:'MY REGISTERED TICKETS', noTickets:'No tickets registered for this game yet.', matched:'matched', bingo:'BINGO!', active:'active', locked:'locked', winner:'winner', ended:'GAME ENDED', winnerTitle:'WINNER CONFIRMED', endedNoWinner:'This round ended without a valid winning claim.',
@@ -56,6 +57,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const [packagesOpen, setPackagesOpen] = useState(false);
   const calledNumbersRef = useRef<HTMLDivElement | null>(null);
+  const ticketBoardRef = useRef<HTMLElement | null>(null);
   const followLatestRef = useRef(true);
 
   const refresh = useCallback(async () => {
@@ -159,6 +161,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
       setNotice(t.buySuccess);
       setPackagesOpen(false);
       await refresh();
+      window.requestAnimationFrame(() => ticketBoardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     } catch { setError(t.errorBuy); }
     finally { setBusy(false); }
   };
@@ -174,6 +177,7 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
   };
 
   const canBuy = state?.settings.enabled && state.game?.status === 'waiting';
+  const unitTicketPrice = state?.isAdmin ? 0 : (state?.settings.ticketPriceEtb ?? 0);
   const langNames: Record<Lang, string> = { am: 'አማርኛ', ti: 'ትግርኛ', en: 'English' };
 
   return (
@@ -263,20 +267,40 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
 
 
 
-      <section className="space-y-3">
+      <section ref={ticketBoardRef} className="scroll-mt-4 space-y-3">
         <div className="flex items-center justify-between gap-2"><h2 className="text-lg font-black text-white">{t.tickets}</h2><span className="text-xs text-amber-200">{state?.tickets.length ?? 0}</span></div>
         {!state?.tickets.length && <p className="rounded-xl border border-white/10 bg-[#111111] p-5 text-center text-sm text-amber-50/55">{t.noTickets}</p>}
-        <div className="grid grid-cols-1 gap-3 min-[430px]:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 items-stretch gap-3 min-[430px]:grid-cols-2 xl:grid-cols-3">
           {state?.tickets.map((ticket,index) => {
             const eligible = ticket.status === 'active' && state.game?.status === 'running' && ticket.matchedNumbers.length === state.game.target && state.game.lastNumber !== null && ticket.numbers.includes(state.game.lastNumber);
             const statusLabel = ticket.status === 'locked' ? t.locked : ticket.status === 'winner' ? t.winner : t.active;
-            return <article key={ticket.id} className="min-w-0 rounded-2xl border-2 border-amber-600/40 bg-gradient-to-b from-white to-[#fff7e6] p-3 text-slate-900 shadow-[0_6px_20px_rgba(0,0,0,.25)]">
-              <div className="mb-2 flex items-center justify-between gap-2"><span className="text-xs font-black text-amber-800">TICKET {index+1}</span><span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${ticket.status==='locked'?'bg-red-100 text-amber-900':ticket.status==='winner'?'bg-amber-100 text-amber-800':'bg-slate-100 text-slate-600'}`}>{statusLabel}</span></div>
-              <div className="grid grid-cols-2 grid-rows-6 gap-2">
-                {ticket.numbers.map((number) => <div key={number} className={`grid aspect-square place-items-center rounded-full border border-white/90 text-sm font-black tabular-nums shadow-[inset_1px_2px_4px_rgba(255,255,255,.85),inset_-2px_-3px_6px_rgba(0,0,0,.18),0_3px_5px_rgba(0,0,0,.12)] sm:text-base ${ticket.matchedNumbers.includes(number)?'bg-[radial-gradient(circle_at_30%_25%,#fff,#fef3c7_25%,#b8860b_85%)] text-white ring-2 ring-amber-500/50':'bg-[radial-gradient(circle_at_30%_25%,#fff,#fef3c7_24%,#b8860b_85%)] text-white'}`}>{number}</div>)}
+            const columns = Array.from({ length: 5 }, (_, column) =>
+              ticket.numbers.filter((number) => Math.floor((number - 1) / 16) === column).sort((a, b) => a - b)
+            );
+            const columnHeaders = ['B', 'I', 'N', 'G', 'O'];
+            const headerColors = ['bg-blue-700', 'bg-red-600', 'bg-emerald-700', 'bg-amber-500', 'bg-orange-600'];
+            return <article key={ticket.id} className="flex h-full min-w-0 flex-col overflow-hidden rounded-[1.2rem] border-2 border-amber-500/70 bg-black p-0 text-slate-900 shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+              <div className="flex min-h-9 items-center justify-between gap-1 bg-gradient-to-r from-amber-800 via-amber-500 to-amber-800 px-2 py-1 text-white">
+                <span className="truncate text-xs font-black tabular-nums">▣ TURBO · {String(index + 1).padStart(2, '0')}</span>
+                <span className={`shrink-0 rounded-full border border-white/25 bg-black/25 px-2 py-0.5 text-[9px] font-black uppercase ${ticket.status==='locked'?'text-red-100':ticket.status==='winner'?'text-yellow-100':'text-white'}`}>{statusLabel}</span>
               </div>
-              <p className="mt-2 text-[10px] font-bold text-slate-600">{ticket.matchedNumbers.length}/{state.game?.target ?? state.settings.target} {t.matched}</p>
-              <button type="button" disabled={!eligible || busy} onClick={() => void claim(ticket.id)} className="mt-2 w-full rounded-xl border border-red-200 bg-gradient-to-b from-[#f59e0b] to-[#b8860b] px-2 py-3 text-xs font-black tracking-wider text-white shadow-[0_3px_0_#785719,0_5px_12px_rgba(212,175,55,.22)] disabled:cursor-not-allowed disabled:opacity-35">{t.bingo}</button>
+              <div className="flex min-h-7 w-full items-center justify-center bg-emerald-700 px-2 py-1 text-xs font-black text-white">BINGO</div>
+              <div className="grid grid-cols-5 gap-px overflow-hidden bg-zinc-300">
+                {columnHeaders.map((letter, column) => <div key={letter} className={`grid min-h-8 place-items-center py-1 text-center text-sm font-black text-white sm:text-lg ${headerColors[column]}`}>{letter}</div>)}
+                {Array.from({ length: 25 }, (_, cellIndex) => {
+                  const row = Math.floor(cellIndex / 5);
+                  const column = cellIndex % 5;
+                  const number = columns[column][row];
+                  const center = row === 2 && column === 2;
+                  const matched = number !== undefined && ticket.matchedNumbers.includes(number);
+                  return <div key={cellIndex} className={`relative grid aspect-square min-w-0 place-items-center border border-zinc-300 text-[clamp(12px,2.8vw,20px)] font-black leading-none tabular-nums ${center ? 'bg-amber-100 text-amber-800' : matched ? 'bg-amber-300 text-black ring-1 ring-amber-500' : 'bg-white text-slate-900'}`}>
+                    {number ?? (center ? '★' : '')}
+                    {center && number !== undefined && <span aria-hidden="true" className="absolute right-1 top-0.5 text-[8px] text-amber-700">★</span>}
+                  </div>;
+                })}
+              </div>
+              <p className="px-2 pt-2 text-[10px] font-bold text-amber-100/75">{ticket.matchedNumbers.length}/{state.game?.target ?? state.settings.target} {t.matched}</p>
+              <button type="button" disabled={!eligible || busy} onClick={() => void claim(ticket.id)} className="mx-2 mb-2 mt-2 rounded-lg border border-amber-200 bg-gradient-to-r from-yellow-200 to-amber-500 px-2 py-2.5 text-xs font-black tracking-wider text-black shadow-[0_3px_0_#785719] disabled:cursor-not-allowed disabled:opacity-35">{t.bingo}</button>
             </article>;
           })}
         </div>
@@ -285,13 +309,13 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
       {state?.game?.status === 'ended' && <section className="rounded-2xl border border-amber-300/30 bg-amber-950/30 p-4 text-center"><h2 className="text-xl font-black text-amber-100">{state.game.winner ? t.winnerTitle : t.ended}</h2><p className="mt-1 text-sm text-amber-50/70">{state.game.winner ? t.claimSuccess : t.endedNoWinner}</p></section>}
       <p className="text-center text-[10px] text-amber-100/40">{t.simulation}</p>
 
-      <button type="button" aria-label={t.addCards} title={t.addCards} onClick={() => setPackagesOpen(true)} className="fixed bottom-6 right-5 z-40 grid h-16 w-16 place-items-center rounded-full border-4 border-[#09090b] bg-gradient-to-br from-[#ffe08a] via-[#f5b928] to-[#d4af37] text-4xl font-black leading-none text-[#09090b] shadow-[0_8px_28px_rgba(212,175,55,.38)] transition-transform hover:scale-105 active:scale-95">+</button>
+      <button type="button" aria-label={t.addCards} title={t.addCards} onClick={() => setPackagesOpen(true)} className="fixed bottom-[calc(6.25rem+env(safe-area-inset-bottom))] right-4 z-50 grid h-16 w-16 place-items-center rounded-full sm:right-6 border-4 border-[#09090b] bg-gradient-to-br from-[#ffe08a] via-[#f5b928] to-[#d4af37] text-4xl font-black leading-none text-[#09090b] shadow-[0_8px_28px_rgba(212,175,55,.38)] transition-transform hover:scale-105 active:scale-95">+</button>
 
       {packagesOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setPackagesOpen(false)}>
           <section role="dialog" aria-modal="true" aria-labelledby="turbo-card-packages-title" className="w-full max-w-md rounded-t-3xl border border-amber-300/25 bg-[#111111] p-5 shadow-2xl sm:rounded-3xl" onClick={(event) => event.stopPropagation()}>
             <div className="mb-4 flex items-start justify-between gap-3">
-              <div><p className="text-[10px] font-black tracking-[.2em] text-amber-300/70">TURBO BINGO</p><h2 id="turbo-card-packages-title" className="mt-1 text-xl font-black text-white">{t.packages}</h2><p className="mt-1 text-xs text-amber-100/55">{t.choosePackage}</p></div>
+              <div><p className="text-[10px] font-black tracking-[.2em] text-amber-300/70">TURBO BINGO</p><h2 id="turbo-card-packages-title" className="mt-1 text-xl font-black text-white">{t.packages}</h2><p className="mt-1 text-xs text-amber-100/55">{t.choosePackage}</p>{state?.isAdmin && <p className="mt-1 text-[10px] font-black tracking-wide text-emerald-300">{t.adminFree}</p>}</div>
               <button type="button" aria-label={t.close} onClick={() => setPackagesOpen(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/30 text-lg text-white">×</button>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -299,16 +323,17 @@ export function TurboBingoGame({ onBack }: { onBack: () => void }) {
                 <button key={packageCount} type="button" aria-pressed={selectedCount === packageCount} onClick={() => setCount(packageCount)} className={`rounded-2xl border p-4 text-left transition-colors ${selectedCount === packageCount ? 'border-amber-300 bg-amber-300/15 ring-2 ring-amber-300/20' : 'border-white/10 bg-black/25 hover:border-amber-200/40'}`}>
                   <span className="block text-2xl font-black text-amber-200">{packageCount}</span>
                   <span className="mt-1 block text-xs font-bold text-white">{packageCount === 1 ? t.cardUnit : t.cardsUnit}</span>
-                  <span className="mt-2 block text-[11px] text-amber-100/55">{money(packageCount * (state?.settings.ticketPriceEtb ?? 0))} ETB</span>
+                  <span className="mt-2 block text-[11px] text-amber-100/55">{money(packageCount * unitTicketPrice)} ETB</span>
                 </button>
               ))}
             </div>
             <div className="mt-4 flex items-center justify-between rounded-xl border border-white/10 bg-black/25 px-4 py-3">
               <span className="text-xs text-amber-100/65">{t.total}</span>
-              <strong className="text-lg text-amber-200">{money(selectedCount * (state?.settings.ticketPriceEtb ?? 0))} ETB</strong>
+              <strong className="text-lg text-amber-200">{money(selectedCount * unitTicketPrice)} ETB</strong>
             </div>
+            {state?.isAdmin && <p className="mt-3 rounded-lg border border-emerald-400/30 bg-emerald-950/30 px-3 py-2 text-xs font-bold text-emerald-200">{t.adminNote}</p>}
             {!canBuy && <p className="mt-3 text-xs text-amber-100/50">{t.salesClosed}</p>}
-            <button type="button" disabled={!canBuy || busy} onClick={() => void buy()} className="mt-4 w-full rounded-xl bg-gradient-to-r from-[#f5c451] to-[#d4af37] px-4 py-3.5 text-sm font-black text-[#09090b] shadow-lg disabled:cursor-not-allowed disabled:opacity-40">{busy ? t.busy : t.buy}</button>
+            <button type="button" disabled={!canBuy || busy} onClick={() => void buy()} className="mt-4 w-full rounded-xl bg-gradient-to-r from-[#f5c451] to-[#d4af37] px-4 py-3.5 text-sm font-black text-[#09090b] shadow-lg disabled:cursor-not-allowed disabled:opacity-40">{busy ? t.busy : state?.isAdmin ? t.adminAdd : t.buy}</button>
           </section>
         </div>
       )}
