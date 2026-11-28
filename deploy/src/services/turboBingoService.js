@@ -158,8 +158,12 @@ export function createTurboBingoService({ repo }) {
 
   async function startGame() {
     const config = await settings();
-    const game = await repo.getCurrentTurboBingoGame();
-    if (!game || game.status === 'ended') throw new HttpError(409, 'sales_not_open', 'Open ticket sales before starting the draw.');
+    let game = await repo.getCurrentTurboBingoGame();
+    if (!game || game.status === 'ended') {
+      await openGame();
+      game = await repo.getCurrentTurboBingoGame();
+    }
+    if (!game) throw new HttpError(409, 'sales_not_open', 'Open a new Turbo Bingo round before starting.');
     if (game.status === 'running') {
       if (!game.pausedAt) throw new HttpError(409, 'game_already_running', 'A Turbo Bingo game is already running.');
       const interval = game.drawIntervalSeconds ?? config.drawIntervalSeconds;
@@ -172,7 +176,6 @@ export function createTurboBingoService({ repo }) {
       return getState();
     }
     if (game.status !== 'waiting') throw new HttpError(409, 'game_already_running', 'A Turbo Bingo game is already running.');
-    if (!game.ticketCount && (game.mode ?? config.mode) !== 'automatic') throw new HttpError(409, 'no_tickets', 'At least one ticket must be registered before starting.');
     const startedAt = Date.now();
     const mode = game.mode ?? config.mode;
     const duration = mode === 'automatic' ? AUTOMATIC_ROUND_DURATION_MS / 1000 : (game.roundDurationSeconds ?? config.roundDurationSeconds);
@@ -199,7 +202,7 @@ export function createTurboBingoService({ repo }) {
 
   async function stopGame() {
     const game = await repo.getCurrentTurboBingoGame();
-    if (!game || game.status !== 'running') throw new HttpError(409, 'game_not_running', 'There is no running Turbo Bingo game.');
+    if (!game || !['waiting', 'running'].includes(game.status)) throw new HttpError(409, 'game_not_running', 'There is no open Turbo Bingo round to end.');
     const updated = await repo.updateTurboBingoGame(game.id, game.version, {
       status: 'ended', pausedAt: null, nextDrawAt: null, endedAt: Date.now(), endReason: 'admin_stopped',
     });
@@ -217,7 +220,7 @@ export function createTurboBingoService({ repo }) {
     // endsAt is retained as round metadata only; it must never stop a live draw.
     const mode = game.mode ?? config.mode;
     if (mode === 'admin' && !forceManual) return false;
-    if (mode === 'automatic' && now < Number(game.nextDrawAt ?? 0)) return false;
+    if (mode === 'automatic' && !forceManual && now < Number(game.nextDrawAt ?? 0)) return false;
     const tickets = await repo.listTurboBingoTickets(game.id);
     const previousLast = game.drawnNumbers.at(-1);
     const lockedTicketIds = tickets.filter((ticket) => {
@@ -352,9 +355,18 @@ export function createTurboBingoService({ repo }) {
     getState, getSettings: settings, buyTickets, startGame, pauseGame, stopGame, claim,
     updateSettings, getAdminOverview, openGame,
     async drawNextManually() {
-      const game = await repo.getCurrentTurboBingoGame();
-      if (!game || game.status !== 'running' || game.pausedAt) throw new HttpError(409, 'game_not_running', 'Start or resume the round before calling the next number.');
-      if ((game.mode ?? (await settings()).mode) !== 'admin') throw new HttpError(409, 'not_manual_mode', 'Manual number calls are available only in Admin mode.');
+      let game = await repo.getCurrentTurboBingoGame();
+      // The Host's Call Next Number control also opens the next round after an
+      // Admin-ended round, matching the regular Bingo Host's start/draw flow.
+      if (!game || game.status === 'ended') {
+        await openGame();
+        game = await repo.getCurrentTurboBingoGame();
+      }
+      if (game?.status === 'waiting' || (game?.status === 'running' && game.pausedAt)) {
+        await startGame();
+        game = await repo.getCurrentTurboBingoGame();
+      }
+      if (!game || game.status !== 'running') throw new HttpError(409, 'game_not_running', 'Start the round before calling the next number.');
       const changed = await drawNext(true);
       if (!changed) throw new HttpError(409, 'draw_not_available', 'The next number could not be called. Refresh and try again.');
       return getState();
