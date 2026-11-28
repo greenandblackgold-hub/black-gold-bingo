@@ -71,6 +71,66 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
   const [selectedCards, setSelectedCards] = useState<string[]>(() => {
     try { const value: unknown = JSON.parse(localStorage.getItem('bgb.selectedCards') || '[]'); return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : []; } catch { return []; }
   });
+  type PriorityLine = { id: 'L' | 'LT' | 'LN' | 'NI'; count: number };
+  const priorityLimits: Record<PriorityLine['id'], number> = { L: 4, LT: 1, LN: 1, NI: 1 };
+  const priorityLabels: Record<PriorityLine['id'], string> = {
+    L: 'የተሞላ ቁጥር መስመር',
+    LT: 'ፍሪ የሚያልፍ መስመር',
+    LN: 'ፍሪ የማያልፍ መስመር',
+    NI: 'የማይገናኙ መስመሮች',
+  };
+  const [priorityQueue, setPriorityQueue] = useState<PriorityLine[]>(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem('bgb.patternPriorityQueue') || 'null') as unknown;
+      if (Array.isArray(raw)) return raw.filter((item): item is PriorityLine =>
+        !!item && typeof item === 'object' && ['L','LT','LN','NI'].includes(String((item as PriorityLine).id)) &&
+        Number.isInteger((item as PriorityLine).count) && (item as PriorityLine).count >= 1 &&
+        (item as PriorityLine).count <= priorityLimits[(item as PriorityLine).id]
+      ).slice(0, 3);
+    } catch { /* Use the initial suggested order. */ }
+    return [{ id: 'L', count: 1 }, { id: 'LT', count: 1 }];
+  });
+  const [nonIntersectingOnly, setNonIntersectingOnly] = useState(() => {
+    try { return localStorage.getItem('bgb.patternNonIntersecting') === 'on'; } catch { return false; }
+  });
+  const [lineSectionOpen, setLineSectionOpen] = useState(true);
+  const [shapeSectionsOpen, setShapeSectionsOpen] = useState<Record<string, boolean>>({});
+  const shapeGroups = [
+    { id: 'circles', label: 'ስኼሮች', options: [{id:'x',label:'X'},{id:'diamond',label:'Diamond'},{id:'bow_tie',label:'Bow Tie'},{id:'hourglass',label:'Hourglass'},{id:'star',label:'Star'}] },
+    { id: 'rectangles', label: 'ሬክታንግሎች', options: [{id:'rectangle',label:'Rectangle'},{id:'two_rectangles',label:'Two Rectangles'},{id:'postage_stamp',label:'Postage Stamp'},{id:'picture_frame',label:'Picture Frame'},{id:'inner_frame',label:'Inner Frame'}] },
+    { id: 'horizontal', label: 'አግድም መስመሮች', options: [{id:'horizontal_line',label:'Horizontal Line'},{id:'two_horizontal_lines',label:'Two Horizontal Lines'},{id:'top_bottom',label:'Top & Bottom'}] },
+    { id: 'vertical', label: 'ቋሚ መስመሮች', options: [{id:'vertical_line',label:'Vertical Line'},{id:'left_right',label:'Left & Right'}] },
+    { id: 'big-t', label: 'ትልቅ T', options: [{id:'t',label:'T Pattern'},{id:'letter_h',label:'H Pattern'}] },
+    { id: 'big-z', label: 'ትልቅ Z', options: [{id:'z',label:'Z Pattern'},{id:'lucky_seven',label:'Lucky Seven'}] },
+  ];
+  const [selectedShapePatterns, setSelectedShapePatterns] = useState<string[]>(() => {
+    try {
+      const raw: unknown = JSON.parse(localStorage.getItem('bgb.shapePatterns') || '[]');
+      return Array.isArray(raw) ? raw.filter((value): value is string => typeof value === 'string') : [];
+    } catch { return []; }
+  });
+  const persistPriorityQueue = (next: PriorityLine[]) => {
+    setPriorityQueue(next);
+    try { localStorage.setItem('bgb.patternPriorityQueue', JSON.stringify(next)); } catch { /* Keep in-memory settings. */ }
+  };
+  const togglePriorityLine = (id: PriorityLine['id'], checked: boolean) => {
+    if (checked) {
+      if (priorityQueue.length >= 3 || priorityQueue.some(item => item.id === id)) return;
+      persistPriorityQueue([...priorityQueue, { id, count: 1 }]);
+    } else {
+      persistPriorityQueue(priorityQueue.filter(item => item.id !== id));
+    }
+  };
+  const updatePriorityCount = (id: PriorityLine['id'], delta: number) => {
+    persistPriorityQueue(priorityQueue.map(item => item.id === id
+      ? { ...item, count: Math.max(1, Math.min(priorityLimits[id], item.count + delta)) }
+      : item));
+  };
+  const toggleShapePattern = (id: string, checked: boolean) => {
+    const next = checked ? [...selectedShapePatterns, id] : selectedShapePatterns.filter(value => value !== id);
+    setSelectedShapePatterns(next);
+    try { localStorage.setItem('bgb.shapePatterns', JSON.stringify(next)); } catch { /* Keep in-memory settings. */ }
+  };
   useEffect(() => {
     const syncSettings = () => {
       try {
@@ -362,6 +422,76 @@ export function PlayerFeatures({ onGoToWallet, settingsOnly = false, menuOnly = 
                         ))}
                       </div>
                     </section>
+                    <section className="rounded-2xl border border-slate-700 bg-slate-950/90 p-4">
+                      <div className="mb-1 flex items-center justify-between gap-3">
+                        <h3 className="text-base font-black text-sky-200">መደርደሪያ</h3>
+                        <button type="button" onClick={() => setLineSectionOpen(false)} aria-label="የመደርደሪያ ክፍልን ዝጋ" className="grid h-8 w-8 place-items-center rounded-lg border border-slate-600 text-lg text-slate-300 hover:border-sky-300 hover:text-white">×</button>
+                      </div>
+                      <p className="mb-3 text-xs leading-5 text-slate-400">የመረጡት ቅደም ተከተል ቅድሚያውን ይወስናል። እስከ 3።</p>
+                      {lineSectionOpen ? (
+                        <div className="space-y-2">
+                          {priorityQueue.map((item, index) => (
+                            <div key={item.id} className="grid grid-cols-[1.8rem_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 p-2">
+                              <span className="grid h-7 w-7 place-items-center rounded-lg bg-sky-600 text-sm font-black text-white">{index + 1}</span>
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-bold text-slate-100">{priorityLabels[item.id]}</p>
+                                <p className="text-[10px] text-slate-400">ቅድሚያ {index + 1} · ከፍተኛ {priorityLimits[item.id]}</p>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <button type="button" aria-label={priorityLabels[item.id] + ' ቀንስ'} disabled={item.count <= 1} onClick={() => updatePriorityCount(item.id, -1)} className="grid h-7 w-7 place-items-center rounded-md border border-slate-600 text-base disabled:opacity-30">−</button>
+                                <span className="min-w-5 text-center text-sm font-black tabular-nums">{item.count}</span>
+                                <button type="button" aria-label={priorityLabels[item.id] + ' ጨምር'} disabled={item.count >= priorityLimits[item.id]} onClick={() => updatePriorityCount(item.id, 1)} className="grid h-7 w-7 place-items-center rounded-md border border-slate-600 text-base disabled:opacity-30">+</button>
+                                <button type="button" aria-label={priorityLabels[item.id] + ' አስወግድ'} onClick={() => togglePriorityLine(item.id, false)} className="grid h-7 w-7 place-items-center rounded-md border border-red-500/40 text-sm text-red-300">×</button>
+                              </div>
+                            </div>
+                          ))}
+                          {priorityQueue.length === 0 && <p className="rounded-lg border border-dashed border-slate-700 p-3 text-center text-xs text-slate-400">እስካሁን ምንም ቅደም ተከተል አልተመረጠም።</p>}
+                          <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2">
+                            <span className="text-xs font-bold text-slate-200">የማይገናኙ</span>
+                            <button type="button" role="switch" aria-checked={nonIntersectingOnly} onClick={() => {const next=!nonIntersectingOnly;setNonIntersectingOnly(next);try{localStorage.setItem('bgb.patternNonIntersecting',next?'on':'off');}catch{}}} className={`relative h-6 w-11 rounded-full border transition ${nonIntersectingOnly?'border-sky-300 bg-sky-600':'border-slate-600 bg-slate-800'}`}><span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${nonIntersectingOnly?'left-5':'left-1'}`}/></button>
+                          </div>
+                          <div className="flex justify-end">
+                            <button type="button" onClick={() => persistPriorityQueue([])} className="rounded-lg border border-orange-500/40 bg-red-950/50 px-4 py-2 text-xs font-black text-orange-200 hover:bg-red-900/60">አጽዳ</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => setLineSectionOpen(true)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-left text-xs font-bold text-slate-300">መደርደሪያውን ክፈት ▾</button>
+                      )}
+                    </section>
+
+                    <section className="rounded-2xl border border-slate-700 bg-slate-950/90 p-4">
+                      <button type="button" onClick={() => setLineSectionOpen(value => !value)} aria-expanded={lineSectionOpen} className="mb-2 flex w-full items-center justify-between gap-3 text-left">
+                        <span className="flex items-center gap-2 text-sm font-black text-sky-200">መስመሮች <span className="grid h-6 min-w-6 place-items-center rounded-full bg-sky-600 px-1.5 text-xs text-white">{priorityQueue.length}</span></span>
+                        <span className="text-lg text-slate-300">{lineSectionOpen ? '⌃' : '⌄'}</span>
+                      </button>
+                      {lineSectionOpen && <div className="divide-y divide-slate-700">
+                        {(['L','LT','LN','NI'] as const).map(id => (
+                          <label key={id} className="flex items-center gap-3 py-3">
+                            <input type="checkbox" checked={priorityQueue.some(item => item.id === id)} disabled={!priorityQueue.some(item => item.id === id) && priorityQueue.length >= 3} onChange={event => togglePriorityLine(id, event.target.checked)} className="h-5 w-5 accent-sky-500 disabled:opacity-40"/>
+                            <span className="min-w-0 flex-1 text-xs font-semibold text-slate-200">{priorityLabels[id]}</span>
+                            <span className="rounded-md border border-slate-600 bg-slate-900 px-2 py-1 text-[10px] font-black text-sky-200">{id}</span>
+                          </label>
+                        ))}
+                      </div>}
+                    </section>
+
+                    {shapeGroups.map(group => (
+                      <section key={group.id} className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/90">
+                        <button type="button" onClick={() => setShapeSectionsOpen(current => ({...current,[group.id]:!current[group.id]}))} aria-expanded={!!shapeSectionsOpen[group.id]} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
+                          <span className="text-sm font-black text-sky-200">{group.label}</span>
+                          <span className="text-lg text-slate-300">{shapeSectionsOpen[group.id] ? '⌃' : '⌄'}</span>
+                        </button>
+                        {shapeSectionsOpen[group.id] && <div className="divide-y divide-slate-700 border-t border-slate-700 px-4">
+                          {group.options.map(option => (
+                            <label key={option.id} className="flex items-center gap-3 py-2.5">
+                              <input type="checkbox" checked={selectedShapePatterns.includes(option.id)} onChange={event => toggleShapePattern(option.id,event.target.checked)} className="h-4 w-4 accent-sky-500"/>
+                              <span className="flex-1 text-xs font-semibold text-slate-200">{option.label}</span>
+                              <span className="rounded-md border border-slate-600 px-2 py-0.5 text-[10px] font-black text-slate-400">{option.id.toUpperCase()}</span>
+                            </label>
+                          ))}
+                        </div>}
+                      </section>
+                    ))}
                   </div>
                 )}
                 {row.id === 'settings' && !settingsOnly && (
